@@ -92,6 +92,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   Blog
                 </Link>
                 <Link
+                  to="/workflows"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
+                >
+                  Workflows
+                </Link>
+                <Link
                   to="/about"
                   className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
                 >

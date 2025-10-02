@@ -98,10 +98,132 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Stats Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8 text-center">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="text-4xl font-bold text-blue-600 mb-2">8+</div>
+              <div className="text-gray-600">Years Experience</div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="text-4xl font-bold text-blue-600 mb-2">100+</div>
+              <div className="text-gray-600">Projects Delivered</div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="text-4xl font-bold text-blue-600 mb-2">50+</div>
+              <div className="text-gray-600">Automation Workflows</div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="text-4xl font-bold text-blue-600 mb-2">20+</div>
+              <div className="text-gray-600">Client Integrations</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Core Expertise Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4 text-center">Core Expertise</h2>
+          <p className="text-gray-600 text-center mb-12 max-w-3xl mx-auto">
+            Specializing in intelligent automation, data analytics, and enterprise system integrations
+          </p>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="text-blue-600 mb-4">
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">AI Automation & Workflows</h3>
+              <p className="text-gray-600 mb-4">
+                Design and implement intelligent automation solutions using n8n, Make.com, Zapier, and OpenAI models
+              </p>
+              <ul className="text-sm text-gray-600 space-y-2">
+                <li>• GPT-4 integration & AI agents</li>
+                <li>• Custom workflow automation</li>
+                <li>• Process optimization</li>
+              </ul>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="text-blue-600 mb-4">
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Data Analysis & Power BI</h3>
+              <p className="text-gray-600 mb-4">
+                Transform complex data into actionable insights with advanced analytics and visualization dashboards
+              </p>
+              <ul className="text-sm text-gray-600 space-y-2">
+                <li>• Power BI dashboard design</li>
+                <li>• KPI tracking & reporting</li>
+                <li>• Predictive analytics</li>
+              </ul>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="text-blue-600 mb-4">
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">CRM & System Integrations</h3>
+              <p className="text-gray-600 mb-4">
+                Seamlessly connect business systems with Zoho CRM, HubSpot, and custom API integrations
+              </p>
+              <ul className="text-sm text-gray-600 space-y-2">
+                <li>• CRM customization & automation</li>
+                <li>• Third-party API integration</li>
+                <li>• Data migration & synchronization</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section className="py-16 bg-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">What I Offer</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">🤖 Workflow Automation</h3>
+              <p className="text-gray-600 mb-4">
+                Automate repetitive tasks, streamline business processes, and reduce manual errors with intelligent workflow solutions tailored to your needs.
+              </p>
+              <Link to="/workflows" className="text-blue-600 hover:text-blue-700 font-semibold">
+                View Automation Examples →
+              </Link>
+            </div>
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">📊 Business Intelligence</h3>
+              <p className="text-gray-600 mb-4">
+                Create interactive Power BI dashboards, generate actionable insights, and make data-driven decisions with comprehensive analytics solutions.
+              </p>
+            </div>
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">🔗 System Integrations</h3>
+              <p className="text-gray-600 mb-4">
+                Connect your CRM, marketing tools, databases, and third-party services into a unified ecosystem that works seamlessly together.
+              </p>
+            </div>
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">💻 Full-Stack Development</h3>
+              <p className="text-gray-600 mb-4">
+                Build scalable web applications, APIs, and custom software solutions using modern frameworks like React, .NET Core, and Django.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            Featured Blog Posts
+            Latest Insights
           </h2>
           {loading ? (
             <div className="text-center py-12">
