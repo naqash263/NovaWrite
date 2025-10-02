@@ -45,39 +45,37 @@ export default function Blog() {
   });
 
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await apiClient.get('/categories');
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
     fetchCategories();
   }, []);
 
   useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (selectedCategory) params.append('category_id', String(selectedCategory));
+        params.append('page', String(currentPage));
+
+        const response = await apiClient.get(`/posts?${params.toString()}`);
+        setPosts(response.data.data || []);
+        setLastPage(response.data.last_page);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchPosts();
   }, [search, selectedCategory, currentPage]);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await apiClient.get('/categories');
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const fetchPosts = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (selectedCategory) params.append('category_id', String(selectedCategory));
-      params.append('page', String(currentPage));
-
-      const response = await apiClient.get(`/posts?${params.toString()}`);
-      setPosts(response.data.data || []);
-      setLastPage(response.data.last_page);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCategorySelect = (categoryId: number | null) => {
     setSelectedCategory(categoryId);
