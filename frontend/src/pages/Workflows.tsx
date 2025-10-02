@@ -13,9 +13,9 @@ interface WorkflowCategory {
 
 interface WorkflowFile {
   id: number;
-  name: string;
+  display_name?: string;
   description?: string;
-  file: {
+  file?: {
     name: string;
     size: number;
   };
@@ -72,7 +72,7 @@ export default function Workflows() {
     },
   });
 
-  const handleDownload = (workflowFile: WorkflowFile, workflowName: string) => {
+  const handleDownload = (workflowFile: any, workflowName: string) => {
     setDownloadModal({
       isOpen: true,
       workflowFile: { id: workflowFile.id, name: workflowFile.name },
@@ -231,7 +231,7 @@ export default function Workflows() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                             <div className="text-left">
-                              <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                              <p className="text-sm font-medium text-gray-900">{file.display_name || file.file?.name || 'Download Workflow'}</p>
                               {file.description && (
                                 <p className="text-xs text-gray-500">{file.description}</p>
                               )}

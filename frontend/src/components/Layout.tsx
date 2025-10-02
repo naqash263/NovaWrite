@@ -41,6 +41,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   >
                     Files
                   </Link>
+                  <Link
+                    to="/admin/workflow-categories"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  >
+                    Workflow Categories
+                  </Link>
+                  <Link
+                    to="/admin/workflows"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  >
+                    Workflows
+                  </Link>
                 </div>
               </div>
               <div className="flex items-center gap-4">

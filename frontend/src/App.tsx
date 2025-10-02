@@ -14,6 +14,8 @@ import Dashboard from './pages/admin/Dashboard';
 import Categories from './pages/admin/Categories';
 import Posts from './pages/admin/Posts';
 import Files from './pages/admin/Files';
+import WorkflowCategories from './pages/admin/WorkflowCategories';
+import AdminWorkflows from './pages/admin/Workflows';
 
 function App() {
   return (
@@ -32,6 +34,8 @@ function App() {
             <Route path="/admin/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
             <Route path="/admin/posts" element={<ProtectedRoute><Posts /></ProtectedRoute>} />
             <Route path="/admin/files" element={<ProtectedRoute><Files /></ProtectedRoute>} />
+            <Route path="/admin/workflow-categories" element={<ProtectedRoute><WorkflowCategories /></ProtectedRoute>} />
+            <Route path="/admin/workflows" element={<ProtectedRoute><AdminWorkflows /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
