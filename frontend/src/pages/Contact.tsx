@@ -7,9 +7,21 @@ export default function Contact() {
   });
 
   return (
-    <div className="bg-gray-50 py-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8 text-center">Get In Touch</h1>
+    <div className="bg-gray-50">
+      {/* Hero Section with Background Image */}
+      <div 
+        className="relative bg-cover bg-center py-20 mb-16"
+        style={{
+          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9)), url('/images/business_analytics_d_948bb4c2.jpg')`
+        }}
+      >
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h1 className="text-5xl font-bold text-white mb-4">Get In Touch</h1>
+          <p className="text-xl text-blue-100">Let's discuss your next automation project</p>
+        </div>
+      </div>
+      
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
 
         <div className="bg-white rounded-lg shadow-md p-8">
           <p className="text-gray-700 text-lg mb-8 text-center">

@@ -21,15 +21,33 @@ interface PostCardProps {
 }
 
 export function PostCard({ post }: PostCardProps) {
+  // Array of fallback images
+  const fallbackImages = [
+    '/images/technology_coding_pr_27f67dc5.jpg',
+    '/images/business_analytics_d_948bb4c2.jpg',
+    '/images/ai_artificial_intell_c522e573.jpg',
+    '/images/modern_technology_ab_8cef6e70.jpg',
+  ];
+  
+  // Select a fallback image based on post ID for consistency
+  const fallbackImage = fallbackImages[post.id % fallbackImages.length];
+  
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-      {post.featured_image && (
-        <img
-          src={post.featured_image}
-          alt={post.title}
-          className="w-full h-48 object-cover"
-        />
-      )}
+      <img
+        src={post.featured_image 
+          ? (post.featured_image.startsWith('http') 
+            ? post.featured_image 
+            : `http://localhost:8000/storage/${post.featured_image}`)
+          : fallbackImage
+        }
+        alt={post.title}
+        className="w-full h-48 object-cover"
+        onError={(e) => {
+          // If the featured image fails to load, use fallback
+          (e.target as HTMLImageElement).src = fallbackImage;
+        }}
+      />
       <div className="p-6">
         <div className="flex items-center gap-2 mb-3">
           <span className="inline-block bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-semibold">
