@@ -4,6 +4,10 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\WorkflowController;
+use App\Http\Controllers\Api\WorkflowDownloadController;
+use App\Http\Controllers\Api\Admin\WorkflowCategoryController as AdminWorkflowCategoryController;
+use App\Http\Controllers\Api\Admin\WorkflowController as AdminWorkflowController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -40,4 +44,27 @@ Route::middleware('auth:api')->group(function () {
     Route::post('files', [FileController::class, 'store']);
     Route::get('files/{id}', [FileController::class, 'show']);
     Route::delete('files/{id}', [FileController::class, 'destroy']);
+});
+
+Route::get('workflow-categories', [WorkflowController::class, 'categories']);
+Route::get('workflows', [WorkflowController::class, 'index']);
+Route::get('workflows/{slug}', [WorkflowController::class, 'show']);
+
+Route::post('workflow-downloads', [WorkflowDownloadController::class, 'requestDownload']);
+Route::get('workflow-files/{id}/download', [WorkflowDownloadController::class, 'download'])->name('workflow-files.download');
+
+Route::middleware('auth:api')->prefix('admin')->group(function () {
+    Route::get('workflow-categories', [AdminWorkflowCategoryController::class, 'index']);
+    Route::post('workflow-categories', [AdminWorkflowCategoryController::class, 'store']);
+    Route::get('workflow-categories/{id}', [AdminWorkflowCategoryController::class, 'show']);
+    Route::put('workflow-categories/{id}', [AdminWorkflowCategoryController::class, 'update']);
+    Route::delete('workflow-categories/{id}', [AdminWorkflowCategoryController::class, 'destroy']);
+
+    Route::get('workflows', [AdminWorkflowController::class, 'index']);
+    Route::post('workflows', [AdminWorkflowController::class, 'store']);
+    Route::get('workflows/{id}', [AdminWorkflowController::class, 'show']);
+    Route::put('workflows/{id}', [AdminWorkflowController::class, 'update']);
+    Route::delete('workflows/{id}', [AdminWorkflowController::class, 'destroy']);
+    Route::post('workflows/{id}/files', [AdminWorkflowController::class, 'attachFile']);
+    Route::delete('workflows/{id}/files/{fileId}', [AdminWorkflowController::class, 'detachFile']);
 });

@@ -8,6 +8,17 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (October 2, 2025)
 
+## Workflow Management System (Backend Complete)
+- **Database Schema**: Created 4 tables (workflow_categories, workflows, workflow_files, workflow_downloads) with proper foreign keys and cascading deletes
+- **Models**: Implemented WorkflowCategory, Workflow, WorkflowFile, WorkflowDownload with auto-slug generation (unique), relationships, and JSON casts
+- **Security**: UUID-based download tokens with 24-hour expiry, published/active status checks, unique slug enforcement
+- **API Endpoints**: 
+  - Public: `/api/workflows` (list with category filter), `/api/workflows/{slug}` (detail), `/api/workflow-categories`
+  - Downloads: `/api/workflow-downloads` (email capture), `/api/workflow-files/{id}/download?token={uuid}` (secure download)
+  - Admin: Full CRUD for workflow categories and workflows under `/api/admin/*` (protected by JWT)
+- **Email-Gated Downloads**: Visitors must provide email to download JSON workflow files; system tracks emails, IPs, download counts for lead generation
+
+## Portfolio Enhancements
 - Enhanced homepage with informative sections: statistics (8+ years experience, 100+ projects), core expertise cards (AI Automation, Data Analysis & Power BI, CRM Integrations), and services offered
 - Created new Workflows page showcasing 6 real-world automation examples (AI Resume Screening, Lead Enrichment, Invoice Processing, Job Aggregation, Email Personalization, Document Generation) with tools, technologies, and benefits
 - Updated About page to emphasize Data Analyst & Power BI skills, added featured projects section with 5 detailed project examples including Power BI dashboards, AI systems, and full-stack platforms

@@ -35,15 +35,31 @@ class Workflow extends Model
 
         static::creating(function ($workflow) {
             if (empty($workflow->slug)) {
-                $workflow->slug = Str::slug($workflow->title);
+                $workflow->slug = static::generateUniqueSlug($workflow->title);
             }
         });
 
         static::updating(function ($workflow) {
             if ($workflow->isDirty('title') && empty($workflow->slug)) {
-                $workflow->slug = Str::slug($workflow->title);
+                $workflow->slug = static::generateUniqueSlug($workflow->title, $workflow->id);
             }
         });
+    }
+
+    protected static function generateUniqueSlug($title, $ignoreId = null)
+    {
+        $slug = Str::slug($title);
+        $originalSlug = $slug;
+        $counter = 1;
+
+        while (static::where('slug', $slug)->when($ignoreId, function ($query, $id) {
+            return $query->where('id', '!=', $id);
+        })->exists()) {
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+
+        return $slug;
     }
 
     public function category()
