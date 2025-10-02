@@ -1,83 +1,97 @@
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../api/axios';
 import { useSEO } from '../utils/seo';
+import WorkflowDownloadModal from '../components/WorkflowDownloadModal';
+
+interface WorkflowCategory {
+  id: number;
+  name: string;
+  slug: string;
+  workflows_count?: number;
+}
+
+interface WorkflowFile {
+  id: number;
+  name: string;
+  description?: string;
+  file: {
+    name: string;
+    size: number;
+  };
+}
+
+interface Workflow {
+  id: number;
+  title: string;
+  slug: string;
+  summary: string;
+  description: string;
+  tools: string[];
+  benefits: string[];
+  is_featured: boolean;
+  category?: WorkflowCategory;
+  files: WorkflowFile[];
+}
 
 export default function Workflows() {
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [downloadModal, setDownloadModal] = useState<{
+    isOpen: boolean;
+    workflowFile: { id: number; name: string } | null;
+    workflowName: string;
+  }>({
+    isOpen: false,
+    workflowFile: null,
+    workflowName: '',
+  });
+
   useSEO({
     title: 'Automation Workflows | Naqash Thaheem',
     description: 'Explore automation workflow examples including AI agents, CRM integrations, data processing pipelines, and business process automation.',
   });
 
-  const workflows = [
-    {
-      title: 'AI-Powered Resume Screening',
-      description: 'Automated candidate evaluation system using GPT-4 to analyze resumes, extract key information, match job requirements, and rank candidates based on skills and experience.',
-      tools: ['n8n', 'OpenAI GPT-4', 'Zoho CRM', 'PostgreSQL'],
-      benefits: ['90% time reduction', 'Consistent evaluation', 'Bias elimination'],
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      )
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery<WorkflowCategory[]>({
+    queryKey: ['workflow-categories'],
+    queryFn: async () => {
+      const response = await apiClient.get('/workflow-categories');
+      return response.data;
     },
-    {
-      title: 'Multi-Channel Lead Enrichment',
-      description: 'Automatically enrich lead data from LinkedIn, company websites, and databases. Extract contact details, company information, and social profiles, then update CRM with enriched data.',
-      tools: ['Make.com', 'Apify', 'LinkedIn API', 'HubSpot'],
-      benefits: ['500+ leads/day', 'Real-time updates', 'Data accuracy 95%'],
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      )
+  });
+
+  const { data: workflows = [], isLoading: workflowsLoading } = useQuery<Workflow[]>({
+    queryKey: ['workflows', selectedCategory, searchQuery],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedCategory) params.append('category_id', selectedCategory.toString());
+      if (searchQuery) params.append('search', searchQuery);
+      
+      const response = await apiClient.get(`/workflows?${params.toString()}`);
+      return response.data;
     },
-    {
-      title: 'Automated Invoice Processing',
-      description: 'Extract data from invoice PDFs using OCR, validate information, categorize expenses, and automatically create entries in accounting system with email notifications.',
-      tools: ['n8n', 'Google Vision API', 'Zoho Books', 'Gmail'],
-      benefits: ['24/7 processing', 'Zero manual entry', 'Instant validation'],
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
-        </svg>
-      )
-    },
-    {
-      title: 'Job Board Data Aggregation',
-      description: 'Scrape job postings from multiple sources (LinkedIn, Indeed, Glassdoor), deduplicate listings, normalize data format, and populate recruitment database with structured information.',
-      tools: ['Apify', 'Octoparse', 'Python', 'Azure MySQL'],
-      benefits: ['10k+ jobs daily', 'Multi-source', 'Real-time sync'],
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      )
-    },
-    {
-      title: 'Email Campaign Personalization',
-      description: 'Generate personalized email content using AI based on recipient profile, industry, and behavior. Automatically schedule sends at optimal times and track engagement metrics.',
-      tools: ['Zapier', 'OpenAI', 'Mailchimp', 'Google Sheets'],
-      benefits: ['3x open rate', 'Personalized at scale', 'Smart timing'],
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      )
-    },
-    {
-      title: 'Document Generation & Approval',
-      description: 'Auto-generate contracts, proposals, and reports from templates with dynamic data population. Route for approvals, collect e-signatures, and store in cloud with version control.',
-      tools: ['n8n', 'Zoho Creator', 'DocuSign', 'OneDrive'],
-      benefits: ['Instant generation', 'Automated routing', 'Compliance tracking'],
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      )
-    }
-  ];
+  });
+
+  const handleDownload = (workflowFile: WorkflowFile, workflowName: string) => {
+    setDownloadModal({
+      isOpen: true,
+      workflowFile: { id: workflowFile.id, name: workflowFile.name },
+      workflowName,
+    });
+  };
+
+  const closeModal = () => {
+    setDownloadModal({
+      isOpen: false,
+      workflowFile: null,
+      workflowName: '',
+    });
+  };
+
+  const isLoading = categoriesLoading || workflowsLoading;
 
   return (
     <div className="bg-gray-50">
-      {/* Hero Section */}
       <div 
         className="relative bg-cover bg-center py-20 mb-16"
         style={{
@@ -93,47 +107,149 @@ export default function Workflows() {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        {/* Workflows Grid */}
-        <div className="grid md:grid-cols-2 gap-8">
-          {workflows.map((workflow, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md p-8 hover:shadow-xl transition-shadow">
-              <div className="text-blue-600 mb-4">
-                {workflow.icon}
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">{workflow.title}</h3>
-              <p className="text-gray-600 mb-6">{workflow.description}</p>
-              
-              {/* Tools Used */}
-              <div className="mb-6">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Tools & Technologies:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {workflow.tools.map((tool, idx) => (
-                    <span key={idx} className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">
-                      {tool}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Benefits */}
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Key Benefits:</h4>
-                <ul className="space-y-1">
-                  {workflow.benefits.map((benefit, idx) => (
-                    <li key={idx} className="text-sm text-gray-600 flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      {benefit}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ))}
+        <div className="mb-8 flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search workflows..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                selectedCategory === null
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              All
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  selectedCategory === category.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {category.name}
+                {category.workflows_count !== undefined && category.workflows_count > 0 && (
+                  <span className="ml-2 text-sm opacity-75">({category.workflows_count})</span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* CTA Section */}
+        {isLoading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+            <p className="mt-4 text-gray-600">Loading workflows...</p>
+          </div>
+        ) : workflows.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-lg shadow-md">
+            <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p className="text-gray-600 text-lg">No workflows found</p>
+            <p className="text-gray-500 mt-2">
+              {searchQuery || selectedCategory
+                ? 'Try adjusting your filters or search query'
+                : 'Check back soon for new automation workflows!'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-8">
+            {workflows.map((workflow) => (
+              <div key={workflow.id} className="bg-white rounded-lg shadow-md p-8 hover:shadow-xl transition-shadow">
+                {workflow.is_featured && (
+                  <div className="mb-3">
+                    <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-semibold">
+                      ⭐ Featured
+                    </span>
+                  </div>
+                )}
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">{workflow.title}</h3>
+                <p className="text-gray-600 mb-6">{workflow.summary || workflow.description}</p>
+                
+                {workflow.category && (
+                  <div className="mb-4">
+                    <span className="inline-block bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-semibold">
+                      {workflow.category.name}
+                    </span>
+                  </div>
+                )}
+                
+                {workflow.tools && workflow.tools.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Tools & Technologies:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {workflow.tools.map((tool, idx) => (
+                        <span key={idx} className="bg-gray-100 text-gray-800 text-xs px-3 py-1 rounded-full">
+                          {tool}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {workflow.benefits && workflow.benefits.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Key Benefits:</h4>
+                    <ul className="space-y-1">
+                      {workflow.benefits.map((benefit, idx) => (
+                        <li key={idx} className="text-sm text-gray-600 flex items-center gap-2">
+                          <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          {benefit}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {workflow.files && workflow.files.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Available Downloads:</h4>
+                    <div className="space-y-2">
+                      {workflow.files.map((file) => (
+                        <button
+                          key={file.id}
+                          onClick={() => handleDownload(file, workflow.title)}
+                          className="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <div className="text-left">
+                              <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                              {file.description && (
+                                <p className="text-xs text-gray-500">{file.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          <svg className="w-5 h-5 text-blue-600 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="mt-16 bg-blue-600 rounded-lg p-8 text-center text-white">
           <h2 className="text-3xl font-bold mb-4">Ready to Automate Your Business?</h2>
           <p className="text-xl mb-6 text-blue-100">
@@ -147,6 +263,15 @@ export default function Workflows() {
           </a>
         </div>
       </div>
+
+      {downloadModal.workflowFile && (
+        <WorkflowDownloadModal
+          workflowFile={downloadModal.workflowFile}
+          workflowName={downloadModal.workflowName}
+          isOpen={downloadModal.isOpen}
+          onClose={closeModal}
+        />
+      )}
     </div>
   );
 }
