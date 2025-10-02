@@ -1,4 +1,4 @@
-modules = ["php-8.4", "nodejs-20"]
+modules = ["php-8.4", "nodejs-20", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -54,3 +54,6 @@ externalPort = 8000
 deploymentTarget = "autoscale"
 run = ["bash", "-c", "cd backend && php artisan serve --host=0.0.0.0 --port=8000 & cd frontend && npm run preview -- --host 0.0.0.0 --port 5000"]
 build = ["bash", "-c", "cd frontend && npm install && npm run build"]
+
+[nix]
+channel = "stable-25_05"
