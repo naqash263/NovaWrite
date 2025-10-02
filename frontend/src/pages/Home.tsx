@@ -37,6 +37,7 @@ export default function Home() {
     message: ''
   });
   const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [contactErrors, setContactErrors] = useState<Partial<ContactFormData>>({});
 
   useSEO({
     title: 'Naqash Thaheem - Systems Analyst & Automation Specialist',
@@ -77,10 +78,59 @@ export default function Home() {
     }
   };
 
+  const validateContactForm = (): boolean => {
+    const errors: Partial<ContactFormData> = {};
+
+    // Normalize values by trimming
+    const trimmedName = contactForm.name.trim();
+    const trimmedEmail = contactForm.email.trim();
+    const trimmedSubject = contactForm.subject.trim();
+    const trimmedMessage = contactForm.message.trim();
+
+    // Validate name
+    if (!trimmedName) {
+      errors.name = 'Name is required';
+    } else if (trimmedName.length < 2) {
+      errors.name = 'Name must be at least 2 characters';
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail) {
+      errors.email = 'Email is required';
+    } else if (!emailRegex.test(trimmedEmail)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    // Validate subject
+    if (!trimmedSubject) {
+      errors.subject = 'Subject is required';
+    } else if (trimmedSubject.length < 3) {
+      errors.subject = 'Subject must be at least 3 characters';
+    }
+
+    // Validate message
+    if (!trimmedMessage) {
+      errors.message = 'Message is required';
+    } else if (trimmedMessage.length < 10) {
+      errors.message = 'Message must be at least 10 characters';
+    }
+
+    setContactErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    if (!validateContactForm()) {
+      return;
+    }
+
     // For now, just show success message (backend integration can be added later)
     setContactSubmitted(true);
+    setContactErrors({});
     setTimeout(() => {
       setContactForm({ name: '', email: '', subject: '', message: '' });
       setContactSubmitted(false);
@@ -92,6 +142,13 @@ export default function Home() {
       ...contactForm,
       [e.target.name]: e.target.value
     });
+    // Clear error for this field when user starts typing
+    if (contactErrors[e.target.name as keyof ContactFormData]) {
+      setContactErrors({
+        ...contactErrors,
+        [e.target.name]: undefined
+      });
+    }
   };
 
   return (
@@ -984,10 +1041,12 @@ export default function Home() {
                     name="name"
                     value={contactForm.name}
                     onChange={handleContactChange}
-                    required
-                    className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all"
+                    className={`w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border ${contactErrors.name ? 'border-red-400' : 'border-white border-opacity-30'} text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all`}
                     placeholder="John Doe"
                   />
+                  {contactErrors.name && (
+                    <p className="text-red-300 text-sm mt-1">{contactErrors.name}</p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="email" className="block text-sm font-semibold mb-2 text-blue-100">Your Email</label>
@@ -997,10 +1056,12 @@ export default function Home() {
                     name="email"
                     value={contactForm.email}
                     onChange={handleContactChange}
-                    required
-                    className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all"
+                    className={`w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border ${contactErrors.email ? 'border-red-400' : 'border-white border-opacity-30'} text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all`}
                     placeholder="john@example.com"
                   />
+                  {contactErrors.email && (
+                    <p className="text-red-300 text-sm mt-1">{contactErrors.email}</p>
+                  )}
                 </div>
               </div>
               <div className="mb-6">
@@ -1011,10 +1072,12 @@ export default function Home() {
                   name="subject"
                   value={contactForm.subject}
                   onChange={handleContactChange}
-                  required
-                  className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all"
+                  className={`w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border ${contactErrors.subject ? 'border-red-400' : 'border-white border-opacity-30'} text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all`}
                   placeholder="Project Inquiry"
                 />
+                {contactErrors.subject && (
+                  <p className="text-red-300 text-sm mt-1">{contactErrors.subject}</p>
+                )}
               </div>
               <div className="mb-6">
                 <label htmlFor="message" className="block text-sm font-semibold mb-2 text-blue-100">Message</label>
@@ -1023,11 +1086,13 @@ export default function Home() {
                   name="message"
                   value={contactForm.message}
                   onChange={handleContactChange}
-                  required
                   rows={6}
-                  className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all resize-none"
+                  className={`w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border ${contactErrors.message ? 'border-red-400' : 'border-white border-opacity-30'} text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all resize-none`}
                   placeholder="Tell me about your project..."
                 ></textarea>
+                {contactErrors.message && (
+                  <p className="text-red-300 text-sm mt-1">{contactErrors.message}</p>
+                )}
               </div>
               <button
                 type="submit"
