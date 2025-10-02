@@ -1,6 +1,6 @@
 # Overview
 
-This is a full-stack blog application built with a Laravel 11 backend and React frontend. The application provides a comprehensive content management system for creating, managing, and publishing blog posts with categories and file management capabilities. Users can browse published posts on the frontend, while authenticated administrators can manage content through a dedicated admin dashboard with rich text editing.
+This is a comprehensive portfolio + blog website for Naqash Thaheem (Systems Analyst & Automation Specialist) built with Laravel 11 backend and React + Vite + TypeScript frontend. The application provides a professional portfolio showcasing skills and experience, along with a full-featured blog system and admin dashboard for content management. Features include JWT authentication, blog posts with file attachments, category filtering, search functionality, and a protected admin panel.
 
 # User Preferences
 
@@ -8,13 +8,14 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (October 2, 2025)
 
-- Completed full-stack blog system implementation with Laravel 11 + React
-- Implemented JWT authentication with secure token-based auth
-- Created comprehensive admin dashboard with CRUD operations for categories, posts, and files
-- Integrated custom rich text editor with formatting toolbar (bold, italic, headings, lists, links)
-- Applied custom design system with specified color palette and typography
-- Configured secure file upload/download system with public/private file support
-- Set up both Backend and Frontend workflows for development
+- Complete frontend rebuild with Tailwind CSS v3 for consistent, professional styling
+- Implemented personal branding for Naqash Thaheem (Systems Analyst & Automation Specialist)
+- Created comprehensive pages: Home (hero + featured posts), About (skills/experience), Contact, Blog (search/filters), Blog Detail, Admin Login, Admin Dashboard
+- Developed reusable components: PostCard, CategoryFilter, FileList, Layout, ErrorBoundary, ProtectedRoute
+- Created useAuth hook for authentication management and SEO utility for page meta tags
+- Fixed Laravel 11 compatibility issues (removed deprecated middleware, updated routes)
+- Resolved database connection and session configuration for stateless JWT API
+- Both backend (Laravel/PostgreSQL on port 8000) and frontend (React/Vite on port 5000) running successfully
 
 # System Architecture
 
@@ -26,33 +27,43 @@ Preferred communication style: Simple, everyday language.
 - React Router DOM for client-side routing
 - TanStack Query for server state management
 - Axios for HTTP requests with JWT token injection
-- Custom CSS with CSS variables for theming
+- Tailwind CSS v3 for utility-first styling
 
 **Design System:**
-- Primary Color: `hsl(96, 85.19%, 73.53%)` (light green)
-- Secondary Color: `hsl(0, 0%, 0%)` (black)
-- Background: `hsl(0, 0%, 100%)` (white)
-- Card Background: `hsl(0, 0%, 96.47%)` (light gray)
-- Typography: Space Grotesk (headings), Geist (body), Geist Mono (code)
-- Spacing Unit: 0.25rem base with calc() multipliers
-- Sharp edges with 0rem border radius throughout
+- Tailwind CSS v3 utility classes for all styling
+- Primary color: Blue (blue-600, blue-700 for hover states)
+- Professional color scheme with gray scale for text and backgrounds
+- Responsive design with mobile-first approach
+- Consistent spacing and typography using Tailwind's default scale
 
 **Design Patterns:**
-- Context API for authentication state management (AuthContext)
+- Custom hooks for auth operations (useAuth) and SEO management (useSEO)
 - Protected routes for admin-only pages
-- Custom hooks pattern for auth operations
 - Centralized API client configuration with automatic JWT token injection
+- Error boundaries for graceful error handling
 
 **Component Structure:**
-- Layout component with persistent navigation and footer
-- Protected route wrapper for authentication checks
-- Custom HtmlEditor component for rich text content editing
-- Separation between public pages (Home, Blog, BlogPost, Login) and admin pages (Dashboard, Categories, Posts, Files)
+- Layout component with responsive navigation (Home, Blog, About, Contact, Admin links) and footer
+- ProtectedRoute wrapper for authentication checks on admin pages
+- ErrorBoundary component for error handling
+- Reusable components: PostCard (blog listing cards), CategoryFilter (category pills), FileList (file attachments display)
+- Separation between public pages (Home, About, Contact, Blog, BlogPost) and admin pages (Dashboard, Categories, Posts, Files)
 
 **Routing Strategy:**
-- Public routes: `/`, `/blog`, `/blog/:id`, `/login`
-- Protected admin routes: `/admin`, `/admin/categories`, `/admin/posts`, `/admin/files`
+- Public routes: `/` (Home), `/about`, `/contact`, `/blog` (listing), `/blog/:slug` (detail), `/admin/login`
+- Protected admin routes: `/admin` (Dashboard), `/admin/categories`, `/admin/posts`, `/admin/files`
+- 404 page for unmatched routes
 - All routes render within a shared Layout component
+
+**Key Pages:**
+- **Home**: Professional hero section with Naqash Thaheem's name, title, tagline, contact info (location, email, phone), plus featured blog posts (latest 3) and CTA to view all posts
+- **About**: Professional summary, core skills (Automation & AI, CRM & Integrations, Web & App Development, Databases & Cloud), notable experience highlights
+- **Contact**: Contact information with icons for easy reach
+- **Blog**: Search bar, category filters (pills), blog post cards with cover images, excerpts, category badges, dates, and view counts, plus pagination
+- **Blog Detail**: Full post view with cover image, title, HTML content rendering, metadata (category, author, date, views), and file attachments list with download links
+- **Admin Login**: Simple form with email/password authentication
+- **Admin Dashboard**: Quick links to manage Categories, Posts, and Files
+- **Admin Categories/Posts/Files**: Full CRUD interfaces with forms, tables, and delete confirmations
 
 ## Backend Architecture
 
@@ -150,7 +161,7 @@ Preferred communication style: Simple, everyday language.
 ## Environment Configuration
 
 **Frontend (.env):**
-- `VITE_API_URL`: API base URL (default: http://localhost:8000/api)
+- `VITE_API_BASE_URL`: API base URL (development: http://localhost:8000/api, production: https://www.naqashthaheem.com/api)
 
 **Backend (.env):**
 - Database connection via Replit environment variables (PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD)
@@ -162,5 +173,8 @@ Preferred communication style: Simple, everyday language.
 - Both workflows are configured and running
 - No mock or placeholder data used - real database integration
 - File upload system supports both public and private files with proper access control
-- Rich text editor implemented with contentEditable and document.execCommand for formatting
-- All styling follows the specified design system with custom CSS variables
+- Blog posts support HTML content (textarea in admin, rendered with dangerouslySetInnerHTML in frontend)
+- All styling uses Tailwind CSS v3 utility classes
+- Professional branding for Naqash Thaheem throughout the site
+- Environment configuration includes .env.example for production deployment guidance
+- Ready for deployment to www.naqashthaheem.com (update VITE_API_BASE_URL in .env for production)
