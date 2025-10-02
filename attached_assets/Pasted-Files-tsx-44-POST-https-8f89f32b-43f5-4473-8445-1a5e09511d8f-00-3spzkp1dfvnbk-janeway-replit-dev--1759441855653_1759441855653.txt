@@ -1,0 +1,52 @@
+Files.tsx:44  POST https://8f89f32b-43f5-4473-8445-1a5e09511d8f-00-3spzkp1dfvnbk.janeway.replit.dev/api/files 422 (Unprocessable Entity)
+dispatchXhrRequest @ axios.js?v=d14bccfa:1683
+xhr @ axios.js?v=d14bccfa:1560
+dispatchRequest @ axios.js?v=d14bccfa:2085
+Promise.then
+_request @ axios.js?v=d14bccfa:2288
+request @ axios.js?v=d14bccfa:2197
+httpMethod @ axios.js?v=d14bccfa:2334
+wrap @ axios.js?v=d14bccfa:8
+handleUpload @ Files.tsx:44
+executeDispatch @ react-dom_client.js?v=d14bccfa:13622
+runWithFiberInDEV @ react-dom_client.js?v=d14bccfa:997
+processDispatchQueue @ react-dom_client.js?v=d14bccfa:13658
+(anonymous) @ react-dom_client.js?v=d14bccfa:14071
+batchedUpdates$1 @ react-dom_client.js?v=d14bccfa:2626
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=d14bccfa:13763
+dispatchEvent @ react-dom_client.js?v=d14bccfa:16784
+dispatchDiscreteEvent @ react-dom_client.js?v=d14bccfa:16765
+<input>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=d14bccfa:247
+Files @ Files.tsx:79
+react_stack_bottom_frame @ react-dom_client.js?v=d14bccfa:18509
+renderWithHooksAgain @ react-dom_client.js?v=d14bccfa:5729
+renderWithHooks @ react-dom_client.js?v=d14bccfa:5665
+updateFunctionComponent @ react-dom_client.js?v=d14bccfa:7475
+beginWork @ react-dom_client.js?v=d14bccfa:8525
+runWithFiberInDEV @ react-dom_client.js?v=d14bccfa:997
+performUnitOfWork @ react-dom_client.js?v=d14bccfa:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=d14bccfa:12557
+renderRootConcurrent @ react-dom_client.js?v=d14bccfa:12539
+performWorkOnRoot @ react-dom_client.js?v=d14bccfa:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=d14bccfa:13505
+performWorkUntilDeadline @ react-dom_client.js?v=d14bccfa:36
+<Files>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=d14bccfa:247
+App @ App.tsx:36
+react_stack_bottom_frame @ react-dom_client.js?v=d14bccfa:18509
+renderWithHooksAgain @ react-dom_client.js?v=d14bccfa:5729
+renderWithHooks @ react-dom_client.js?v=d14bccfa:5665
+updateFunctionComponent @ react-dom_client.js?v=d14bccfa:7475
+beginWork @ react-dom_client.js?v=d14bccfa:8525
+runWithFiberInDEV @ react-dom_client.js?v=d14bccfa:997
+performUnitOfWork @ react-dom_client.js?v=d14bccfa:12561
+workLoopSync @ react-dom_client.js?v=d14bccfa:12424
+renderRootSync @ react-dom_client.js?v=d14bccfa:12408
+performWorkOnRoot @ react-dom_client.js?v=d14bccfa:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=d14bccfa:13505
+performWorkUntilDeadline @ react-dom_client.js?v=d14bccfa:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=d14bccfa:247
+(anonymous) @ main.tsx:20Understand this error
+Files.tsx:50 Error uploading file: AxiosError {message: 'Request failed with status code 422', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
