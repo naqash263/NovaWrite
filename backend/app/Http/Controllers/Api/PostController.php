@@ -9,11 +9,6 @@ use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:api')->except(['index', 'show']);
-    }
-
     public function index(Request $request)
     {
         $query = Post::with(['category', 'user'])

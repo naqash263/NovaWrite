@@ -9,11 +9,6 @@ use Illuminate\Support\Facades\Storage;
 
 class FileController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:api')->except(['download']);
-    }
-
     public function index()
     {
         $files = File::with('user')->orderBy('created_at', 'desc')->get();
