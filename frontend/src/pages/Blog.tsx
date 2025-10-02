@@ -71,7 +71,6 @@ export default function Blog() {
 
       const response = await apiClient.get(`/posts?${params.toString()}`);
       setPosts(response.data.data || []);
-      setCurrentPage(response.data.current_page);
       setLastPage(response.data.last_page);
     } catch (error) {
       console.error('Error fetching posts:', error);
