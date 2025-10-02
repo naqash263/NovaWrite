@@ -1,16 +1,47 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import apiClient from '../api/axios';
-import type { Post, Category, PaginatedResponse } from '../types';
+import { PostCard } from '../components/PostCard';
+import { CategoryFilter } from '../components/CategoryFilter';
+import { useSEO } from '../utils/seo';
+
+interface Post {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  featured_image?: string;
+  published_at: string;
+  category: {
+    id: number;
+    name: string;
+  };
+  user: {
+    name: string;
+  };
+}
+
+interface Category {
+  id: number;
+  name: string;
+  posts_count?: number;
+}
 
 export default function Blog() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-  const search = searchParams.get('search') || '';
-  const categoryId = searchParams.get('category_id') || '';
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(
+    searchParams.get('category') ? Number(searchParams.get('category')) : null
+  );
+  const [pagination, setPagination] = useState({ currentPage: 1, lastPage: 1 });
+
+  useSEO({
+    title: 'Blog | Naqash Thaheem',
+    description: 'Articles about automation, AI, CRM integration, and web development.',
+  });
 
   useEffect(() => {
     fetchCategories();
@@ -18,7 +49,7 @@ export default function Blog() {
 
   useEffect(() => {
     fetchPosts();
-  }, [search, categoryId]);
+  }, [search, selectedCategory, pagination.currentPage]);
 
   const fetchCategories = async () => {
     try {
@@ -34,10 +65,15 @@ export default function Blog() {
     try {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
-      if (categoryId) params.append('category_id', categoryId);
-      
-      const response = await apiClient.get<PaginatedResponse<Post>>(`/posts?${params}`);
-      setPosts(response.data.data);
+      if (selectedCategory) params.append('category_id', String(selectedCategory));
+      params.append('page', String(pagination.currentPage));
+
+      const response = await apiClient.get(`/posts?${params.toString()}`);
+      setPosts(response.data.data || []);
+      setPagination({
+        currentPage: response.data.current_page,
+        lastPage: response.data.last_page,
+      });
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
@@ -45,60 +81,99 @@ export default function Blog() {
     }
   };
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCategorySelect = (categoryId: number | null) => {
+    setSelectedCategory(categoryId);
+    setPagination({ ...pagination, currentPage: 1 });
+    if (categoryId) {
+      searchParams.set('category', String(categoryId));
+    } else {
+      searchParams.delete('category');
+    }
+    setSearchParams(searchParams);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const searchValue = formData.get('search') as string;
-    setSearchParams({ search: searchValue, ...(categoryId && { category_id: categoryId }) });
+    setPagination({ ...pagination, currentPage: 1 });
+    if (search) {
+      searchParams.set('search', search);
+    } else {
+      searchParams.delete('search');
+    }
+    setSearchParams(searchParams);
   };
 
   return (
-    <div className="blog-page">
-      <header>
-        <h1>Blog</h1>
-        <div className="filters">
-          <form onSubmit={handleSearch}>
-            <input
-              type="text"
-              name="search"
-              placeholder="Search posts..."
-              defaultValue={search}
-            />
-            <button type="submit">Search</button>
-          </form>
-          
-          <select
-            value={categoryId}
-            onChange={(e) => setSearchParams({ ...(search && { search }), category_id: e.target.value })}
-          >
-            <option value="">All Categories</option>
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-        </div>
-      </header>
+    <div className="bg-gray-50 min-h-screen py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="text-4xl font-bold text-gray-900 mb-8">Blog</h1>
 
-      {loading ? (
-        <div className="loading">Loading...</div>
-      ) : (
-        <div className="posts-list">
-          {posts.map(post => (
-            <article key={post.id} className="post-item">
-              <div className="post-meta">
-                <span className="category">{post.category?.name}</span>
-                <span className="date">{new Date(post.published_at!).toLocaleDateString()}</span>
-              </div>
-              <h2><Link to={`/blog/${post.id}`}>{post.title}</Link></h2>
-              <p>{post.excerpt}</p>
-              <div className="post-footer">
-                <span>By {post.user?.name}</span>
-                <span>{post.views} views</span>
-              </div>
-            </article>
-          ))}
+        <div className="mb-8">
+          <form onSubmit={handleSearchSubmit} className="mb-6">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Search posts..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Search
+              </button>
+            </div>
+          </form>
+
+          <CategoryFilter
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelect={handleCategorySelect}
+          />
         </div>
-      )}
+
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+          </div>
+        ) : posts.length > 0 ? (
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+
+            {pagination.lastPage > 1 && (
+              <div className="flex justify-center gap-2">
+                <button
+                  onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage - 1 })}
+                  disabled={pagination.currentPage === 1}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg">
+                  Page {pagination.currentPage} of {pagination.lastPage}
+                </span>
+                <button
+                  onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage + 1 })}
+                  disabled={pagination.currentPage === pagination.lastPage}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-12 bg-white rounded-lg">
+            <p className="text-gray-600">No posts found.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

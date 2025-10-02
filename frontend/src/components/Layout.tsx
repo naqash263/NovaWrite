@@ -1,30 +1,132 @@
-import { Link, Outlet } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
-export default function Layout() {
-  const { user } = useAuth();
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const { user, logout } = useAuth();
+  const isAdmin = location.pathname.startsWith('/admin');
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <nav className="bg-white shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+              <div className="flex">
+                <Link to="/admin" className="flex items-center text-xl font-bold text-gray-900">
+                  Admin Panel
+                </Link>
+                <div className="hidden sm:ml-6 sm:flex sm:space-x-4">
+                  <Link
+                    to="/admin"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/admin/categories"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  >
+                    Categories
+                  </Link>
+                  <Link
+                    to="/admin/posts"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  >
+                    Posts
+                  </Link>
+                  <Link
+                    to="/admin/files"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  >
+                    Files
+                  </Link>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <Link to="/" className="text-sm text-gray-600 hover:text-gray-900">
+                  View Site
+                </Link>
+                {user && (
+                  <>
+                    <span className="text-sm text-gray-600">{user.name}</span>
+                    <button
+                      onClick={logout}
+                      className="text-sm text-red-600 hover:text-red-800"
+                    >
+                      Logout
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </nav>
+        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">{children}</div>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <div className="app">
-      <nav className="main-nav">
-        <div className="nav-container">
-          <Link to="/" className="logo">Blog</Link>
-          <div className="nav-links">
-            <Link to="/">Home</Link>
-            <Link to="/blog">Blog</Link>
-            {user ? (
-              <Link to="/admin">Admin</Link>
-            ) : (
-              <Link to="/login">Login</Link>
-            )}
+    <div className="min-h-screen flex flex-col">
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <Link to="/" className="flex items-center text-xl font-bold text-gray-900">
+                Naqash Thaheem
+              </Link>
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                <Link
+                  to="/"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
+                >
+                  Home
+                </Link>
+                <Link
+                  to="/blog"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
+                >
+                  Blog
+                </Link>
+                <Link
+                  to="/about"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
+                >
+                  About
+                </Link>
+                <Link
+                  to="/contact"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
+                >
+                  Contact
+                </Link>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <Link
+                to="/admin/login"
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                Admin
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
-      <main>
-        <Outlet />
-      </main>
-      <footer>
-        <p>&copy; 2025 Blog. All rights reserved.</p>
+
+      <main className="flex-1">{children}</main>
+
+      <footer className="bg-gray-900 text-white py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-gray-400">
+              © {new Date().getFullYear()} Naqash Thaheem. All rights reserved.
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   );

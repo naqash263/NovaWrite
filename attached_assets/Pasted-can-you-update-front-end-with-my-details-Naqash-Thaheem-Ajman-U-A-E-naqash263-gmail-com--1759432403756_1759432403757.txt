@@ -1,0 +1,90 @@
+can you update front end with my details
+
+Naqash Thaheem
+
+📍 Ajman, U.A.E | 📧 naqash263@gmail.com
+ | 📱 +971 54 474 7121 | 🌐 LinkedIn/GitHub
+
+Naqash Thaheem
+
+📍 UAE | 📧 [your email] | 📱 [your phone] | 🌐 LinkedIn/GitHub
+
+Professional Summary
+
+Systems Analyst and Automation Specialist with 8+ years of experience in building AI-powered automation workflows, CRM integrations, and scalable web platforms. Proven expertise in data scraping, processing, and enrichment for recruitment and business intelligence. Skilled at designing databases, developing backend/frontend applications, and leading cross-functional teams to deliver high-impact digital solutions. Strong focus on efficiency, compliance (GDPR/CCPA), and cloud security.
+
+Core Skills
+
+Automation & AI: n8n, Make.com, Zapier, OpenAI (GPT models), AI Agents, OCR, Embeddings, Pinecone, pgVector
+
+CRM & Integrations: Zoho CRM, HubSpot, LinkedIn Recruiter, Zoho Creator, Wrike
+
+Web & App Development: React.js, Vite, .NET Core, Django, Flutter, Supabase
+
+Databases & Cloud: Azure MySQL, PostgreSQL, Firestore, Supabase, SharePoint/OneDrive Migration, Cloudflare, Microsoft 365
+
+Data Scraping & Processing: Octoparse, Apify, Jobin, Zyte API, Custom parsing (LinkedIn, Indeed, Stepstone, Xing)
+
+Business Intelligence: Power BI dashboards, Talent-job matching, KPI visualization, compliance tracking
+
+Other Expertise: Workflow optimization, Project management, Multi-language data processing, Islamic finance features
+
+Professional Experience
+Chief Data Officer – Talent For The Team
+
+(2025 – Present)
+
+Leading data-driven recruitment platform development combining AI job-talent matchmaking, CRM automation, and credit-based engagement system.
+
+Architected TFT Platform with React (frontend), .NET Core (backend), and MySQL (Azure) — handling talent/team registration via LinkedIn, CV upload, or manual input.
+
+Designed and implemented matching algorithms using embeddings + similarity search for job-talent compatibility.
+
+Built dashboards in Power BI to track KPIs (lead type, job titles, metropolitan areas, company/talent data).
+
+Oversaw Microsoft 365 migration (emails, SharePoint, OneDrive) and domain/DNS configurations for cross-domain collaboration.
+
+Systems Analyst – Private Company, UAE
+
+(2016 – Present)
+
+Automated office operations, workflows, and client systems, reducing costs and improving efficiency.
+
+Implemented Zoho CRM + Make.com integrations for recruitment workflows: job leads → talent matching → email triggers.
+
+Developed custom dashboards and compliance pipelines for Germany/Switzerland recruitment markets.
+
+Designed secure cloud database structures with strong access control and encryption on Azure.
+
+Built n8n-powered workflows:
+
+Job hunting automation (RSS feeds → Google Sheets → AI cover letters).
+
+WhatsApp chatbot integration with webhook-based order processing.
+
+AI-assisted job description classification and talent ranking.
+
+Freelance Automation & AI Developer (Ongoing)
+
+Delivered n8n-based automation projects:
+
+Facebook API posting, LinkedIn scraping pipelines, and WhatsApp without FB approval.
+
+Built AI chatbot workflows with memory & embeddings for product search and order creation.
+
+Developed Zoho CRM Talents Module for recruitment companies (custom pipeline: Talent → Job Lead → Deal).
+
+Assisted clients with data migration from Google Workspace to Microsoft Office 365, mapping shared drives to SharePoint.
+
+
+Education
+
+🎓 Master’s in Information Technology – Institute of Southern Punjab, Multan, Pakistan (2012 – 2014)
+
+Languages
+
+English (Fluent), Urdu (Fluent), Hindi (Fluent)
+
+Strengths
+
+Leadership Potential | Organizing Skills | Influencing Personality | Fast Learner | Problem Solving | Team Collaboration
