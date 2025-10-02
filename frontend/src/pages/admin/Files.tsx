@@ -38,7 +38,7 @@ export default function Files() {
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('is_public', 'true');
+    formData.append('is_public', '1');
 
     try {
       await apiClient.post('/files', formData, {
@@ -48,6 +48,7 @@ export default function Files() {
       e.target.value = '';
     } catch (error) {
       console.error('Error uploading file:', error);
+      alert('Error uploading file. Please try again.');
     } finally {
       setUploading(false);
     }
