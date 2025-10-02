@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../../api/axios';
 import type { Post, Category } from '../../types';
+import HtmlEditor from '../../components/HtmlEditor';
 
 export default function Posts() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -126,12 +127,10 @@ export default function Posts() {
             />
           </div>
           <div className="form-group">
-            <label>Content</label>
-            <textarea
+            <label>Content (Rich Text Editor)</label>
+            <HtmlEditor
               value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              rows={10}
-              required
+              onChange={(value) => setFormData({ ...formData, content: value })}
             />
           </div>
           <div className="form-group">
