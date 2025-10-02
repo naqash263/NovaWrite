@@ -41,6 +41,8 @@ class PostController extends Controller
             'featured_image' => 'nullable|string',
             'category_id' => 'required|exists:categories,id',
             'is_published' => 'boolean',
+            'meta_description' => 'nullable|string',
+            'meta_keywords' => 'nullable|string|max:255',
         ]);
 
         $post = Post::create([
@@ -53,16 +55,25 @@ class PostController extends Controller
             'user_id' => auth('api')->id(),
             'is_published' => $request->is_published ?? false,
             'published_at' => $request->is_published ? now() : null,
+            'meta_description' => $request->meta_description,
+            'meta_keywords' => $request->meta_keywords,
         ]);
 
         return response()->json($post->load(['category', 'user']), 201);
     }
 
-    public function show($id)
+    public function show($idOrSlug)
     {
         $post = Post::with(['category', 'user'])
             ->where('is_published', true)
-            ->findOrFail($id);
+            ->where(function($query) use ($idOrSlug) {
+                if (is_numeric($idOrSlug)) {
+                    $query->where('id', $idOrSlug);
+                } else {
+                    $query->where('slug', $idOrSlug);
+                }
+            })
+            ->firstOrFail();
 
         $post->increment('views');
 
@@ -80,6 +91,8 @@ class PostController extends Controller
             'featured_image' => 'nullable|string',
             'category_id' => 'required|exists:categories,id',
             'is_published' => 'boolean',
+            'meta_description' => 'nullable|string',
+            'meta_keywords' => 'nullable|string|max:255',
         ]);
 
         $post->update([
@@ -91,6 +104,8 @@ class PostController extends Controller
             'category_id' => $request->category_id,
             'is_published' => $request->is_published ?? $post->is_published,
             'published_at' => $request->is_published && !$post->is_published ? now() : $post->published_at,
+            'meta_description' => $request->meta_description,
+            'meta_keywords' => $request->meta_keywords,
         ]);
 
         return response()->json($post->load(['category', 'user']));

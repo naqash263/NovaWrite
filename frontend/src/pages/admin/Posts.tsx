@@ -30,6 +30,8 @@ export default function Posts() {
     featured_image: '',
     category_id: '',
     is_published: false,
+    meta_description: '',
+    meta_keywords: '',
   });
 
   useSEO({ title: 'Manage Posts | Admin' });
@@ -81,12 +83,14 @@ export default function Posts() {
       featured_image: '',
       category_id: '',
       is_published: false,
+      meta_description: '',
+      meta_keywords: '',
     });
     setEditingId(null);
     setShowForm(false);
   };
 
-  const handleEdit = (post: Post) => {
+  const handleEdit = (post: any) => {
     setFormData({
       title: post.title,
       content: post.content,
@@ -94,6 +98,8 @@ export default function Posts() {
       featured_image: post.featured_image || '',
       category_id: String(post.category_id),
       is_published: post.is_published,
+      meta_description: post.meta_description || '',
+      meta_keywords: post.meta_keywords || '',
     });
     setEditingId(post.id);
     setShowForm(true);
@@ -166,6 +172,9 @@ export default function Posts() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Content (HTML)</label>
+              <p className="text-xs text-gray-500 mb-2">
+                💡 To add images: Use <code className="bg-gray-100 px-1 rounded">&lt;img src="URL" alt="description" class="w-full rounded-lg my-4" /&gt;</code>
+              </p>
               <textarea
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
@@ -182,6 +191,31 @@ export default function Posts() {
                 onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               />
+            </div>
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">SEO Settings</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
+                  <textarea
+                    value={formData.meta_description}
+                    onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    rows={2}
+                    placeholder="Brief description for search engines (150-160 characters)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Meta Keywords</label>
+                  <input
+                    type="text"
+                    value={formData.meta_keywords}
+                    onChange={(e) => setFormData({ ...formData, meta_keywords: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    placeholder="keyword1, keyword2, keyword3"
+                  />
+                </div>
+              </div>
             </div>
             <div className="flex items-center">
               <input

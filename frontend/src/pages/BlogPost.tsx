@@ -10,6 +10,8 @@ interface Post {
   content: string;
   featured_image?: string;
   published_at: string;
+  meta_description?: string;
+  meta_keywords?: string;
   category: {
     id: number;
     name: string;
@@ -28,7 +30,7 @@ export default function BlogPost() {
 
   useSEO({
     title: post ? `${post.title} | Naqash Thaheem` : 'Loading...',
-    description: post ? post.content.substring(0, 160) : '',
+    description: post ? (post.meta_description || post.content.substring(0, 160).replace(/<[^>]+>/g, '')) : '',
   });
 
   useEffect(() => {
@@ -39,15 +41,8 @@ export default function BlogPost() {
 
   const fetchPost = async () => {
     try {
-      const response = await apiClient.get(`/posts?search=${slug}`);
-      const posts = response.data.data || [];
-      const foundPost = posts.find((p: any) => p.slug === slug);
-      
-      if (foundPost) {
-        setPost(foundPost);
-      } else {
-        setError(true);
-      }
+      const response = await apiClient.get(`/posts/${slug}`);
+      setPost(response.data);
     } catch (err) {
       console.error('Error fetching post:', err);
       setError(true);

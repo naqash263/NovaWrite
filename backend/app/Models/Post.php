@@ -17,6 +17,8 @@ class Post extends Model
         'published_at',
         'is_published',
         'views',
+        'meta_description',
+        'meta_keywords',
     ];
 
     protected function casts(): array
