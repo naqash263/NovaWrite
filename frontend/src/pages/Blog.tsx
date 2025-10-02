@@ -36,7 +36,8 @@ export default function Blog() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(
     searchParams.get('category') ? Number(searchParams.get('category')) : null
   );
-  const [pagination, setPagination] = useState({ currentPage: 1, lastPage: 1 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
 
   useSEO({
     title: 'Blog | Naqash Thaheem',
@@ -49,7 +50,7 @@ export default function Blog() {
 
   useEffect(() => {
     fetchPosts();
-  }, [search, selectedCategory, pagination.currentPage]);
+  }, [search, selectedCategory, currentPage]);
 
   const fetchCategories = async () => {
     try {
@@ -66,14 +67,12 @@ export default function Blog() {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (selectedCategory) params.append('category_id', String(selectedCategory));
-      params.append('page', String(pagination.currentPage));
+      params.append('page', String(currentPage));
 
       const response = await apiClient.get(`/posts?${params.toString()}`);
       setPosts(response.data.data || []);
-      setPagination({
-        currentPage: response.data.current_page,
-        lastPage: response.data.last_page,
-      });
+      setCurrentPage(response.data.current_page);
+      setLastPage(response.data.last_page);
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
@@ -83,7 +82,7 @@ export default function Blog() {
 
   const handleCategorySelect = (categoryId: number | null) => {
     setSelectedCategory(categoryId);
-    setPagination({ ...pagination, currentPage: 1 });
+    setCurrentPage(1);
     if (categoryId) {
       searchParams.set('category', String(categoryId));
     } else {
@@ -94,7 +93,7 @@ export default function Blog() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setPagination({ ...pagination, currentPage: 1 });
+    setCurrentPage(1);
     if (search) {
       searchParams.set('search', search);
     } else {
@@ -146,21 +145,21 @@ export default function Blog() {
               ))}
             </div>
 
-            {pagination.lastPage > 1 && (
+            {lastPage > 1 && (
               <div className="flex justify-center gap-2">
                 <button
-                  onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage - 1 })}
-                  disabled={pagination.currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
                   className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
                 <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg">
-                  Page {pagination.currentPage} of {pagination.lastPage}
+                  Page {currentPage} of {lastPage}
                 </span>
                 <button
-                  onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage + 1 })}
-                  disabled={pagination.currentPage === pagination.lastPage}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === lastPage}
                   className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
