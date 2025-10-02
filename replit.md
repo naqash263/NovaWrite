@@ -8,9 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (October 2, 2025)
 
-- Complete frontend rebuild with Tailwind CSS v3 for consistent, professional styling
-- Implemented personal branding for Naqash Thaheem (Systems Analyst & Automation Specialist)
-- Created comprehensive pages: Home (hero + featured posts), About (skills/experience), Contact, Blog (search/filters), Blog Detail, Admin Login, Admin Dashboard
+- Enhanced homepage with informative sections: statistics (8+ years experience, 100+ projects), core expertise cards (AI Automation, Data Analysis & Power BI, CRM Integrations), and services offered
+- Created new Workflows page showcasing 6 real-world automation examples (AI Resume Screening, Lead Enrichment, Invoice Processing, Job Aggregation, Email Personalization, Document Generation) with tools, technologies, and benefits
+- Updated About page to emphasize Data Analyst & Power BI skills, added featured projects section with 5 detailed project examples including Power BI dashboards, AI systems, and full-stack platforms
+- Added "Workflows" to navigation menu between Blog and About
+- Complete frontend with Tailwind CSS v3 for consistent, professional styling
+- Implemented personal branding for Naqash Thaheem (Data Analyst with Power BI, Systems Analyst & Automation Specialist from Ajman, UAE)
+- Created comprehensive pages: Home (hero + stats + expertise + services + featured posts), About (skills/experience/projects), Contact, Blog (search/filters), Blog Detail, Workflows (automation examples), Admin Login, Admin Dashboard
 - Developed reusable components: PostCard, CategoryFilter, FileList, Layout, ErrorBoundary, ProtectedRoute
 - Created useAuth hook for authentication management and SEO utility for page meta tags
 - Fixed Laravel 11 compatibility issues (removed deprecated middleware, updated routes)
@@ -43,21 +47,22 @@ Preferred communication style: Simple, everyday language.
 - Error boundaries for graceful error handling
 
 **Component Structure:**
-- Layout component with responsive navigation (Home, Blog, About, Contact, Admin links) and footer
+- Layout component with responsive navigation (Home, Blog, Workflows, About, Contact, Admin links) and footer
 - ProtectedRoute wrapper for authentication checks on admin pages
 - ErrorBoundary component for error handling
 - Reusable components: PostCard (blog listing cards), CategoryFilter (category pills), FileList (file attachments display)
-- Separation between public pages (Home, About, Contact, Blog, BlogPost) and admin pages (Dashboard, Categories, Posts, Files)
+- Separation between public pages (Home, About, Workflows, Contact, Blog, BlogPost) and admin pages (Dashboard, Categories, Posts, Files)
 
 **Routing Strategy:**
-- Public routes: `/` (Home), `/about`, `/contact`, `/blog` (listing), `/blog/:slug` (detail), `/admin/login`
+- Public routes: `/` (Home), `/about`, `/workflows`, `/contact`, `/blog` (listing), `/blog/:slug` (detail), `/admin/login`
 - Protected admin routes: `/admin` (Dashboard), `/admin/categories`, `/admin/posts`, `/admin/files`
 - 404 page for unmatched routes
 - All routes render within a shared Layout component
 
 **Key Pages:**
-- **Home**: Professional hero section with Naqash Thaheem's name, title, tagline, contact info (location, email, phone), plus featured blog posts (latest 3) and CTA to view all posts
-- **About**: Professional summary, core skills (Automation & AI, CRM & Integrations, Web & App Development, Databases & Cloud), notable experience highlights
+- **Home**: Professional hero section with avatar, name, title (Systems Analyst & Automation Specialist), tagline, contact info (location, email, phone); Statistics section (8+ years, 100+ projects, 50+ workflows, 20+ integrations); Core Expertise cards with icons (AI Automation, Data Analysis & Power BI, CRM Integrations); Services section (Workflow Automation, Business Intelligence, System Integrations, Full-Stack Development); Latest Insights section with featured blog posts (latest 3) and CTA
+- **About**: Professional summary emphasizing data analysis and automation; Core Skills with 6 categories (Automation & AI, Data Analysis & Power BI, CRM & Integrations, Web & App Development, Databases & Cloud, Data Scraping); Featured Projects section showcasing 5 real-world projects (Power BI dashboards, AI systems, job aggregation, TFT platform, sales dashboards) with technology tags; Professional Experience with detailed job history; Education & Languages
+- **Workflows**: Showcase page with hero section and 6 automation workflow examples in cards (AI Resume Screening, Lead Enrichment, Invoice Processing, Job Aggregation, Email Personalization, Document Generation), each with description, tools/technologies badges, and key benefits with icons; CTA section to contact
 - **Contact**: Contact information with icons for easy reach
 - **Blog**: Search bar, category filters (pills), blog post cards with cover images, excerpts, category badges, dates, and view counts, plus pagination
 - **Blog Detail**: Full post view with cover image, title, HTML content rendering, metadata (category, author, date, views), and file attachments list with download links
