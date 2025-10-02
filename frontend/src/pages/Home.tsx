@@ -46,9 +46,22 @@ export default function Home() {
 
   return (
     <div>
-      <section className="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-20">
+      <section 
+        className="relative text-white py-20 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.85), rgba(30, 64, 175, 0.85)), url('/images/modern_technology_ab_8cef6e70.jpg')`
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
+            {/* Profile Image */}
+            <div className="mb-8">
+              <img 
+                src="/images/professional_busines_b4d6588a.jpg" 
+                alt="Naqash Thaheem"
+                className="w-40 h-40 rounded-full mx-auto border-4 border-white shadow-2xl object-cover"
+              />
+            </div>
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
               Naqash Thaheem
             </h1>

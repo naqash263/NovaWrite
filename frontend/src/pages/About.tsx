@@ -7,9 +7,21 @@ export default function About() {
   });
 
   return (
-    <div className="bg-gray-50 py-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">About Me</h1>
+    <div className="bg-gray-50">
+      {/* Hero Section with AI Image */}
+      <div 
+        className="relative bg-cover bg-center py-20 mb-16"
+        style={{
+          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9)), url('/images/ai_artificial_intell_c522e573.jpg')`
+        }}
+      >
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h1 className="text-5xl font-bold text-white mb-4">About Me</h1>
+          <p className="text-xl text-blue-100">Transforming Business Through Intelligent Automation</p>
+        </div>
+      </div>
+      
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
 
         <div className="bg-white rounded-lg shadow-md p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Professional Summary</h2>
