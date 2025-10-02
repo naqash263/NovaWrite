@@ -1,3 +1,200 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-in forwards;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+  }
+
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  .animate-progress-95 {
+    animation: progress-95 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-94 {
+    animation: progress-94 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-93 {
+    animation: progress-93 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-92 {
+    animation: progress-92 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-91 {
+    animation: progress-91 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-90 {
+    animation: progress-90 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-89 {
+    animation: progress-89 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-88 {
+    animation: progress-88 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-87 {
+    animation: progress-87 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-86 {
+    animation: progress-86 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-85 {
+    animation: progress-85 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-82 {
+    animation: progress-82 1.5s ease-out forwards;
+    width: 0;
+  }
+
+  .animate-progress-80 {
+    animation: progress-80 1.5s ease-out forwards;
+    width: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+@keyframes progress-95 {
+  to {
+    width: 95%;
+  }
+}
+
+@keyframes progress-94 {
+  to {
+    width: 94%;
+  }
+}
+
+@keyframes progress-93 {
+  to {
+    width: 93%;
+  }
+}
+
+@keyframes progress-92 {
+  to {
+    width: 92%;
+  }
+}
+
+@keyframes progress-91 {
+  to {
+    width: 91%;
+  }
+}
+
+@keyframes progress-90 {
+  to {
+    width: 90%;
+  }
+}
+
+@keyframes progress-89 {
+  to {
+    width: 89%;
+  }
+}
+
+@keyframes progress-88 {
+  to {
+    width: 88%;
+  }
+}
+
+@keyframes progress-87 {
+  to {
+    width: 87%;
+  }
+}
+
+@keyframes progress-86 {
+  to {
+    width: 86%;
+  }
+}
+
+@keyframes progress-85 {
+  to {
+    width: 85%;
+  }
+}
+
+@keyframes progress-82 {
+  to {
+    width: 82%;
+  }
+}
+
+@keyframes progress-80 {
+  to {
+    width: 80%;
+  }
+}
