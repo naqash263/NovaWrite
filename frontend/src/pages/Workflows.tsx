@@ -30,6 +30,7 @@ interface Workflow {
   tools: string[];
   benefits: string[];
   is_featured: boolean;
+  is_premium: boolean;
   category?: WorkflowCategory;
   files: WorkflowFile[];
 }
@@ -168,13 +169,18 @@ export default function Workflows() {
           <div className="grid md:grid-cols-2 gap-8">
             {workflows.map((workflow) => (
               <div key={workflow.id} className="bg-white rounded-lg shadow-md p-8 hover:shadow-xl transition-shadow">
-                {workflow.is_featured && (
-                  <div className="mb-3">
+                <div className="flex items-center gap-2 mb-3">
+                  {workflow.is_featured && (
                     <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-semibold">
                       ⭐ Featured
                     </span>
-                  </div>
-                )}
+                  )}
+                  {workflow.is_premium && (
+                    <span className="inline-block bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded-full font-semibold">
+                      👑 Premium
+                    </span>
+                  )}
+                </div>
                 
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">{workflow.title}</h3>
                 <p className="text-gray-600 mb-6">{workflow.summary || workflow.description}</p>

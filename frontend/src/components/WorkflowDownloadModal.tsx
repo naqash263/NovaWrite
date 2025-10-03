@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/axios';
 
 interface WorkflowDownloadModalProps {
@@ -21,6 +22,8 @@ export default function WorkflowDownloadModal({
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [requiresAuth, setRequiresAuth] = useState(false);
+  const navigate = useNavigate();
 
   if (!isOpen) return null;
 
@@ -46,10 +49,19 @@ export default function WorkflowDownloadModal({
         setMarketingOptIn(false);
       }, 1000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to process download. Please try again.');
+      const errorData = err.response?.data;
+      setError(errorData?.message || 'Failed to process download. Please try again.');
+      if (errorData?.requires_auth) {
+        setRequiresAuth(true);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLoginRedirect = () => {
+    onClose();
+    navigate('/login');
   };
 
   return (
@@ -73,8 +85,20 @@ export default function WorkflowDownloadModal({
         </p>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+          <div className={`border px-4 py-3 rounded mb-4 ${
+            requiresAuth 
+              ? 'bg-purple-50 border-purple-200 text-purple-700' 
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}>
+            <p className="font-semibold mb-2">{error}</p>
+            {requiresAuth && (
+              <button
+                onClick={handleLoginRedirect}
+                className="mt-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-semibold"
+              >
+                Login or Register
+              </button>
+            )}
           </div>
         )}
 
