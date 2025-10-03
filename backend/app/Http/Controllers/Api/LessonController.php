@@ -11,6 +11,10 @@ class LessonController extends Controller
 {
     public function index($courseId)
     {
+        if (!auth()->user() || !auth()->user()->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $course = Course::findOrFail($courseId);
         $lessons = $course->lessons()->orderBy('order')->get();
         
@@ -22,6 +26,10 @@ class LessonController extends Controller
 
     public function store(Request $request, $courseId)
     {
+        if (!auth()->user() || !auth()->user()->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $course = Course::findOrFail($courseId);
         
         $validated = $request->validate([
@@ -44,6 +52,10 @@ class LessonController extends Controller
 
     public function update(Request $request, $courseId, $id)
     {
+        if (!auth()->user() || !auth()->user()->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $lesson = Lesson::where('course_id', $courseId)->findOrFail($id);
 
         $validated = $request->validate([
@@ -65,6 +77,10 @@ class LessonController extends Controller
 
     public function destroy($courseId, $id)
     {
+        if (!auth()->user() || !auth()->user()->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $lesson = Lesson::where('course_id', $courseId)->findOrFail($id);
         $lesson->delete();
 
