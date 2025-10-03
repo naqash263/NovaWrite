@@ -15,6 +15,7 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
+        'role',
     ];
 
     protected $hidden = [
@@ -43,5 +44,27 @@ class User extends Authenticatable implements JWTSubject
     public function posts()
     {
         return $this->hasMany(Post::class);
+    }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function courses()
+    {
+        return $this->belongsToMany(Course::class, 'enrollments')
+            ->withPivot('enrolled_at', 'progress', 'completed_at')
+            ->withTimestamps();
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isEnrolledIn($courseId)
+    {
+        return $this->enrollments()->where('course_id', $courseId)->exists();
     }
 }

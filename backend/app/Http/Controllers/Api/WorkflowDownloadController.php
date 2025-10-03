@@ -7,6 +7,7 @@ use App\Models\WorkflowDownload;
 use App\Models\WorkflowFile;
 use App\Models\File;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class WorkflowDownloadController extends Controller
@@ -27,6 +28,13 @@ class WorkflowDownloadController extends Controller
 
         if ($workflowFile->workflow->status !== 'published') {
             abort(403, 'This workflow is not published');
+        }
+
+        if ($workflowFile->workflow->is_premium && !Auth::check()) {
+            return response()->json([
+                'message' => 'This is a premium workflow. Please login or register to access.',
+                'requires_auth' => true,
+            ], 401);
         }
 
         $download = WorkflowDownload::create([

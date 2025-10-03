@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\WorkflowController;
 use App\Http\Controllers\Api\WorkflowDownloadController;
 use App\Http\Controllers\Api\Admin\WorkflowCategoryController as AdminWorkflowCategoryController;
@@ -52,6 +53,13 @@ Route::get('workflows/{slug}', [WorkflowController::class, 'show']);
 
 Route::post('workflow-downloads', [WorkflowDownloadController::class, 'requestDownload']);
 Route::get('workflow-files/{id}/download', [WorkflowDownloadController::class, 'download'])->name('workflow-files.download');
+
+Route::get('courses', [CourseController::class, 'index']);
+Route::get('courses/{slug}', [CourseController::class, 'show']);
+Route::middleware('auth:api')->group(function () {
+    Route::post('courses/{id}/enroll', [CourseController::class, 'enroll']);
+    Route::get('my-courses', [CourseController::class, 'myCourses']);
+});
 
 Route::middleware('auth:api')->prefix('admin')->group(function () {
     Route::get('workflow-categories', [AdminWorkflowCategoryController::class, 'index']);

@@ -16,6 +16,7 @@ class Workflow extends Model
         'tools',
         'benefits',
         'is_featured',
+        'is_premium',
         'status',
         'published_at',
         'created_by',
@@ -26,6 +27,7 @@ class Workflow extends Model
         'tools' => 'array',
         'benefits' => 'array',
         'is_featured' => 'boolean',
+        'is_premium' => 'boolean',
         'published_at' => 'datetime',
     ];
 
