@@ -22,9 +22,9 @@ export default function Login() {
         password,
       });
 
-      const { access_token, user } = response.data;
+      const { token, user } = response.data;
       
-      localStorage.setItem('token', access_token);
+      localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       
       if (user.role === 'admin') {
