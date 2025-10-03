@@ -17,6 +17,7 @@ import AdminLogin from './pages/Login';
 import NotFound from './pages/NotFound';
 import Dashboard from './pages/admin/Dashboard';
 import AdminCourses from './pages/admin/Courses';
+import AdminLessons from './pages/admin/Lessons';
 import Categories from './pages/admin/Categories';
 import Posts from './pages/admin/Posts';
 import Files from './pages/admin/Files';
@@ -43,6 +44,7 @@ function App() {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute><AdminCourses /></ProtectedRoute>} />
+            <Route path="/admin/courses/:courseId/lessons" element={<ProtectedRoute><AdminLessons /></ProtectedRoute>} />
             <Route path="/admin/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
             <Route path="/admin/posts" element={<ProtectedRoute><Posts /></ProtectedRoute>} />
             <Route path="/admin/files" element={<ProtectedRoute><Files /></ProtectedRoute>} />
