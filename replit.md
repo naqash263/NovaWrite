@@ -1,6 +1,6 @@
 # Overview
 
-This project is a comprehensive portfolio and blog website for Naqash Thaheem, a Systems Analyst & Automation Specialist. It features a Laravel 11 backend and a React + Vite + TypeScript frontend. The application provides a professional portfolio, a full-featured blog system, and an admin dashboard for content management. Key capabilities include JWT authentication, blog posts with file attachments, category filtering, search functionality, and a protected admin panel. The site aims to showcase skills, experience, and provide a platform for sharing insights, with advanced features like an interactive home page, SEO enhancements for blog content, and a workflow management system with email-gated downloads for lead generation.
+This project is a comprehensive portfolio and blog website for Naqash Thaheem, a Systems Analyst & Automation Specialist. It features a Laravel 11 backend and a React + Vite + TypeScript frontend. The application provides a professional portfolio, a full-featured blog system, free courses for registered users, premium workflow downloads, and an admin dashboard for content management. Key capabilities include JWT authentication with role-based access (admin/user), blog posts with file attachments, category filtering, search functionality, course enrollment system, premium workflow gating, and a protected admin panel. The site aims to showcase skills, experience, and provide a platform for sharing insights and educational content.
 
 # User Preferences
 
@@ -36,18 +36,23 @@ Preferred communication style: Simple, everyday language.
 - Separation of public (Home, Blog, Workflows, About, Contact) and admin (Dashboard, Categories, Posts, Files) pages.
 
 **Routing Strategy:**
-- Public routes: `/`, `/about`, `/workflows`, `/contact`, `/blog`, `/blog/:slug`, `/admin/login`.
-- Protected admin routes: `/admin`, `/admin/categories`, `/admin/posts`, `/admin/files`.
+- Public routes: `/`, `/about`, `/workflows`, `/contact`, `/blog`, `/blog/:slug`, `/login`, `/register`, `/courses`, `/courses/:slug`.
+- User routes (require login): `/my-courses`.
+- Protected admin routes: `/admin/login`, `/admin`, `/admin/categories`, `/admin/posts`, `/admin/files`, `/admin/workflow-categories`, `/admin/workflows`.
 - 404 page for unmatched routes.
 
 **Key Pages:**
 - **Home**: Interactive landing page with 11 sections including Hero, Statistics, Video Introduction, Why Choose Me, Core Expertise, Skills Progress Bars, Portfolio Showcase, Professional Timeline, Services, Testimonials, and Contact Form. Features extensive animations and design elements.
 - **About**: Professional summary, core skills, featured projects, professional experience, education & languages.
-- **Workflows**: Showcase page with 6 automation workflow examples, descriptions, tools, and benefits.
+- **Workflows**: Showcase page with automation workflow examples. Premium workflows show 👑 Premium badge and require user authentication to download.
 - **Contact**: Contact information.
 - **Blog**: Search bar, category filters, blog post cards with pagination.
 - **Blog Detail**: Full post view with HTML content, metadata, and file attachments.
-- **Admin Pages**: Login, Dashboard, and full CRUD interfaces for Categories, Posts, and Files.
+- **Courses**: Browse all available courses with enrollment status indicators.
+- **Course Detail**: View lessons, enroll in course, and access lesson content (locked for non-enrolled users).
+- **My Courses**: Dashboard showing enrolled courses with progress tracking.
+- **Login/Register**: User authentication pages for accessing courses and premium workflows.
+- **Admin Pages**: Login, Dashboard, and full CRUD interfaces for Categories, Posts, Files, Workflow Categories, and Workflows.
 
 ## Backend Architecture
 
@@ -60,6 +65,7 @@ Preferred communication style: Simple, everyday language.
 **Authentication:**
 - JWT-based stateless authentication.
 - Bearer token authentication for API requests.
+- Role-based access control (admin/user roles).
 - Auth endpoints: `/api/auth/login`, `/api/auth/register`, `/api/auth/me`, `/api/auth/logout`, `/api/auth/refresh`.
 
 **API Design:**
@@ -69,11 +75,14 @@ Preferred communication style: Simple, everyday language.
 - Token-based authorization middleware (`auth:api`).
 
 **Models & Relationships:**
-- User (has many Posts).
+- User (has many Posts, Enrollments; role: admin/user).
 - Category (has many Posts).
 - Post (belongs to Category and User).
 - File (belongs to User).
-- WorkflowCategory, Workflow, WorkflowFile, WorkflowDownload for workflow management.
+- Course (has many Lessons and Enrollments).
+- Lesson (belongs to Course).
+- Enrollment (belongs to User and Course; tracks progress).
+- WorkflowCategory, Workflow (has is_premium flag), WorkflowFile, WorkflowDownload for workflow management.
 
 **Security Features:**
 - File downloads gated by `is_public` flag and user authentication.
@@ -97,16 +106,20 @@ Preferred communication style: Simple, everyday language.
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET /api/files/{id}/download`
-- `GET /api/workflows` (list with category filter)
+- `GET /api/workflows` (list with category filter; shows is_premium flag)
 - `GET /api/workflows/{slug}` (detail)
 - `GET /api/workflow-categories`
-- `POST /api/workflow-downloads` (email capture for downloads)
+- `POST /api/workflow-downloads` (email capture; protected for premium workflows)
 - `GET /api/workflow-files/{id}/download?token={uuid}` (secure download)
+- `GET /api/courses` (list all published courses)
+- `GET /api/courses/{slug}` (course detail with lessons)
 
 ### Protected Endpoints (require authentication)
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
 - `POST /api/auth/refresh`
+- `POST /api/courses/{id}/enroll` (enroll in course)
+- `GET /api/my-courses` (user's enrolled courses)
 - `GET /api/admin/posts`
 - `POST /api/categories`
 - `PUT /api/categories/{id}`
