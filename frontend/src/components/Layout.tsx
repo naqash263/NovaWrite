@@ -98,6 +98,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   Home
                 </Link>
                 <Link
+                  to="/courses"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
+                >
+                  Courses
+                </Link>
+                <Link
                   to="/blog"
                   className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
                 >
@@ -123,13 +129,47 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               </div>
             </div>
-            <div className="flex items-center">
-              <Link
-                to="/admin/login"
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                Admin
-              </Link>
+            <div className="flex items-center gap-4">
+              {user ? (
+                <>
+                  {user.role === 'admin' && (
+                    <Link
+                      to="/admin"
+                      className="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      Admin
+                    </Link>
+                  )}
+                  <Link
+                    to="/my-courses"
+                    className="text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    My Courses
+                  </Link>
+                  <span className="text-sm text-gray-600">{user.name}</span>
+                  <button
+                    onClick={logout}
+                    className="text-sm text-gray-600 hover:text-red-600"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

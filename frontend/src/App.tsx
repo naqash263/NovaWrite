@@ -8,7 +8,12 @@ import Contact from './pages/Contact';
 import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 import Workflows from './pages/Workflows';
-import Login from './pages/Login';
+import UserLogin from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import Courses from './pages/courses/Courses';
+import CourseDetail from './pages/courses/CourseDetail';
+import MyCourses from './pages/courses/MyCourses';
+import AdminLogin from './pages/Login';
 import NotFound from './pages/NotFound';
 import Dashboard from './pages/admin/Dashboard';
 import Categories from './pages/admin/Categories';
@@ -29,7 +34,12 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
-            <Route path="/admin/login" element={<Login />} />
+            <Route path="/login" element={<UserLogin />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="/courses/:slug" element={<CourseDetail />} />
+            <Route path="/my-courses" element={<MyCourses />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/admin/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
             <Route path="/admin/posts" element={<ProtectedRoute><Posts /></ProtectedRoute>} />
