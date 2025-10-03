@@ -7,6 +7,8 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Validator;
 
 class CourseController extends Controller
 {
@@ -139,5 +141,109 @@ class CourseController extends Controller
             });
 
         return response()->json($enrollments);
+    }
+
+    public function adminIndex()
+    {
+        $courses = Course::withCount('lessons')
+            ->orderBy('order')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($courses);
+    }
+
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'image_url' => 'nullable|url',
+            'what_you_learn' => 'nullable|string',
+            'duration_hours' => 'required|numeric|min:0',
+            'level' => 'required|in:beginner,intermediate,advanced',
+            'is_published' => 'boolean',
+            'order' => 'integer|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $slug = Str::slug($request->title);
+        $originalSlug = $slug;
+        $counter = 1;
+
+        while (Course::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+
+        $course = Course::create([
+            'title' => $request->title,
+            'slug' => $slug,
+            'description' => $request->description,
+            'image_url' => $request->image_url,
+            'what_you_learn' => $request->what_you_learn,
+            'duration_hours' => $request->duration_hours,
+            'level' => $request->level,
+            'is_published' => $request->is_published ?? true,
+            'order' => $request->order ?? 0,
+        ]);
+
+        return response()->json($course, 201);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $course = Course::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'image_url' => 'nullable|url',
+            'what_you_learn' => 'nullable|string',
+            'duration_hours' => 'sometimes|required|numeric|min:0',
+            'level' => 'sometimes|required|in:beginner,intermediate,advanced',
+            'is_published' => 'boolean',
+            'order' => 'integer|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        if ($request->has('title') && $request->title !== $course->title) {
+            $slug = Str::slug($request->title);
+            $originalSlug = $slug;
+            $counter = 1;
+
+            while (Course::where('slug', $slug)->where('id', '!=', $id)->exists()) {
+                $slug = $originalSlug . '-' . $counter;
+                $counter++;
+            }
+            $course->slug = $slug;
+        }
+
+        $course->update($request->only([
+            'title',
+            'description',
+            'image_url',
+            'what_you_learn',
+            'duration_hours',
+            'level',
+            'is_published',
+            'order',
+        ]));
+
+        return response()->json($course);
+    }
+
+    public function destroy($id)
+    {
+        $course = Course::findOrFail($id);
+        $course->delete();
+
+        return response()->json(['message' => 'Course deleted successfully']);
     }
 }

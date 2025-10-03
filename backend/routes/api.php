@@ -62,6 +62,11 @@ Route::middleware('auth:api')->group(function () {
 });
 
 Route::middleware('auth:api')->prefix('admin')->group(function () {
+    Route::get('courses', [CourseController::class, 'adminIndex']);
+    Route::post('courses', [CourseController::class, 'store']);
+    Route::put('courses/{id}', [CourseController::class, 'update']);
+    Route::delete('courses/{id}', [CourseController::class, 'destroy']);
+
     Route::get('workflow-categories', [AdminWorkflowCategoryController::class, 'index']);
     Route::post('workflow-categories', [AdminWorkflowCategoryController::class, 'store']);
     Route::get('workflow-categories/{id}', [AdminWorkflowCategoryController::class, 'show']);
