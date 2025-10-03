@@ -18,6 +18,12 @@ Preferred communication style: Simple, everyday language.
 - Axios
 - Tailwind CSS v3
 
+**API Configuration:**
+- Frontend proxies API requests through Vite dev server to backend (port 8000)
+- Uses relative path `/api` in `frontend/.env` (VITE_API_BASE_URL=/api)
+- Vite proxy config in `vite.config.ts` forwards `/api/*` to `http://localhost:8000`
+- This avoids CORS/mixed-content issues between HTTPS frontend and HTTP backend
+
 **Design System:**
 - Utility-first styling with Tailwind CSS v3.
 - Primary color: Blue (blue-600, blue-700).
@@ -38,7 +44,7 @@ Preferred communication style: Simple, everyday language.
 **Routing Strategy:**
 - Public routes: `/`, `/about`, `/workflows`, `/contact`, `/blog`, `/blog/:slug`, `/login`, `/register`, `/courses`, `/courses/:slug`.
 - User routes (require login): `/my-courses`.
-- Protected admin routes: `/admin/login`, `/admin`, `/admin/categories`, `/admin/posts`, `/admin/files`, `/admin/workflow-categories`, `/admin/workflows`.
+- Protected admin routes: `/admin/login`, `/admin`, `/admin/categories`, `/admin/posts`, `/admin/files`, `/admin/workflow-categories`, `/admin/workflows`, `/admin/courses`.
 - 404 page for unmatched routes.
 
 **Key Pages:**
@@ -52,7 +58,7 @@ Preferred communication style: Simple, everyday language.
 - **Course Detail**: View lessons, enroll in course, and access lesson content (locked for non-enrolled users).
 - **My Courses**: Dashboard showing enrolled courses with progress tracking.
 - **Login/Register**: User authentication pages for accessing courses and premium workflows.
-- **Admin Pages**: Login, Dashboard, and full CRUD interfaces for Categories, Posts, Files, Workflow Categories, and Workflows.
+- **Admin Pages**: Login, Dashboard, and full CRUD interfaces for Categories, Posts, Files, Workflow Categories, Workflows, and Courses.
 
 ## Backend Architecture
 
@@ -130,6 +136,10 @@ Preferred communication style: Simple, everyday language.
 - `GET /api/files`
 - `POST /api/files`
 - `DELETE /api/files/{id}`
+- `GET /api/admin/courses` (list all courses with lessons count)
+- `POST /api/admin/courses` (create course with validation)
+- `PUT /api/admin/courses/{id}` (update course)
+- `DELETE /api/admin/courses/{id}` (delete course)
 - Admin CRUD for workflow categories and workflows under `/api/admin/*`.
 
 # External Dependencies
