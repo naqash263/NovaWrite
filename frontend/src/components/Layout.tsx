@@ -24,6 +24,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     Dashboard
                   </Link>
                   <Link
+                    to="/admin/courses"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  >
+                    Courses
+                  </Link>
+                  <Link
                     to="/admin/categories"
                     className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-900 hover:text-blue-600"
                   >
