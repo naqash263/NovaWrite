@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\WorkflowController;
 use App\Http\Controllers\Api\WorkflowDownloadController;
 use App\Http\Controllers\Api\Admin\WorkflowCategoryController as AdminWorkflowCategoryController;
@@ -66,6 +67,11 @@ Route::middleware('auth:api')->prefix('admin')->group(function () {
     Route::post('courses', [CourseController::class, 'store']);
     Route::put('courses/{id}', [CourseController::class, 'update']);
     Route::delete('courses/{id}', [CourseController::class, 'destroy']);
+
+    Route::get('courses/{courseId}/lessons', [LessonController::class, 'index']);
+    Route::post('courses/{courseId}/lessons', [LessonController::class, 'store']);
+    Route::put('courses/{courseId}/lessons/{id}', [LessonController::class, 'update']);
+    Route::delete('courses/{courseId}/lessons/{id}', [LessonController::class, 'destroy']);
 
     Route::get('workflow-categories', [AdminWorkflowCategoryController::class, 'index']);
     Route::post('workflow-categories', [AdminWorkflowCategoryController::class, 'store']);
