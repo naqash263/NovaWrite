@@ -6,7 +6,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [loading, setLoading] = useState(false);
