@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../api/axios';
+import EnhancedImageUpload from '../../components/EnhancedImageUpload';
+import RichTextEditor from '../../components/RichTextEditor';
 import { useSEO } from '../../utils/seo';
 
 interface Workflow {
@@ -9,11 +11,12 @@ interface Workflow {
   slug: string;
   summary?: string;
   description?: string;
-  tools_used?: string;
-  key_benefits?: string;
-  is_published: boolean;
+  tools?: string[];
+  benefits?: string[];
+  status: string;
   is_featured: boolean;
   workflow_category_id: number;
+  image_url?: string;
   category?: {
     id: number;
     name: string;
@@ -41,10 +44,11 @@ export default function Workflows() {
     title: '',
     summary: '',
     description: '',
-    tools_used: '',
-    key_benefits: '',
-    is_published: false,
+    tools: [] as string[],
+    benefits: [] as string[],
+    status: 'draft',
     is_featured: false,
+    image_url: '',
   });
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [fileDescription, setFileDescription] = useState('');
@@ -184,10 +188,11 @@ export default function Workflows() {
       title: '',
       summary: '',
       description: '',
-      tools_used: '',
-      key_benefits: '',
-      is_published: false,
+      tools: [],
+      benefits: [],
+      status: 'draft',
       is_featured: false,
+      image_url: '',
     });
     setEditingId(null);
     setShowForm(false);
@@ -201,10 +206,11 @@ export default function Workflows() {
       title: workflow.title,
       summary: workflow.summary || '',
       description: workflow.description || '',
-      tools_used: workflow.tools_used || '',
-      key_benefits: workflow.key_benefits || '',
-      is_published: workflow.is_published,
+      tools: workflow.tools || [],
+      benefits: workflow.benefits || [],
+      status: workflow.status || 'draft',
       is_featured: workflow.is_featured,
+      image_url: workflow.image_url || '',
     });
     setEditingId(workflow.id);
     setShowForm(true);
@@ -241,7 +247,7 @@ export default function Workflows() {
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Workflows</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Workflow Templates Management</h1>
         <button
           onClick={() => { 
             if (showForm) {
@@ -311,33 +317,67 @@ export default function Workflows() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
+              <RichTextEditor
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                rows={5}
+                onChange={(description) => setFormData({ ...formData, description })}
+                placeholder="Enter workflow description..."
+                height={300}
               />
             </div>
+
+            <EnhancedImageUpload
+              onImageUploaded={(imageUrl) => setFormData({ ...formData, image_url: imageUrl })}
+              currentImage={formData.image_url}
+              label="Workflow Image"
+              maxSize={5}
+            />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tools Used</label>
               <input
                 type="text"
-                value={formData.tools_used}
-                onChange={(e) => setFormData({ ...formData, tools_used: e.target.value })}
+                value={formData.tools.join(', ')}
+                onChange={(e) => {
+                  const tools = e.target.value
+                    .split(',')
+                    .map(t => t.trim())
+                    .filter(t => t.length > 0);
+                  setFormData({ ...formData, tools });
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="e.g., React, Node.js, PostgreSQL"
+                placeholder="e.g., React, Node.js, PostgreSQL (separate with commas)"
               />
+              <p className="text-xs text-gray-500 mt-1">Separate multiple tools with commas</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Key Benefits</label>
-              <textarea
-                value={formData.key_benefits}
-                onChange={(e) => setFormData({ ...formData, key_benefits: e.target.value })}
+              <input
+                type="text"
+                value={formData.benefits.join(', ')}
+                onChange={(e) => {
+                  const benefits = e.target.value
+                    .split(',')
+                    .map(b => b.trim())
+                    .filter(b => b.length > 0);
+                  setFormData({ ...formData, benefits });
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                rows={3}
+                placeholder="e.g., Faster processing, Better accuracy, Cost savings (separate with commas)"
               />
+              <p className="text-xs text-gray-500 mt-1">Separate multiple benefits with commas</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
             </div>
 
             <div className="flex gap-6">
@@ -345,8 +385,8 @@ export default function Workflows() {
                 <input
                   type="checkbox"
                   id="published"
-                  checked={formData.is_published}
-                  onChange={(e) => setFormData({ ...formData, is_published: e.target.checked })}
+                  checked={formData.status === 'published'}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.checked ? 'published' : 'draft' })}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="published" className="ml-2 text-sm font-medium text-gray-700">
@@ -450,6 +490,7 @@ export default function Workflows() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured</th>
@@ -461,12 +502,25 @@ export default function Workflows() {
               {workflows.map((workflow: Workflow) => (
                 <tr key={workflow.id}>
                   <td className="px-6 py-4 font-medium text-gray-900">{workflow.title}</td>
+                  <td className="px-6 py-4">
+                    {workflow.image_url ? (
+                      <img
+                        src={workflow.image_url}
+                        alt={workflow.title}
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-300"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-400 text-xs">
+                        No Image
+                      </div>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-gray-600">
                     {workflow.category?.name || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${workflow.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {workflow.is_published ? 'Published' : 'Draft'}
+                    <span className={`px-2 py-1 text-xs rounded-full ${workflow.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {workflow.status === 'published' ? 'Published' : 'Draft'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

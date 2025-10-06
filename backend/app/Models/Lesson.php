@@ -27,4 +27,63 @@ class Lesson extends Model
     {
         return $this->belongsTo(Course::class);
     }
+
+    public function lessonFiles()
+    {
+        return $this->hasMany(LessonFile::class)->orderBy('order');
+    }
+
+    public function files()
+    {
+        return $this->hasManyThrough(File::class, LessonFile::class, 'lesson_id', 'id', 'id', 'file_id');
+    }
+
+    public function lessonProgress()
+    {
+        return $this->hasMany(LessonProgress::class);
+    }
+
+    public function tests()
+    {
+        return $this->hasMany(LessonTest::class)->orderBy('order');
+    }
+
+    /**
+     * Get the active test for this lesson
+     */
+    public function activeTest()
+    {
+        return $this->tests()->where('is_active', true)->first();
+    }
+
+    /**
+     * Check if user has completed this lesson
+     */
+    public function isCompletedByUser($userId)
+    {
+        return $this->lessonProgress()
+            ->where('user_id', $userId)
+            ->where('is_completed', true)
+            ->exists();
+    }
+
+    /**
+     * Check if user can access this lesson (previous lessons completed)
+     */
+    public function canBeAccessedByUser($userId)
+    {
+        // Get all previous lessons in the same course
+        $previousLessons = Lesson::where('course_id', $this->course_id)
+            ->where('order', '<', $this->order)
+            ->get();
+
+        // Check if all previous lessons are completed
+        foreach ($previousLessons as $prevLesson) {
+            if (!$prevLesson->isCompletedByUser($userId)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

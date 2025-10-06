@@ -1,0 +1,184 @@
+{
+  "name": "Automated Invoice Processing",
+  "description": "End-to-end invoice processing workflow with OCR, validation, and approval routing",
+  "version": "1.2.0",
+  "author": "Naqash Thaheem",
+  "created": "2025-01-05",
+  "workflow": {
+    "triggers": [
+      {
+        "type": "email",
+        "name": "Invoice Email Received",
+        "description": "Triggered when invoice is received via email attachment"
+      },
+      {
+        "type": "file_upload",
+        "name": "Invoice File Upload",
+        "description": "Triggered when invoice file is uploaded to system"
+      }
+    ],
+    "steps": [
+      {
+        "id": 1,
+        "name": "Extract Invoice Data",
+        "type": "ocr_processing",
+        "description": "Use OCR to extract text and data from invoice PDF/image",
+        "ocr_engine": "tesseract",
+        "extract_fields": [
+          "vendor_name",
+          "invoice_number",
+          "invoice_date",
+          "due_date",
+          "total_amount",
+          "line_items",
+          "tax_amount",
+          "vendor_address"
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Validate Invoice Data",
+        "type": "validation",
+        "description": "Validate extracted data for completeness and accuracy",
+        "validation_rules": [
+          "required_fields_present",
+          "amount_format_valid",
+          "date_format_valid",
+          "vendor_exists_in_system"
+        ]
+      },
+      {
+        "id": 3,
+        "name": "Check Duplicate",
+        "type": "duplicate_check",
+        "description": "Check if invoice already exists in system",
+        "check_fields": ["invoice_number", "vendor_name", "amount", "date"]
+      },
+      {
+        "id": 4,
+        "name": "Match Purchase Order",
+        "type": "po_matching",
+        "description": "Match invoice against existing purchase orders",
+        "matching_criteria": {
+          "vendor_match": 100,
+          "amount_tolerance": 5,
+          "date_range": 30
+        }
+      },
+      {
+        "id": 5,
+        "name": "Calculate Approval Route",
+        "type": "approval_routing",
+        "description": "Determine approval workflow based on amount and department",
+        "routing_rules": [
+          {
+            "condition": "amount < 1000",
+            "approver": "department_manager"
+          },
+          {
+            "condition": "amount >= 1000 && amount < 5000",
+            "approver": "finance_manager"
+          },
+          {
+            "condition": "amount >= 5000",
+            "approver": "cfo"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "name": "Create Accounting Entry",
+        "type": "accounting_integration",
+        "description": "Create journal entry in accounting system",
+        "accounting_system": "quickbooks",
+        "entry_type": "accounts_payable"
+      },
+      {
+        "id": 7,
+        "name": "Send for Approval",
+        "type": "approval_notification",
+        "description": "Send approval request to designated approver",
+        "notification_method": "email",
+        "approval_deadline": "3_business_days"
+      },
+      {
+        "id": 8,
+        "name": "Process Payment",
+        "type": "payment_processing",
+        "description": "Process payment after approval",
+        "conditions": "{{approval_status == 'approved'}}",
+        "payment_method": "ach_transfer"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "invoice_id",
+        "description": "System invoice ID",
+        "type": "string"
+      },
+      {
+        "name": "approval_status",
+        "description": "Current approval status",
+        "type": "string"
+      },
+      {
+        "name": "processing_time",
+        "description": "Total processing time in minutes",
+        "type": "number"
+      }
+    ]
+  },
+  "integrations": [
+    {
+      "name": "Tesseract OCR",
+      "type": "ocr",
+      "version": "4.1.1",
+      "required_fields": ["language_pack"]
+    },
+    {
+      "name": "QuickBooks Online",
+      "type": "accounting",
+      "version": "v3",
+      "required_fields": ["client_id", "client_secret", "access_token"]
+    },
+    {
+      "name": "Slack",
+      "type": "notification",
+      "version": "webhook",
+      "required_fields": ["webhook_url"]
+    },
+    {
+      "name": "Bank API",
+      "type": "payment",
+      "version": "v2",
+      "required_fields": ["api_key", "account_number"]
+    }
+  ],
+  "configuration": {
+    "timeout": 600,
+    "retry_attempts": 2,
+    "ocr_confidence_threshold": 0.8,
+    "approval_timeout_hours": 72,
+    "amount_tolerance_percentage": 5
+  },
+  "monitoring": {
+    "success_metrics": [
+      "invoices_processed",
+      "ocr_accuracy",
+      "approval_time",
+      "payment_accuracy"
+    ],
+    "alerts": [
+      {
+        "condition": "ocr_confidence < 0.7",
+        "action": "manual_review",
+        "recipients": ["finance@company.com"]
+      },
+      {
+        "condition": "approval_timeout",
+        "action": "escalate",
+        "recipients": ["cfo@company.com"]
+      }
+    ]
+  }
+}

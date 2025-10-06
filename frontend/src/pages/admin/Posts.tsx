@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import apiClient from '../../api/axios';
+import Pagination from '../../components/Pagination';
+import EnhancedImageUpload from '../../components/EnhancedImageUpload';
 import { useSEO } from '../../utils/seo';
 
 interface Post {
@@ -23,6 +25,13 @@ export default function Posts() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    lastPage: 1,
+    total: 0,
+    perPage: 10
+  });
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -41,12 +50,21 @@ export default function Posts() {
     fetchCategories();
   }, []);
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (page: number = 1) => {
+    setLoading(true);
     try {
-      const response = await apiClient.get('/admin/posts');
+      const response = await apiClient.get(`/admin/posts?page=${page}&per_page=${pagination.perPage}`);
       setPosts(response.data.data || []);
+      setPagination({
+        currentPage: response.data.current_page || 1,
+        lastPage: response.data.last_page || 1,
+        total: response.data.total || 0,
+        perPage: response.data.per_page || 10
+      });
     } catch (error) {
       console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,12 +82,12 @@ export default function Posts() {
     try {
       const data = { ...formData, category_id: Number(formData.category_id) };
       if (editingId) {
-        await apiClient.put(`/posts/${editingId}`, data);
+        await apiClient.put(`/admin/posts/${editingId}`, data);
       } else {
-        await apiClient.post('/posts', data);
+        await apiClient.post('/admin/posts', data);
       }
       resetForm();
-      fetchPosts();
+      fetchPosts(pagination.currentPage);
     } catch (error) {
       console.error('Error saving post:', error);
     }
@@ -108,8 +126,8 @@ export default function Posts() {
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this post?')) {
       try {
-        await apiClient.delete(`/posts/${id}`);
-        fetchPosts();
+        await apiClient.delete(`/admin/posts/${id}`);
+        fetchPosts(pagination.currentPage);
       } catch (error) {
         console.error('Error deleting post:', error);
       }
@@ -119,7 +137,7 @@ export default function Posts() {
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Posts</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Blog Posts Management</h1>
         <button
           onClick={() => {
             if (showForm) {
@@ -183,15 +201,12 @@ export default function Posts() {
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Featured Image URL</label>
-              <input
-                type="text"
-                value={formData.featured_image}
-                onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
+            <EnhancedImageUpload
+              onImageUploaded={(imageUrl) => setFormData({ ...formData, featured_image: imageUrl })}
+              currentImage={formData.featured_image}
+              label="Featured Image"
+              maxSize={5}
+            />
             <div className="border-t pt-4 mt-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">SEO Settings</h3>
               <div className="space-y-4">
@@ -244,6 +259,7 @@ export default function Posts() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured Image</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
@@ -252,6 +268,19 @@ export default function Posts() {
             {posts.map((post) => (
               <tr key={post.id}>
                 <td className="px-6 py-4 font-medium text-gray-900">{post.title}</td>
+                <td className="px-6 py-4">
+                  {post.featured_image ? (
+                    <img
+                      src={post.featured_image}
+                      alt={post.title}
+                      className="w-16 h-16 object-cover rounded-lg border border-gray-300"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-400 text-xs">
+                      No Image
+                    </div>
+                  )}
+                </td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-1 text-xs rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                     {post.is_published ? 'Published' : 'Draft'}
@@ -275,6 +304,15 @@ export default function Posts() {
             ))}
           </tbody>
         </table>
+        
+        <Pagination
+          currentPage={pagination.currentPage}
+          lastPage={pagination.lastPage}
+          total={pagination.total}
+          perPage={pagination.perPage}
+          onPageChange={fetchPosts}
+          loading={loading}
+        />
       </div>
     </div>
   );

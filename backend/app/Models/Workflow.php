@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasAccessControl;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Workflow extends Model
 {
+    use HasAccessControl;
     protected $fillable = [
         'workflow_category_id',
         'title',
@@ -15,9 +17,15 @@ class Workflow extends Model
         'description',
         'tools',
         'benefits',
+        'tools_used',
+        'key_benefits',
         'is_featured',
         'is_premium',
+        'is_published',
         'status',
+        'access_level',
+        'allowed_user_ids',
+        'allowed_group_ids',
         'published_at',
         'created_by',
         'updated_by',
@@ -26,8 +34,11 @@ class Workflow extends Model
     protected $casts = [
         'tools' => 'array',
         'benefits' => 'array',
+        'allowed_user_ids' => 'array',
+        'allowed_group_ids' => 'array',
         'is_featured' => 'boolean',
         'is_premium' => 'boolean',
+        'is_published' => 'boolean',
         'published_at' => 'datetime',
     ];
 
@@ -91,6 +102,11 @@ class Workflow extends Model
 
     public function scopePublished($query)
     {
-        return $query->where('status', 'published');
+        return $query->where('is_published', true);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

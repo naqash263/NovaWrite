@@ -37,11 +37,14 @@ class LessonController extends Controller
             'content' => 'required|string',
             'video_url' => 'nullable|url|max:500',
             'duration_minutes' => 'required|integer|min:1',
-            'order' => 'required|integer|min:0',
             'is_free_preview' => 'boolean',
         ]);
 
+        // Auto-assign order number (next available order)
+        $maxOrder = $course->lessons()->max('order') ?? -1;
+        $validated['order'] = $maxOrder + 1;
         $validated['course_id'] = $courseId;
+        
         $lesson = Lesson::create($validated);
 
         return response()->json([
@@ -63,7 +66,7 @@ class LessonController extends Controller
             'content' => 'required|string',
             'video_url' => 'nullable|url|max:500',
             'duration_minutes' => 'required|integer|min:1',
-            'order' => 'required|integer|min:0',
+            'order' => 'nullable|integer|min:0',
             'is_free_preview' => 'boolean',
         ]);
 

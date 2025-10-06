@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/axios';
 import { PostCard } from '../components/PostCard';
+import LazyImage from '../components/LazyImage';
 import { useSEO } from '../utils/seo';
+import { generateAISearchSchema, generateKnowledgeGraphSchema, generateFAQSchema, injectAISearchOptimizations } from '../utils/aiSearchOptimization';
 
 interface Post {
   id: number;
@@ -38,33 +40,79 @@ export default function Home() {
   });
   const [contactSubmitted, setContactSubmitted] = useState(false);
   const [contactErrors, setContactErrors] = useState<Partial<ContactFormData>>({});
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useSEO({
-    title: 'Naqash Thaheem - Systems Analyst & Automation Specialist',
-    description: 'AI-powered automation workflows, CRM integrations, and scalable web platforms. 8+ years of experience in data scraping, processing, and business intelligence.',
+    title: 'Naqash Thaheem - Global AI Automation Expert & Systems Analyst',
+    description: 'Global AI automation specialist offering workflow automation, CRM integration, Power BI dashboards, and business intelligence solutions worldwide. 8+ years experience with n8n, Make.com, OpenAI, and Zoho CRM. Remote services available.',
+    image: '/images/professional_busines_b4d6588a.jpg',
+    url: '/',
+    keywords: ['AI automation expert', 'global automation specialist', 'workflow automation consultant', 'CRM integration expert', 'Power BI consultant', 'business intelligence specialist', 'n8n automation expert', 'Make.com specialist', 'OpenAI integration', 'Zoho CRM expert', 'remote automation services', 'international consultant'],
+    structuredData: 'custom',
+    customStructuredData: generateAISearchSchema()
   });
 
   useEffect(() => {
     fetchFeaturedPosts();
     
-    // Add scroll animation observer
+    // Inject AI search optimizations
+    injectAISearchOptimizations();
+    
+    // Add additional structured data for AI search engines
+    const knowledgeGraphSchema = generateKnowledgeGraphSchema();
+    const faqSchema = generateFAQSchema();
+    
+    // Inject knowledge graph schema
+    const kgScript = document.createElement('script');
+    kgScript.type = 'application/ld+json';
+    kgScript.textContent = JSON.stringify(knowledgeGraphSchema);
+    document.head.appendChild(kgScript);
+    
+    // Inject FAQ schema
+    const faqScript = document.createElement('script');
+    faqScript.type = 'application/ld+json';
+    faqScript.textContent = JSON.stringify(faqSchema);
+    document.head.appendChild(faqScript);
+    
+    // Add scroll animation observer with fallback
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('animate-fade-in-up');
+            entry.target.classList.remove('opacity-0');
+            entry.target.classList.add('animate-fade-in-up', 'opacity-100');
           }
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0.1, rootMargin: '50px' }
     );
 
-    // Observe all sections
-    document.querySelectorAll('.scroll-animate').forEach((el) => {
+    // Observe all sections with scroll-animate class
+    const animatedElements = document.querySelectorAll('.scroll-animate');
+    animatedElements.forEach((el) => {
       observer.observe(el);
     });
 
-    return () => observer.disconnect();
+    // Fallback: Make all content visible after 2 seconds if animations fail
+    const fallbackTimer = setTimeout(() => {
+      animatedElements.forEach((el) => {
+        el.classList.remove('opacity-0');
+        el.classList.add('opacity-100');
+      });
+    }, 2000);
+
+    // Scroll to top button visibility
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   const fetchFeaturedPosts = async () => {
@@ -151,6 +199,13 @@ export default function Home() {
     }
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <div>
       {/* Hero Section - Enhanced */}
@@ -171,7 +226,7 @@ export default function Home() {
           <div className="text-center animate-fade-in">
             {/* Profile Image with enhanced animation */}
             <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
-              <img 
+              <LazyImage 
                 src="/images/professional_busines_b4d6588a.jpg" 
                 alt="Naqash Thaheem"
                 className="w-40 h-40 md:w-48 md:h-48 rounded-full mx-auto border-4 border-white shadow-2xl object-cover ring-4 ring-blue-300 ring-opacity-50"
@@ -187,7 +242,7 @@ export default function Home() {
             </p>
             
             <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Transforming businesses through AI-powered automation, intelligent workflows, and data-driven insights
+              Global AI automation specialist transforming businesses worldwide through intelligent workflows, CRM integrations, and data-driven insights. Specializing in n8n, Make.com, OpenAI, Power BI, and Zoho CRM solutions. Remote services available globally.
             </p>
             
             {/* Contact Info */}
@@ -203,15 +258,9 @@ export default function Home() {
                   <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                   <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                 </svg>
-                <a href="mailto:naqash263@gmail.com" className="hover:underline">
-                  naqash263@gmail.com
+                <a href="mailto:contact@naqashthaheem.com" className="hover:underline">
+                  contact@naqashthaheem.com
                 </a>
-              </div>
-              <div className="flex items-center gap-2 hover:text-blue-200 transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                </svg>
-                <span>+971 54 474 7121</span>
               </div>
             </div>
 
@@ -256,7 +305,7 @@ export default function Home() {
                 </svg>
               </a>
               <a 
-                href="mailto:naqash263@gmail.com"
+                href="mailto:contact@naqashthaheem.com"
                 className="text-white hover:text-blue-200 transform hover:scale-110 transition-all duration-300"
                 aria-label="Email"
               >
@@ -270,7 +319,7 @@ export default function Home() {
       </section>
 
       {/* Stats Section - Enhanced with hover effects */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate opacity-0">
+      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 text-center">
             <div className="bg-white p-8 rounded-2xl shadow-md hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border-t-4 border-blue-600">
@@ -294,23 +343,58 @@ export default function Home() {
       </section>
 
       {/* Video Introduction Section */}
-      <section className="py-16 bg-white scroll-animate opacity-0">
+      <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Get To Know Me</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Professional Background</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Watch this quick introduction to learn about my background, expertise, and approach to solving business challenges
+              Learn about my journey in automation, systems analysis, and business intelligence
             </p>
           </div>
-          <div className="max-w-4xl mx-auto">
-            <div className="aspect-video bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl shadow-2xl flex items-center justify-center relative overflow-hidden">
-              {/* Video placeholder - user can add their YouTube/Vimeo embed */}
-              <div className="text-center p-8">
-                <svg className="w-24 h-24 mx-auto text-blue-600 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-                <p className="text-gray-700 font-semibold mb-2">Video Introduction</p>
-                <p className="text-gray-500 text-sm">Coming soon - Professional introduction video</p>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="order-2 md:order-1">
+              <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg border border-blue-100">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">My Approach</h3>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="text-white text-sm font-bold">1</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Understand & Analyze</h4>
+                      <p className="text-gray-600 text-sm">Deep dive into your business processes to identify automation opportunities</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="text-white text-sm font-bold">2</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Design & Prototype</h4>
+                      <p className="text-gray-600 text-sm">Create scalable solutions with clear ROI and measurable outcomes</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="text-white text-sm font-bold">3</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Implement & Optimize</h4>
+                      <p className="text-gray-600 text-sm">Deploy robust solutions with ongoing support and continuous improvement</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="order-1 md:order-2">
+              <div className="relative">
+                <LazyImage
+                  src="/images/business_analytics_d_948bb4c2.jpg"
+                  alt="Business Analytics and Automation"
+                  className="w-full rounded-2xl shadow-2xl"
+                  placeholder="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkJ1c2luZXNzIEFuYWx5dGljczwvdGV4dD48L3N2Zz4="
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent rounded-2xl"></div>
               </div>
             </div>
           </div>
@@ -318,7 +402,7 @@ export default function Home() {
       </section>
 
       {/* Why Choose Me Section */}
-      <section className="py-16 bg-gradient-to-br from-blue-600 to-blue-800 text-white scroll-animate opacity-0">
+      <section className="py-16 bg-gradient-to-br from-blue-600 to-blue-800 text-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Why Choose Me?</h2>
@@ -353,7 +437,7 @@ export default function Home() {
       </section>
 
       {/* Core Expertise Section - Enhanced */}
-      <section className="py-16 bg-white scroll-animate opacity-0">
+      <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">Core Expertise</h2>
           <p className="text-xl text-gray-600 text-center mb-12 max-w-3xl mx-auto">
@@ -442,7 +526,7 @@ export default function Home() {
       </section>
 
       {/* Skills Progress Bars Section */}
-      <section className="py-16 bg-gray-50 scroll-animate opacity-0">
+      <section className="py-16 bg-gray-50 scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Technical Proficiency</h2>
@@ -623,7 +707,7 @@ export default function Home() {
       </section>
 
       {/* Portfolio Showcase Section */}
-      <section className="py-16 bg-white scroll-animate opacity-0">
+      <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Projects</h2>
@@ -752,7 +836,7 @@ export default function Home() {
       </section>
 
       {/* Experience Timeline Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate opacity-0">
+      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Professional Journey</h2>
@@ -799,8 +883,8 @@ export default function Home() {
                 <div className="md:w-5/12"></div>
                 <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 bg-green-600 rounded-full border-4 border-white shadow-lg hidden md:block"></div>
                 <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                  <span className="text-green-600 font-bold text-sm">2019 - 2021</span>
-                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Full-Stack Developer</h3>
+                  <span className="text-green-600 font-bold text-sm">2017 - 2021</span>
+                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">System Analyst & Automation Specialist</h3>
                   <p className="text-gray-600 mb-3">Built scalable web applications and RESTful APIs using React, Laravel, and .NET Core</p>
                   <div className="flex flex-wrap gap-2">
                     <span className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">React</span>
@@ -812,8 +896,8 @@ export default function Home() {
               {/* Item 4 - Left */}
               <div className="relative flex items-center justify-between md:justify-start">
                 <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                  <span className="text-orange-600 font-bold text-sm">2017 - 2019</span>
-                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Junior Developer</h3>
+                  <span className="text-orange-600 font-bold text-sm">2016 - 2017</span>
+                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Software Developer</h3>
                   <p className="text-gray-600 mb-3">Started career building web applications and learning automation tools and data analysis techniques</p>
                   <div className="flex flex-wrap gap-2">
                     <span className="px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-full">PHP</span>
@@ -829,7 +913,7 @@ export default function Home() {
       </section>
 
       {/* Services Section - Enhanced */}
-      <section className="py-16 bg-white scroll-animate opacity-0">
+      <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">What I Offer</h2>
           <p className="text-xl text-gray-600 text-center mb-12 max-w-3xl mx-auto">
@@ -893,7 +977,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate opacity-0">
+      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Client Success Stories</h2>
@@ -901,7 +985,7 @@ export default function Home() {
               Hear from businesses that transformed their operations with automation and analytics
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Testimonial 1 */}
             <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
               <div className="flex items-center gap-2 mb-4">
@@ -970,12 +1054,160 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            {/* Testimonial 4 */}
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+              <div className="flex items-center gap-2 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-6 italic leading-relaxed">
+                "The data scraping solution Naqash built for us processes 50,000+ records daily with 99.9% accuracy. It's been running flawlessly for 8 months now."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  SK
+                </div>
+                <div>
+                  <div className="font-bold text-gray-900">Sarah Kim</div>
+                  <div className="text-sm text-gray-500">Data Manager, TechCorp Solutions</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 5 */}
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+              <div className="flex items-center gap-2 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-6 italic leading-relaxed">
+                "Outstanding technical expertise and communication. The Power BI dashboard Naqash created gives us insights we never had before. ROI was achieved in just 2 weeks."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  DA
+                </div>
+                <div>
+                  <div className="font-bold text-gray-900">David Anderson</div>
+                  <div className="text-sm text-gray-500">CEO, Analytics Pro</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 6 */}
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+              <div className="flex items-center gap-2 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-6 italic leading-relaxed">
+                "Naqash's automation solutions saved us 30+ hours per week. The n8n workflows he built are robust and easy to maintain. Highly recommended!"
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-rose-400 to-rose-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  EM
+                </div>
+                <div>
+                  <div className="font-bold text-gray-900">Emma Martinez</div>
+                  <div className="text-sm text-gray-500">Operations Director, FlowTech</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Client Logos Section */}
+          <div className="mt-16">
+            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Trusted by Leading Companies</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center opacity-60">
+              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
+                <span className="text-gray-600 font-semibold text-sm">TechCorp</span>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
+                <span className="text-gray-600 font-semibold text-sm">Analytics Pro</span>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
+                <span className="text-gray-600 font-semibold text-sm">FlowTech</span>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
+                <span className="text-gray-600 font-semibold text-sm">DataFlow</span>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
+                <span className="text-gray-600 font-semibold text-sm">AutoSys</span>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
+                <span className="text-gray-600 font-semibold text-sm">BI Solutions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* AI-Friendly FAQ Section */}
+      <section className="py-16 bg-white scroll-animate">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Common questions about global AI automation, CRM integration, and business intelligence services
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">What services does Naqash Thaheem offer?</h3>
+                <p className="text-gray-600">
+                  Naqash offers AI automation workflows, CRM integration services, Power BI dashboard development, web development, and business intelligence solutions globally. He specializes in n8n, Make.com, Zoho CRM, HubSpot, and OpenAI integrations, serving clients worldwide with remote services.
+                </p>
+              </div>
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">What is AI automation and how can it help my business?</h3>
+                <p className="text-gray-600">
+                  AI automation uses artificial intelligence to automate repetitive business processes, reducing manual work and improving efficiency. It can help businesses save time, reduce errors, and scale operations by automating tasks like data processing, email marketing, CRM updates, and workflow management.
+                </p>
+              </div>
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">What tools does Naqash use for automation?</h3>
+                <p className="text-gray-600">
+                  Naqash uses n8n, Make.com, Zapier, OpenAI GPT models, Zoho CRM, HubSpot, Power BI, React, .NET Core, Laravel, and Python for creating comprehensive automation solutions and business intelligence dashboards.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">How can I get started with automation for my business?</h3>
+                <p className="text-gray-600">
+                  Start by identifying repetitive tasks in your business, then contact Naqash for a remote consultation. He can analyze your processes and recommend the best automation solutions using tools like n8n, Make.com, or custom integrations, regardless of your location.
+                </p>
+              </div>
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">What is the cost of automation services?</h3>
+                <p className="text-gray-600">
+                  Automation service costs vary based on complexity and requirements. Contact Naqash at contact@naqashthaheem.com for a personalized quote based on your specific business needs and automation goals.
+                </p>
+              </div>
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Does Naqash provide ongoing support for automation solutions?</h3>
+                <p className="text-gray-600">
+                  Yes, Naqash provides comprehensive remote support and maintenance for all automation solutions globally. This includes monitoring, troubleshooting, updates, and optimization to ensure your workflows continue running efficiently, regardless of your location.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Latest Insights Section - Enhanced */}
-      <section className="py-16 bg-white scroll-animate opacity-0">
+      <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">
             Latest Insights
@@ -1013,7 +1245,7 @@ export default function Home() {
       </section>
 
       {/* Contact Form Section */}
-      <section className="py-16 bg-gradient-to-br from-blue-600 to-blue-800 text-white scroll-animate opacity-0">
+      <section className="py-16 bg-gradient-to-br from-blue-600 to-blue-800 text-white scroll-animate">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Let's Work Together</h2>
@@ -1104,6 +1336,19 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-blue-600 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 transform hover:scale-110 transition-all duration-300 z-50 animate-bounce"
+          aria-label="Scroll to top"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

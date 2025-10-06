@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../../api/axios';
+import RichTextEditor from '../../components/RichTextEditor';
 
 interface Lesson {
   id: number;
@@ -15,10 +16,56 @@ interface Lesson {
   updated_at: string;
 }
 
+interface LessonFile {
+  id: number;
+  lesson_id: number;
+  file_id: number;
+  title?: string;
+  description?: string;
+  order: number;
+  is_required: boolean;
+  is_downloadable: boolean;
+  file: {
+    id: number;
+    name: string;
+    original_name: string;
+    path: string;
+    mime_type: string;
+    size: number;
+    is_public: boolean;
+  };
+}
+
+interface File {
+  id: number;
+  name: string;
+  original_name: string;
+  path: string;
+  mime_type: string;
+  size: number;
+  is_public: boolean;
+}
+
 interface Course {
   id: number;
   title: string;
   slug: string;
+}
+
+interface QuizQuestion {
+  id: number;
+  question: string;
+  options: { [key: string]: string };
+  correct_answer: string;
+}
+
+interface QuizData {
+  title: string;
+  description: string;
+  questions: QuizQuestion[];
+  passing_score: number;
+  time_limit_minutes: number;
+  is_active: boolean;
 }
 
 interface FormData {
@@ -26,8 +73,9 @@ interface FormData {
   content: string;
   video_url: string;
   duration_minutes: number;
-  order: number;
   is_free_preview: boolean;
+  order?: number;
+  quiz: QuizData | null;
 }
 
 export default function AdminLessons() {
@@ -42,8 +90,31 @@ export default function AdminLessons() {
     content: '',
     video_url: '',
     duration_minutes: 10,
-    order: 0,
     is_free_preview: false,
+    quiz: null,
+  });
+
+  const [showQuizForm, setShowQuizForm] = useState(false);
+  const [quizData, setQuizData] = useState<QuizData>({
+    title: '',
+    description: '',
+    questions: [],
+    passing_score: 70,
+    time_limit_minutes: 10,
+    is_active: true,
+  });
+
+  // File attachment states
+  const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
+  const [lessonFiles, setLessonFiles] = useState<LessonFile[]>([]);
+  const [availableFiles, setAvailableFiles] = useState<File[]>([]);
+  const [showFileModal, setShowFileModal] = useState(false);
+  const [fileFormData, setFileFormData] = useState({
+    file_id: '',
+    title: '',
+    description: '',
+    is_required: false,
+    is_downloadable: true,
   });
 
   useEffect(() => {
@@ -76,8 +147,14 @@ export default function AdminLessons() {
       setEditingLesson(null);
       resetForm();
       fetchLessons();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving lesson:', error);
+      if (error.response?.data?.errors) {
+        console.error('Validation errors:', error.response.data.errors);
+        alert('Validation errors: ' + JSON.stringify(error.response.data.errors));
+      } else {
+        alert('Error saving lesson: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
@@ -88,8 +165,9 @@ export default function AdminLessons() {
       content: lesson.content,
       video_url: lesson.video_url || '',
       duration_minutes: lesson.duration_minutes,
-      order: lesson.order,
       is_free_preview: lesson.is_free_preview,
+      order: lesson.order,
+      quiz: null, // TODO: Load existing quiz data
     });
     setShowForm(true);
   };
@@ -111,9 +189,160 @@ export default function AdminLessons() {
       content: '',
       video_url: '',
       duration_minutes: 10,
-      order: 0,
       is_free_preview: false,
+      order: undefined,
+      quiz: null,
     });
+    setQuizData({
+      title: '',
+      description: '',
+      questions: [],
+      passing_score: 70,
+      time_limit_minutes: 10,
+      is_active: true,
+    });
+    setShowQuizForm(false);
+  };
+
+  // Quiz management functions
+  const addQuestion = () => {
+    const newQuestion: QuizQuestion = {
+      id: Date.now(),
+      question: '',
+      options: { A: '', B: '', C: '', D: '' },
+      correct_answer: 'A',
+    };
+    setQuizData({
+      ...quizData,
+      questions: [...quizData.questions, newQuestion],
+    });
+  };
+
+  const updateQuestion = (questionId: number, field: string, value: string) => {
+    setQuizData({
+      ...quizData,
+      questions: quizData.questions.map(q =>
+        q.id === questionId ? { ...q, [field]: value } : q
+      ),
+    });
+  };
+
+  const updateQuestionOption = (questionId: number, optionKey: string, value: string) => {
+    setQuizData({
+      ...quizData,
+      questions: quizData.questions.map(q =>
+        q.id === questionId 
+          ? { ...q, options: { ...q.options, [optionKey]: value } }
+          : q
+      ),
+    });
+  };
+
+  const removeQuestion = (questionId: number) => {
+    setQuizData({
+      ...quizData,
+      questions: quizData.questions.filter(q => q.id !== questionId),
+    });
+  };
+
+  const saveQuiz = () => {
+    if (quizData.questions.length === 0) {
+      alert('Please add at least one question');
+      return;
+    }
+
+    // Validate all questions have content and options
+    for (const question of quizData.questions) {
+      if (!question.question.trim()) {
+        alert('All questions must have content');
+        return;
+      }
+      for (const [, value] of Object.entries(question.options)) {
+        if (!value.trim()) {
+          alert('All answer options must be filled');
+          return;
+        }
+      }
+    }
+
+    setFormData({ ...formData, quiz: quizData });
+    setShowQuizForm(false);
+  };
+
+  // File attachment functions
+  const fetchLessonFiles = async (lessonId: number) => {
+    try {
+      const response = await apiClient.get(`/admin/lessons/${lessonId}/files`);
+      setLessonFiles(response.data);
+    } catch (error) {
+      console.error('Error fetching lesson files:', error);
+    }
+  };
+
+  const fetchAvailableFiles = async () => {
+    try {
+      const response = await apiClient.get('/files');
+      setAvailableFiles(response.data);
+    } catch (error) {
+      console.error('Error fetching available files:', error);
+    }
+  };
+
+  const handleOpenFileModal = async (lessonId: number) => {
+    setSelectedLessonId(lessonId);
+    setShowFileModal(true);
+    await fetchLessonFiles(lessonId);
+    await fetchAvailableFiles();
+  };
+
+  const handleAttachFile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLessonId) return;
+
+    try {
+      await apiClient.post(`/admin/lessons/${selectedLessonId}/files`, {
+        ...fileFormData,
+        file_id: parseInt(fileFormData.file_id),
+      });
+      setFileFormData({
+        file_id: '',
+        title: '',
+        description: '',
+        is_required: false,
+        is_downloadable: true,
+      });
+      await fetchLessonFiles(selectedLessonId);
+    } catch (error) {
+      console.error('Error attaching file:', error);
+    }
+  };
+
+  const handleRemoveFile = async (fileId: number) => {
+    if (!selectedLessonId) return;
+
+    try {
+      await apiClient.delete(`/admin/lessons/${selectedLessonId}/files/${fileId}`);
+      await fetchLessonFiles(selectedLessonId);
+    } catch (error) {
+      console.error('Error removing file:', error);
+    }
+  };
+
+  const getFileIcon = (mimeType: string): string => {
+    if (mimeType.startsWith('image/')) return '🖼️';
+    if (mimeType.includes('pdf')) return '📄';
+    if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
+    if (mimeType.includes('zip') || mimeType.includes('rar')) return '📦';
+    if (mimeType.includes('json')) return '🔧';
+    return '📁';
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleCancel = () => {
@@ -182,12 +411,11 @@ export default function AdminLessons() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Content *
               </label>
-              <textarea
+              <RichTextEditor
                 value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                rows={6}
-                required
+                onChange={(content) => setFormData({ ...formData, content })}
+                placeholder="Enter lesson content..."
+                height={300}
               />
             </div>
 
@@ -205,19 +433,6 @@ export default function AdminLessons() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Order *
-                </label>
-                <input
-                  type="number"
-                  value={formData.order}
-                  onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  min="0"
-                  required
-                />
-              </div>
               <div className="flex items-end">
                 <label className="flex items-center">
                   <input
@@ -229,6 +444,51 @@ export default function AdminLessons() {
                   <span className="text-sm font-medium text-gray-700">Free Preview</span>
                 </label>
               </div>
+            </div>
+
+            {/* Quiz Section */}
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Quiz (Optional)</h3>
+                <div className="flex gap-2">
+                  {formData.quiz ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowQuizForm(true)}
+                      className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"
+                    >
+                      Edit Quiz
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowQuizForm(true)}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
+                    >
+                      Add Quiz
+                    </button>
+                  )}
+                  {formData.quiz && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, quiz: null })}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"
+                    >
+                      Remove Quiz
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {formData.quiz && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">{formData.quiz.title}</h4>
+                  <p className="text-sm text-gray-600 mb-2">{formData.quiz.description}</p>
+                  <div className="text-sm text-gray-500">
+                    {formData.quiz.questions.length} questions • {formData.quiz.passing_score}% passing score • {formData.quiz.time_limit_minutes} min time limit
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2">
@@ -254,9 +514,6 @@ export default function AdminLessons() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Order
-              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Title
               </th>
@@ -284,9 +541,6 @@ export default function AdminLessons() {
             ) : (
               lessons.map((lesson) => (
                 <tr key={lesson.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lesson.order}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{lesson.title}</div>
                   </td>
@@ -315,6 +569,12 @@ export default function AdminLessons() {
                       Edit
                     </button>
                     <button
+                      onClick={() => handleOpenFileModal(lesson.id)}
+                      className="text-green-600 hover:text-green-900 mr-4"
+                    >
+                      Files
+                    </button>
+                    <button
                       onClick={() => handleDelete(lesson.id)}
                       className="text-red-600 hover:text-red-900"
                     >
@@ -327,6 +587,315 @@ export default function AdminLessons() {
           </tbody>
         </table>
       </div>
+
+      {/* File Attachment Modal */}
+      {showFileModal && selectedLessonId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold">Manage Lesson Files</h3>
+              <button
+                onClick={() => setShowFileModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Attach File Form */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <h4 className="text-md font-medium mb-4">Attach New File</h4>
+              <form onSubmit={handleAttachFile} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Select File
+                    </label>
+                    <select
+                      value={fileFormData.file_id}
+                      onChange={(e) => setFileFormData({ ...fileFormData, file_id: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Choose a file...</option>
+                      {availableFiles.map((file) => (
+                        <option key={file.id} value={file.id}>
+                          {getFileIcon(file.mime_type)} {file.original_name} ({formatFileSize(file.size)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Title (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={fileFormData.title}
+                      onChange={(e) => setFileFormData({ ...fileFormData, title: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Custom title for this file"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    value={fileFormData.description}
+                    onChange={(e) => setFileFormData({ ...fileFormData, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={2}
+                    placeholder="Description of this file"
+                  />
+                </div>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={fileFormData.is_required}
+                      onChange={(e) => setFileFormData({ ...fileFormData, is_required: e.target.checked })}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Required</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={fileFormData.is_downloadable}
+                      onChange={(e) => setFileFormData({ ...fileFormData, is_downloadable: e.target.checked })}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Downloadable</span>
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Attach File
+                </button>
+              </form>
+            </div>
+
+            {/* Attached Files List */}
+            <div>
+              <h4 className="text-md font-medium mb-4">Attached Files ({lessonFiles.length})</h4>
+              {lessonFiles.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="text-4xl mb-2">📁</div>
+                  <p>No files attached to this lesson yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {lessonFiles.map((lessonFile) => (
+                    <div key={lessonFile.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">{getFileIcon(lessonFile.file.mime_type)}</span>
+                        <div>
+                          <h5 className="font-medium text-gray-900">
+                            {lessonFile.title || lessonFile.file.original_name}
+                          </h5>
+                          <p className="text-sm text-gray-500">
+                            {formatFileSize(lessonFile.file.size)} • {lessonFile.file.mime_type}
+                          </p>
+                          {lessonFile.description && (
+                            <p className="text-sm text-gray-600 mt-1">{lessonFile.description}</p>
+                          )}
+                          <div className="flex space-x-2 mt-1">
+                            {lessonFile.is_required && (
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                Required
+                              </span>
+                            )}
+                            {lessonFile.is_downloadable && (
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                Downloadable
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveFile(lessonFile.id)}
+                        className="text-red-600 hover:text-red-800 p-2"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quiz Form Modal */}
+      {showQuizForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">Create Quiz</h3>
+                <button
+                  onClick={() => setShowQuizForm(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Quiz Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Quiz Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={quizData.title}
+                      onChange={(e) => setQuizData({ ...quizData, title: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="e.g., Lesson 1 Quiz"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <input
+                      type="text"
+                      value={quizData.description}
+                      onChange={(e) => setQuizData({ ...quizData, description: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Brief description of the quiz"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Passing Score (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={quizData.passing_score}
+                      onChange={(e) => setQuizData({ ...quizData, passing_score: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Time Limit (minutes)
+                    </label>
+                    <input
+                      type="number"
+                      value={quizData.time_limit_minutes}
+                      onChange={(e) => setQuizData({ ...quizData, time_limit_minutes: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      min="1"
+                    />
+                  </div>
+                </div>
+
+                {/* Questions */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-medium text-gray-900">Questions</h4>
+                    <button
+                      onClick={addQuestion}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                    >
+                      Add Question
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {quizData.questions.map((question, index) => (
+                      <div key={question.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h5 className="font-medium text-gray-900">Question {index + 1}</h5>
+                          <button
+                            onClick={() => removeQuestion(question.id)}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Question Text *
+                          </label>
+                          <input
+                            type="text"
+                            value={question.question}
+                            onChange={(e) => updateQuestion(question.id, 'question', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            placeholder="Enter the question..."
+                            required
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                          {Object.entries(question.options).map(([key, value]) => (
+                            <div key={key} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                name={`correct_${question.id}`}
+                                value={key}
+                                checked={question.correct_answer === key}
+                                onChange={(e) => updateQuestion(question.id, 'correct_answer', e.target.value)}
+                                className="w-4 h-4 text-blue-600"
+                              />
+                              <input
+                                type="text"
+                                value={value}
+                                onChange={(e) => updateQuestionOption(question.id, key, e.target.value)}
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                                placeholder={`Option ${key}`}
+                                required
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    {quizData.questions.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        No questions added yet. Click "Add Question" to get started.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 mt-8 pt-6 border-t">
+                <button
+                  onClick={() => setShowQuizForm(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveQuiz}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                >
+                  Save Quiz
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

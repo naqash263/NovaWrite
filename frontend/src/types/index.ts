@@ -26,6 +26,8 @@ export interface Post {
   published_at?: string;
   is_published: boolean;
   views: number;
+  meta_description?: string;
+  meta_keywords?: string;
   category?: Category;
   user?: User;
   created_at: string;

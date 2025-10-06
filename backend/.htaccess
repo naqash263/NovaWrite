@@ -1,0 +1,8 @@
+# Disable directory browsing
+Options -Indexes
+
+# Redirect all requests to public folder
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

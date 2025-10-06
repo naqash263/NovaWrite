@@ -32,19 +32,31 @@ export function useAuth() {
     }
   };
 
-  const login = async (email: string, password: string) => {
-    const response = await apiClient.post('/auth/login', { email, password });
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+    const response = await apiClient.post('/auth/login', { 
+      email, 
+      password, 
+      remember_me: rememberMe 
+    });
     const { token: newToken, user: userData } = response.data;
+    
+    // Store token in localStorage (persists across browser sessions)
     localStorage.setItem('token', newToken);
     setTokenState(newToken);
     setUser(userData);
+    setLoading(false);
     return response.data;
   };
 
-  const logout = () => {
+  const logout = (redirectTo?: string) => {
     localStorage.removeItem('token');
     setTokenState(null);
     setUser(null);
+    
+    // Redirect after logout
+    if (redirectTo) {
+      window.location.href = redirectTo;
+    }
   };
 
   return {

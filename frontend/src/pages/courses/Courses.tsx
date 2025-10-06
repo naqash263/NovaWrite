@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import apiClient from '../../api/axios';
+import { useSEO } from '../../utils/seo';
+import LazyImage from '../../components/LazyImage';
+import { CourseCardSkeleton } from '../../components/Skeleton';
 
 interface Course {
   id: number;
@@ -22,16 +23,20 @@ export default function Courses() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  useSEO({
+    title: 'Free Automation & Business Intelligence Courses | Naqash Thaheem',
+    description: 'Master AI automation, Power BI, CRM integration, and business process optimization with free courses from Systems Analyst Naqash Thaheem. Start learning today!',
+    keywords: ['free automation courses', 'AI training', 'Power BI courses', 'CRM integration training', 'business intelligence', 'n8n automation', 'workflow optimization', 'data analysis'],
+    url: '/courses'
+  });
+
   useEffect(() => {
     fetchCourses();
   }, []);
 
   const fetchCourses = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-      
-      const response = await axios.get(`${API_URL}/courses`, config);
+      const response = await apiClient.get('/courses?per_page=12'); // Limit for faster loading
       setCourses(response.data);
     } catch (err) {
       setError('Failed to load courses');
@@ -55,10 +60,21 @@ export default function Courses() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading courses...</p>
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Free Courses & Learning Resources
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Master automation, data analysis, and system development with our comprehensive courses. All courses are free for registered users!
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <CourseCardSkeleton key={index} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -98,10 +114,11 @@ export default function Courses() {
                 className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
                 {course.image_url ? (
-                  <img
+                  <LazyImage
                     src={course.image_url}
                     alt={course.title}
                     className="w-full h-48 object-cover"
+                    placeholder="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjE5MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzc4MWY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7wn5OSPC90ZXh0Pjwvc3ZnPg=="
                   />
                 ) : (
                   <div className="w-full h-48 bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">

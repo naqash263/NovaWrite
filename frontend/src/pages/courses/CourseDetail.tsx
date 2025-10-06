@@ -13,6 +13,9 @@ interface Lesson {
   order: number;
   is_free_preview: boolean;
   is_locked: boolean;
+  is_completed: boolean;
+  has_test: boolean;
+  test_passed: boolean;
 }
 
 interface Course {
@@ -27,6 +30,39 @@ interface Course {
   lessons: Lesson[];
   enrolled_users_count: number;
   is_enrolled: boolean;
+  is_logged_in: boolean;
+}
+
+interface TestQuestion {
+  id: number;
+  question: string;
+  options: { [key: string]: string };
+  correct_answer: string;
+}
+
+interface Test {
+  id: number;
+  lesson_id: number;
+  title: string;
+  description: string;
+  questions: TestQuestion[];
+  passing_score: number;
+  time_limit_minutes: number;
+  is_active: boolean;
+  order: number;
+}
+
+interface TestAttempt {
+  id: number;
+  user_id: number;
+  lesson_test_id: number;
+  answers: string[];
+  score: number;
+  passed: boolean;
+  started_at: string;
+  completed_at: string | null;
+  time_taken_minutes: number | null;
+  feedback: any;
 }
 
 export default function CourseDetail() {
@@ -36,6 +72,12 @@ export default function CourseDetail() {
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState('');
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [showTest, setShowTest] = useState(false);
+  const [test, setTest] = useState<Test | null>(null);
+  const [testAttempt, setTestAttempt] = useState<TestAttempt | null>(null);
+  const [testAnswers, setTestAnswers] = useState<{ [key: number]: string }>({});
+  const [submittingTest, setSubmittingTest] = useState(false);
+  const [completingLesson, setCompletingLesson] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -89,6 +131,84 @@ export default function CourseDetail() {
     }
   };
 
+  const handleStartTest = async (lessonId: number) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/lessons/${lessonId}/test/start`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setTest(response.data.test);
+      setTestAttempt(response.data.attempt);
+      setShowTest(true);
+      setTestAnswers({});
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to start test');
+    }
+  };
+
+  const handleSubmitTest = async () => {
+    if (!test || !testAttempt) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setSubmittingTest(true);
+    setError('');
+
+    try {
+      const answers = Object.values(testAnswers);
+      const response = await axios.post(
+        `${API_URL}/lessons/${test.lesson_id}/test/submit`,
+        {
+          attempt_id: testAttempt.id,
+          answers: answers
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.passed) {
+        setError('');
+        setShowTest(false);
+        await fetchCourse(); // Refresh course data
+        alert('🎉 Test passed! Lesson completed successfully!');
+      } else {
+        setError(`Test failed. Score: ${response.data.score}%. Try again!`);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to submit test');
+    } finally {
+      setSubmittingTest(false);
+    }
+  };
+
+  const handleCompleteLesson = async (lessonId: number) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setCompletingLesson(true);
+    setError('');
+
+    try {
+      await axios.post(
+        `${API_URL}/lessons/${lessonId}/complete`,
+        { time_spent_minutes: 10 },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      await fetchCourse(); // Refresh course data
+      alert('✅ Lesson marked as completed!');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to complete lesson');
+    } finally {
+      setCompletingLesson(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -135,7 +255,18 @@ export default function CourseDetail() {
             </div>
             
             <div>
-              {!course.is_enrolled ? (
+              {!course.is_logged_in ? (
+                <div className="bg-white rounded-lg p-6 text-gray-900">
+                  <p className="text-2xl font-bold mb-2">Login Required</p>
+                  <p className="text-gray-600 mb-4">Register or login to access all lessons</p>
+                  <Link
+                    to="/login"
+                    className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all inline-block text-center"
+                  >
+                    Login to Access
+                  </Link>
+                </div>
+              ) : !course.is_enrolled ? (
                 <div className="bg-white rounded-lg p-6 text-gray-900">
                   <p className="text-2xl font-bold mb-2">FREE</p>
                   <p className="text-gray-600 mb-4">Full access for registered users</p>
@@ -168,7 +299,21 @@ export default function CourseDetail() {
           <div className="md:col-span-2">
             {selectedLesson ? (
               <div className="bg-white rounded-lg shadow-lg p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">{selectedLesson.title}</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">{selectedLesson.title}</h2>
+                  <div className="flex items-center space-x-2">
+                    {selectedLesson.is_completed && (
+                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                        ✅ Completed
+                      </span>
+                    )}
+                    {selectedLesson.has_test && (
+                      <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                        📝 Has Test
+                      </span>
+                    )}
+                  </div>
+                </div>
                 
                 {selectedLesson.video_url && (
                   <div className="mb-6 aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
@@ -177,17 +322,66 @@ export default function CourseDetail() {
                 )}
                 
                 {selectedLesson.content ? (
-                  <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: selectedLesson.content }} />
+                  <div>
+                    <div className="prose max-w-none mb-6" dangerouslySetInnerHTML={{ __html: selectedLesson.content }} />
+                    
+                    {/* Lesson Actions */}
+                    <div className="border-t pt-6">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                          Duration: {selectedLesson.duration_minutes} minutes
+                        </div>
+                        <div className="flex space-x-3">
+                          {!selectedLesson.is_completed && !selectedLesson.is_locked && (
+                            <>
+                              {selectedLesson.has_test ? (
+                                <button
+                                  onClick={() => handleStartTest(selectedLesson.id)}
+                                  className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+                                >
+                                  📝 Take Test
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleCompleteLesson(selectedLesson.id)}
+                                  disabled={completingLesson}
+                                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                                >
+                                  {completingLesson ? 'Completing...' : '✅ Mark Complete'}
+                                </button>
+                              )}
+                            </>
+                          )}
+                          {selectedLesson.is_completed && (
+                            <span className="text-green-600 font-medium">
+                              🎉 Great job! This lesson is completed.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
                     <p className="text-yellow-800 font-semibold mb-2">🔒 Lesson Locked</p>
-                    <p className="text-yellow-700">Enroll in this course to access this lesson</p>
-                    <button
-                      onClick={handleEnroll}
-                      className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-                    >
-                      Enroll Now
-                    </button>
+                    {!course.is_logged_in ? (
+                      <>
+                        <p className="text-yellow-700 mb-4">Login to access this lesson</p>
+                        <Link
+                          to="/login"
+                          className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 inline-block"
+                        >
+                          Login to Access
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-yellow-700 mb-4">Complete previous lessons to unlock this lesson</p>
+                        <p className="text-sm text-yellow-600">
+                          You need to complete all previous lessons in order to access this content.
+                        </p>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -203,24 +397,42 @@ export default function CourseDetail() {
               <h3 className="text-xl font-bold text-gray-900 mb-4">Course Content</h3>
               <div className="space-y-2">
                 {course.lessons.map((lesson) => (
-                  <button
+                  <div
                     key={lesson.id}
-                    onClick={() => !lesson.is_locked && setSelectedLesson(lesson)}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-all ${
+                    className={`w-full px-4 py-3 rounded-lg transition-all border ${
                       selectedLesson?.id === lesson.id
                         ? 'bg-blue-50 border-2 border-blue-500'
-                        : 'border border-gray-200 hover:border-blue-300'
-                    } ${lesson.is_locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        : 'border-gray-200 hover:border-blue-300'
+                    } ${lesson.is_locked ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-900 text-sm">{lesson.title}</p>
+                        <div className="flex items-center space-x-2">
+                          <p className="font-semibold text-gray-900 text-sm">{lesson.title}</p>
+                          {lesson.is_completed && <span className="text-green-600">✅</span>}
+                          {lesson.has_test && !lesson.test_passed && !lesson.is_locked && (
+                            <span className="text-orange-500">📝</span>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500">{lesson.duration_minutes} min</p>
+                        {lesson.is_locked && (
+                          <p className="text-xs text-red-500 mt-1">Complete previous lessons to unlock</p>
+                        )}
                       </div>
-                      {lesson.is_locked && <span className="text-gray-400">🔒</span>}
-                      {lesson.is_free_preview && <span className="text-green-600 text-xs">FREE</span>}
+                      <div className="flex items-center space-x-2">
+                        {lesson.is_locked && <span className="text-gray-400">🔒</span>}
+                        {lesson.is_free_preview && <span className="text-green-600 text-xs">FREE</span>}
+                        {!lesson.is_locked && (
+                          <button
+                            onClick={() => setSelectedLesson(lesson)}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          >
+                            View
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -234,6 +446,76 @@ export default function CourseDetail() {
           </div>
         </div>
       </div>
+
+      {/* Test Modal */}
+      {showTest && test && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">{test.title}</h3>
+                <button
+                  onClick={() => setShowTest(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <p className="text-gray-600 mb-6">{test.description}</p>
+              
+              <div className="space-y-6">
+                {test.questions.map((question, index) => (
+                  <div key={question.id} className="border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-3">
+                      {index + 1}. {question.question}
+                    </h4>
+                    <div className="space-y-2">
+                      {Object.entries(question.options).map(([key, value]) => (
+                        <label key={key} className="flex items-center space-x-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`question_${question.id}`}
+                            value={key}
+                            checked={testAnswers[question.id] === key}
+                            onChange={(e) => setTestAnswers(prev => ({
+                              ...prev,
+                              [question.id]: e.target.value
+                            }))}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-gray-700">{key}. {value}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex items-center justify-between mt-8 pt-6 border-t">
+                <div className="text-sm text-gray-600">
+                  Passing Score: {test.passing_score}% | Time Limit: {test.time_limit_minutes} minutes
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowTest(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitTest}
+                    disabled={submittingTest || Object.keys(testAnswers).length !== test.questions.length}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submittingTest ? 'Submitting...' : 'Submit Test'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

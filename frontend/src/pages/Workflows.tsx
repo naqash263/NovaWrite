@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/axios';
 import { useSEO } from '../utils/seo';
+import { WorkflowCardSkeleton } from '../components/Skeleton';
 import WorkflowDownloadModal from '../components/WorkflowDownloadModal';
+import LazyImage from '../components/LazyImage';
 
 interface WorkflowCategory {
   id: number;
@@ -37,7 +39,9 @@ interface Workflow {
 
 export default function Workflows() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedWorkflows, setExpandedWorkflows] = useState<Set<number>>(new Set());
   const [downloadModal, setDownloadModal] = useState<{
     isOpen: boolean;
     workflowFile: { id: number; name: string } | null;
@@ -48,9 +52,20 @@ export default function Workflows() {
     workflowName: '',
   });
 
+  // Debounce search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
+
   useSEO({
-    title: 'Automation Workflows | Naqash Thaheem',
-    description: 'Explore automation workflow examples including AI agents, CRM integrations, data processing pipelines, and business process automation.',
+    title: 'AI Automation Workflows & Solutions | Naqash Thaheem Portfolio',
+    description: 'Explore real-world AI automation workflows, CRM integrations, data processing pipelines, and business process automation solutions by Systems Analyst Naqash Thaheem.',
+    keywords: ['AI automation workflows', 'CRM automation', 'business process automation', 'n8n workflows', 'Zoho CRM integration', 'data pipelines', 'workflow examples', 'automation solutions'],
+    url: '/workflows'
   });
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery<WorkflowCategory[]>({
@@ -59,6 +74,10 @@ export default function Workflows() {
       const response = await apiClient.get('/workflow-categories');
       return response.data;
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const { data: workflows = [], isLoading: workflowsLoading } = useQuery<Workflow[]>({
@@ -71,6 +90,11 @@ export default function Workflows() {
       const response = await apiClient.get(`/workflows?${params.toString()}`);
       return response.data;
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !searchQuery || searchQuery.length >= 3, // Only search when query is at least 3 characters
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const handleDownload = (workflowFile: any, workflowName: string) => {
@@ -79,6 +103,44 @@ export default function Workflows() {
       workflowFile: { id: workflowFile.id, name: workflowFile.name },
       workflowName,
     });
+  };
+
+  const downloadWorkflowAsJSON = (workflow: Workflow) => {
+    const workflowData = {
+      title: workflow.title,
+      description: workflow.description,
+      summary: workflow.summary,
+      tools: workflow.tools || [],
+      benefits: workflow.benefits || [],
+      category: workflow.category?.name,
+      is_featured: workflow.is_featured,
+      is_premium: workflow.is_premium,
+      created_by: 'Naqash Thaheem - Systems Analyst & Automation Specialist',
+      contact: 'contact@naqashthaheem.com',
+      website: 'Portfolio: Naqash Thaheem'
+    };
+    
+    const blob = new Blob([JSON.stringify(workflowData, null, 2)], {
+      type: 'application/json'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${workflow.slug}-workflow.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const toggleExpanded = (workflowId: number) => {
+    const newExpanded = new Set(expandedWorkflows);
+    if (newExpanded.has(workflowId)) {
+      newExpanded.delete(workflowId);
+    } else {
+      newExpanded.add(workflowId);
+    }
+    setExpandedWorkflows(newExpanded);
   };
 
   const closeModal = () => {
@@ -96,9 +158,15 @@ export default function Workflows() {
       <div 
         className="relative bg-cover bg-center py-20 mb-16"
         style={{
-          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9)), url('/images/ai_artificial_intell_c522e573.jpg')`
+          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9))`
         }}
       >
+        <LazyImage
+          src="/images/ai_artificial_intell_c522e573.jpg"
+          alt="AI Automation Background"
+          className="absolute inset-0 w-full h-full object-cover -z-10"
+          placeholder="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSIzMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzI1NjNlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QXV0b21hdGlvbiBXb3JrZmxvd3M8L3RleHQ+PC9zdmc+"
+        />
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="text-5xl font-bold text-white mb-4">Automation Workflows</h1>
           <p className="text-xl text-blue-100 max-w-3xl mx-auto">
@@ -113,8 +181,8 @@ export default function Workflows() {
             <input
               type="text"
               placeholder="Search workflows..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -149,9 +217,10 @@ export default function Workflows() {
         </div>
 
         {isLoading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-            <p className="mt-4 text-gray-600">Loading workflows...</p>
+          <div className="grid md:grid-cols-2 gap-8">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <WorkflowCardSkeleton key={index} />
+            ))}
           </div>
         ) : workflows.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow-md">
@@ -160,30 +229,67 @@ export default function Workflows() {
             </svg>
             <p className="text-gray-600 text-lg">No workflows found</p>
             <p className="text-gray-500 mt-2">
-              {searchQuery || selectedCategory
+              {searchInput || selectedCategory
                 ? 'Try adjusting your filters or search query'
                 : 'Check back soon for new automation workflows!'}
             </p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-8">
-            {workflows.map((workflow) => (
+            {workflows.map((workflow) => {
+              const isExpanded = expandedWorkflows.has(workflow.id);
+              const shouldShowReadMore = workflow.description && workflow.description.length > 150;
+              const displayDescription = isExpanded ? workflow.description : 
+                (shouldShowReadMore ? workflow.description.substring(0, 150) + '...' : workflow.description);
+              
+              return (
               <div key={workflow.id} className="bg-white rounded-lg shadow-md p-8 hover:shadow-xl transition-shadow">
-                <div className="flex items-center gap-2 mb-3">
-                  {workflow.is_featured && (
-                    <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-semibold">
-                      ⭐ Featured
-                    </span>
-                  )}
-                  {workflow.is_premium && (
-                    <span className="inline-block bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded-full font-semibold">
-                      👑 Premium
-                    </span>
-                  )}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    {workflow.is_featured && (
+                      <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-semibold">
+                        ⭐ Featured
+                      </span>
+                    )}
+                    {workflow.is_premium && (
+                      <span className="inline-block bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded-full font-semibold">
+                        👑 Premium
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => downloadWorkflowAsJSON(workflow)}
+                    className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                    title="Download workflow as JSON"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    JSON
+                  </button>
                 </div>
                 
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">{workflow.title}</h3>
-                <p className="text-gray-600 mb-6">{workflow.summary || workflow.description}</p>
+                
+                {workflow.summary && (
+                  <p className="text-gray-600 mb-4 font-medium">{workflow.summary}</p>
+                )}
+                
+                {workflow.description && (
+                  <div className="mb-6">
+                    <p className="text-gray-600 leading-relaxed">
+                      {displayDescription}
+                    </p>
+                    {shouldShowReadMore && (
+                      <button
+                        onClick={() => toggleExpanded(workflow.id)}
+                        className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                      >
+                        {isExpanded ? 'Read Less' : 'Read More'}
+                      </button>
+                    )}
+                  </div>
+                )}
                 
                 {workflow.category && (
                   <div className="mb-4">
@@ -193,7 +299,7 @@ export default function Workflows() {
                   </div>
                 )}
                 
-                {workflow.tools && workflow.tools.length > 0 && (
+                {workflow.tools && Array.isArray(workflow.tools) && workflow.tools.length > 0 && (
                   <div className="mb-6">
                     <h4 className="text-sm font-semibold text-gray-700 mb-2">Tools & Technologies:</h4>
                     <div className="flex flex-wrap gap-2">
@@ -206,7 +312,7 @@ export default function Workflows() {
                   </div>
                 )}
                 
-                {workflow.benefits && workflow.benefits.length > 0 && (
+                {workflow.benefits && Array.isArray(workflow.benefits) && workflow.benefits.length > 0 && (
                   <div className="mb-6">
                     <h4 className="text-sm font-semibold text-gray-700 mb-2">Key Benefits:</h4>
                     <ul className="space-y-1">
@@ -252,7 +358,8 @@ export default function Workflows() {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

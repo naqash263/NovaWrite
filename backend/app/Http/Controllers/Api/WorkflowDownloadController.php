@@ -30,9 +30,10 @@ class WorkflowDownloadController extends Controller
             abort(403, 'This workflow is not published');
         }
 
-        if ($workflowFile->workflow->is_premium && !Auth::check()) {
+        // Require authentication for premium or featured workflows
+        if (($workflowFile->workflow->is_premium || $workflowFile->workflow->is_featured) && !Auth::check()) {
             return response()->json([
-                'message' => 'This is a premium workflow. Please login or register to access.',
+                'message' => 'This workflow requires login to download. Please login or register to access.',
                 'requires_auth' => true,
             ], 401);
         }
@@ -77,7 +78,7 @@ class WorkflowDownloadController extends Controller
         }
 
         $file = $workflowFile->file;
-        $filePath = storage_path('app/' . $file->path);
+        $filePath = storage_path('app/public/' . $file->path);
 
         if (!file_exists($filePath)) {
             abort(404, 'File not found');

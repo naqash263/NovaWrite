@@ -1,0 +1,136 @@
+{
+  "name": "Lead Qualification Automation",
+  "description": "Automated lead scoring and qualification system using AI and CRM integration",
+  "version": "1.0.0",
+  "author": "Naqash Thaheem",
+  "created": "2025-01-05",
+  "workflow": {
+    "triggers": [
+      {
+        "type": "webhook",
+        "name": "New Lead Received",
+        "description": "Triggered when a new lead is submitted through website form"
+      }
+    ],
+    "steps": [
+      {
+        "id": 1,
+        "name": "Extract Lead Data",
+        "type": "data_extraction",
+        "description": "Extract lead information from webhook payload",
+        "fields": ["name", "email", "company", "phone", "source", "message"]
+      },
+      {
+        "id": 2,
+        "name": "Validate Email",
+        "type": "validation",
+        "description": "Check if email is valid and not already in CRM",
+        "validation_rules": ["email_format", "duplicate_check"]
+      },
+      {
+        "id": 3,
+        "name": "Score Lead",
+        "type": "ai_scoring",
+        "description": "Use AI to score lead based on company size, industry, and message content",
+        "scoring_criteria": {
+          "company_size": 30,
+          "industry_match": 25,
+          "message_quality": 20,
+          "contact_info_completeness": 15,
+          "source_quality": 10
+        }
+      },
+      {
+        "id": 4,
+        "name": "Create CRM Record",
+        "type": "crm_integration",
+        "description": "Create lead record in CRM system",
+        "crm_fields": {
+          "name": "{{lead.name}}",
+          "email": "{{lead.email}}",
+          "company": "{{lead.company}}",
+          "phone": "{{lead.phone}}",
+          "source": "{{lead.source}}",
+          "score": "{{lead.score}}",
+          "status": "{{lead.score > 70 ? 'Hot' : 'Warm'}}"
+        }
+      },
+      {
+        "id": 5,
+        "name": "Send Notification",
+        "type": "notification",
+        "description": "Notify sales team of new qualified lead",
+        "conditions": "{{lead.score > 70}}",
+        "recipients": ["sales@company.com"],
+        "template": "hot_lead_notification"
+      },
+      {
+        "id": 6,
+        "name": "Send Auto-Response",
+        "type": "email",
+        "description": "Send automated response to lead",
+        "template": "lead_acknowledgment",
+        "recipient": "{{lead.email}}"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "lead_id",
+        "description": "CRM lead ID",
+        "type": "string"
+      },
+      {
+        "name": "lead_score",
+        "description": "Calculated lead score",
+        "type": "number"
+      },
+      {
+        "name": "lead_status",
+        "description": "Qualified lead status",
+        "type": "string"
+      }
+    ]
+  },
+  "integrations": [
+    {
+      "name": "Zoho CRM",
+      "type": "crm",
+      "version": "v2.1",
+      "required_fields": ["api_key", "crm_url"]
+    },
+    {
+      "name": "OpenAI API",
+      "type": "ai",
+      "version": "gpt-4",
+      "required_fields": ["api_key"]
+    },
+    {
+      "name": "SendGrid",
+      "type": "email",
+      "version": "v3",
+      "required_fields": ["api_key"]
+    }
+  ],
+  "configuration": {
+    "timeout": 300,
+    "retry_attempts": 3,
+    "webhook_secret": "{{env.WEBHOOK_SECRET}}",
+    "crm_api_key": "{{env.CRM_API_KEY}}",
+    "openai_api_key": "{{env.OPENAI_API_KEY}}",
+    "sendgrid_api_key": "{{env.SENDGRID_API_KEY}}"
+  },
+  "monitoring": {
+    "success_metrics": [
+      "leads_processed",
+      "qualification_accuracy",
+      "response_time"
+    ],
+    "alerts": [
+      {
+        "condition": "error_rate > 5%",
+        "action": "send_email",
+        "recipients": ["admin@company.com"]
+      }
+    ]
+  }
+}

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasAccessControl;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
 {
+    use HasAccessControl;
     protected $fillable = [
         'title',
         'slug',
@@ -16,6 +18,9 @@ class Post extends Model
         'user_id',
         'published_at',
         'is_published',
+        'access_level',
+        'allowed_user_ids',
+        'allowed_group_ids',
         'views',
         'meta_description',
         'meta_keywords',
@@ -26,6 +31,8 @@ class Post extends Model
         return [
             'published_at' => 'datetime',
             'is_published' => 'boolean',
+            'allowed_user_ids' => 'array',
+            'allowed_group_ids' => 'array',
         ];
     }
 

@@ -6,26 +6,62 @@ use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\LessonController;
+use App\Http\Controllers\Api\LessonFileController;
 use App\Http\Controllers\Api\WorkflowController;
 use App\Http\Controllers\Api\WorkflowDownloadController;
+use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\Admin\WorkflowCategoryController as AdminWorkflowCategoryController;
 use App\Http\Controllers\Api\Admin\WorkflowController as AdminWorkflowController;
+use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\Admin\BulkOperationsController;
+use App\Http\Controllers\Api\Admin\ContentApprovalController;
+use App\Http\Controllers\Api\Admin\CacheController;
+use App\Http\Controllers\Api\Auth\TwoFactorController;
+use App\Http\Controllers\Api\Admin\ActivityLogController;
+use App\Http\Controllers\Api\Admin\ApiTokenController;
+use App\Http\Controllers\Api\Auth\GoogleAuthController;
+use App\Http\Controllers\Api\Admin\UserGroupController;
+use App\Http\Controllers\Api\Admin\UserAccessController;
+use App\Http\Controllers\EmailController;
+use App\Http\Controllers\EmailTemplateController;
+use App\Http\Controllers\SmtpConfigurationController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('verify-email', [AuthController::class, 'verifyEmail']);
+    Route::post('resend-verification', [AuthController::class, 'resendVerification']);
     
-    Route::middleware('auth:api')->group(function () {
+    Route::middleware('api.auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('me', [AuthController::class, 'me']);
+        
+        // Two-factor authentication routes
+        Route::post('2fa/enable', [TwoFactorController::class, 'enable']);
+        Route::post('2fa/verify', [TwoFactorController::class, 'verify']);
+        Route::post('2fa/disable', [TwoFactorController::class, 'disable']);
+        Route::get('2fa/status', [TwoFactorController::class, 'getStatus']);
+        
+        // Google OAuth management routes (authenticated)
+        Route::post('google/unlink', [GoogleAuthController::class, 'unlinkGoogle']);
+        Route::get('google/status', [GoogleAuthController::class, 'getGoogleStatus']);
+        Route::post('google/set-password', [GoogleAuthController::class, 'setPassword']);
     });
+    
+    // 2FA login routes (no auth required)
+    Route::post('2fa/verify-login', [TwoFactorController::class, 'verifyLogin']);
+    Route::post('2fa/recovery', [TwoFactorController::class, 'useRecoveryCode']);
+    
+    // Google OAuth routes (no auth required)
+    Route::get('google/redirect', [GoogleAuthController::class, 'redirectToGoogle']);
+    Route::post('google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 });
 
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('categories/{id}', [CategoryController::class, 'show']);
-Route::middleware('auth:api')->group(function () {
+Route::middleware('api.auth')->group(function () {
     Route::post('categories', [CategoryController::class, 'store']);
     Route::put('categories/{id}', [CategoryController::class, 'update']);
     Route::delete('categories/{id}', [CategoryController::class, 'destroy']);
@@ -33,18 +69,20 @@ Route::middleware('auth:api')->group(function () {
 
 Route::get('posts', [PostController::class, 'index']);
 Route::get('posts/{id}', [PostController::class, 'show']);
-Route::get('admin/posts', [PostController::class, 'allPosts'])->middleware('auth:api');
-Route::middleware('auth:api')->group(function () {
+Route::get('admin/posts', [PostController::class, 'allPosts'])->middleware('api.auth');
+Route::middleware('api.auth')->group(function () {
     Route::post('posts', [PostController::class, 'store']);
     Route::put('posts/{id}', [PostController::class, 'update']);
     Route::delete('posts/{id}', [PostController::class, 'destroy']);
 });
 
 Route::get('files/{id}/download', [FileController::class, 'download']);
-Route::middleware('auth:api')->group(function () {
+Route::middleware('api.auth')->group(function () {
     Route::get('files', [FileController::class, 'index']);
+    Route::get('files/type/{type}', [FileController::class, 'getByType']);
     Route::post('files', [FileController::class, 'store']);
     Route::get('files/{id}', [FileController::class, 'show']);
+    Route::put('files/{id}', [FileController::class, 'update']);
     Route::delete('files/{id}', [FileController::class, 'destroy']);
 });
 
@@ -52,17 +90,31 @@ Route::get('workflow-categories', [WorkflowController::class, 'categories']);
 Route::get('workflows', [WorkflowController::class, 'index']);
 Route::get('workflows/{slug}', [WorkflowController::class, 'show']);
 
-Route::post('workflow-downloads', [WorkflowDownloadController::class, 'requestDownload']);
+Route::post('workflow-downloads', [WorkflowDownloadController::class, 'requestDownload'])->middleware('auth:api');
 Route::get('workflow-files/{id}/download', [WorkflowDownloadController::class, 'download'])->name('workflow-files.download');
+
+Route::post('contact', [ContactController::class, 'submit']);
 
 Route::get('courses', [CourseController::class, 'index']);
 Route::get('courses/{slug}', [CourseController::class, 'show']);
-Route::middleware('auth:api')->group(function () {
+Route::middleware('api.auth')->group(function () {
     Route::post('courses/{id}/enroll', [CourseController::class, 'enroll']);
     Route::get('my-courses', [CourseController::class, 'myCourses']);
+    
+    // Lesson Progress Management
+    Route::post('lessons/{lessonId}/complete', [App\Http\Controllers\Api\LessonProgressController::class, 'markCompleted']);
+    Route::get('lessons/{lessonId}/progress', [App\Http\Controllers\Api\LessonProgressController::class, 'getProgress']);
+    Route::get('courses/{courseId}/progress', [App\Http\Controllers\Api\LessonProgressController::class, 'getCourseProgress']);
+    Route::delete('lessons/{lessonId}/progress', [App\Http\Controllers\Api\LessonProgressController::class, 'resetProgress']);
+    
+    // Lesson Tests
+    Route::get('lessons/{lessonId}/test', [App\Http\Controllers\Api\LessonTestController::class, 'getTest']);
+    Route::post('lessons/{lessonId}/test/start', [App\Http\Controllers\Api\LessonTestController::class, 'startTest']);
+    Route::post('lessons/{lessonId}/test/submit', [App\Http\Controllers\Api\LessonTestController::class, 'submitTest']);
+    Route::get('lessons/{lessonId}/test/results', [App\Http\Controllers\Api\LessonTestController::class, 'getResults']);
 });
 
-Route::middleware('auth:api')->prefix('admin')->group(function () {
+Route::middleware(['api.auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('courses', [CourseController::class, 'adminIndex']);
     Route::post('courses', [CourseController::class, 'store']);
     Route::put('courses/{id}', [CourseController::class, 'update']);
@@ -73,12 +125,38 @@ Route::middleware('auth:api')->prefix('admin')->group(function () {
     Route::put('courses/{courseId}/lessons/{id}', [LessonController::class, 'update']);
     Route::delete('courses/{courseId}/lessons/{id}', [LessonController::class, 'destroy']);
 
+    // Lesson Files Management
+    Route::get('lessons/{lessonId}/files', [LessonFileController::class, 'index']);
+    Route::post('lessons/{lessonId}/files', [LessonFileController::class, 'store']);
+    Route::get('lessons/{lessonId}/files/{id}', [LessonFileController::class, 'show']);
+    Route::put('lessons/{lessonId}/files/{id}', [LessonFileController::class, 'update']);
+    Route::delete('lessons/{lessonId}/files/{id}', [LessonFileController::class, 'destroy']);
+    Route::post('lessons/{lessonId}/files/reorder', [LessonFileController::class, 'reorder']);
+
     Route::get('workflow-categories', [AdminWorkflowCategoryController::class, 'index']);
     Route::post('workflow-categories', [AdminWorkflowCategoryController::class, 'store']);
     Route::get('workflow-categories/{id}', [AdminWorkflowCategoryController::class, 'show']);
     Route::put('workflow-categories/{id}', [AdminWorkflowCategoryController::class, 'update']);
     Route::delete('workflow-categories/{id}', [AdminWorkflowCategoryController::class, 'destroy']);
 
+    // Stats endpoints must come before resource routes
+    Route::get('posts/stats', [PostController::class, 'stats']);
+    Route::get('workflows/stats', [AdminWorkflowController::class, 'stats']);
+    
+    // Posts admin routes
+    Route::get('posts', [PostController::class, 'allPosts']);
+    Route::post('posts', [PostController::class, 'store']);
+    Route::put('posts/{id}', [PostController::class, 'update']);
+    Route::delete('posts/{id}', [PostController::class, 'destroy']);
+    
+    // API Tokens management
+    Route::get('api-tokens', [ApiTokenController::class, 'index']);
+    Route::post('api-tokens', [ApiTokenController::class, 'store']);
+    Route::get('api-tokens/{apiToken}', [ApiTokenController::class, 'show']);
+    Route::put('api-tokens/{apiToken}', [ApiTokenController::class, 'update']);
+    Route::delete('api-tokens/{apiToken}', [ApiTokenController::class, 'destroy']);
+    Route::get('api-tokens-stats', [ApiTokenController::class, 'stats']);
+    
     Route::get('workflows', [AdminWorkflowController::class, 'index']);
     Route::post('workflows', [AdminWorkflowController::class, 'store']);
     Route::get('workflows/{id}', [AdminWorkflowController::class, 'show']);
@@ -86,4 +164,96 @@ Route::middleware('auth:api')->prefix('admin')->group(function () {
     Route::delete('workflows/{id}', [AdminWorkflowController::class, 'destroy']);
     Route::post('workflows/{id}/files', [AdminWorkflowController::class, 'attachFile']);
     Route::delete('workflows/{id}/files/{fileId}', [AdminWorkflowController::class, 'detachFile']);
+    
+    // User management routes
+    Route::get('users/stats', [AdminUserController::class, 'stats']);
+    Route::get('users', [AdminUserController::class, 'index']);
+    Route::post('users', [AdminUserController::class, 'store']);
+    Route::get('users/{id}', [AdminUserController::class, 'show']);
+    Route::put('users/{id}', [AdminUserController::class, 'update']);
+    Route::delete('users/{id}', [AdminUserController::class, 'destroy']);
+    
+    // Bulk operations routes
+    Route::post('bulk/posts/delete', [BulkOperationsController::class, 'bulkDeletePosts']);
+    Route::post('bulk/posts/status', [BulkOperationsController::class, 'bulkUpdatePostStatus']);
+    Route::post('bulk/users/delete', [BulkOperationsController::class, 'bulkDeleteUsers']);
+    Route::post('bulk/users/role', [BulkOperationsController::class, 'bulkUpdateUserRole']);
+    Route::post('bulk/workflows/delete', [BulkOperationsController::class, 'bulkDeleteWorkflows']);
+    Route::post('bulk/workflows/status', [BulkOperationsController::class, 'bulkUpdateWorkflowStatus']);
+    
+    // Content approval routes
+    Route::get('approval/posts/pending', [ContentApprovalController::class, 'getPendingPosts']);
+    Route::get('approval/workflows/pending', [ContentApprovalController::class, 'getPendingWorkflows']);
+    Route::post('approval/posts/{id}/approve', [ContentApprovalController::class, 'approvePost']);
+    Route::post('approval/posts/{id}/reject', [ContentApprovalController::class, 'rejectPost']);
+    Route::post('approval/workflows/{id}/approve', [ContentApprovalController::class, 'approveWorkflow']);
+    Route::post('approval/workflows/{id}/reject', [ContentApprovalController::class, 'rejectWorkflow']);
+    Route::get('approval/stats', [ContentApprovalController::class, 'getApprovalStats']);
+    Route::post('approval/bulk/approve', [ContentApprovalController::class, 'bulkApprove']);
+    Route::post('approval/bulk/reject', [ContentApprovalController::class, 'bulkReject']);
+    
+    // Cache management routes
+    Route::post('cache/clear', [\App\Http\Controllers\Api\Admin\CacheController::class, 'clearAllCache']);
+    Route::post('cache/clear-key', [\App\Http\Controllers\Api\Admin\CacheController::class, 'clearSpecificCache']);
+    Route::get('cache/stats', [\App\Http\Controllers\Api\Admin\CacheController::class, 'getCacheStats']);
+    Route::post('cache/warm', [\App\Http\Controllers\Api\Admin\CacheController::class, 'warmCache']);
+    
+    // Activity logging routes
+    Route::get('activity-logs', [ActivityLogController::class, 'index']);
+    Route::get('activity-logs/{id}', [ActivityLogController::class, 'show']);
+    Route::get('activity-logs/stats', [ActivityLogController::class, 'getStats']);
+    Route::get('activity-logs/user/{userId}', [ActivityLogController::class, 'getUserActivity']);
+    Route::delete('activity-logs/clear', [ActivityLogController::class, 'clear']);
+    Route::get('activity-logs/export', [ActivityLogController::class, 'export']);
+    
+    // User groups management
+    Route::get('user-groups/stats', [UserGroupController::class, 'getStats']);
+    Route::get('user-groups', [UserGroupController::class, 'index']);
+    Route::post('user-groups', [UserGroupController::class, 'store']);
+    Route::get('user-groups/{id}', [UserGroupController::class, 'show']);
+    Route::put('user-groups/{id}', [UserGroupController::class, 'update']);
+    Route::delete('user-groups/{id}', [UserGroupController::class, 'destroy']);
+    Route::post('user-groups/{id}/members', [UserGroupController::class, 'addMember']);
+    Route::delete('user-groups/{id}/members/{userId}', [UserGroupController::class, 'removeMember']);
+    Route::post('user-groups/{id}/bulk-members', [UserGroupController::class, 'bulkAddMembers']);
+    
+    // User access control
+    Route::get('users/{userId}/access', [UserAccessController::class, 'getUserAccess']);
+    Route::post('access/grant', [UserAccessController::class, 'grantAccess']);
+    Route::put('access/{accessId}', [UserAccessController::class, 'updateAccess']);
+    Route::delete('access/{accessId}', [UserAccessController::class, 'revokeAccess']);
+    Route::post('access/bulk-grant', [UserAccessController::class, 'bulkGrantAccess']);
+    Route::get('resources/access', [UserAccessController::class, 'getResourceAccess']);
+    Route::get('access/stats', [UserAccessController::class, 'getAccessStats']);
+    
+    // Email management
+    Route::post('emails/welcome', [EmailController::class, 'sendWelcomeEmail']);
+    Route::post('emails/password-reset', [EmailController::class, 'sendPasswordResetEmail']);
+    Route::post('emails/course-enrollment', [EmailController::class, 'sendCourseEnrollmentEmail']);
+    Route::post('emails/workflow-notification', [EmailController::class, 'sendWorkflowNotificationEmail']);
+    Route::post('emails/bulk', [EmailController::class, 'sendBulkEmails']);
+    Route::post('emails/test-configuration', [EmailController::class, 'testEmailConfiguration']);
+    Route::get('emails/stats', [EmailController::class, 'getEmailStats']);
+    
+    // Email template management
+    Route::apiResource('email-templates', EmailTemplateController::class);
+    Route::get('email-templates/{id}/preview', [EmailTemplateController::class, 'preview']);
+    Route::post('email-templates/{id}/test', [EmailTemplateController::class, 'test']);
+    Route::post('email-templates/{id}/duplicate', [EmailTemplateController::class, 'duplicate']);
+    Route::post('email-templates/{id}/toggle-status', [EmailTemplateController::class, 'toggleStatus']);
+    Route::get('email-templates/categories', [EmailTemplateController::class, 'categories']);
+    Route::get('email-templates/types', [EmailTemplateController::class, 'types']);
+    Route::get('email-templates/by-name/{name}', [EmailTemplateController::class, 'getByName']);
+    
+    // SMTP configuration management
+    Route::apiResource('smtp-configurations', SmtpConfigurationController::class);
+    Route::post('smtp-configurations/{id}/test', [SmtpConfigurationController::class, 'test']);
+    Route::post('smtp-configurations/{id}/set-active', [SmtpConfigurationController::class, 'setActive']);
+    Route::post('smtp-configurations/{id}/set-default', [SmtpConfigurationController::class, 'setDefault']);
+    Route::post('smtp-configurations/{id}/duplicate', [SmtpConfigurationController::class, 'duplicate']);
+    Route::get('smtp-configurations/mailer-types', [SmtpConfigurationController::class, 'getMailerTypes']);
+    Route::get('smtp-configurations/encryption-types', [SmtpConfigurationController::class, 'getEncryptionTypes']);
+    Route::get('smtp-configurations/common-ports', [SmtpConfigurationController::class, 'getCommonPorts']);
+    Route::get('smtp-configurations/active', [SmtpConfigurationController::class, 'getActive']);
+    Route::get('smtp-configurations/default', [SmtpConfigurationController::class, 'getDefault']);
 });

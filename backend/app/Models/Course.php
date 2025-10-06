@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasAccessControl;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Course extends Model
 {
+    use HasAccessControl;
     protected $fillable = [
         'title',
         'slug',
@@ -16,11 +18,16 @@ class Course extends Model
         'duration_hours',
         'level',
         'is_published',
+        'access_level',
+        'allowed_user_ids',
+        'allowed_group_ids',
         'order',
     ];
 
     protected $casts = [
         'is_published' => 'boolean',
+        'allowed_user_ids' => 'array',
+        'allowed_group_ids' => 'array',
         'duration_hours' => 'integer',
         'order' => 'integer',
     ];
@@ -76,5 +83,20 @@ class Course extends Model
     public function getEnrolledUsersCountAttribute()
     {
         return $this->enrollments()->count();
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function courseFiles()
+    {
+        return $this->hasMany(CourseFile::class)->orderBy('order');
+    }
+
+    public function files()
+    {
+        return $this->hasManyThrough(File::class, CourseFile::class, 'course_id', 'id', 'id', 'file_id');
     }
 }

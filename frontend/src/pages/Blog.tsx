@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/axios';
 import { PostCard } from '../components/PostCard';
 import { CategoryFilter } from '../components/CategoryFilter';
+import { PostCardSkeleton } from '../components/Skeleton';
+import Pagination from '../components/Pagination';
 import { useSEO } from '../utils/seo';
 
 interface Post {
@@ -29,53 +32,67 @@ interface Category {
 
 export default function Blog() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(
     searchParams.get('category') ? Number(searchParams.get('category')) : null
   );
   const [currentPage, setCurrentPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
 
   useSEO({
-    title: 'Blog | Naqash Thaheem',
-    description: 'Articles about automation, AI, CRM integration, and web development.',
+    title: 'Blog - AI Automation & Business Intelligence | Naqash Thaheem',
+    description: 'Expert insights on AI automation, CRM integration, Power BI dashboards, and business process optimization from Systems Analyst Naqash Thaheem.',
+    keywords: ['AI automation', 'CRM integration', 'Power BI', 'business intelligence', 'workflow automation', 'n8n', 'Zoho CRM', 'systems analysis', 'UAE tech'],
+    url: '/blog'
   });
 
+  // Debounce search input
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await apiClient.get('/categories');
-        setCategories(response.data);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-    };
-    fetchCategories();
-  }, []);
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [search]);
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        if (search) params.append('search', search);
-        if (selectedCategory) params.append('category_id', String(selectedCategory));
-        params.append('page', String(currentPage));
+  // Fetch categories using TanStack Query
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const response = await apiClient.get('/categories');
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
 
-        const response = await apiClient.get(`/posts?${params.toString()}`);
-        setPosts(response.data.data || []);
-        setLastPage(response.data.last_page);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
-  }, [search, selectedCategory, currentPage]);
+  // Fetch posts using TanStack Query
+  const { data: postsData, isLoading: loading } = useQuery({
+    queryKey: ['posts', selectedCategory, debouncedSearch, currentPage],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      if (selectedCategory) params.append('category_id', String(selectedCategory));
+      params.append('page', String(currentPage));
+      params.append('per_page', '9');
+
+      const response = await apiClient.get(`/posts?${params.toString()}`);
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    enabled: !debouncedSearch || debouncedSearch.length >= 3,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+
+  const posts = postsData?.data || [];
+  const pagination = {
+    lastPage: postsData?.last_page || 1,
+    total: postsData?.total || 0,
+    perPage: postsData?.per_page || 9
+  };
 
   const handleCategorySelect = (categoryId: number | null) => {
     setSelectedCategory(categoryId);
@@ -131,37 +148,28 @@ export default function Blog() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <PostCardSkeleton key={index} />
+            ))}
           </div>
         ) : posts.length > 0 ? (
           <>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-              {posts.map((post) => (
+              {posts.map((post: Post) => (
                 <PostCard key={post.id} post={post} />
               ))}
             </div>
 
-            {lastPage > 1 && (
-              <div className="flex justify-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg">
-                  Page {currentPage} of {lastPage}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === lastPage}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
+            {pagination.lastPage > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                lastPage={pagination.lastPage}
+                total={pagination.total}
+                perPage={pagination.perPage}
+                onPageChange={setCurrentPage}
+                loading={loading}
+              />
             )}
           </>
         ) : (

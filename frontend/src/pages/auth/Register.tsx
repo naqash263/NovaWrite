@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
@@ -9,9 +9,65 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
   const navigate = useNavigate();
+
+  // Countdown timer effect
+  useEffect(() => {
+    let interval: number;
+    if (resendCooldown > 0) {
+      interval = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [resendCooldown]);
+
+  const handleResendVerification = async () => {
+    if (resendCooldown > 0 || resendLoading) return;
+
+    setResendLoading(true);
+    setResendMessage('');
+    setError('');
+
+    try {
+      const response = await axios.post(`${API_URL}/auth/resend-verification`, {
+        email: verificationEmail,
+      });
+
+      setResendMessage(response.data.message);
+      setResendCooldown(60); // Reset cooldown to 60 seconds
+      
+      // Show verification URL in development mode
+      if (response.data.verification_url) {
+        console.log('Verification URL:', response.data.verification_url);
+        setResendMessage(prev => prev + '\n\nDevelopment Mode: Click this link to verify your email:\n' + response.data.verification_url);
+      }
+    } catch (err: any) {
+      setResendMessage(
+        err.response?.data?.message || 
+        'Failed to resend verification email. Please try again.'
+      );
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,12 +93,20 @@ export default function Register() {
         password_confirmation: passwordConfirmation,
       });
 
-      const { token, user } = response.data;
+      const { user, email_verification_required } = response.data;
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      navigate('/courses');
+      if (email_verification_required) {
+        setSuccess(true);
+        setVerificationEmail(email);
+        setResendCooldown(60); // Start 60-second cooldown
+        setError('');
+      } else {
+        // Legacy flow for backward compatibility
+        const { token } = response.data;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        navigate('/courses');
+      }
     } catch (err: any) {
       setError(
         err.response?.data?.message || 
@@ -67,6 +131,62 @@ export default function Register() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                 {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <h3 className="text-sm font-medium text-green-800">
+                      Registration Successful!
+                    </h3>
+                    <div className="mt-2 text-sm text-green-700">
+                      <p>We've sent a verification email to <strong>{verificationEmail}</strong></p>
+                      <p className="mt-1">Please check your email and click the verification link to activate your account.</p>
+                    </div>
+                    
+                    {/* Resend Message */}
+                    {resendMessage && (
+                      <div className={`mt-3 text-sm ${resendMessage.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
+                        <div className="whitespace-pre-line">{resendMessage}</div>
+                      </div>
+                    )}
+                    
+                    <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={resendCooldown > 0 || resendLoading}
+                        className="text-sm font-medium text-green-800 hover:text-green-600 underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {resendLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-600 border-t-transparent"></div>
+                            Sending...
+                          </>
+                        ) : resendCooldown > 0 ? (
+                          `Resend in ${resendCooldown}s`
+                        ) : (
+                          'Resend Verification Email'
+                        )}
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={() => navigate('/login')}
+                        className="text-sm font-medium text-green-800 hover:text-green-600 underline"
+                      >
+                        Go to Login
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -129,6 +249,20 @@ export default function Register() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="••••••••"
               />
+            </div>
+
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center">
+              <input
+                id="remember-me-register"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="remember-me-register" className="ml-2 block text-sm text-gray-700">
+                Remember me for 30 days
+              </label>
             </div>
 
             <button

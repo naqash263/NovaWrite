@@ -1,0 +1,109 @@
+# Dependencies
+node_modules/
+vendor/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+
+# Build outputs
+dist/
+build/
+public/build/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+storage/logs/*.log
+
+# Cache
+.cache/
+.parcel-cache/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Database
+*.sqlite
+*.sqlite3
+database.sqlite
+
+# Replit specific
+.replit
+.replitignore
+.replit.nix
+.config/
+.local/
+.agent_state_*.bin
+.latest.json
+filesystem_state.json
+repl_state.bin
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# Email files
+*.eml
+backend/naqash263@gmail.com,
+
+# Test files
+test_*.php
+debug-*.html
+
+# User uploads (if any)
+uploads/
+storage/app/public/uploads/
+
+# Composer
+composer.phar
+
+# PHPUnit
+.phpunit.result.cache
+
+# Laravel specific
+bootstrap/cache/*.php
+storage/app/private/
+storage/framework/cache/data/
+storage/framework/sessions/
+storage/framework/views/
+storage/logs/
+
+# Frontend specific
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# Deployment files (keep scripts but ignore generated)
+deployment-*/

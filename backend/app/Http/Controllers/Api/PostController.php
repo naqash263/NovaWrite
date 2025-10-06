@@ -6,30 +6,34 @@ use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class PostController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Post::with(['category', 'user'])
-            ->where('is_published', true);
+        // Create cache key based on request parameters
+        $cacheKey = 'posts.index.' . md5(serialize($request->all()));
+        
+        return Cache::remember($cacheKey, 900, function () use ($request) { // 15 minutes cache
+            $query = Post::with(['category', 'user'])
+                ->where('is_published', true);
 
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('excerpt', 'like', "%{$search}%")
-                  ->orWhere('content', 'like', "%{$search}%");
-            });
-        }
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                      ->orWhere('excerpt', 'like', "%{$search}%")
+                      ->orWhere('content', 'like', "%{$search}%");
+                });
+            }
 
-        if ($request->has('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
+            if ($request->has('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
 
-        $posts = $query->orderBy('published_at', 'desc')->paginate(10);
-
-        return response()->json($posts);
+            return $query->orderBy('published_at', 'desc')->paginate(10);
+        });
     }
 
     public function store(Request $request)
@@ -59,23 +63,32 @@ class PostController extends Controller
             'meta_keywords' => $request->meta_keywords,
         ]);
 
+        // Clear related caches
+        Cache::forget('posts.popular');
+        Cache::forget('posts.index.*'); // This would need a more sophisticated cache invalidation
+
         return response()->json($post->load(['category', 'user']), 201);
     }
 
     public function show($idOrSlug)
     {
-        $post = Post::with(['category', 'user'])
-            ->where('is_published', true)
-            ->where(function($query) use ($idOrSlug) {
-                if (is_numeric($idOrSlug)) {
-                    $query->where('id', $idOrSlug);
-                } else {
-                    $query->where('slug', $idOrSlug);
-                }
-            })
-            ->firstOrFail();
+        $cacheKey = "post.{$idOrSlug}";
+        
+        $post = Cache::remember($cacheKey, 1800, function () use ($idOrSlug) { // 30 minutes cache
+            return Post::with(['category', 'user'])
+                ->where('is_published', true)
+                ->where(function($query) use ($idOrSlug) {
+                    if (is_numeric($idOrSlug)) {
+                        $query->where('id', $idOrSlug);
+                    } else {
+                        $query->where('slug', $idOrSlug);
+                    }
+                })
+                ->firstOrFail();
+        });
 
-        $post->increment('views');
+        // Increment views (this shouldn't be cached)
+        Post::where('id', $post->id)->increment('views');
 
         return response()->json($post);
     }
@@ -118,12 +131,28 @@ class PostController extends Controller
         return response()->json(['message' => 'Post deleted successfully']);
     }
 
-    public function allPosts()
+    public function allPosts(Request $request)
     {
+        $perPage = $request->get('per_page', 10);
+        $perPage = min($perPage, 50); // Limit to maximum 50 per page
+        
         $posts = Post::with(['category', 'user'])
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate($perPage);
 
         return response()->json($posts);
+    }
+
+    public function stats()
+    {
+        $total = Post::count();
+        $published = Post::where('is_published', true)->count();
+        $drafts = Post::where('is_published', false)->count();
+
+        return response()->json([
+            'total' => $total,
+            'published' => $published,
+            'drafts' => $drafts
+        ]);
     }
 }

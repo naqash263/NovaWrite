@@ -127,4 +127,19 @@ class WorkflowController extends Controller
         $workflowFile->delete();
         return response()->json(['message' => 'File detached successfully']);
     }
+
+    public function stats()
+    {
+        $total = Workflow::count();
+        $featured = Workflow::where('is_featured', true)->count();
+        $premium = Workflow::where('is_premium', true)->count();
+        $published = Workflow::where('is_published', true)->count();
+
+        return response()->json([
+            'total' => $total,
+            'featured' => $featured,
+            'premium' => $premium,
+            'published' => $published
+        ]);
+    }
 }

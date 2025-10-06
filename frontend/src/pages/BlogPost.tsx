@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import apiClient from '../api/axios';
 import { FileList } from '../components/FileList';
 import { useSEO } from '../utils/seo';
+import LazyImage from '../components/LazyImage';
 
 interface Post {
   id: number;
   title: string;
   content: string;
+  excerpt?: string;
   featured_image?: string;
   published_at: string;
+  updated_at: string;
   meta_description?: string;
   meta_keywords?: string;
   category: {
@@ -30,7 +33,16 @@ export default function BlogPost() {
 
   useSEO({
     title: post ? `${post.title} | Naqash Thaheem` : 'Loading...',
-    description: post ? (post.meta_description || post.content.substring(0, 160).replace(/<[^>]+>/g, '')) : '',
+    description: post ? (post.meta_description || post.excerpt || post.content.substring(0, 160).replace(/<[^>]+>/g, '')) : '',
+    type: 'article',
+    image: post?.featured_image,
+    url: `/blog/${slug}`,
+    author: post?.user?.name || 'Naqash Thaheem',
+    publishedTime: post?.published_at,
+    modifiedTime: post?.updated_at,
+    keywords: post?.meta_keywords 
+      ? post.meta_keywords.split(',').map(k => k.trim()) 
+      : (post?.category?.name ? [post.category.name] : [])
   });
 
   useEffect(() => {
@@ -75,10 +87,11 @@ export default function BlogPost() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {post.featured_image && (
-            <img
+            <LazyImage
               src={post.featured_image}
               alt={post.title}
               className="w-full h-96 object-cover"
+              placeholder="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+"
             />
           )}
           

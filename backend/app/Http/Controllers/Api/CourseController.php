@@ -48,7 +48,24 @@ class CourseController extends Controller
             return response()->json(['message' => 'Course not found'], 404);
         }
 
-        $isEnrolled = Auth::check() ? Auth::user()->isEnrolledIn($course->id) : false;
+        // Manually check for authentication token
+        $isLoggedIn = false;
+        $isEnrolled = false;
+        $user = null;
+        
+        if (request()->bearerToken()) {
+            try {
+                $user = Auth::guard('api')->user();
+                if ($user) {
+                    $isLoggedIn = true;
+                    $isEnrolled = $user->isEnrolledIn($course->id);
+                }
+            } catch (\Exception $e) {
+                // Token is invalid, treat as not logged in
+                $isLoggedIn = false;
+                $user = null;
+            }
+        }
 
         return response()->json([
             'id' => $course->id,
@@ -59,20 +76,42 @@ class CourseController extends Controller
             'what_you_learn' => $course->what_you_learn,
             'duration_hours' => $course->duration_hours,
             'level' => $course->level,
-            'lessons' => $course->lessons->map(function ($lesson) use ($isEnrolled) {
+            'lessons' => $course->lessons->map(function ($lesson) use ($isLoggedIn, $isEnrolled, $user) {
+                // For logged-in users: check sequential access
+                if ($isLoggedIn && $user) {
+                    $canAccess = $lesson->canBeAccessedByUser($user->id);
+                    $isCompleted = $lesson->isCompletedByUser($user->id);
+                    $hasTest = $lesson->activeTest() !== null;
+                    $hasPassedTest = $hasTest ? $lesson->activeTest()->hasUserPassed($user->id) : true;
+                    
+                    // User can access lesson content if previous lessons are completed
+                    // Test passing is only required for marking lesson as completed, not for accessing content
+                    $hasAccess = $canAccess;
+                } else {
+                    // Non-logged-in users only get free previews
+                    $hasAccess = $lesson->is_free_preview;
+                    $isCompleted = false;
+                    $hasTest = false;
+                    $hasPassedTest = false;
+                }
+                
                 return [
                     'id' => $lesson->id,
                     'title' => $lesson->title,
-                    'content' => ($isEnrolled || $lesson->is_free_preview) ? $lesson->content : null,
-                    'video_url' => ($isEnrolled || $lesson->is_free_preview) ? $lesson->video_url : null,
+                    'content' => $hasAccess ? $lesson->content : null,
+                    'video_url' => $hasAccess ? $lesson->video_url : null,
                     'duration_minutes' => $lesson->duration_minutes,
                     'order' => $lesson->order,
                     'is_free_preview' => $lesson->is_free_preview,
-                    'is_locked' => !($isEnrolled || $lesson->is_free_preview),
+                    'is_locked' => !$hasAccess,
+                    'is_completed' => $isCompleted ?? false,
+                    'has_test' => $hasTest ?? false,
+                    'test_passed' => $hasPassedTest ?? false,
                 ];
             }),
             'enrolled_users_count' => $course->enrollments()->count(),
             'is_enrolled' => $isEnrolled,
+            'is_logged_in' => $isLoggedIn,
         ]);
     }
 
@@ -149,7 +188,7 @@ class CourseController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $courses = Course::withCount('lessons')
+        $courses = Course::withCount(['lessons', 'courseFiles'])
             ->orderBy('order')
             ->orderBy('created_at', 'desc')
             ->get();
