@@ -18,16 +18,16 @@
 
 // Database Configuration
 $db_host = 'localhost'; // Your database host
-$db_name = 'naqashth_novawrite'; // Your database name
-$db_user = 'naqashth_novauser'; // Your database username
-$db_pass = 'your_database_password'; // Your database password
+$db_name = 'timesovh_naqashthaheem'; // Your database name
+$db_user = 'timesovh_naqash_thaheem'; // Your database username
+$db_pass = 'mg08.Rcrld}N'; // Your database password
 $db_port = 5432; // Your database port
 
 // Email Configuration
-$smtp_host = 'mail.naqashthaheem.com'; // Your SMTP host
-$smtp_port = 587; // Your SMTP port
+$smtp_host = 'naqashthaheem.com'; // Your SMTP host
+$smtp_port = 465; // Your SMTP port
 $smtp_user = 'contact@naqashthaheem.com'; // Your email address
-$smtp_pass = 'your_email_password'; // Your email password
+$smtp_pass = 'aeQi*(M99Hf'; // Your email password
 
 // ========================================
 // TEST FUNCTIONS
