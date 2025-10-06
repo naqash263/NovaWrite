@@ -16,7 +16,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/auth/forgot-password`, {
+      await axios.post(`${API_URL}/auth/forgot-password`, {
         email: email,
       });
 
