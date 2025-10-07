@@ -46,20 +46,25 @@ jobs:
     - name: Deploy to Namecheap
       uses: appleboy/ssh-action@v0.1.5
       with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
+        host: ${{ secrets.HOST }}                 # serverNNN.web-hosting.com (or shared IP)
+        username: ${{ secrets.USERNAME }}         # cPanel username
+        key: ${{ secrets.SSH_KEY }}               # private key
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        timeout: 90s
         script: |
-          cd /path/to/your/app
+          echo "🚀 Starting deployment to Namecheap..."
+          
+          # Navigate to app directory
+          cd /naqashthaheem.com
+          
+          # Pull latest changes
+          echo "📥 Pulling latest changes from GitHub..."
           git pull origin main
-          cd backend
-          composer install --no-dev --optimize-autoloader
-          php artisan migrate --force
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-          cd ../frontend
-          npm ci
-          npm run build
-          # Copy built files to web root
-          cp -r dist/* /path/to/web/root/
+          
+          # Run deployment script
+          echo "🔧 Running deployment script..."
+          chmod +x cpanel-deploy.sh
+          ./cpanel-deploy.sh
+          
+          echo "✅ Deployment completed successfully!"

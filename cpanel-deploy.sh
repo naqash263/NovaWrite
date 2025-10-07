@@ -63,6 +63,11 @@ if [ -d "../backend/public" ]; then
     cp -r ../backend/public/* ../public_html/
 fi
 
+# Copy .htaccess for Laravel
+if [ -f "../backend/public/.htaccess" ]; then
+    cp ../backend/public/.htaccess ../public_html/
+fi
+
 # Step 6: Set Permissions
 echo -e "${BLUE}🔐 Setting file permissions...${NC}"
 chmod -R 755 ../public_html/
