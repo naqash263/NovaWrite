@@ -50,7 +50,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          cd /path/to/your/app
+          cd /naqashthaheem.com
           git pull origin main
           cd backend
           composer install --no-dev --optimize-autoloader
@@ -62,4 +62,4 @@ jobs:
           npm ci
           npm run build
           # Copy built files to web root
-          cp -r dist/* /path/to/web/root/
+          cp -r dist/* /naqashthaheem.com/public_html
