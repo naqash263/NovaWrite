@@ -56,7 +56,7 @@ jobs:
           echo "🚀 Starting deployment to Namecheap..."
           
           # Navigate to app directory
-          cd /naqashthaheem.com/public_html
+          cd naqashthaheem.com/public_html
           
           # Pull latest changes
           echo "📥 Pulling latest changes from GitHub..."
