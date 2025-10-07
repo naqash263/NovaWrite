@@ -21,8 +21,6 @@ class User extends Authenticatable implements JWTSubject
         'avatar',
         'email_verified_at',
         'email_verification_token',
-        'password_reset_token',
-        'password_reset_expires_at',
         'two_factor_enabled',
         'two_factor_secret',
         'two_factor_recovery_codes',
@@ -41,7 +39,6 @@ class User extends Authenticatable implements JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'password_reset_expires_at' => 'datetime',
             'two_factor_enabled' => 'boolean',
             'two_factor_recovery_codes' => 'array',
             'two_factor_confirmed_at' => 'datetime',

@@ -1,31 +1,39 @@
 # Dependencies
 node_modules/
 vendor/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # Environment files
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
 .env.production
+.env.staging
+backend/.env
+backend/.env.local
+frontend/.env
+frontend/.env.production
 
 # Build outputs
-dist/
-build/
-public/build/
+frontend/dist/
+frontend/build/
+backend/public/build/
+backend/public/hot
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Logs
+*.log
+backend/storage/logs/*
+!backend/storage/logs/.gitkeep
 
-# OS files
+# Cache
+backend/bootstrap/cache/*
+!backend/bootstrap/cache/.gitkeep
+backend/storage/framework/cache/*
+!backend/storage/framework/cache/.gitkeep
+backend/storage/framework/sessions/*
+!backend/storage/framework/sessions/.gitkeep
+backend/storage/framework/views/*
+!backend/storage/framework/views/.gitkeep
+
+# OS generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -34,76 +42,32 @@ public/build/
 ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
-logs/
-storage/logs/*.log
-
-# Cache
-.cache/
-.parcel-cache/
-storage/framework/cache/
-storage/framework/sessions/
-storage/framework/views/
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # Temporary files
 *.tmp
 *.temp
-.tmp/
-.temp/
-
-# Database
-*.sqlite
-*.sqlite3
-database.sqlite
-
-# Replit specific
-.replit
-.replitignore
-.replit.nix
-.config/
-.local/
-.agent_state_*.bin
-.latest.json
-filesystem_state.json
-repl_state.bin
-
-# Backup files
-*.backup
 *.bak
-*~
+*.backup
 
-# Email files
-*.eml
-backend/naqash263@gmail.com,
+# Deployment files (keep structure but ignore sensitive data)
+deployment/*/api/.env
+deployment/*/api/storage/logs/*
+deployment/*/api/vendor/
 
 # Test files
-test_*.php
-debug-*.html
+backend/test_email.php
+frontend/debug-api.html
 
-# User uploads (if any)
-uploads/
-storage/app/public/uploads/
+# Personal files
+backend/naqash263@gmail.com,
+attached_assets/.DS_Store
 
-# Composer
-composer.phar
-
-# PHPUnit
-.phpunit.result.cache
-
-# Laravel specific
-bootstrap/cache/*.php
-storage/app/private/
-storage/framework/cache/data/
-storage/framework/sessions/
-storage/framework/views/
-storage/logs/
-
-# Frontend specific
-frontend/dist/
-frontend/.env
-frontend/.env.local
-frontend/.env.production
-
-# Deployment files (keep scripts but ignore generated)
-deployment-*/
+# Config files that might contain sensitive data
+.config/
+.local/

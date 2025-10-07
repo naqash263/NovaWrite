@@ -7,7 +7,6 @@ import axios from 'axios';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -54,12 +53,6 @@ export default function Login() {
 
       setResendMessage(response.data.message);
       setResendCooldown(60); // Reset cooldown to 60 seconds
-      
-      // Show verification URL in development mode
-      if (response.data.verification_url) {
-        console.log('Verification URL:', response.data.verification_url);
-        setResendMessage(prev => prev + '\n\nDevelopment Mode: Click this link to verify your email:\n' + response.data.verification_url);
-      }
     } catch (err: any) {
       setResendMessage(
         err.response?.data?.message || 
@@ -92,7 +85,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await login(email, password, rememberMe);
+      const response = await login(email, password);
       const { user } = response;
       
       if (user.role === 'admin') {
@@ -163,7 +156,7 @@ export default function Login() {
                         {/* Resend Message */}
                         {resendMessage && (
                           <div className={`text-sm ${resendMessage.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
-                            <div className="whitespace-pre-line">{resendMessage}</div>
+                            {resendMessage}
                           </div>
                         )}
                         
@@ -219,28 +212,6 @@ export default function Login() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="••••••••"
               />
-            </div>
-
-            {/* Remember Me Checkbox */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                  Remember me for 30 days
-                </label>
-              </div>
-              <Link
-                to="/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Forgot password?
-              </Link>
             </div>
 
             <button

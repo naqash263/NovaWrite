@@ -9,7 +9,6 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -53,12 +52,6 @@ export default function Register() {
 
       setResendMessage(response.data.message);
       setResendCooldown(60); // Reset cooldown to 60 seconds
-      
-      // Show verification URL in development mode
-      if (response.data.verification_url) {
-        console.log('Verification URL:', response.data.verification_url);
-        setResendMessage(prev => prev + '\n\nDevelopment Mode: Click this link to verify your email:\n' + response.data.verification_url);
-      }
     } catch (err: any) {
       setResendMessage(
         err.response?.data?.message || 
@@ -154,7 +147,7 @@ export default function Register() {
                     {/* Resend Message */}
                     {resendMessage && (
                       <div className={`mt-3 text-sm ${resendMessage.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
-                        <div className="whitespace-pre-line">{resendMessage}</div>
+                        {resendMessage}
                       </div>
                     )}
                     
@@ -249,20 +242,6 @@ export default function Register() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="••••••••"
               />
-            </div>
-
-            {/* Remember Me Checkbox */}
-            <div className="flex items-center">
-              <input
-                id="remember-me-register"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me-register" className="ml-2 block text-sm text-gray-700">
-                Remember me for 30 days
-              </label>
             </div>
 
             <button

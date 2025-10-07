@@ -1,22 +1,34 @@
-@component('mail::message')
+<x-mail::message>
 # Reset Your Password
 
-Hello {{ $user->name }},
+Hi {{ $user->name }},
 
-You requested to reset your password for your NovaWrite account. Click the button below to reset your password:
+We received a request to reset your password for your NovaWrite account. If you didn't make this request, you can safely ignore this email.
 
-@component('mail::button', ['url' => $resetUrl])
+## Reset Your Password
+
+Click the button below to reset your password. This link will expire in {{ $expiresIn }} for security reasons.
+
+<x-mail::button :url="$resetUrl">
 Reset Password
-@endcomponent
+</x-mail::button>
 
-**Important:** This reset link will expire in {{ $expiresIn }} for security reasons.
+## Security Notice
 
-If the button above doesn't work, you can copy and paste the following link into your browser:
+- This link will expire in {{ $expiresIn }}
+- If you didn't request this password reset, please ignore this email
+- For security, never share this link with anyone
+- If you continue to have issues, contact our support team
+
+## Need Help?
+
+If you're having trouble with the button above, copy and paste the URL below into your web browser:
 
 {{ $resetUrl }}
 
-If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+If you didn't request this password reset, no further action is required.
 
-Thanks,<br>
-{{ config('app.name') }} Team
-@endcomponent
+Best regards,<br>
+**The NovaWrite Team**<br>
+{{ config('app.name') }}
+</x-mail::message>

@@ -15,9 +15,7 @@ const BlogPost = lazy(() => import('./pages/BlogPost'));
 const Workflows = lazy(() => import('./pages/Workflows'));
 const UserLogin = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
-const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
-const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
-const EmailVerification = lazy(() => import('./pages/auth/EmailVerification'));
+const EmailVerification = lazy(() => import('./pages/EmailVerification'));
 const Courses = lazy(() => import('./pages/courses/Courses'));
 const CourseDetail = lazy(() => import('./pages/courses/CourseDetail'));
 const MyCourses = lazy(() => import('./pages/courses/MyCourses'));
@@ -64,8 +62,6 @@ function App() {
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/login" element={<UserLogin />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<EmailVerification />} />
               <Route path="/auth/google/callback" element={<GoogleCallback />} />
               <Route path="/courses" element={<Courses />} />
