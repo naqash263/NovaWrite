@@ -53,5 +53,5 @@ jobs:
 
             # Publish frontend to web root
             rm -rf ~/naqashthaheem.com/public_html/*
-            cp -r ~/naqashthaheem.com/frontend/dist/* ~/public_html/
+            cp -r ~/naqashthaheem.com/frontend/dist/* ~/naqashthaheem.com/public_html/
 
