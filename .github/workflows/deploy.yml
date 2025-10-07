@@ -1,4 +1,4 @@
-name: Deploy to Namecheap
+name: Deploy to Namecheap (server builds)
 
 on:
   push:
@@ -9,57 +9,49 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, dom, fileinfo, mysql, pgsql
-        coverage: none
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-        
-    - name: Install PHP dependencies
-      run: |
-        cd backend
-        composer install --no-dev --optimize-autoloader
-        
-    - name: Install Node dependencies
-      run: |
-        cd frontend
-        npm ci
-        
-    - name: Build frontend
-      run: |
-        cd frontend
-        npm run build
-        
-    - name: Deploy to Namecheap
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          cd /naqashthaheem.com
-          git pull origin main
-          cd backend
-          composer install --no-dev --optimize-autoloader
-          php artisan migrate --force
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-          cd ../frontend
-          npm ci
-          npm run build
-          # Copy built files to web root
-          cp -r dist/* /naqashthaheem.com/public_html
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # SSH to the server and do everything there
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.HOST }}                 # serverNNN.web-hosting.com (or shared IP)
+          username: ${{ secrets.USERNAME }}         # cPanel username
+          key: ${{ secrets.SSH_KEY }}               # private key
+          port: 21098
+          timeout: 90s
+          script: |
+            set -e
+            cd ~
+            # Option 1: if repo already cloned once:
+            # cd ~/app && git fetch --all && git reset --hard origin/main
+
+            # Option 2: deploy dir without git (first time):
+            mkdir -p ~/naqashthaheem.com
+            # (You could scp files here instead—see plan B)
+
+            # Backend
+            cd ~/naqashthaheem.com/backend
+            php --version
+            composer --version
+            composer install --no-dev --optimize-autoloader
+
+            # Laravel housekeeping
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # Frontend (only if Node is available on server)
+            cd ~/naqashthaheem.com/frontend
+            node --version
+            npm ci
+            npm run build
+
+            # Publish frontend to web root
+            rm -rf ~/naqashthaheem.com/public_html/*
+            cp -r ~/naqashthaheem.com/frontend/dist/* ~/public_html/
+
