@@ -28,6 +28,26 @@ Route::get('/debug/jwt', function () {
     ]);
 });
 
+// Debug endpoint to check database tables
+Route::get('/debug/database', function () {
+    try {
+        $tables = \Illuminate\Support\Facades\DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = ?", [config('database.connections.pgsql.database')]);
+        $tableNames = array_column($tables, 'table_name');
+        
+        return response()->json([
+            'database' => config('database.connections.pgsql.database'),
+            'tables' => $tableNames,
+            'api_tokens_exists' => in_array('api_tokens', $tableNames),
+            'migrations_table_exists' => in_array('migrations', $tableNames),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'database' => config('database.connections.pgsql.database'),
+        ]);
+    }
+});
+
 // Admin setup endpoint (temporary for initial setup) - REMOVED FOR SECURITY
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
