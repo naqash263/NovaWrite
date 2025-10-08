@@ -9,7 +9,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('posts', function (Blueprint $table) {
-            $table->enum('approval_status', ['pending', 'approved', 'rejected'])->default('pending')->after('status');
+            $table->enum('approval_status', ['pending', 'approved', 'rejected'])->default('pending')->after('is_published');
             $table->text('rejection_reason')->nullable()->after('approval_status');
             $table->unsignedBigInteger('approved_by')->nullable()->after('rejection_reason');
             $table->timestamp('approved_at')->nullable()->after('approved_by');

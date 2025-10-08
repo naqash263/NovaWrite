@@ -57,7 +57,15 @@ fi
 
 # Step 3: Run Laravel Commands
 echo -e "${BLUE}🔧 Running Laravel commands...${NC}"
-php artisan migrate --force
+
+# Run migrations with error handling
+if php artisan migrate --force; then
+    echo -e "${GREEN}✅ Migrations completed successfully${NC}"
+else
+    echo -e "${YELLOW}⚠️  Some migrations failed, but continuing with deployment${NC}"
+    echo -e "${YELLOW}💡 You may need to fix migration issues manually${NC}"
+fi
+
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
