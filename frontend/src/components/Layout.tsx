@@ -87,7 +87,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       { path: '/admin/smtp-configurations', label: 'SMTP Settings', icon: '⚙️', category: 'Email' },
       
       // User Management
-      { path: '/admin/users', label: 'User Management', icon: '👥', category: 'Users' },
+      { path: '/admin/user-management', label: 'User Management', icon: '👥', category: 'Users' },
       { path: '/admin/user-groups', label: 'User Groups', icon: '👨‍👩‍👧‍👦', category: 'Users' },
       
       // System Settings
