@@ -78,9 +78,23 @@ cd ../frontend
 # Check if npm is available
 if ! command -v npm &> /dev/null; then
     echo -e "${YELLOW}⚠️  npm not found, trying alternative installation...${NC}"
-    # Try to install Node.js and npm if not available
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-    apt-get install -y nodejs || echo -e "${YELLOW}⚠️  Could not install Node.js automatically${NC}"
+    
+    # Check if we're on a Debian-based system
+    if command -v apt-get &> /dev/null; then
+        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+        apt-get install -y nodejs || echo -e "${YELLOW}⚠️  Could not install Node.js via apt${NC}"
+    elif command -v yum &> /dev/null; then
+        # For CentOS/RHEL systems
+        curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+        yum install -y nodejs || echo -e "${YELLOW}⚠️  Could not install Node.js via yum${NC}"
+    elif command -v dnf &> /dev/null; then
+        # For Fedora systems
+        curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+        dnf install -y nodejs || echo -e "${YELLOW}⚠️  Could not install Node.js via dnf${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Unsupported system for automatic Node.js installation${NC}"
+        echo -e "${YELLOW}💡 Please install Node.js manually on your server${NC}"
+    fi
 fi
 
 # Install dependencies and build
