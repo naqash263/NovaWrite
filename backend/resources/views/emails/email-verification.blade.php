@@ -24,3 +24,4 @@ Thanks,<br>
 
 **Need help?** If you're having trouble verifying your email, please contact our support team at {{ config('mail.from.address') }}.
 @endcomponent
+

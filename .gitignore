@@ -71,3 +71,4 @@ attached_assets/.DS_Store
 # Config files that might contain sensitive data
 .config/
 .local/
+

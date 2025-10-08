@@ -172,3 +172,4 @@ MAIL_FROM_NAME="Naqash Thaheem"
 ---
 
 **Your workflow is now: Code in Cursor → Push to GitHub → Auto-deploy to cPanel → Live site updates!** 🚀
+

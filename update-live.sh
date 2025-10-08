@@ -84,3 +84,4 @@ echo "4. Monitor for any issues"
 
 echo ""
 echo -e "${GREEN}🎉 Live site update completed!${NC}"
+

@@ -16,7 +16,7 @@ echo -e "${BLUE}🔄 NovaWrite Quick Update${NC}"
 echo "================================"
 
 # Check if we're in the right directory
-if [ ! -f "composer.json" ] || [ ! -f "package.json" ]; then
+if [ ! -f "backend/composer.json" ] || [ ! -f "frontend/package.json" ]; then
     echo -e "${RED}❌ Error: Please run this script from the project root directory${NC}"
     exit 1
 fi

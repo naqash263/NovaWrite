@@ -152,3 +152,4 @@ class CourseFileController extends Controller
         return response()->json(['message' => 'File order updated successfully']);
     }
 }
+

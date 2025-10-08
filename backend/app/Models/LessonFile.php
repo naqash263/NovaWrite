@@ -32,3 +32,4 @@ class LessonFile extends Model
         return $this->belongsTo(File::class);
     }
 }
+

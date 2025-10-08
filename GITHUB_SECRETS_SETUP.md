@@ -138,3 +138,4 @@ ssh -p 21098 timesovh@162.254.39.126
 ---
 
 **Once you set up these secrets, your GitHub Actions will automatically deploy to your Namecheap server every time you push to the main branch!** 🚀
+

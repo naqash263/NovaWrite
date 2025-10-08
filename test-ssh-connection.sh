@@ -79,3 +79,4 @@ fi
 echo ""
 echo -e "${GREEN}🎉 SSH connection test completed!${NC}"
 echo -e "${BLUE}💡 If all tests passed, you're ready to set up GitHub Actions!${NC}"
+
