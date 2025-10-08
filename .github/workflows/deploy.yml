@@ -44,7 +44,9 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
-        port: ${{ secrets.PORT }}
+        port: 21098
+        timeout: 300s
+        command_timeout: 300s
         script: |
           # Colors for output
           RED='\033[0;31m'
