@@ -17,7 +17,7 @@ class ApiTokenController extends Controller
      */
     public function index(): JsonResponse
     {
-        $tokens = ApiToken::where('user_id', Auth::id())
+        $tokens = ApiToken::where('user_id', Auth::guard('api')->id())
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($token) {
@@ -62,7 +62,7 @@ class ApiTokenController extends Controller
                 'token' => ApiToken::generateToken(),
                 'permissions' => $request->permissions,
                 'expires_at' => $expiresAt,
-                'user_id' => Auth::id(),
+                'user_id' => Auth::guard('api')->id(),
             ]);
 
             return response()->json([
@@ -88,7 +88,7 @@ class ApiTokenController extends Controller
     public function show(ApiToken $apiToken): JsonResponse
     {
         // Ensure user can only access their own tokens
-        if ($apiToken->user_id !== Auth::id()) {
+        if ($apiToken->user_id !== Auth::guard('api')->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -108,7 +108,7 @@ class ApiTokenController extends Controller
     public function update(Request $request, ApiToken $apiToken): JsonResponse
     {
         // Ensure user can only update their own tokens
-        if ($apiToken->user_id !== Auth::id()) {
+        if ($apiToken->user_id !== Auth::guard('api')->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -140,7 +140,7 @@ class ApiTokenController extends Controller
     public function destroy(ApiToken $apiToken): JsonResponse
     {
         // Ensure user can only delete their own tokens
-        if ($apiToken->user_id !== Auth::id()) {
+        if ($apiToken->user_id !== Auth::guard('api')->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -154,7 +154,7 @@ class ApiTokenController extends Controller
      */
     public function stats(): JsonResponse
     {
-        $userTokens = ApiToken::where('user_id', Auth::id())->get();
+        $userTokens = ApiToken::where('user_id', Auth::guard('api')->id())->get();
 
         $stats = [
             'total_tokens' => $userTokens->count(),
