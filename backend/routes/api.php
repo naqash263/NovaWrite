@@ -142,6 +142,57 @@ Route::post('/debug/api-token-test', function (Request $request) {
     }
 });
 
+// Simplified API token creation for debugging
+Route::post('/debug/simple-api-token', function (Request $request) {
+    try {
+        // Get authenticated user
+        $user = \Illuminate\Support\Facades\Auth::guard('api')->user();
+        if (!$user) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+        
+        // Validate input
+        $name = $request->input('name', 'Test Token');
+        $permissions = $request->input('permissions', ['admin']);
+        $expiresInDays = $request->input('expires_in_days', 30);
+        
+        // Calculate expiration
+        $expiresAt = null;
+        if ($expiresInDays > 0) {
+            $expiresAt = \Carbon\Carbon::now()->addDays($expiresInDays);
+        }
+        
+        // Create token
+        $token = \App\Models\ApiToken::create([
+            'name' => $name,
+            'token' => \App\Models\ApiToken::generateToken(),
+            'permissions' => $permissions,
+            'expires_at' => $expiresAt,
+            'user_id' => $user->id,
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'token' => [
+                'id' => $token->id,
+                'name' => $token->name,
+                'token' => $token->token,
+                'permissions' => $token->permissions,
+                'expires_at' => $token->expires_at,
+                'created_at' => $token->created_at,
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ]);
+    }
+});
+
 // Admin setup endpoint (temporary for initial setup) - REMOVED FOR SECURITY
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
