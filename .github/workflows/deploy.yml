@@ -301,8 +301,9 @@ jobs:
               
               # Generate JWT secret
               echo -e "${BLUE}🔑 Generating JWT secret...${NC}"
-              JWT_SECRET=$(php artisan jwt:secret --force 2>/dev/null || openssl rand -base64 32)
-              sed -i "s/JWT_SECRET=/JWT_SECRET=$JWT_SECRET/" .env
+              JWT_SECRET=$(openssl rand -base64 32)
+              echo "JWT_SECRET=$JWT_SECRET" >> .env
+              echo -e "${GREEN}✅ JWT secret generated and added to .env${NC}"
               
               php artisan config:cache
               php artisan route:cache
