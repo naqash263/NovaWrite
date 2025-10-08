@@ -1,14 +1,16 @@
 ---
 alwaysApply: false
 ---
-Task: Interactive Task Loop with User Feedback
-Check if userinput.py exists in the root directory.
 
 Always Remember Production Structure is like below
 
 /home/username/
 └── naqashthaheem.com/
-    ├── public_html/     # Main website files (accessible via domain)
-    ├── backend/         # Laravel backend
-    ├── frontend/        # React frontend
+    ├── public_html/          # Main website (accessible via domain)
+    │   ├── index.html        # React frontend
+    │   ├── assets/           # Frontend assets
+    │   └── api/              # Laravel backend
+    │       └── public/       # Laravel public files
+    ├── backend/              # Source code
+    ├── frontend/             # Source code
     └── other files...

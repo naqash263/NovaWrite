@@ -88,11 +88,9 @@ jobs:
           
           # Create production environment file
           echo -e "${BLUE}📝 Creating production environment file...${NC}"
-          cat > .env << 'EOF'
-VITE_API_URL=https://naqashthaheem.com/api
-VITE_APP_NAME=Naqash Thaheem
-VITE_APP_ENV=production
-EOF
+          echo "VITE_API_URL=https://naqashthaheem.com/api" > .env
+          echo "VITE_APP_NAME=Naqash Thaheem" >> .env
+          echo "VITE_APP_ENV=production" >> .env
           
           # Build frontend
           echo -e "${BLUE}🔨 Building frontend...${NC}"
@@ -169,28 +167,24 @@ EOF
           
           # Set up .htaccess for API
           echo -e "${BLUE}⚙️ Setting up API routing...${NC}"
-          cat > ~/naqashthaheem.com/public_html/api/.htaccess << 'EOF'
-          <IfModule mod_rewrite.c>
-              RewriteEngine On
-              RewriteRule ^(.*)$ public/$1 [L]
-          </IfModule>
-          EOF
+          echo "<IfModule mod_rewrite.c>" > ~/naqashthaheem.com/public_html/api/.htaccess
+          echo "    RewriteEngine On" >> ~/naqashthaheem.com/public_html/api/.htaccess
+          echo "    RewriteRule ^(.*)$ public/\$1 [L]" >> ~/naqashthaheem.com/public_html/api/.htaccess
+          echo "</IfModule>" >> ~/naqashthaheem.com/public_html/api/.htaccess
           
           # Set up main .htaccess
-          cat > ~/naqashthaheem.com/public_html/.htaccess << 'EOF'
-          <IfModule mod_rewrite.c>
-              RewriteEngine On
-              
-              # Handle API requests
-              RewriteCond %{REQUEST_URI} ^/api/(.*)$
-              RewriteRule ^api/(.*)$ api/public/$1 [L]
-              
-              # Handle frontend routes
-              RewriteCond %{REQUEST_FILENAME} !-f
-              RewriteCond %{REQUEST_FILENAME} !-d
-              RewriteRule . /index.html [L]
-          </IfModule>
-          EOF
+          echo "<IfModule mod_rewrite.c>" > ~/naqashthaheem.com/public_html/.htaccess
+          echo "    RewriteEngine On" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "    # Handle API requests" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "    RewriteCond %{REQUEST_URI} ^/api/(.*)$" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "    RewriteRule ^api/(.*)$ api/public/\$1 [L]" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "    # Handle frontend routes" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "    RewriteCond %{REQUEST_FILENAME} !-f" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "    RewriteCond %{REQUEST_FILENAME} !-d" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "    RewriteRule . /index.html [L]" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "</IfModule>" >> ~/naqashthaheem.com/public_html/.htaccess
           
           echo -e "${GREEN}✅ Deployment completed successfully!${NC}"
           echo -e "${BLUE}🌐 Your site is now live at: https://naqashthaheem.com${NC}"
