@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\PostController;
@@ -257,3 +258,4 @@ Route::middleware(['api.auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('smtp-configurations/active', [SmtpConfigurationController::class, 'getActive']);
     Route::get('smtp-configurations/default', [SmtpConfigurationController::class, 'getDefault']);
 });
+
