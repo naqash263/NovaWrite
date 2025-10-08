@@ -31,19 +31,36 @@ Route::get('/debug/jwt', function () {
 // Debug endpoint to check database tables
 Route::get('/debug/database', function () {
     try {
-        $tables = \Illuminate\Support\Facades\DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = ?", [config('database.connections.pgsql.database')]);
+        // Test basic database connection
+        $connection = \Illuminate\Support\Facades\DB::connection();
+        $pdo = $connection->getPdo();
+        
+        // Get database name
+        $databaseName = config('database.connections.pgsql.database');
+        
+        // Try to get tables
+        $tables = \Illuminate\Support\Facades\DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = ?", [$databaseName]);
         $tableNames = array_column($tables, 'table_name');
         
+        // Also try a simple query to test connection
+        $testQuery = \Illuminate\Support\Facades\DB::select("SELECT 1 as test");
+        
         return response()->json([
-            'database' => config('database.connections.pgsql.database'),
+            'database' => $databaseName,
+            'connection_working' => true,
+            'test_query' => $testQuery,
             'tables' => $tableNames,
             'api_tokens_exists' => in_array('api_tokens', $tableNames),
             'migrations_table_exists' => in_array('migrations', $tableNames),
+            'total_tables' => count($tableNames),
         ]);
     } catch (\Exception $e) {
         return response()->json([
             'error' => $e->getMessage(),
             'database' => config('database.connections.pgsql.database'),
+            'connection_working' => false,
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
         ]);
     }
 });
