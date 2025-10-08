@@ -72,18 +72,37 @@ jobs:
             git reset --hard origin/main
           fi
           
-          # Install Node.js if not present
+          # Install Node.js using NVM (no sudo required)
           if ! command -v node &> /dev/null; then
-            echo -e "${YELLOW}📦 Installing Node.js...${NC}"
-            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-            sudo apt-get install -y nodejs
+            echo -e "${YELLOW}📦 Installing Node.js via NVM...${NC}"
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm install 18
+            nvm use 18
+            nvm alias default 18
           else
-            echo -e "${GREEN}✅ Node.js already installed${NC}"
+            echo -e "${GREEN}✅ Node.js already installed: $(node --version)${NC}"
           fi
+          
+          # Ensure Node.js is available in current session
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          export PATH="$NVM_DIR/versions/node/$(nvm current)/bin:$PATH"
           
           # Install frontend dependencies
           echo -e "${BLUE}📦 Installing frontend dependencies...${NC}"
           cd frontend
+          
+          # Verify Node.js is working
+          if ! command -v node &> /dev/null; then
+            echo -e "${RED}❌ Node.js not found after installation${NC}"
+            exit 1
+          fi
+          
+          echo -e "${GREEN}✅ Node.js version: $(node --version)${NC}"
+          echo -e "${GREEN}✅ NPM version: $(npm --version)${NC}"
+          
           npm ci --production=false
           
           # Create production environment file
@@ -116,8 +135,13 @@ jobs:
           if ! command -v composer &> /dev/null; then
             echo -e "${YELLOW}📦 Installing Composer...${NC}"
             curl -sS https://getcomposer.org/installer | php
-            sudo mv composer.phar /usr/local/bin/composer
+            mv composer.phar ~/composer
+            chmod +x ~/composer
+            export PATH="$HOME:$PATH"
           fi
+          
+          # Ensure Composer is available
+          export PATH="$HOME:$PATH"
           
           composer install --no-dev --optimize-autoloader
           
