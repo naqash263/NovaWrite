@@ -86,18 +86,29 @@ jobs:
           cd frontend
           npm ci --production=false
           
+          # Create production environment file
+          echo -e "${BLUE}📝 Creating production environment file...${NC}"
+          cat > .env << 'EOF'
+VITE_API_URL=https://naqashthaheem.com/api
+VITE_APP_NAME=Naqash Thaheem
+VITE_APP_ENV=production
+EOF
+          
           # Build frontend
           echo -e "${BLUE}🔨 Building frontend...${NC}"
           export VITE_API_URL=https://naqashthaheem.com/api
           export VITE_APP_NAME="Naqash Thaheem"
           export VITE_APP_ENV=production
           
-          if [ -f ".env.production" ]; then
-            echo -e "${GREEN}✅ Using production environment file${NC}"
-            cp .env.production .env
+          npm run build
+          
+          # Verify build was successful
+          if [ ! -d "dist" ]; then
+            echo -e "${RED}❌ Frontend build failed - dist directory not found${NC}"
+            exit 1
           fi
           
-          npm run build
+          echo -e "${GREEN}✅ Frontend build completed successfully${NC}"
           
           # Install backend dependencies
           echo -e "${BLUE}📦 Installing backend dependencies...${NC}"
@@ -114,7 +125,24 @@ jobs:
           
           # Set up Laravel
           echo -e "${BLUE}⚙️ Setting up Laravel...${NC}"
-          cp .env.production .env
+          
+          # Create .env file for Laravel
+          if [ -f ".env.production" ]; then
+            echo -e "${GREEN}✅ Using production environment file${NC}"
+            cp .env.production .env
+          else
+            echo -e "${YELLOW}⚠️ Creating .env file from example${NC}"
+            cp .env.example .env
+            # Update database configuration for production
+            sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env
+            sed -i 's/DB_DATABASE=.*/DB_DATABASE=timesovh_naqashthaheem/' .env
+            sed -i 's/DB_USERNAME=.*/DB_USERNAME=timesovh_naqash_thaheem/' .env
+            sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=mg08.Rcrld}N/' .env
+            sed -i 's/APP_URL=.*/APP_URL=https:\/\/naqashthaheem.com/' .env
+            sed -i 's/APP_ENV=.*/APP_ENV=production/' .env
+            sed -i 's/APP_DEBUG=.*/APP_DEBUG=false/' .env
+          fi
+          
           php artisan key:generate --force
           php artisan config:cache
           php artisan route:cache
@@ -129,19 +157,19 @@ jobs:
           chmod -R 755 storage/
           chmod -R 755 bootstrap/cache/
           
-          # Deploy frontend to public_html
+          # Deploy frontend to public_html (inside naqashthaheem.com)
           echo -e "${BLUE}📁 Deploying frontend to public_html...${NC}"
-          mkdir -p ~/public_html
-          cp -r ../frontend/dist/* ~/public_html/
+          mkdir -p ~/naqashthaheem.com/public_html
+          cp -r ../frontend/dist/* ~/naqashthaheem.com/public_html/
           
-          # Deploy backend to api directory
+          # Deploy backend to api directory (inside naqashthaheem.com)
           echo -e "${BLUE}📁 Deploying backend to api directory...${NC}"
-          mkdir -p ~/public_html/api
-          cp -r . ~/public_html/api/
+          mkdir -p ~/naqashthaheem.com/public_html/api
+          cp -r . ~/naqashthaheem.com/public_html/api/
           
           # Set up .htaccess for API
           echo -e "${BLUE}⚙️ Setting up API routing...${NC}"
-          cat > ~/public_html/api/.htaccess << 'EOF'
+          cat > ~/naqashthaheem.com/public_html/api/.htaccess << 'EOF'
           <IfModule mod_rewrite.c>
               RewriteEngine On
               RewriteRule ^(.*)$ public/$1 [L]
@@ -149,7 +177,7 @@ jobs:
           EOF
           
           # Set up main .htaccess
-          cat > ~/public_html/.htaccess << 'EOF'
+          cat > ~/naqashthaheem.com/public_html/.htaccess << 'EOF'
           <IfModule mod_rewrite.c>
               RewriteEngine On
               
