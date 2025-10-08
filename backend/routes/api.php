@@ -11,6 +11,22 @@ Route::get('/health', function () {
         'environment' => app()->environment(),
     ]);
 });
+
+// Debug endpoint to check JWT configuration
+Route::get('/debug/jwt', function () {
+    $jwtSecret = config('jwt.secret');
+    $jwtAlgo = config('jwt.algo');
+    $jwtTtl = config('jwt.ttl');
+    
+    return response()->json([
+        'jwt_secret_set' => !empty($jwtSecret),
+        'jwt_secret_length' => strlen($jwtSecret ?? ''),
+        'jwt_algo' => $jwtAlgo,
+        'jwt_ttl' => $jwtTtl,
+        'app_key_set' => !empty(config('app.key')),
+        'app_key_length' => strlen(config('app.key') ?? ''),
+    ]);
+});
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\PostController;
