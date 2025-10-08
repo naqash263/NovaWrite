@@ -85,6 +85,56 @@ Route::post('/debug/run-migrations', function () {
     }
 });
 
+// Debug API token creation step by step
+Route::post('/debug/api-token-test', function (Request $request) {
+    try {
+        // Step 1: Test Auth
+        $user = \Illuminate\Support\Facades\Auth::guard('api')->user();
+        if (!$user) {
+            return response()->json(['error' => 'Not authenticated', 'step' => 'auth']);
+        }
+        
+        // Step 2: Test ApiToken model
+        $apiTokenModel = new \App\Models\ApiToken();
+        
+        // Step 3: Test database connection
+        $connection = \Illuminate\Support\Facades\DB::connection();
+        $pdo = $connection->getPdo();
+        
+        // Step 4: Test table exists
+        $tableExists = \Illuminate\Support\Facades\Schema::hasTable('api_tokens');
+        
+        // Step 5: Test creating a token
+        $testToken = \App\Models\ApiToken::create([
+            'name' => 'Debug Test Token',
+            'token' => \App\Models\ApiToken::generateToken(),
+            'permissions' => ['admin'],
+            'expires_at' => null,
+            'user_id' => $user->id,
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'user_id' => $user->id,
+            'user_role' => $user->role,
+            'table_exists' => $tableExists,
+            'connection_working' => true,
+            'token_created' => true,
+            'token_id' => $testToken->id,
+            'step' => 'complete'
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+});
+
 // Admin setup endpoint (temporary for initial setup) - REMOVED FOR SECURITY
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
