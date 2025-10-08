@@ -15,9 +15,20 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}🚀 Starting cPanel deployment...${NC}"
 echo "=================================="
 
+# Debug information
+echo -e "${BLUE}📋 Debug information:${NC}"
+echo "Current directory: $(pwd)"
+echo "Contents of current directory:"
+ls -la
+echo ""
+
 # Check if we're in the right directory
-if [ ! -f "composer.json" ] || [ ! -f "package.json" ]; then
+if [ ! -f "backend/composer.json" ] || [ ! -f "frontend/package.json" ]; then
     echo -e "${RED}❌ Error: Please run this script from the project root directory${NC}"
+    echo -e "${YELLOW}💡 Current directory: $(pwd)${NC}"
+    echo -e "${YELLOW}💡 Looking for: backend/composer.json and frontend/package.json${NC}"
+    echo -e "${YELLOW}💡 Available files:${NC}"
+    ls -la | grep -E "(composer|package)"
     exit 1
 fi
 
