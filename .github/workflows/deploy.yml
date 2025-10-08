@@ -141,15 +141,48 @@ jobs:
           export VITE_APP_NAME="Naqash Thaheem"
           export VITE_APP_ENV=production
           
-          npm run build
+          # Show current directory and files
+          echo -e "${BLUE}📁 Current directory: $(pwd)${NC}"
+          echo -e "${BLUE}📁 Directory contents:${NC}"
+          ls -la
+          
+          # Show package.json scripts
+          echo -e "${BLUE}📋 Available npm scripts:${NC}"
+          npm run --silent 2>/dev/null || echo "No scripts available"
+          
+          # Try to build with detailed output
+          echo -e "${BLUE}🔨 Running TypeScript compilation...${NC}"
+          if npx tsc -b --verbose; then
+            echo -e "${GREEN}✅ TypeScript compilation completed${NC}"
+          else
+            echo -e "${RED}❌ TypeScript compilation failed${NC}"
+            exit 1
+          fi
+          
+          echo -e "${BLUE}🔨 Running Vite build...${NC}"
+          if npx vite build; then
+            echo -e "${GREEN}✅ Vite build completed${NC}"
+          else
+            echo -e "${RED}❌ Vite build failed${NC}"
+            echo -e "${BLUE}📁 Checking if dist directory exists...${NC}"
+            ls -la dist/ 2>/dev/null || echo "dist directory does not exist"
+            exit 1
+          fi
           
           # Verify build was successful
           if [ ! -d "dist" ]; then
             echo -e "${RED}❌ Frontend build failed - dist directory not found${NC}"
+            echo -e "${BLUE}📁 Current directory contents after build:${NC}"
+            ls -la
+            echo -e "${BLUE}📁 Looking for any build output directories:${NC}"
+            find . -name "dist" -type d 2>/dev/null || echo "No dist directories found"
+            find . -name "build" -type d 2>/dev/null || echo "No build directories found"
             exit 1
           fi
           
           echo -e "${GREEN}✅ Frontend build completed successfully${NC}"
+          echo -e "${BLUE}📁 Dist directory contents:${NC}"
+          ls -la dist/
           
           # Install backend dependencies
           echo -e "${BLUE}📦 Installing backend dependencies...${NC}"
