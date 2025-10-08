@@ -123,11 +123,18 @@ echo -e "${BLUE}📁 Copying files to web root...${NC}"
 # Create public_html directory if it doesn't exist
 mkdir -p ~/naqashthaheem.com/public_html
 
-# Copy frontend build files
-cp -r dist/* ~/naqashthaheem.com/public_html/
+# Copy frontend build files (if they exist)
+if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
+    echo -e "${GREEN}✅ Copying frontend build files...${NC}"
+    cp -r dist/* ~/naqashthaheem.com/public_html/
+else
+    echo -e "${YELLOW}⚠️  No frontend build files found, skipping frontend deployment${NC}"
+    echo -e "${YELLOW}💡 Install Node.js and run 'npm run build' to generate frontend files${NC}"
+fi
 
 # Copy Laravel public files (if any)
 if [ -d "../backend/public" ]; then
+    echo -e "${GREEN}✅ Copying Laravel public files...${NC}"
     cp -r ../backend/public/* ~/naqashthaheem.com/public_html/
 fi
 
