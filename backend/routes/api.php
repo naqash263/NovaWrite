@@ -27,6 +27,37 @@ Route::get('/debug/jwt', function () {
         'app_key_length' => strlen(config('app.key') ?? ''),
     ]);
 });
+
+// Admin setup endpoint (temporary for initial setup)
+Route::post('/setup/admin', function (Request $request) {
+    $email = $request->input('email');
+    $password = $request->input('password');
+    
+    if (!$email || !$password) {
+        return response()->json(['error' => 'Email and password required'], 400);
+    }
+    
+    $user = \App\Models\User::where('email', $email)->first();
+    
+    if (!$user) {
+        return response()->json(['error' => 'User not found'], 404);
+    }
+    
+    // Update password if provided
+    if ($password) {
+        $user->password = \Illuminate\Support\Facades\Hash::make($password);
+    }
+    
+    // Set as admin and verify email
+    $user->role = 'admin';
+    $user->email_verified_at = now();
+    $user->save();
+    
+    return response()->json([
+        'message' => 'User promoted to admin successfully',
+        'user' => $user
+    ]);
+});
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\PostController;
