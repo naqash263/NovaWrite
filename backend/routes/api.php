@@ -48,6 +48,26 @@ Route::get('/debug/database', function () {
     }
 });
 
+// Migration runner endpoint (temporary for fixing missing tables)
+Route::post('/debug/run-migrations', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $output = \Illuminate\Support\Facades\Artisan::output();
+        
+        return response()->json([
+            'success' => true,
+            'output' => $output,
+            'message' => 'Migrations completed successfully'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'message' => 'Migration failed'
+        ]);
+    }
+});
+
 // Admin setup endpoint (temporary for initial setup) - REMOVED FOR SECURITY
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
