@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npx tsc -b && npx vite build",
-    "build:analyze": "ANALYZE=true npx tsc -b && npx vite build",
+    "build": "npm run build:ts && npm run build:vite",
+    "build:ts": "tsc -b",
+    "build:vite": "vite build",
+    "build:analyze": "ANALYZE=true npm run build:ts && npm run build:vite",
     "preview": "vite preview",
     "lint": "eslint ."
   },
