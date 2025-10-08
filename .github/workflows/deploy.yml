@@ -55,12 +55,19 @@ jobs:
         script: |
           echo "🚀 Starting deployment to Namecheap..."
           
-          # Navigate to app directory
+          # Create app directory if it doesn't exist
+          mkdir -p /naqashthaheem.com
           cd /naqashthaheem.com
           
-          # Pull latest changes
-          echo "📥 Pulling latest changes from GitHub..."
-          git pull origin main
+          # Clone or update repository
+          if [ -d ".git" ]; then
+            echo "📥 Updating existing repository..."
+            git fetch --all
+            git reset --hard origin/main
+          else
+            echo "📥 Cloning repository for first time..."
+            git clone https://github.com/naqash263/NovaWrite.git .
+          fi
           
           # Run deployment script
           echo "🔧 Running deployment script..."

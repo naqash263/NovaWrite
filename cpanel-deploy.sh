@@ -24,7 +24,16 @@ fi
 # Step 1: Install/Update Backend Dependencies
 echo -e "${BLUE}📦 Installing backend dependencies...${NC}"
 cd backend
-composer install --no-dev --optimize-autoloader --no-interaction
+
+# Check if composer is available
+if ! command -v composer &> /dev/null; then
+    echo -e "${YELLOW}⚠️  Composer not found, trying alternative installation...${NC}"
+    # Try to install composer if not available
+    curl -sS https://getcomposer.org/installer | php
+    php composer.phar install --no-dev --optimize-autoloader --no-interaction
+else
+    composer install --no-dev --optimize-autoloader --no-interaction
+fi
 
 # Step 2: Set up Laravel Environment
 echo -e "${BLUE}⚙️  Configuring Laravel...${NC}"
@@ -46,7 +55,21 @@ php artisan queue:restart
 # Step 4: Build Frontend
 echo -e "${BLUE}🎨 Building frontend...${NC}"
 cd ../frontend
-npm ci --production
+
+# Check if npm is available
+if ! command -v npm &> /dev/null; then
+    echo -e "${YELLOW}⚠️  npm not found, trying alternative installation...${NC}"
+    # Try to install Node.js and npm if not available
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+fi
+
+# Install dependencies and build
+if [ -f "package-lock.json" ]; then
+    npm ci --production
+else
+    npm install --production
+fi
 npm run build
 
 # Step 5: Copy Files to Web Root
