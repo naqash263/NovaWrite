@@ -40,38 +40,46 @@ class ApiTokenController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'expires_in_days' => 'required|integer|min:0|max:3650', // Max 10 years
-            'permissions' => 'required|array|min:1',
-            'permissions.*' => 'in:read,write,delete,admin',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'expires_in_days' => 'required|integer|min:0|max:3650', // Max 10 years
+                'permissions' => 'required|array|min:1',
+                'permissions.*' => 'in:read,write,delete,admin',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
+
+            $expiresAt = null;
+            if ($request->expires_in_days > 0) {
+                $expiresAt = Carbon::now()->addDays($request->expires_in_days);
+            }
+
+            $token = ApiToken::create([
+                'name' => $request->name,
+                'token' => ApiToken::generateToken(),
+                'permissions' => $request->permissions,
+                'expires_at' => $expiresAt,
+                'user_id' => Auth::id(),
+            ]);
+
+            return response()->json([
+                'id' => $token->id,
+                'name' => $token->name,
+                'token' => $token->token, // Return token only on creation
+                'permissions' => $token->permissions,
+                'expires_at' => $token->expires_at,
+                'created_at' => $token->created_at,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ], 500);
         }
-
-        $expiresAt = null;
-        if ($request->expires_in_days > 0) {
-            $expiresAt = Carbon::now()->addDays($request->expires_in_days);
-        }
-
-        $token = ApiToken::create([
-            'name' => $request->name,
-            'token' => ApiToken::generateToken(),
-            'permissions' => $request->permissions,
-            'expires_at' => $expiresAt,
-            'user_id' => Auth::id(),
-        ]);
-
-        return response()->json([
-            'id' => $token->id,
-            'name' => $token->name,
-            'token' => $token->token, // Return token only on creation
-            'permissions' => $token->permissions,
-            'expires_at' => $token->expires_at,
-            'created_at' => $token->created_at,
-        ], 201);
     }
 
     /**
