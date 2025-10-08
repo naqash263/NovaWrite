@@ -79,17 +79,23 @@ cd ../frontend
 if ! command -v npm &> /dev/null; then
     echo -e "${YELLOW}⚠️  npm not found, trying alternative installation...${NC}"
     # Try to install Node.js and npm if not available
-    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-    sudo apt-get install -y nodejs
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+    apt-get install -y nodejs || echo -e "${YELLOW}⚠️  Could not install Node.js automatically${NC}"
 fi
 
 # Install dependencies and build
 if [ -f "package-lock.json" ]; then
-    npm ci --production
+    npm ci --production || echo -e "${YELLOW}⚠️  npm ci failed, trying npm install${NC}" && npm install --production
 else
     npm install --production
 fi
-npm run build
+
+# Build frontend
+if npm run build; then
+    echo -e "${GREEN}✅ Frontend built successfully${NC}"
+else
+    echo -e "${YELLOW}⚠️  Frontend build failed, but continuing with deployment${NC}"
+fi
 
 # Step 5: Copy Files to Web Root
 echo -e "${BLUE}📁 Copying files to web root...${NC}"
