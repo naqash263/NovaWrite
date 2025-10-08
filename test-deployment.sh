@@ -41,12 +41,12 @@ fi
 
 # Test 2: Check if app directory exists
 echo -e "${BLUE}📁 Checking app directory...${NC}"
-if ssh -p $PORT $USERNAME@$HOST "test -d /naqashthaheem.com" 2>/dev/null; then
+if ssh -p $PORT $USERNAME@$HOST "test -d ~/naqashthaheem.com" 2>/dev/null; then
     echo -e "${GREEN}✅ App directory exists${NC}"
 else
-    echo -e "${YELLOW}⚠️  App directory /naqashthaheem.com not found${NC}"
+    echo -e "${YELLOW}⚠️  App directory ~/naqashthaheem.com not found${NC}"
     echo -e "${BLUE}🔧 Creating app directory...${NC}"
-    ssh -p $PORT $USERNAME@$HOST "sudo mkdir -p /naqashthaheem.com && sudo chown $USERNAME:$USERNAME /naqashthaheem.com"
+    ssh -p $PORT $USERNAME@$HOST "mkdir -p ~/naqashthaheem.com"
     echo -e "${GREEN}✅ App directory created${NC}"
 fi
 
@@ -96,7 +96,7 @@ fi
 
 # Test 7: Test repository clone
 echo -e "${BLUE}📥 Testing repository clone...${NC}"
-if ssh -p $PORT $USERNAME@$HOST "cd /naqashthaheem.com && git clone https://github.com/naqash263/NovaWrite.git test-clone && rm -rf test-clone" 2>/dev/null; then
+if ssh -p $PORT $USERNAME@$HOST "cd ~/naqashthaheem.com && git clone https://github.com/naqash263/NovaWrite.git test-clone && rm -rf test-clone" 2>/dev/null; then
     echo -e "${GREEN}✅ Repository clone successful${NC}"
 else
     echo -e "${RED}❌ Repository clone failed${NC}"

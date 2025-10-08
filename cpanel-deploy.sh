@@ -76,26 +76,26 @@ npm run build
 echo -e "${BLUE}📁 Copying files to web root...${NC}"
 
 # Create public_html directory if it doesn't exist
-mkdir -p ../public_html
+mkdir -p ~/naqashthaheem.com/public_html
 
 # Copy frontend build files
-cp -r dist/* ../public_html/
+cp -r dist/* ~/naqashthaheem.com/public_html/
 
 # Copy Laravel public files (if any)
 if [ -d "../backend/public" ]; then
-    cp -r ../backend/public/* ../public_html/
+    cp -r ../backend/public/* ~/naqashthaheem.com/public_html/
 fi
 
 # Copy .htaccess for Laravel
 if [ -f "../backend/public/.htaccess" ]; then
-    cp ../backend/public/.htaccess ../public_html/
+    cp ../backend/public/.htaccess ~/naqashthaheem.com/public_html/
 fi
 
 # Step 6: Set Permissions
 echo -e "${BLUE}🔐 Setting file permissions...${NC}"
-chmod -R 755 ../public_html/
-chmod -R 755 ../backend/storage/
-chmod -R 755 ../backend/bootstrap/cache/
+chmod -R 755 ~/naqashthaheem.com/public_html/
+chmod -R 755 ~/naqashthaheem.com/backend/storage/
+chmod -R 755 ~/naqashthaheem.com/backend/bootstrap/cache/
 
 # Step 7: Clean up
 echo -e "${BLUE}🧹 Cleaning up...${NC}"

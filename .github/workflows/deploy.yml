@@ -55,9 +55,8 @@ jobs:
         script: |
           echo "🚀 Starting deployment to Namecheap..."
           
-          # Create app directory if it doesn't exist
-          mkdir -p /naqashthaheem.com
-          cd /naqashthaheem.com
+          # Navigate to the correct directory
+          cd ~/naqashthaheem.com
           
           # Clone or update repository
           if [ -d ".git" ]; then
@@ -66,6 +65,10 @@ jobs:
             git reset --hard origin/main
           else
             echo "📥 Cloning repository for first time..."
+            # Remove existing directory if it exists but is not a git repo
+            if [ -d "." ] && [ ! -d ".git" ]; then
+              rm -rf *
+            fi
             git clone https://github.com/naqash263/NovaWrite.git .
           fi
           

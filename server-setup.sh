@@ -64,14 +64,12 @@ sudo apt-get install -y postgresql-client
 
 # Step 7: Create app directory
 echo -e "${BLUE}📁 Creating app directory...${NC}"
-sudo mkdir -p /naqashthaheem.com
-sudo chown $USER:$USER /naqashthaheem.com
+mkdir -p ~/naqashthaheem.com
 echo -e "${GREEN}✅ App directory created${NC}"
 
 # Step 8: Set up web root
 echo -e "${BLUE}🌐 Setting up web root...${NC}"
-sudo mkdir -p /naqashthaheem.com/public_html
-sudo chown -R $USER:$USER /naqashthaheem.com/public_html
+mkdir -p ~/naqashthaheem.com/public_html
 echo -e "${GREEN}✅ Web root created${NC}"
 
 # Step 9: Install PM2 for process management (optional)
@@ -93,7 +91,7 @@ echo -e "${GREEN}✅ Firewall configured${NC}"
 
 # Step 11: Create production environment file
 echo -e "${BLUE}⚙️  Creating production environment file...${NC}"
-cat > /naqashthaheem.com/production.env.example << 'EOF'
+cat > ~/naqashthaheem.com/production.env.example << 'EOF'
 # Production Environment Configuration
 APP_NAME="Naqash Thaheem"
 APP_ENV=production
@@ -129,8 +127,7 @@ sudo chown $USER:$USER /var/log/novawrite
 
 # Step 13: Final permissions
 echo -e "${BLUE}🔐 Setting final permissions...${NC}"
-sudo chown -R $USER:$USER /naqashthaheem.com
-sudo chmod -R 755 /naqashthaheem.com
+chmod -R 755 ~/naqashthaheem.com
 
 echo -e "${GREEN}🎉 Server setup completed successfully!${NC}"
 echo ""
