@@ -1,6 +1,16 @@
 <?php
 
 use Illuminate\Http\Request;
+
+// Health check endpoint (no authentication required)
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now(),
+        'version' => '1.0.0',
+        'environment' => app()->environment(),
+    ]);
+});
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\PostController;
