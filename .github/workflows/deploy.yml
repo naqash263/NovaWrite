@@ -41,6 +41,13 @@ jobs:
     - name: Build frontend
       run: |
         cd frontend
+        export VITE_API_URL=https://naqashthaheem.com/api
+        export VITE_APP_NAME="Naqash Thaheem"
+        export VITE_APP_ENV=production
+        # Use production environment file if it exists
+        if [ -f ".env.production" ]; then
+          cp .env.production .env
+        fi
         npm run build
         
     - name: Deploy to Namecheap

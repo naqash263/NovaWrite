@@ -105,6 +105,17 @@ if command -v npm &> /dev/null; then
         npm install --production
     fi
 
+    # Set production environment variables for build
+    export VITE_API_URL=https://naqashthaheem.com/api
+    export VITE_APP_NAME="Naqash Thaheem"
+    export VITE_APP_ENV=production
+
+    # Use production environment file if it exists
+    if [ -f ".env.production" ]; then
+        echo -e "${GREEN}✅ Using production environment file${NC}"
+        cp .env.production .env
+    fi
+
     # Build frontend
     if npm run build; then
         echo -e "${GREEN}✅ Frontend built successfully${NC}"
