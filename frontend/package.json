@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:analyze": "ANALYZE=true tsc -b && vite build",
+    "build": "npx tsc -b && npx vite build",
+    "build:analyze": "ANALYZE=true npx tsc -b && npx vite build",
     "preview": "vite preview",
     "lint": "eslint ."
   },
