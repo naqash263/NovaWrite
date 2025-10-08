@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\Admin\WorkflowCategoryController as AdminWorkflowCategoryController;
 use App\Http\Controllers\Api\Admin\WorkflowController as AdminWorkflowController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\BulkOperationsController;
 use App\Http\Controllers\Api\Admin\ContentApprovalController;
 use App\Http\Controllers\Api\Admin\CacheController;
@@ -226,6 +227,17 @@ Route::middleware(['api.auth', 'admin'])->prefix('admin')->group(function () {
     Route::post('access/bulk-grant', [UserAccessController::class, 'bulkGrantAccess']);
     Route::get('resources/access', [UserAccessController::class, 'getResourceAccess']);
     Route::get('access/stats', [UserAccessController::class, 'getAccessStats']);
+    
+    // User management (manual verification)
+    Route::get('user-management', [UserManagementController::class, 'index']);
+    Route::get('user-management/stats', [UserManagementController::class, 'statistics']);
+    Route::post('user-management/bulk-verify', [UserManagementController::class, 'bulkVerify']);
+    Route::get('user-management/{user}', [UserManagementController::class, 'show']);
+    Route::put('user-management/{user}', [UserManagementController::class, 'update']);
+    Route::delete('user-management/{user}', [UserManagementController::class, 'destroy']);
+    Route::post('user-management/{user}/verify', [UserManagementController::class, 'verifyAccount']);
+    Route::post('user-management/{user}/unverify', [UserManagementController::class, 'unverifyAccount']);
+    Route::post('user-management/{user}/resend-verification', [UserManagementController::class, 'resendVerification']);
     
     // Email management
     Route::post('emails/welcome', [EmailController::class, 'sendWelcomeEmail']);
