@@ -78,17 +78,37 @@ jobs:
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            nvm install 18
-            nvm use 18
-            nvm alias default 18
+            nvm install 20
+            nvm use 20
+            nvm alias default 20
           else
             echo -e "${GREEN}✅ Node.js already installed: $(node --version)${NC}"
+            # Check if we need to upgrade to Node 20
+            NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+            if [ "$NODE_VERSION" -lt 20 ]; then
+              echo -e "${YELLOW}⚠️ Upgrading to Node.js 20 (current: $(node --version))${NC}"
+              export NVM_DIR="$HOME/.nvm"
+              [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+              nvm install 20
+              nvm use 20
+              nvm alias default 20
+            fi
           fi
           
           # Ensure Node.js is available in current session
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           export PATH="$NVM_DIR/versions/node/$(nvm current)/bin:$PATH"
+          
+          # Fix npm configuration issues
+          echo -e "${BLUE}🔧 Fixing npm configuration...${NC}"
+          if [ -f "$HOME/.npmrc" ]; then
+            echo -e "${YELLOW}⚠️ Removing conflicting .npmrc file${NC}"
+            rm -f "$HOME/.npmrc"
+          fi
+          
+          # Clean npm cache
+          npm cache clean --force
           
           # Install frontend dependencies
           echo -e "${BLUE}📦 Installing frontend dependencies...${NC}"
@@ -103,7 +123,11 @@ jobs:
           echo -e "${GREEN}✅ Node.js version: $(node --version)${NC}"
           echo -e "${GREEN}✅ NPM version: $(npm --version)${NC}"
           
-          npm ci --production=false
+          # Clean install
+          echo -e "${BLUE}🧹 Cleaning previous installation...${NC}"
+          rm -rf node_modules package-lock.json
+          
+          npm install
           
           # Create production environment file
           echo -e "${BLUE}📝 Creating production environment file...${NC}"
