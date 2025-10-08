@@ -133,6 +133,11 @@ jobs:
           rm -f tsconfig.tsbuildinfo
           rm -rf node_modules/.tmp
           
+          # Clean any generated JavaScript files from TypeScript compilation
+          echo -e "${BLUE}🧹 Cleaning generated JavaScript files...${NC}"
+          find src -name "*.js" -type f -delete
+          find . -name "*.js.map" -type f -delete
+          
           npm install
           
           # Create production environment file
@@ -164,6 +169,12 @@ jobs:
             echo -e "${RED}❌ TypeScript type checking failed${NC}"
             exit 1
           fi
+          
+          # Clean up any files that might have been generated during type checking
+          echo -e "${BLUE}🧹 Cleaning up after type checking...${NC}"
+          find src -name "*.js" -type f -delete
+          find . -name "*.js.map" -type f -delete
+          rm -f tsconfig.tsbuildinfo
           
           echo -e "${BLUE}🔨 Running Vite build...${NC}"
           if npx vite build; then
