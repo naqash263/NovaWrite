@@ -45,12 +45,19 @@ Route::get('/debug/database', function () {
         // Also try a simple query to test connection
         $testQuery = \Illuminate\Support\Facades\DB::select("SELECT 1 as test");
         
+        // Check api_tokens table structure if it exists
+        $apiTokensStructure = null;
+        if (in_array('api_tokens', $tableNames)) {
+            $apiTokensStructure = \Illuminate\Support\Facades\DB::select("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'api_tokens' ORDER BY ordinal_position");
+        }
+        
         return response()->json([
             'database' => $databaseName,
             'connection_working' => true,
             'test_query' => $testQuery,
             'tables' => $tableNames,
             'api_tokens_exists' => in_array('api_tokens', $tableNames),
+            'api_tokens_structure' => $apiTokensStructure,
             'migrations_table_exists' => in_array('migrations', $tableNames),
             'total_tables' => count($tableNames),
         ]);
