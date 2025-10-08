@@ -146,7 +146,7 @@ class ApiTokenController extends Controller
      */
     public function stats(): JsonResponse
     {
-        $userTokens = ApiToken::where('user_id', Auth::id());
+        $userTokens = ApiToken::where('user_id', Auth::id())->get();
 
         $stats = [
             'total_tokens' => $userTokens->count(),
