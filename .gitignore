@@ -72,3 +72,13 @@ attached_assets/.DS_Store
 .config/
 .local/
 
+# Temporary and backup files
+*.backup
+*.bak
+*.tmp
+*.old
+*~
+*.log
+*.cache
+*.pid
+
