@@ -127,6 +127,12 @@ jobs:
           echo -e "${BLUE}🧹 Cleaning previous installation...${NC}"
           rm -rf node_modules package-lock.json
           
+          # Clean any generated config files that might conflict
+          echo -e "${BLUE}🧹 Cleaning generated config files...${NC}"
+          rm -f vite.config.js
+          rm -f tsconfig.tsbuildinfo
+          rm -rf node_modules/.tmp
+          
           npm install
           
           # Create production environment file
@@ -151,11 +157,11 @@ jobs:
           npm run --silent 2>/dev/null || echo "No scripts available"
           
           # Try to build with detailed output
-          echo -e "${BLUE}🔨 Running TypeScript compilation...${NC}"
-          if npx tsc -b --verbose; then
-            echo -e "${GREEN}✅ TypeScript compilation completed${NC}"
+          echo -e "${BLUE}🔨 Running TypeScript type checking...${NC}"
+          if npx tsc --noEmit; then
+            echo -e "${GREEN}✅ TypeScript type checking completed${NC}"
           else
-            echo -e "${RED}❌ TypeScript compilation failed${NC}"
+            echo -e "${RED}❌ TypeScript type checking failed${NC}"
             exit 1
           fi
           
