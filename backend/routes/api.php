@@ -12,6 +12,9 @@ Route::get('/health', function () {
     ]);
 });
 
+// Public home settings (no authentication required)
+Route::get('/home-settings', [HomeSettingsController::class, 'getPublicSettings']);
+
 // Debug endpoint to check JWT configuration
 Route::get('/debug/jwt', function () {
     $jwtSecret = config('jwt.secret');
@@ -199,6 +202,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\Admin\HomeSettingsController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\LessonFileController;
 use App\Http\Controllers\Api\WorkflowController;
@@ -351,6 +355,16 @@ Route::middleware(['api.auth', 'admin'])->prefix('admin')->group(function () {
     Route::put('api-tokens/{apiToken}', [ApiTokenController::class, 'update']);
     Route::delete('api-tokens/{apiToken}', [ApiTokenController::class, 'destroy']);
     Route::get('api-tokens-stats', [ApiTokenController::class, 'stats']);
+    
+    // Home Settings management
+    Route::get('home-settings', [HomeSettingsController::class, 'index']);
+    Route::post('home-settings', [HomeSettingsController::class, 'store']);
+    Route::get('home-settings/{homeSetting}', [HomeSettingsController::class, 'show']);
+    Route::put('home-settings/{homeSetting}', [HomeSettingsController::class, 'update']);
+    Route::delete('home-settings/{homeSetting}', [HomeSettingsController::class, 'destroy']);
+    Route::post('home-settings/upload-image', [HomeSettingsController::class, 'uploadImage']);
+    Route::post('home-settings/bulk-update', [HomeSettingsController::class, 'bulkUpdate']);
+    Route::post('home-settings/{homeSetting}/toggle-active', [HomeSettingsController::class, 'toggleActive']);
     
     Route::get('workflows', [AdminWorkflowController::class, 'index']);
     Route::post('workflows', [AdminWorkflowController::class, 'store']);
