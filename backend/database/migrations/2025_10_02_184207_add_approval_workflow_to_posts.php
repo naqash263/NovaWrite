@@ -34,6 +34,12 @@ return new class extends Migration
 
     private function constraintExists($table, $constraint)
     {
+        // SQLite doesn't have information_schema.table_constraints
+        // For SQLite, we'll assume the constraint doesn't exist and let Laravel handle it
+        if (DB::getDriverName() === 'sqlite') {
+            return false;
+        }
+        
         $constraints = DB::select("
             SELECT constraint_name 
             FROM information_schema.table_constraints 

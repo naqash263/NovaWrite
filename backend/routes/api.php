@@ -13,7 +13,7 @@ Route::get('/health', function () {
 });
 
 // Public home settings (no authentication required)
-Route::get('/home-settings', [HomeSettingsController::class, 'getPublicSettings']);
+Route::get('/home-settings', [\App\Http\Controllers\Api\Admin\HomeSettingsController::class, 'getPublicSettings']);
 
 // Debug endpoint to check JWT configuration
 Route::get('/debug/jwt', function () {

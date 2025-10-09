@@ -39,6 +39,7 @@ const Settings = lazy(() => import('./pages/admin/Settings'));
 const EmailTemplates = lazy(() => import('./pages/admin/EmailTemplates'));
 const SmtpConfigurations = lazy(() => import('./pages/admin/SmtpConfigurations'));
 const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
+const HomeSettings = lazy(() => import('./pages/admin/HomeSettings'));
 const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
@@ -87,6 +88,7 @@ function App() {
               <Route path="/admin/email-templates" element={<ProtectedRoute><EmailTemplates /></ProtectedRoute>} />
               <Route path="/admin/smtp-configurations" element={<ProtectedRoute><SmtpConfigurations /></ProtectedRoute>} />
               <Route path="/admin/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+              <Route path="/admin/home-settings" element={<ProtectedRoute><HomeSettings /></ProtectedRoute>} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />

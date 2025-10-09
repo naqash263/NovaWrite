@@ -81,6 +81,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       // Content Settings
       { path: '/admin/categories', label: 'Categories', icon: '🏷️', category: 'Content' },
       { path: '/admin/tags', label: 'Tags', icon: '🔖', category: 'Content' },
+      { path: '/admin/home-settings', label: 'Home Settings', icon: '🏠', category: 'Content' },
       
       // Email Settings
       { path: '/admin/email-templates', label: 'Email Templates', icon: '📧', category: 'Email' },

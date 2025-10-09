@@ -84,6 +84,17 @@ return new class extends Migration
 
     private function indexExists($table, $index)
     {
+        // SQLite doesn't have pg_indexes, use pragma instead
+        if (DB::getDriverName() === 'sqlite') {
+            $indexes = DB::select("PRAGMA index_list({$table})");
+            foreach ($indexes as $idx) {
+                if ($idx->name === $index) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         // PostgreSQL-compatible index check
         $indexes = DB::select("
             SELECT indexname 

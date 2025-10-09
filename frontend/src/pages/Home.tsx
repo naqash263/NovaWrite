@@ -29,9 +29,26 @@ interface ContactFormData {
   message: string;
 }
 
+interface HomeSetting {
+  key: string;
+  type: string;
+  value: string;
+  image_url?: string;
+}
+
+interface HomeSettings {
+  settings: HomeSetting[];
+  grouped: {
+    text: HomeSetting[];
+    image: HomeSetting[];
+    boolean: HomeSetting[];
+  };
+}
+
 export default function Home() {
   const [featuredPosts, setFeaturedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [homeSettings, setHomeSettings] = useState<HomeSettings | null>(null);
   const [contactForm, setContactForm] = useState<ContactFormData>({
     name: '',
     email: '',
@@ -41,6 +58,21 @@ export default function Home() {
   const [contactSubmitted, setContactSubmitted] = useState(false);
   const [contactErrors, setContactErrors] = useState<Partial<ContactFormData>>({});
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Helper function to get setting value
+  const getSettingValue = (key: string, defaultValue: string = '') => {
+    if (!homeSettings) return defaultValue;
+    const setting = homeSettings.settings.find(s => s.key === key);
+    return setting ? setting.value : defaultValue;
+  };
+
+
+  // Helper function to check boolean setting
+  const getBooleanSetting = (key: string, defaultValue: boolean = false) => {
+    if (!homeSettings) return defaultValue;
+    const setting = homeSettings.settings.find(s => s.key === key);
+    return setting ? setting.value === '1' : defaultValue;
+  };
 
   useSEO({
     title: 'Naqash Thaheem - Global AI Automation Expert & Systems Analyst',
@@ -54,6 +86,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchFeaturedPosts();
+    fetchHomeSettings();
     
     // Inject AI search optimizations
     injectAISearchOptimizations();
@@ -123,6 +156,15 @@ export default function Home() {
       console.error('Error fetching featured posts:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchHomeSettings = async () => {
+    try {
+      const response = await apiClient.get('/home-settings');
+      setHomeSettings(response.data);
+    } catch (error) {
+      console.error('Error fetching home settings:', error);
     }
   };
 
@@ -234,11 +276,11 @@ export default function Home() {
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white">
-              Naqash Thaheem
+              {getSettingValue('hero_title', 'Naqash Thaheem')}
             </h1>
             
             <p className="text-2xl md:text-3xl mb-4 text-blue-50 font-semibold">
-              Systems Analyst & Automation Specialist
+              {getSettingValue('hero_subtitle', 'Systems Analyst & Automation Specialist')}
             </p>
             
             <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -317,6 +359,22 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Notification Banner */}
+      {getBooleanSetting('notification_enabled', false) && (
+        <div className={`py-4 px-4 ${
+          getSettingValue('notification_type', 'info') === 'success' ? 'bg-green-600' :
+          getSettingValue('notification_type', 'info') === 'warning' ? 'bg-yellow-600' :
+          getSettingValue('notification_type', 'info') === 'error' ? 'bg-red-600' :
+          'bg-blue-600'
+        } text-white`}>
+          <div className="max-w-7xl mx-auto text-center">
+            <p className="text-lg font-medium">
+              {getSettingValue('notification_message', 'Welcome to our new platform!')}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats Section - Enhanced with hover effects */}
       <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate">
