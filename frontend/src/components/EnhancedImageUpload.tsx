@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { API_CONFIG } from '../config/api';
 import apiClient from '../api/axios';
 
 interface File {
@@ -121,7 +122,7 @@ export default function EnhancedImageUpload({
       clearInterval(progressInterval);
 
       // Get the full URL for the uploaded image
-      const imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${response.data.file.path}`;
+      const imageUrl = API_CONFIG.getStorageUrl(response.data.file.path);
       onImageUploaded(imageUrl);
       
       // Show success state
@@ -141,7 +142,7 @@ export default function EnhancedImageUpload({
   };
 
   const handleSelectExistingFile = (file: File) => {
-    const imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${file.path}`;
+    const imageUrl = API_CONFIG.getStorageUrl(file.path);
     setPreview(imageUrl);
     onImageUploaded(imageUrl);
     setShowFileSelector(false);
@@ -289,7 +290,7 @@ export default function EnhancedImageUpload({
                       >
                         <div className="aspect-square bg-gray-100 flex items-center justify-center">
                           <img
-                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${file.path}`}
+                            src={API_CONFIG.getStorageUrl(file.path)}
                             alt={file.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -358,4 +359,6 @@ export default function EnhancedImageUpload({
     </div>
   );
 }
+
+
 

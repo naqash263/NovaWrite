@@ -21,7 +21,7 @@ Preferred communication style: Simple, everyday language.
 **API Configuration:**
 - Frontend proxies API requests through Vite dev server to backend (port 8000)
 - Uses relative path `/api` in `frontend/.env` (VITE_API_BASE_URL=/api)
-- Vite proxy config in `vite.config.ts` forwards `/api/*` to `http://localhost:8000`
+- Vite proxy config in `vite.config.ts` forwards `/api/*` to `http://localhost:8001`
 - This avoids CORS/mixed-content issues between HTTPS frontend and HTTP backend
 
 **Design System:**

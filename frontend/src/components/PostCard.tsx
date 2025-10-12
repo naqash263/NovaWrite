@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { API_CONFIG } from '../config/api';
 
 interface Post {
   id: number;
@@ -38,7 +39,7 @@ export function PostCard({ post }: PostCardProps) {
         src={post.featured_image 
           ? (post.featured_image.startsWith('http') 
             ? post.featured_image 
-            : `http://localhost:8000/storage/${post.featured_image}`)
+            : API_CONFIG.getStorageUrl(post.featured_image))
           : fallbackImage
         }
         alt={post.title}

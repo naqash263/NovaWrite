@@ -14,6 +14,8 @@ import {
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import apiClient from '../../api/axios';
+import { useToast } from '../../hooks/use-toast';
+import { useConfirm } from '../../hooks/use-confirm';
 
 interface User {
   id: number;
@@ -43,6 +45,8 @@ interface UserStats {
 }
 
 const UserManagement: React.FC = () => {
+  const { addToast } = useToast();
+  const { confirm } = useConfirm();
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,6 +69,21 @@ const UserManagement: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showColumnModal, setShowColumnModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [selectedUserDetails, setSelectedUserDetails] = useState<User | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    role: '',
+    email_verified_at: null as string | null,
+    two_factor_enabled: false
+  });
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkOperation, setBulkOperation] = useState<'role' | 'status' | 'verify' | 'delete'>('role');
+  const [bulkValue, setBulkValue] = useState('');
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
   // Fetch users
   const fetchUsers = async () => {
@@ -158,7 +177,15 @@ const UserManagement: React.FC = () => {
 
   // Delete user
   const deleteUser = async (userId: number) => {
-    if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    const confirmed = await confirm({
+      title: 'Delete User',
+      message: 'Are you sure you want to delete this user? This action cannot be undone.',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (confirmed) {
       try {
         await apiClient.delete(`/admin/user-management/${userId}`);
         await fetchUsers();
@@ -171,14 +198,189 @@ const UserManagement: React.FC = () => {
 
   // Edit user
   const editUser = (user: User) => {
-    console.log('Edit user:', user);
-    // TODO: Implement edit modal
+    setEditingUser(user);
+    setEditFormData({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      email_verified_at: user.email_verified_at,
+      two_factor_enabled: user.two_factor_enabled || false
+    });
+    setShowEditModal(true);
   };
 
   // View user details
   const viewUserDetails = (userId: number) => {
-    console.log('View user details:', userId);
-    // TODO: Implement details modal
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUserDetails(user);
+      setShowDetailsModal(true);
+    }
+  };
+
+  // Update user
+  const updateUser = async () => {
+    if (!editingUser) return;
+
+    try {
+      const response = await apiClient.put(`/admin/user-management/${editingUser.id}`, editFormData);
+      
+      if (response.data.success) {
+        // Update the user in the local state
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === editingUser.id 
+              ? { ...user, ...editFormData }
+              : user
+          )
+        );
+        
+        setShowEditModal(false);
+        setEditingUser(null);
+        
+        // Show success message
+        addToast({
+          type: 'success',
+          title: 'User Updated',
+          description: 'User updated successfully!',
+          duration: 5000
+        });
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      addToast({
+        type: 'error',
+        title: 'Update Failed',
+        description: 'Failed to update user. Please try again.',
+        duration: 5000
+      });
+    }
+  };
+
+  // Bulk operations
+  const handleBulkOperation = async () => {
+    if (selectedUsers.length === 0) {
+      addToast({
+        type: 'warning',
+        title: 'No Users Selected',
+        description: 'Please select users to perform bulk operations.',
+        duration: 5000
+      });
+      return;
+    }
+
+    setIsBulkProcessing(true);
+
+    try {
+      const response = await apiClient.post('/admin/user-management/bulk', {
+        user_ids: selectedUsers,
+        operation: bulkOperation,
+        value: bulkValue
+      });
+
+      if (response.data.success) {
+        // Update local state based on operation
+        setUsers(prevUsers => 
+          prevUsers.map(user => {
+            if (selectedUsers.includes(user.id)) {
+              switch (bulkOperation) {
+                case 'role':
+                  return { ...user, role: bulkValue };
+                case 'status':
+                  return { ...user, is_active: bulkValue === 'active' };
+                case 'verify':
+                  return { ...user, email_verified_at: bulkValue === 'verify' ? new Date().toISOString() : null };
+                default:
+                  return user;
+              }
+            }
+            return user;
+          })
+        );
+
+        // Clear selection and close modal
+        setSelectedUsers([]);
+        setShowBulkModal(false);
+        setBulkValue('');
+        
+        addToast({
+          type: 'success',
+          title: 'Bulk Operation Complete',
+          description: `Bulk operation completed successfully! ${selectedUsers.length} users updated.`,
+          duration: 5000
+        });
+      }
+    } catch (error) {
+      console.error('Error performing bulk operation:', error);
+      addToast({
+        type: 'error',
+        title: 'Bulk Operation Failed',
+        description: 'Failed to perform bulk operation. Please try again.',
+        duration: 5000
+      });
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  };
+
+  // Bulk delete users
+  const handleBulkDelete = async () => {
+    if (selectedUsers.length === 0) {
+      addToast({
+        type: 'warning',
+        title: 'No Users Selected',
+        description: 'Please select users to delete.',
+        duration: 5000
+      });
+      return;
+    }
+
+    const confirmed = await confirm({
+      title: 'Delete Users',
+      message: `Are you sure you want to delete ${selectedUsers.length} users? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) {
+      return;
+    }
+
+    setIsBulkProcessing(true);
+
+    try {
+      const response = await apiClient.post('/admin/user-management/bulk-delete', {
+        user_ids: selectedUsers
+      });
+
+      if (response.data.success) {
+        // Remove deleted users from local state
+        setUsers(prevUsers => 
+          prevUsers.filter(user => !selectedUsers.includes(user.id))
+        );
+
+        // Clear selection
+        setSelectedUsers([]);
+        
+        addToast({
+          type: 'success',
+          title: 'Users Deleted',
+          description: `${selectedUsers.length} users deleted successfully!`,
+          duration: 5000
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting users:', error);
+      addToast({
+        type: 'error',
+        title: 'Delete Failed',
+        description: 'Failed to delete users. Please try again.',
+        duration: 5000
+      });
+    } finally {
+      setIsBulkProcessing(false);
+    }
   };
 
   // Sort users
@@ -388,6 +590,54 @@ const UserManagement: React.FC = () => {
                   </dl>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Operations */}
+      {selectedUsers.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-blue-800">
+                  {selectedUsers.length} user{selectedUsers.length !== 1 ? 's' : ''} selected
+                </h3>
+                <p className="text-sm text-blue-600">Choose an action to perform on selected users</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowBulkModal(true)}
+                className="inline-flex items-center px-3 py-2 border border-blue-300 shadow-sm text-sm leading-4 font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                </svg>
+                Bulk Actions
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={isBulkProcessing}
+                className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+              >
+                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete Selected
+              </button>
+              <button
+                onClick={clearSelection}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              >
+                Clear Selection
+              </button>
             </div>
           </div>
         </div>
@@ -876,6 +1126,272 @@ const UserManagement: React.FC = () => {
                     Next
                   </button>
                 </nav>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit User Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Edit User</h3>
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                    <input
+                      type="text"
+                      value={editFormData.name}
+                      onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <input
+                      type="email"
+                      value={editFormData.email}
+                      onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Role</label>
+                    <select
+                      value={editFormData.role}
+                      onChange={(e) => setEditFormData({...editFormData, role: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="user">User</option>
+                      <option value="moderator">Moderator</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="two_factor_enabled"
+                      checked={editFormData.two_factor_enabled}
+                      onChange={(e) => setEditFormData({...editFormData, two_factor_enabled: e.target.checked})}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="two_factor_enabled" className="ml-2 block text-sm text-gray-900">
+                      Two-Factor Authentication Enabled
+                    </label>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={updateUser}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Update User
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* User Details Modal */}
+        {showDetailsModal && selectedUserDetails && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">User Details</h3>
+                  <button
+                    onClick={() => setShowDetailsModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Name:</span>
+                    <p className="text-sm text-gray-900">{selectedUserDetails.name}</p>
+                  </div>
+                  
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Email:</span>
+                    <p className="text-sm text-gray-900">{selectedUserDetails.email}</p>
+                  </div>
+                  
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Role:</span>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(selectedUserDetails.role)}`}>
+                      {selectedUserDetails.role}
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Email Verified:</span>
+                    <p className="text-sm text-gray-900">
+                      {selectedUserDetails.email_verified_at ? 'Yes' : 'No'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Two-Factor Auth:</span>
+                    <p className="text-sm text-gray-900">
+                      {selectedUserDetails.two_factor_enabled ? 'Enabled' : 'Disabled'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Created:</span>
+                    <p className="text-sm text-gray-900">{formatDate(selectedUserDetails.created_at)}</p>
+                  </div>
+                  
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Last Updated:</span>
+                    <p className="text-sm text-gray-900">{formatDate(selectedUserDetails.updated_at)}</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end mt-6">
+                  <button
+                    onClick={() => setShowDetailsModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Operations Modal */}
+        {showBulkModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Bulk Operations</h3>
+                  <button
+                    onClick={() => setShowBulkModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Operation</label>
+                    <select
+                      value={bulkOperation}
+                      onChange={(e) => setBulkOperation(e.target.value as any)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="role">Change Role</option>
+                      <option value="status">Change Status</option>
+                      <option value="verify">Verify/Unverify Email</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {bulkOperation === 'role' ? 'New Role' : 
+                       bulkOperation === 'status' ? 'New Status' : 
+                       'Action'}
+                    </label>
+                    {bulkOperation === 'role' ? (
+                      <select
+                        value={bulkValue}
+                        onChange={(e) => setBulkValue(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select Role</option>
+                        <option value="user">User</option>
+                        <option value="moderator">Moderator</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    ) : bulkOperation === 'status' ? (
+                      <select
+                        value={bulkValue}
+                        onChange={(e) => setBulkValue(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    ) : (
+                      <select
+                        value={bulkValue}
+                        onChange={(e) => setBulkValue(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select Action</option>
+                        <option value="verify">Verify Email</option>
+                        <option value="unverify">Unverify Email</option>
+                      </select>
+                    )}
+                  </div>
+                  
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-yellow-800">Warning</h3>
+                        <div className="mt-1 text-sm text-yellow-700">
+                          This action will affect {selectedUsers.length} user{selectedUsers.length !== 1 ? 's' : ''}. 
+                          This cannot be undone.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={() => setShowBulkModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleBulkOperation}
+                    disabled={isBulkProcessing || !bulkValue}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isBulkProcessing ? 'Processing...' : 'Apply Changes'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

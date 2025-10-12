@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { GoogleLoginButton } from '../../components/GoogleLoginButton';
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import { API_CONFIG } from '../../config/api';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -62,6 +62,23 @@ export default function Register() {
     }
   };
 
+  const handleGoogleSuccess = (user: any) => {
+    if (user.role === 'admin') {
+      navigate('/admin');
+    } else {
+      // Show success popup for regular users
+      setSuccess(true);
+      setVerificationEmail(user.email);
+      setTimeout(() => {
+        window.location.reload(); // Refresh to show user name
+      }, 2000);
+    }
+  };
+
+  const handleGoogleError = (error: string) => {
+    setError(error);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -79,7 +96,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, {
+      const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REGISTER}`, {
         name,
         email,
         password,
@@ -252,6 +269,25 @@ export default function Register() {
               {loading ? 'Creating Account...' : 'Sign Up'}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="my-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Google Login Button */}
+          <GoogleLoginButton
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            className="mb-6"
+          />
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">

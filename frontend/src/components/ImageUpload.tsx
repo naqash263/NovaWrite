@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { API_CONFIG } from '../config/api';
 import apiClient from '../api/axios';
 
 interface ImageUploadProps {
@@ -89,7 +90,7 @@ export default function ImageUpload({
       clearInterval(progressInterval);
 
       // Get the full URL for the uploaded image
-      const imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${response.data.file.path}`;
+      const imageUrl = API_CONFIG.getStorageUrl(response.data.file.path);
       onImageUploaded(imageUrl);
       
       // Show success state

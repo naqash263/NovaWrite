@@ -1,0 +1,118 @@
+John Doe
+Senior Software Engineer & Technical Lead
+john.doe@email.com
++1-555-0123
+123 Main St, City, State 12345
+
+PROFESSIONAL SUMMARY
+Experienced software engineer with 10+ years of experience in full-stack development, team leadership, and system architecture. Proven track record of delivering scalable solutions and leading cross-functional teams. Expert in modern web technologies, cloud platforms, and agile methodologies.
+
+EXPERIENCE
+
+Senior Software Engineer & Technical Lead | Tech Corp | 2020-2023
+- Led a team of 8 developers in building microservices architecture
+- Improved system performance by 50% through optimization and caching strategies
+- Implemented CI/CD pipelines reducing deployment time by 70%
+- Mentored junior developers and conducted code reviews
+- Architected solutions serving 1M+ daily active users
+- Implemented monitoring and alerting systems reducing downtime by 90%
+
+Software Engineer | StartupXYZ | 2018-2020
+- Developed React-based frontend applications with TypeScript
+- Built RESTful APIs using Node.js, Express, and GraphQL
+- Collaborated with product team to define technical requirements
+- Implemented automated testing increasing code coverage to 95%
+- Optimized database queries improving response time by 60%
+- Integrated third-party services and payment processing
+
+Junior Developer | WebSolutions Inc | 2016-2018
+- Developed web applications using JavaScript, PHP, and Laravel
+- Worked with MySQL databases and wrote complex queries
+- Participated in agile development processes and sprint planning
+- Fixed bugs and implemented new features based on client requirements
+- Collaborated with designers to implement responsive UI components
+
+EDUCATION
+
+Master of Computer Science
+University of Technology | 2016
+- Specialization in Software Engineering and Distributed Systems
+- GPA: 3.8/4.0
+- Thesis: 'Scalable Web Application Architecture for High-Traffic Systems'
+- Relevant Coursework: Advanced Algorithms, Machine Learning, Database Systems
+
+Bachelor of Computer Science
+State University | 2014
+- Magna Cum Laude
+- GPA: 3.9/4.0
+- Relevant Coursework: Data Structures, Algorithms, Database Systems, Operating Systems
+
+TECHNICAL SKILLS
+
+Programming Languages: JavaScript, TypeScript, Python, Java, PHP, SQL, C++, Go, Rust
+Frontend: React, Vue.js, Angular, HTML5, CSS3, Sass, Webpack, Vite
+Backend: Node.js, Express, FastAPI, Django, Laravel, Spring Boot, ASP.NET Core
+Databases: MySQL, PostgreSQL, MongoDB, Redis, Elasticsearch, Cassandra
+Cloud Platforms: AWS (EC2, S3, Lambda, RDS), Google Cloud, Azure, DigitalOcean
+DevOps: Docker, Kubernetes, Jenkins, GitLab CI, Terraform, Ansible
+Tools: Git, GitHub, JIRA, Confluence, Slack, Postman, VS Code
+Methodologies: Agile, Scrum, Kanban, Test-Driven Development, Continuous Integration
+
+PROJECTS
+
+E-commerce Platform (2022-2023)
+- Built scalable e-commerce platform serving 100K+ users daily
+- Implemented microservices architecture with Docker and Kubernetes
+- Technologies: React, Node.js, PostgreSQL, Redis, AWS, Stripe API
+- Result: 50% increase in conversion rate and 99.9% uptime
+
+Task Management System (2021)
+- Developed collaborative task management tool with real-time updates
+- Real-time updates using WebSockets and Redis pub/sub
+- Technologies: React, Node.js, MongoDB, Socket.io, JWT authentication
+- Result: Adopted by 15+ teams across the company
+
+Analytics Dashboard (2020)
+- Created comprehensive analytics dashboard for business intelligence
+- Real-time data visualization using D3.js and Chart.js
+- Technologies: Vue.js, Python, FastAPI, PostgreSQL, Redis
+- Result: 40% improvement in decision-making speed
+
+CERTIFICATIONS
+
+AWS Certified Solutions Architect - Professional (2023)
+AWS Certified Developer - Associate (2022)
+Google Cloud Professional Developer (2021)
+Google Cloud Professional Data Engineer (2021)
+Certified Scrum Master (2020)
+Oracle Certified Java Developer (2019)
+Microsoft Azure Fundamentals (2019)
+
+ACHIEVEMENTS
+
+- Led team that won 'Best Innovation Award' at Tech Corp (2022)
+- Published 5 technical articles on software architecture and best practices
+- Speaker at 3 regional tech conferences and 2 international events
+- Open source contributor with 1000+ GitHub stars across multiple projects
+- Mentored 20+ junior developers who advanced to senior positions
+- Contributed to major open source projects including React and Node.js
+
+LANGUAGES
+
+English: Native
+Spanish: Fluent
+French: Intermediate
+German: Beginner
+
+REFERENCES
+
+Available upon request
+
+ADDITIONAL INFORMATION
+
+- Willing to relocate
+- Available for remote work
+- Open to travel (up to 25%)
+- Strong communication and leadership skills
+- Experience with international teams
+- Passionate about technology and continuous learning

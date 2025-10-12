@@ -11,6 +11,8 @@ import {
   EyeIcon,
   EyeSlashIcon
 } from '@heroicons/react/24/outline';
+import { useToast } from '../../hooks/use-toast';
+import { useConfirm } from '../../hooks/use-confirm';
 
 interface SmtpConfiguration {
   id: number;
@@ -49,6 +51,8 @@ interface SmtpConfigurationFormData {
 }
 
 const SmtpConfigurations: React.FC = () => {
+  const { addToast } = useToast();
+  const { confirm } = useConfirm();
   const [configurations, setConfigurations] = useState<SmtpConfiguration[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -168,7 +172,15 @@ const SmtpConfigurations: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this SMTP configuration?')) {
+    const confirmed = await confirm({
+      title: 'Delete SMTP Configuration',
+      message: 'Are you sure you want to delete this SMTP configuration?',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (confirmed) {
       try {
         const response = await fetch(`/api/admin/smtp-configurations/${id}`, {
           method: 'DELETE',
@@ -181,7 +193,12 @@ const SmtpConfigurations: React.FC = () => {
           fetchConfigurations();
         } else {
           const error = await response.json();
-          alert(error.message || 'Failed to delete configuration');
+          addToast({
+            type: 'error',
+            title: 'Delete Failed',
+            description: error.message || 'Failed to delete configuration',
+            duration: 5000
+          });
         }
       } catch (error) {
         console.error('Error deleting configuration:', error);
@@ -194,8 +211,18 @@ const SmtpConfigurations: React.FC = () => {
       setTestingConfig(configuration.id);
       setTestResult(null);
 
-      const testEmail = prompt('Enter test email address:', configuration.from_address);
-      if (!testEmail) return;
+      // For now, use the from_address as test email
+      // TODO: Implement a proper input dialog
+      const testEmail = configuration.from_address;
+      if (!testEmail) {
+        addToast({
+          type: 'warning',
+          title: 'No Email Address',
+          description: 'Please set a from address before testing.',
+          duration: 5000
+        });
+        return;
+      }
 
       const response = await fetch(`/api/admin/smtp-configurations/${configuration.id}/test`, {
         method: 'POST',

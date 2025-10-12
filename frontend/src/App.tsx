@@ -5,6 +5,8 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { PerformanceOptimizer } from './components/PerformanceOptimizer';
 import { PageLoader } from './components/LoadingComponents';
+import { ToastContainer } from './hooks/use-toast';
+import { ConfirmDialog } from './hooks/use-confirm';
 
 // Lazy load components for better performance
 const Home = lazy(() => import('./pages/Home'));
@@ -39,12 +41,19 @@ const Settings = lazy(() => import('./pages/admin/Settings'));
 const EmailTemplates = lazy(() => import('./pages/admin/EmailTemplates'));
 const SmtpConfigurations = lazy(() => import('./pages/admin/SmtpConfigurations'));
 const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
+const UserActivities = lazy(() => import('./pages/admin/UserActivities'));
 const HomeSettings = lazy(() => import('./pages/admin/HomeSettings'));
+const GeminiApiManagement = lazy(() => import('./pages/admin/GeminiApiManagement'));
+const CvTemplates = lazy(() => import('./pages/admin/CvTemplates'));
+const CvTemplateCreate = lazy(() => import('./pages/admin/CvTemplateCreate'));
 const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
+const GoogleSuccess = lazy(() => import('./pages/auth/GoogleSuccess'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const Resources = lazy(() => import('./pages/Resources'));
+const CVBuilder = lazy(() => import('./pages/resources/CVBuilder'));
+const WatermarkRemover = lazy(() => import('./pages/resources/WatermarkRemover'));
 
 // Enhanced loading with performance optimizations
 
@@ -66,6 +75,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<EmailVerification />} />
               <Route path="/auth/google/callback" element={<GoogleCallback />} />
+              <Route path="/auth/google/success" element={<GoogleSuccess />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:slug" element={<CourseDetail />} />
               <Route path="/my-courses" element={<MyCourses />} />
@@ -88,15 +98,24 @@ function App() {
               <Route path="/admin/email-templates" element={<ProtectedRoute><EmailTemplates /></ProtectedRoute>} />
               <Route path="/admin/smtp-configurations" element={<ProtectedRoute><SmtpConfigurations /></ProtectedRoute>} />
               <Route path="/admin/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+              <Route path="/admin/user-activities" element={<ProtectedRoute><UserActivities /></ProtectedRoute>} />
               <Route path="/admin/home-settings" element={<ProtectedRoute><HomeSettings /></ProtectedRoute>} />
+              <Route path="/admin/gemini-api" element={<ProtectedRoute><GeminiApiManagement /></ProtectedRoute>} />
+              <Route path="/admin/cv-templates" element={<ProtectedRoute><CvTemplates /></ProtectedRoute>} />
+              <Route path="/admin/cv-templates/create" element={<ProtectedRoute><CvTemplateCreate /></ProtectedRoute>} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />
               <Route path="/resources" element={<Resources />} />
+              <Route path="/resources/cv-builder" element={<CVBuilder />} />
+              <Route path="/resources/watermark-remover" element={<WatermarkRemover />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
         </Layout>
+        {/* Global Toast and Confirm Dialogs */}
+        <ToastContainer />
+        <ConfirmDialog />
       </BrowserRouter>
     </ErrorBoundary>
   );

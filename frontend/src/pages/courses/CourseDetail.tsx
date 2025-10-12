@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { useToast } from '../../hooks/use-toast';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
 interface Lesson {
   id: number;
@@ -66,6 +67,7 @@ interface TestAttempt {
 }
 
 export default function CourseDetail() {
+  const { addToast } = useToast();
   const { slug } = useParams<{ slug: string }>();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
@@ -175,7 +177,12 @@ export default function CourseDetail() {
         setError('');
         setShowTest(false);
         await fetchCourse(); // Refresh course data
-        alert('🎉 Test passed! Lesson completed successfully!');
+        addToast({
+          type: 'success',
+          title: 'Test Passed!',
+          description: '🎉 Test passed! Lesson completed successfully!',
+          duration: 5000
+        });
       } else {
         setError(`Test failed. Score: ${response.data.score}%. Try again!`);
       }
@@ -201,7 +208,12 @@ export default function CourseDetail() {
       );
       
       await fetchCourse(); // Refresh course data
-      alert('✅ Lesson marked as completed!');
+      addToast({
+        type: 'success',
+        title: 'Lesson Completed',
+        description: '✅ Lesson marked as completed!',
+        duration: 5000
+      });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to complete lesson');
     } finally {

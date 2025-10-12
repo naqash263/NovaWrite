@@ -19,63 +19,14 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
     
     try {
       // Get the Google OAuth redirect URL
-      const response = await apiClient.get('/auth/google/redirect');
-      const { redirect_url } = response.data;
+      const response = await apiClient.get('/auth/google/url');
+      const { url, state } = response.data;
 
-      // Open Google OAuth in a popup window
-      const popup = window.open(
-        redirect_url,
-        'google-oauth',
-        'width=500,height=600,scrollbars=yes,resizable=yes'
-      );
+      // Store state for verification
+      sessionStorage.setItem('google_oauth_state', state);
 
-      if (!popup) {
-        throw new Error('Popup blocked. Please allow popups for this site.');
-      }
-
-      // Listen for the OAuth callback
-      const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed);
-          setLoading(false);
-        }
-      }, 1000);
-
-      // Listen for messages from the popup
-      const messageListener = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-
-        if (event.data.type === 'GOOGLE_OAUTH_SUCCESS') {
-          const { access_token, user } = event.data;
-          
-          // Store the token and user data
-          localStorage.setItem('token', access_token);
-          localStorage.setItem('user', JSON.stringify(user));
-          
-          // Update API client with new token
-          apiClient.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-          
-          popup.close();
-          clearInterval(checkClosed);
-          window.removeEventListener('message', messageListener);
-          setLoading(false);
-          
-          if (onSuccess) {
-            onSuccess(user);
-          }
-        } else if (event.data.type === 'GOOGLE_OAUTH_ERROR') {
-          popup.close();
-          clearInterval(checkClosed);
-          window.removeEventListener('message', messageListener);
-          setLoading(false);
-          
-          if (onError) {
-            onError(event.data.error || 'Google login failed');
-          }
-        }
-      };
-
-      window.addEventListener('message', messageListener);
+      // Redirect to Google OAuth
+      window.location.href = url;
 
     } catch (error: any) {
       setLoading(false);

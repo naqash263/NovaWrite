@@ -6,7 +6,7 @@ This guide explains how to deploy your NovaWrite application to Namecheap hostin
 ## 📁 Environment Setup
 
 ### 1. Development Environment (Current - Cursor)
-- **Backend**: `http://localhost:8000`
+- **Backend**: `http://localhost:8001`
 - **Frontend**: `http://localhost:3000`
 - **Database**: Local PostgreSQL/SQLite
 - **Environment**: `.env` (local development)

@@ -1,0 +1,17 @@
+John Doe
+Software Engineer
+john.doe@example.com
++1 (555) 123-4567
+
+EXPERIENCE
+Senior Software Engineer - Tech Corp (2020-2024)
+- Led development of web applications
+- Managed team of 5 developers
+- Implemented CI/CD pipelines
+
+EDUCATION
+Bachelor of Science in Computer Science
+University of Technology (2016-2020)
+
+SKILLS
+JavaScript, React, Node.js, Python, SQL

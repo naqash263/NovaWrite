@@ -1,3 +1,21 @@
+# PHP Upload Limits - Force settings
+php_value upload_max_filesize 50M
+php_value post_max_size 50M
+php_value max_execution_time 300
+php_value max_input_time 300
+php_value memory_limit 256M
+php_value max_file_uploads 20
+php_flag file_uploads On
+php_value max_input_vars 3000
+
+# Additional PHP settings for large file uploads
+php_admin_value upload_max_filesize 50M
+php_admin_value post_max_size 50M
+php_admin_value memory_limit 256M
+
+# Force these settings to take effect
+SetEnv PHP_VALUE "upload_max_filesize=50M;post_max_size=50M;memory_limit=256M"
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

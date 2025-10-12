@@ -4,6 +4,7 @@ import apiClient from '../api/axios';
 import { FileList } from '../components/FileList';
 import { useSEO } from '../utils/seo';
 import LazyImage from '../components/LazyImage';
+import { API_CONFIG } from '../config/api';
 
 interface Post {
   id: number;
@@ -124,7 +125,7 @@ export default function BlogPost() {
             {post.files && post.files.length > 0 && (
               <FileList
                 files={post.files}
-                apiBaseUrl={import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}
+                apiBaseUrl={API_CONFIG.BASE_URL}
               />
             )}
           </div>

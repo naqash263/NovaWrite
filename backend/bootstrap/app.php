@@ -16,10 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
         
-        // Register custom middleware
+        // Register custom middleware aliases
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'api.auth' => \App\Http\Middleware\ApiAuth::class,
+            'large.upload' => \App\Http\Middleware\LargeFileUpload::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

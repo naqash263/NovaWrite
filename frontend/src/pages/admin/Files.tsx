@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/axios';
 import { useSEO } from '../../utils/seo';
+import { API_CONFIG } from '../../config/api';
 
 interface File {
   id: number;
@@ -141,7 +142,7 @@ export default function Files() {
   };
 
   const getFileUrl = (file: File): string => {
-    return `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${file.path}`;
+    return API_CONFIG.getStorageUrl(file.path);
   };
 
   const filteredFiles = files.filter(file => {

@@ -80,7 +80,7 @@ A modern, full-stack web application built with React, TypeScript, Laravel, and 
 
 4. **Access the application**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000/api
+   - Backend API: http://localhost:8001/api
    - Admin Panel: http://localhost:3000/admin
 
 ## 📁 Project Structure

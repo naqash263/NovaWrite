@@ -21,11 +21,11 @@ class SmtpConfigurationSeeder extends Seeder
                 'mailer' => 'smtp',
                 'host' => 'mail.naqashthaheem.com',
                 'port' => 587,
-                'username' => 'noreply@naqashthaheem.com',
-                'password' => 'your_smtp_password_here', // This will be encrypted automatically
+                'username' => 'contact@naqashthaheem.com',
+                'password' => 'aeQi*(M99Hf', // This will be encrypted automatically
                 'encryption' => 'tls',
-                'from_address' => 'noreply@naqashthaheem.com',
-                'from_name' => 'NovaWrite',
+                'from_address' => 'contact@naqashthaheem.com',
+                'from_name' => 'Naqash Thaheem',
                 'is_active' => true,
                 'is_default' => true,
                 'description' => 'Default SMTP configuration for naqashthaheem.com domain',

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import { API_CONFIG } from '../../config/api';
 
 export default function EmailVerification() {
   const [searchParams] = useSearchParams();
@@ -58,7 +57,7 @@ export default function EmailVerification() {
     setError('');
 
     try {
-      await axios.post(`${API_URL}/auth/verify-email`, {
+      await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.VERIFY_EMAIL}`, {
         token: token,
         email: email,
       });
@@ -82,7 +81,7 @@ export default function EmailVerification() {
     setError('');
 
     try {
-      const response = await axios.post(`${API_URL}/auth/resend-verification`, {
+      const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.RESEND_VERIFICATION}`, {
         email: email,
       });
 

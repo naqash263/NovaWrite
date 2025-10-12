@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import ApiKeyManager from './ApiKeyManager';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -8,6 +9,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const isAdmin = location.pathname.startsWith('/admin');
   const isLoginPage = location.pathname === '/admin/login';
 
@@ -20,6 +22,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setUserDropdownOpen(false);
     setSettingsDropdownOpen(false);
+    setMoreDropdownOpen(false);
   }, [user]);
 
   // Close dropdowns when clicking outside
@@ -34,13 +37,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       if (settingsDropdownOpen && !target.closest('[data-settings-dropdown]')) {
         setSettingsDropdownOpen(false);
       }
+      
+      if (moreDropdownOpen && !target.closest('[data-more-dropdown]')) {
+        setMoreDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [userDropdownOpen, settingsDropdownOpen]);
+  }, [userDropdownOpen, settingsDropdownOpen, moreDropdownOpen]);
 
   // Allow access to login page without authentication
   if (isLoginPage) {
@@ -89,11 +96,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       
       // User Management
       { path: '/admin/user-management', label: 'User Management', icon: '👥', category: 'Users' },
+      { path: '/admin/user-activities', label: 'User Activities', icon: '📊', category: 'Users' },
       { path: '/admin/user-groups', label: 'User Groups', icon: '👨‍👩‍👧‍👦', category: 'Users' },
       
       // System Settings
       { path: '/admin/api-tokens', label: 'API Tokens', icon: '🔑', category: 'System' },
       { path: '/admin/api-docs', label: 'API Documentation', icon: '📖', category: 'System' },
+      { path: '/admin/gemini-api', label: 'Gemini API', icon: '🤖', category: 'System' },
+      { path: '/admin/cv-templates', label: 'CV Templates', icon: '📄', category: 'System' },
     ];
 
     return (
@@ -361,89 +371,232 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <Link to="/" className="flex items-center text-xl font-bold text-gray-900">
                 Naqash Thaheem
               </Link>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-1">
+                {/* Primary Navigation - Most Important Items */}
                 <Link
                   to="/"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    location.pathname === '/'
+                      ? 'bg-blue-100 text-blue-700 shadow-sm'
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                  }`}
                 >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
                   Home
                 </Link>
+                
                 <Link
                   to="/courses"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    location.pathname.startsWith('/courses')
+                      ? 'bg-blue-100 text-blue-700 shadow-sm'
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                  }`}
                 >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
                   Courses
                 </Link>
-                <Link
-                  to="/blog"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
-                >
-                  Blog
-                </Link>
+                
                 <Link
                   to="/workflows"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    location.pathname.startsWith('/workflows')
+                      ? 'bg-blue-100 text-blue-700 shadow-sm'
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                  }`}
                 >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
                   Workflows
                 </Link>
-                <Link
-                  to="/resources"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
-                >
-                  Resources
-                </Link>
-                <Link
-                  to="/about"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
-                >
-                  About
-                </Link>
-                <Link
-                  to="/contact"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
-                >
-                  Contact
-                </Link>
+                
+                {/* Resources Dropdown */}
+                <div className="relative" data-more-dropdown>
+                  <button
+                    onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                    className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      location.pathname.startsWith('/resources') || location.pathname.startsWith('/blog') || location.pathname.startsWith('/about') || location.pathname.startsWith('/contact')
+                        ? 'bg-blue-100 text-blue-700 shadow-sm'
+                        : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    Resources
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Resources Dropdown Menu */}
+                  {moreDropdownOpen && (
+                    <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Tools & Resources
+                      </div>
+                      <Link
+                        to="/resources"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        All Resources
+                      </Link>
+                      <Link
+                        to="/resources/cv-builder"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        CV Builder
+                      </Link>
+                      <Link
+                        to="/resources/watermark-remover"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Watermark Remover
+                      </Link>
+                      
+                      <div className="border-t border-gray-100 my-2"></div>
+                      
+                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Information
+                      </div>
+                      <Link
+                        to="/blog"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                        </svg>
+                        Blog
+                      </Link>
+                      <Link
+                        to="/about"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        About
+                      </Link>
+                      <Link
+                        to="/contact"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Contact
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
             {/* Desktop Auth Menu */}
-            <div className="hidden sm:flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-3">
               {user ? (
                 <>
-                  {user.role === 'admin' && (
-                    <Link
-                      to="/admin"
-                      className="text-sm text-gray-600 hover:text-gray-900"
+                  {/* API Key Status - Compact */}
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
+                    <span className="text-gray-500">AI:</span>
+                    <span className="font-medium text-gray-700">0/0</span>
+                    <ApiKeyManager />
+                  </div>
+                  
+                  {/* User Dropdown */}
+                  <div className="relative" data-user-dropdown>
+                    <button
+                      onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
                     >
-                      Admin
-                    </Link>
-                  )}
-                  <Link
-                    to="/my-courses"
-                    className="text-sm text-gray-600 hover:text-gray-900"
-                  >
-                    My Courses
-                  </Link>
-                  <span className="text-sm text-gray-600">{user.name}</span>
-                  <button
-                    onClick={() => logout('/')}
-                    className="text-sm text-gray-600 hover:text-red-600"
-                  >
-                    Logout
-                  </button>
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="hidden md:block">{user.name}</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* User Dropdown Menu */}
+                    {userDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        <div className="px-4 py-2 border-b border-gray-100">
+                          <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                          <p className="text-xs text-gray-500">{user.email}</p>
+                        </div>
+                        
+                        <Link
+                          to="/my-courses"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <span className="mr-3">📚</span>
+                          My Courses
+                        </Link>
+                        
+                        {user.role === 'admin' && (
+                          <Link
+                            to="/admin"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <span className="mr-3">⚙️</span>
+                            Admin Dashboard
+                          </Link>
+                        )}
+                        
+                        <div className="border-t border-gray-100 mt-1 pt-1">
+                          <button
+                            onClick={() => {
+                              setUserDropdownOpen(false);
+                              logout('/');
+                            }}
+                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Logout
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <>
                   <Link
                     to="/login"
-                    className="text-sm text-gray-600 hover:text-gray-900"
+                    className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Login
                   </Link>
                   <Link
                     to="/register"
-                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Sign Up
                   </Link>
@@ -471,74 +624,185 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {/* Mobile menu */}
           {mobileMenuOpen && (
             <div className="sm:hidden border-t border-gray-200 py-4">
-              <div className="space-y-1">
-                <Link
-                  to="/"
-                  className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                >
-                  Home
-                </Link>
-                <Link
-                  to="/courses"
-                  className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                >
-                  Courses
-                </Link>
-                <Link
-                  to="/blog"
-                  className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                >
-                  Blog
-                </Link>
-                <Link
-                  to="/workflows"
-                  className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                >
-                  Workflows
-                </Link>
-                <Link
-                  to="/resources"
-                  className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                >
-                  Resources
-                </Link>
-                <Link
-                  to="/about"
-                  className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                >
-                  About
-                </Link>
-                <Link
-                  to="/contact"
-                  className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                >
-                  Contact
-                </Link>
+              <div className="space-y-4">
+                {/* Primary Navigation */}
+                <div>
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Main Navigation
+                  </div>
+                  <div className="space-y-1">
+                    <Link
+                      to="/"
+                      className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                        location.pathname === '/'
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                      Home
+                    </Link>
+                    <Link
+                      to="/courses"
+                      className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                        location.pathname.startsWith('/courses')
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      Courses
+                    </Link>
+                    <Link
+                      to="/workflows"
+                      className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                        location.pathname.startsWith('/workflows')
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Workflows
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Resources Section */}
+                <div>
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Tools & Resources
+                  </div>
+                  <div className="space-y-1">
+                    <Link
+                      to="/resources"
+                      className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                        location.pathname.startsWith('/resources')
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                      All Resources
+                    </Link>
+                    <Link
+                      to="/resources/cv-builder"
+                      className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      CV Builder
+                    </Link>
+                    <Link
+                      to="/resources/watermark-remover"
+                      className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Watermark Remover
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Information Section */}
+                <div>
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Information
+                  </div>
+                  <div className="space-y-1">
+                    <Link
+                      to="/blog"
+                      className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                        location.pathname.startsWith('/blog')
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                      </svg>
+                      Blog
+                    </Link>
+                    <Link
+                      to="/about"
+                      className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                        location.pathname.startsWith('/about')
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      About
+                    </Link>
+                    <Link
+                      to="/contact"
+                      className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                        location.pathname.startsWith('/contact')
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Contact
+                    </Link>
+                  </div>
+                </div>
                 
+                {/* User Section */}
                 <div className="border-t border-gray-200 pt-4 mt-4">
                   {user ? (
                     <>
+                      {/* API Key Status */}
+                      <div className="px-3 py-2">
+                        <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500 text-sm">AI Requests:</span>
+                            <span className="font-medium text-gray-700">0/0</span>
+                          </div>
+                          <ApiKeyManager />
+                        </div>
+                      </div>
+                      
+                      <Link
+                        to="/my-courses"
+                        className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                      >
+                        <span className="mr-3">📚</span>
+                        My Courses
+                      </Link>
+                      
                       {user.role === 'admin' && (
                         <Link
                           to="/admin"
-                          className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                          className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
                         >
+                          <span className="mr-3">⚙️</span>
                           Admin Dashboard
                         </Link>
                       )}
-                      <Link
-                        to="/my-courses"
-                        className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                      >
-                        My Courses
-                      </Link>
+                      
                       <div className="px-3 py-2 text-sm text-gray-500">
                         Signed in as {user.name}
                       </div>
+                      
                       <button
                         onClick={() => logout('/')}
-                        className="block w-full text-left px-3 py-2 text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md"
+                        className="flex items-center w-full text-left px-3 py-2 text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md"
                       >
+                        <span className="mr-3">🚪</span>
                         Logout
                       </button>
                     </>

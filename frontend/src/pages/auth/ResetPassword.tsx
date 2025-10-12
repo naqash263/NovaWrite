@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import { API_CONFIG } from '../../config/api';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -44,7 +43,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      await axios.post(`${API_URL}/auth/reset-password`, {
+      await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.RESET_PASSWORD}`, {
         token: token,
         email: email,
         password: password,

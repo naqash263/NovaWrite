@@ -1,0 +1,89 @@
+John Doe
+Senior Software Engineer
+john.doe@email.com
++1-555-0123
+123 Main St, City, State
+
+PROFESSIONAL SUMMARY
+Experienced software engineer with 8+ years of experience in full-stack development, team leadership, and system architecture. Proven track record of delivering scalable solutions and leading cross-functional teams.
+
+EXPERIENCE
+
+Senior Software Engineer | Tech Corp | 2020-2023
+- Led a team of 5 developers in building microservices architecture
+- Improved system performance by 40% through optimization
+- Implemented CI/CD pipelines reducing deployment time by 60%
+- Mentored junior developers and conducted code reviews
+
+Software Engineer | StartupXYZ | 2018-2020
+- Developed React-based frontend applications
+- Built RESTful APIs using Node.js and Express
+- Collaborated with product team to define technical requirements
+- Implemented automated testing increasing code coverage to 90%
+
+Junior Developer | WebSolutions Inc | 2016-2018
+- Developed web applications using JavaScript and PHP
+- Worked with MySQL databases and wrote complex queries
+- Participated in agile development processes
+- Fixed bugs and implemented new features
+
+EDUCATION
+
+Master of Computer Science
+University of Technology | 2016
+- Specialization in Software Engineering
+- GPA: 3.8/4.0
+- Thesis: 'Scalable Web Application Architecture'
+
+Bachelor of Computer Science
+State University | 2014
+- Magna Cum Laude
+- GPA: 3.9/4.0
+- Relevant Coursework: Data Structures, Algorithms, Database Systems
+
+TECHNICAL SKILLS
+
+Programming Languages: JavaScript, Python, Java, PHP, SQL, TypeScript
+Frameworks: React, Node.js, Express, Laravel, Django, Spring Boot
+Databases: MySQL, PostgreSQL, MongoDB, Redis
+Cloud Platforms: AWS, Google Cloud, Azure
+Tools: Git, Docker, Kubernetes, Jenkins, JIRA
+Methodologies: Agile, Scrum, Test-Driven Development
+
+PROJECTS
+
+E-commerce Platform (2022-2023)
+- Built scalable e-commerce platform serving 100K+ users
+- Implemented microservices architecture with Docker and Kubernetes
+- Technologies: React, Node.js, PostgreSQL, Redis, AWS
+- Result: 50% increase in conversion rate
+
+Task Management System (2021)
+- Developed collaborative task management tool
+- Real-time updates using WebSockets
+- Technologies: React, Node.js, MongoDB, Socket.io
+- Result: Adopted by 10+ teams across the company
+
+CERTIFICATIONS
+
+AWS Certified Solutions Architect (2022)
+Google Cloud Professional Developer (2021)
+Certified Scrum Master (2020)
+Oracle Certified Java Developer (2019)
+
+ACHIEVEMENTS
+
+- Led team that won 'Best Innovation Award' at Tech Corp (2022)
+- Published 3 technical articles on software architecture
+- Speaker at 2 regional tech conferences
+- Open source contributor with 500+ GitHub stars
+
+LANGUAGES
+
+English: Native
+Spanish: Fluent
+French: Intermediate
+
+REFERENCES
+
+Available upon request

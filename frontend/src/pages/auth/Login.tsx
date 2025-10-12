@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { GoogleLoginButton } from '../../components/GoogleLoginButton';
 import axios from 'axios';
+import { API_CONFIG } from '../../config/api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -16,8 +17,6 @@ export default function Login() {
   const [resendMessage, setResendMessage] = useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
-
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
   // Countdown timer effect
   useEffect(() => {
@@ -47,7 +46,7 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await axios.post(`${API_URL}/auth/resend-verification`, {
+      const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.RESEND_VERIFICATION}`, {
         email: email,
       });
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../api/axios';
 import { useSEO } from '../../utils/seo';
+import { useToast } from '../../hooks/use-toast';
 
 interface Settings {
   site_name: string;
@@ -15,6 +16,7 @@ interface Settings {
 }
 
 export default function Settings() {
+  const { addToast } = useToast();
   const [formData, setFormData] = useState<Settings>({
     site_name: '',
     site_description: '',
@@ -47,7 +49,12 @@ export default function Settings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      alert('Settings saved successfully!');
+      addToast({
+        type: 'success',
+        title: 'Settings Saved',
+        description: 'Settings saved successfully!',
+        duration: 5000
+      });
     },
   });
 

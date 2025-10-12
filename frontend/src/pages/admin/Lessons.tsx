@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../../api/axios';
 import RichTextEditor from '../../components/RichTextEditor';
+import { useToast } from '../../hooks/use-toast';
 
 interface Lesson {
   id: number;
@@ -79,6 +80,7 @@ interface FormData {
 }
 
 export default function AdminLessons() {
+  const { addToast } = useToast();
   const { courseId } = useParams<{ courseId: string }>();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [course, setCourse] = useState<Course | null>(null);
@@ -151,9 +153,19 @@ export default function AdminLessons() {
       console.error('Error saving lesson:', error);
       if (error.response?.data?.errors) {
         console.error('Validation errors:', error.response.data.errors);
-        alert('Validation errors: ' + JSON.stringify(error.response.data.errors));
+        addToast({
+          type: 'error',
+          title: 'Validation Errors',
+          description: 'Validation errors: ' + JSON.stringify(error.response.data.errors),
+          duration: 5000
+        });
       } else {
-        alert('Error saving lesson: ' + (error.response?.data?.message || error.message));
+        addToast({
+          type: 'error',
+          title: 'Save Failed',
+          description: 'Error saving lesson: ' + (error.response?.data?.message || error.message),
+          duration: 5000
+        });
       }
     }
   };
@@ -247,19 +259,34 @@ export default function AdminLessons() {
 
   const saveQuiz = () => {
     if (quizData.questions.length === 0) {
-      alert('Please add at least one question');
+      addToast({
+        type: 'error',
+        title: 'Quiz Required',
+        description: 'Please add at least one question',
+        duration: 5000
+      });
       return;
     }
 
     // Validate all questions have content and options
     for (const question of quizData.questions) {
       if (!question.question.trim()) {
-        alert('All questions must have content');
+        addToast({
+          type: 'error',
+          title: 'Invalid Question',
+          description: 'All questions must have content',
+          duration: 5000
+        });
         return;
       }
       for (const [, value] of Object.entries(question.options)) {
         if (!value.trim()) {
-          alert('All answer options must be filled');
+          addToast({
+            type: 'error',
+            title: 'Invalid Answer Options',
+            description: 'All answer options must be filled',
+            duration: 5000
+          });
           return;
         }
       }

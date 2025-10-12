@@ -205,6 +205,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(UserResourceAccess::class, 'granted_by');
     }
 
+    public function activities()
+    {
+        return $this->hasMany(UserActivity::class);
+    }
+
     public function addToGroup($groupId, $addedBy = null)
     {
         if (!$this->groups()->where('group_id', $groupId)->exists()) {

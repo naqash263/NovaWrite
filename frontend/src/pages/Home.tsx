@@ -911,12 +911,15 @@ export default function Home() {
                 <div className="md:w-5/12"></div>
                 <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 bg-blue-600 rounded-full border-4 border-white shadow-lg hidden md:block"></div>
                 <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                  <span className="text-blue-600 font-bold text-sm">2023 - Present</span>
+                  <span className="text-blue-600 font-bold text-sm">2024 - Present</span>
                   <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Senior Automation Specialist</h3>
                   <p className="text-gray-600 mb-3">Leading complex automation projects with AI integration and enterprise system implementations</p>
                   <div className="flex flex-wrap gap-2">
                     <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">AI Integration</span>
                     <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">Power BI</span>
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">N8N</span>
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">Make.com</span>
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">Vibe Code</span>
                   </div>
                 </div>
               </div>
@@ -925,11 +928,16 @@ export default function Home() {
               <div className="relative flex items-center justify-between md:justify-start">
                 <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                   <span className="text-purple-600 font-bold text-sm">2021 - 2023</span>
-                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Systems Analyst</h3>
-                  <p className="text-gray-600 mb-3">Designed and implemented CRM automation solutions and Power BI dashboards for multiple clients</p>
+                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Support Engineer </h3>
+                  <p className="text-gray-600 mb-3">Application and infrastructure support for Riayati (MOHAP’s Health Information Exchange).
+
+Ensured ITSM process adherence (request, incident, problem & change management).
+
+Generated performance & downtime reports, conducted CAB meetings, and maintained SLA compliance.</p>
                   <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full">Zoho CRM</span>
-                    <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full">n8n</span>
+                    <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full">Zoho Service Desk</span>
+                    <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full">Riayati</span>
+                    <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full">Power BI</span>
                   </div>
                 </div>
                 <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 bg-purple-600 rounded-full border-4 border-white shadow-lg hidden md:block"></div>
@@ -943,10 +951,12 @@ export default function Home() {
                 <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                   <span className="text-green-600 font-bold text-sm">2017 - 2021</span>
                   <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">System Analyst & Automation Specialist</h3>
-                  <p className="text-gray-600 mb-3">Built scalable web applications and RESTful APIs using React, Laravel, and .NET Core</p>
+                  <p className="text-gray-600 mb-3">Built scalable web applications and RESTful APIs using React, Laravel,Python</p>
                   <div className="flex flex-wrap gap-2">
                     <span className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">React</span>
                     <span className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">Laravel</span>
+                    <span className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">Python</span>
+                    <span className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">Zoho Creator</span>
                   </div>
                 </div>
               </div>
@@ -956,7 +966,7 @@ export default function Home() {
                 <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                   <span className="text-orange-600 font-bold text-sm">2016 - 2017</span>
                   <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Software Developer</h3>
-                  <p className="text-gray-600 mb-3">Started career building web applications and learning automation tools and data analysis techniques</p>
+                  <p className="text-gray-600 mb-3">Started career building applications and learning automation tools and data analysis techniques</p>
                   <div className="flex flex-wrap gap-2">
                     <span className="px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-full">PHP</span>
                     <span className="px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-full">Python</span>

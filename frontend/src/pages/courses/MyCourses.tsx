@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import { API_CONFIG } from '../../config/api';
 
 interface Enrollment {
   enrollment_id: number;
@@ -40,7 +39,7 @@ export default function MyCourses() {
     }
 
     try {
-      const response = await axios.get(`${API_URL}/my-courses`, {
+      const response = await axios.get(`${API_CONFIG.BASE_URL}/my-courses`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEnrollments(response.data);
