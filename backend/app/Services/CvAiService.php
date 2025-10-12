@@ -177,14 +177,31 @@ class CvAiService
     {
         try {
             // Get the actual API key value
-            $apiKeyValue = $apiKey instanceof UserApiKey ? $apiKey->api_key : $apiKey->api_key;
+            if ($apiKey instanceof UserApiKey) {
+                $apiKeyValue = $apiKey->api_key; // UserApiKey has encrypted cast
+            } elseif ($apiKey instanceof GeminiApiKey) {
+                // For GeminiApiKey, try single decrypt first, then double decrypt if needed
+                try {
+                    $firstDecrypt = decrypt($apiKey->getRawOriginal('api_key'));
+                    // Check if the first decrypt gives us a valid API key (starts with AIza)
+                    if (strpos($firstDecrypt, 'AIza') === 0) {
+                        $apiKeyValue = $firstDecrypt;
+                    } else {
+                        // If not, try double decrypt
+                        $apiKeyValue = decrypt($firstDecrypt);
+                    }
+                } catch (\Exception $e) {
+                    // If decryption fails, try double decrypt
+                    $apiKeyValue = decrypt(decrypt($apiKey->getRawOriginal('api_key')));
+                }
+            } else {
+                // For PDO objects or other types
+                $apiKeyValue = $apiKey->api_key ?? $apiKey->apiKey ?? null;
+            }
             
-            $response = $this->client->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', [
+            $response = $this->client->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKeyValue}", [
                 'headers' => [
                     'Content-Type' => 'application/json',
-                ],
-                'query' => [
-                    'key' => $apiKeyValue
                 ],
                 'json' => [
                     'contents' => [

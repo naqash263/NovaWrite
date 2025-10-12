@@ -27,7 +27,7 @@ class GeminiApiKey extends Model
     ];
 
     protected $hidden = [
-        'api_key'
+        // 'api_key' - Commented out to allow access to decrypted API key
     ];
 
     /**

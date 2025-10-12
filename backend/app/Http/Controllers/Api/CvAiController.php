@@ -539,7 +539,7 @@ class CvAiController extends Controller
             if ($adminApiKey) {
                 // Create a simple object that mimics the GeminiApiKey model
                 $key = new \stdClass();
-                $key->api_key = decrypt($adminApiKey['api_key']);
+                $key->api_key = decrypt(decrypt($adminApiKey['api_key'])); // Double decrypt for admin keys
                 $key->id = $adminApiKey['id'];
                 $key->name = $adminApiKey['name'];
                 $key->is_active = $adminApiKey['is_active'];
@@ -571,23 +571,24 @@ class CvAiController extends Controller
      * Validate API key
      */
     private function validateApiKey(string $apiKey): bool
-{
-    try {
-        $response = \Http::withHeaders([
-            'Content-Type' => 'application/json',
-        ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => 'Test']
+    {
+        try {
+            $response = \Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => 'Test']
+                        ]
                     ]
                 ]
-            ]
-        ]);
+            ]);
 
-        return $response->successful();
-    } catch (\Exception $e) {
-        Log::error('CV AI API key validation failed: ' . $e->getMessage());
-        return false;
-    }}
+            return $response->successful();
+        } catch (\Exception $e) {
+            Log::error('CV AI API key validation failed: ' . $e->getMessage());
+            return false;
+        }
+    }
 }
