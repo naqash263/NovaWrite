@@ -8,7 +8,6 @@ interface GoogleLoginButtonProps {
 }
 
 export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
-  onSuccess,
   onError,
   className = ''
 }) => {

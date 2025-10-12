@@ -28,6 +28,7 @@ interface User {
   last_login_at?: string | null;
   login_count?: number;
   is_active?: boolean;
+  two_factor_enabled?: boolean;
   avatar?: string | null;
   phone?: string | null;
   location?: string | null;

@@ -12,17 +12,10 @@ export interface Toast {
   };
 }
 
-interface ToastContextValue {
-  toasts: Toast[];
-  addToast: (toast: Omit<Toast, 'id'>) => void;
-  removeToast: (id: string) => void;
-  clearToasts: () => void;
-}
-
 // Global toast state
 let toasts: Toast[] = [];
 let listeners: ((toasts: Toast[]) => void)[] = [];
-let timeouts: Map<string, NodeJS.Timeout> = new Map();
+let timeouts: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
 // Toast management functions
 const addToast = (toast: Omit<Toast, 'id'>) => {

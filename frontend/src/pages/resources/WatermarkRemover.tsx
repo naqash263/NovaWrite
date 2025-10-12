@@ -223,9 +223,9 @@ export default function WatermarkRemover() {
     const error = validateFile(file);
     if (error) {
       addToast({
+        type: 'error',
         title: 'Invalid File',
-        description: error,
-        variant: 'destructive'
+        description: error
       });
       return;
     }
@@ -301,6 +301,7 @@ export default function WatermarkRemover() {
       setProcessedVideoUrl(statusResult.data.processed_file_url);
 
       addToast({
+        type: 'success',
         title: 'Success',
         description: 'Video processed successfully! You can now download the result.',
       });
@@ -325,9 +326,9 @@ export default function WatermarkRemover() {
       });
 
       addToast({
+        type: 'error',
         title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
+        description: errorMessage
       });
     }
   };
@@ -346,9 +347,9 @@ export default function WatermarkRemover() {
       document.body.removeChild(link);
     } catch (error) {
       addToast({
+        type: 'error',
         title: 'Download Error',
-        description: 'Failed to download the processed video. Please try again.',
-        variant: 'destructive'
+        description: 'Failed to download the processed video. Please try again.'
       });
     }
   };

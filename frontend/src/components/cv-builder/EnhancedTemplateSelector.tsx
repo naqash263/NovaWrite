@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { API_CONFIG } from '../../config/api';
 
 interface Template {
@@ -28,10 +28,8 @@ export const EnhancedTemplateSelector: React.FC<EnhancedTemplateSelectorProps> =
   templatesLoading,
   selectedTemplate,
   onTemplateSelect,
-  onStyleChange,
-  currentStyle
+  onStyleChange
 }) => {
-  const [previewMode, setPreviewMode] = useState<'grid' | 'preview'>('grid');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'ats_score' | 'category'>('ats_score');
@@ -66,7 +64,6 @@ export const EnhancedTemplateSelector: React.FC<EnhancedTemplateSelectorProps> =
 
   const handleTemplateSelect = (template: Template) => {
     onTemplateSelect(template);
-    setPreviewMode('preview');
     
     // Apply template's default styling
     const defaultStyle = {

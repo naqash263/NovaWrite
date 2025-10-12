@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Filter, RefreshCw, TrendingUp, Users, Activity } from 'lucide-react';
 import apiClient from '../../api/axios';
 import Button from '../../components/ui/Button';

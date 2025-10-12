@@ -6,6 +6,7 @@ export const templatePreviewData: CVData = {
   email: "naqash263@gmail.com",
   phoneNumber: "+971 50 123 4567",
   address: "Ajman, U.A.E.",
+  profilePictureUrl: "",
   professionalSummary: "Experienced Systems Analyst with 5+ years in automation, data analysis, and system optimization. Proven track record in implementing efficient solutions and improving operational workflows.",
   
   workExperience: [
@@ -14,16 +15,14 @@ export const templatePreviewData: CVData = {
       jobTitle: "Senior Systems Analyst",
       startDate: "2022-01",
       endDate: "Present",
-      description: "Led automation projects reducing manual work by 40%. Implemented data analysis tools improving decision-making processes.",
-      location: "Dubai, UAE"
+      description: "Led automation projects reducing manual work by 40%. Implemented data analysis tools improving decision-making processes."
     },
     {
       company: "Digital Innovations Ltd.",
       jobTitle: "Systems Analyst",
       startDate: "2020-06",
       endDate: "2021-12",
-      description: "Developed workflow automation systems. Collaborated with cross-functional teams to optimize business processes.",
-      location: "Abu Dhabi, UAE"
+      description: "Developed workflow automation systems. Collaborated with cross-functional teams to optimize business processes."
     }
   ],
   
@@ -31,18 +30,12 @@ export const templatePreviewData: CVData = {
     {
       institution: "University of Technology",
       degree: "Bachelor of Computer Science",
-      startDate: "2016-09",
-      endDate: "2020-06",
-      description: "Specialized in Software Engineering and Data Analysis",
-      location: "UAE"
+      graduationYear: "2020"
     },
     {
       institution: "Professional Development Institute",
       degree: "Certified Systems Analyst",
-      startDate: "2021-03",
-      endDate: "2021-06",
-      description: "Advanced certification in system analysis and automation",
-      location: "Online"
+      graduationYear: "2021"
     }
   ],
   
@@ -81,10 +74,15 @@ export const templatePreviewData: CVData = {
   languages: [
     { language: "English", proficiency: "Native" },
     { language: "Arabic", proficiency: "Fluent" },
-    { language: "Hindi", proficiency: "Conversational" },
+    { language: "Hindi", proficiency: "Intermediate" },
     { language: "Urdu", proficiency: "Fluent" },
-    { language: "French", proficiency: "Basic" },
-    { language: "Spanish", proficiency: "Basic" }
+    { language: "French", proficiency: "Beginner" },
+    { language: "Spanish", proficiency: "Beginner" }
+  ],
+  
+  achievements: [
+    { title: "Process Optimization Award", description: "Reduced processing time by 60% through automation", date: "2022" },
+    { title: "Innovation Excellence", description: "Implemented AI-driven analytics solution", date: "2021" }
   ],
   
   interests: [

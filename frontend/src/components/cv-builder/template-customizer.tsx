@@ -1,4 +1,3 @@
-import React from 'react';
 import Input from "../../components/ui/Input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../components/ui/accordion";
 

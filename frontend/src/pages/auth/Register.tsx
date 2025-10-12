@@ -46,7 +46,7 @@ export default function Register() {
     setError('');
 
     try {
-      const response = await axios.post(`${API_URL}/auth/resend-verification`, {
+      const response = await axios.post(`${API_CONFIG.BASE_URL}/auth/resend-verification`, {
         email: verificationEmail,
       });
 

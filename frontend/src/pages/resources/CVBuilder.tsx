@@ -1249,7 +1249,7 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
   const currentStepData = steps.find(step => step.id === currentStep);
   const completedStepsCount = completedSteps.size;
   const remainingSteps = totalSteps - currentStep;
-  const progressPercentage = (currentStep / totalSteps) * 100;
+  // const progressPercentage = (currentStep / totalSteps) * 100;
 
   return (
     <div className="bg-white border-b border-gray-200 px-4 py-6 sticky top-0 z-10 shadow-sm">
@@ -1460,7 +1460,7 @@ const StepNavigation = ({
   onFinish: () => void,
   isNextDisabled?: boolean 
 }) => {
-  const progressPercentage = (currentStep / totalSteps) * 100;
+  // const progressPercentage = (currentStep / totalSteps) * 100;
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === totalSteps;
 
@@ -1473,7 +1473,7 @@ const StepNavigation = ({
             <div className="text-sm text-gray-600">
               <span className="font-medium text-gray-900">Step {currentStep}</span> of {totalSteps}
               <span className="mx-2">•</span>
-              <span className="text-blue-600 font-medium">{Math.round(progressPercentage)}% Complete</span>
+              <span className="text-blue-600 font-medium">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
             </div>
             <div className="text-xs text-gray-500">
               {isLastStep ? 'Ready to download!' : `${totalSteps - currentStep} steps remaining`}
@@ -1482,7 +1482,7 @@ const StepNavigation = ({
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
               className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progressPercentage}%` }}
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             />
           </div>
         </div>
@@ -2942,6 +2942,7 @@ export default function CVBuilder() {
   const [templates, setTemplates] = useState<any[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const { addToast } = useToast();
 
   const totalSteps = 10;
 
@@ -3523,7 +3524,7 @@ export default function CVBuilder() {
     }
   };
 
-  const exportAsDOCX = async (options: any) => {
+  const exportAsDOCX = async (_options: any) => {
     // For now, show a message that DOCX export is coming soon
     addToast({
       type: 'info',
@@ -3533,7 +3534,7 @@ export default function CVBuilder() {
     });
   };
 
-  const exportAsHTML = async (options: any) => {
+  const exportAsHTML = async (_options: any) => {
     try {
       // Get the CV preview HTML
       const previewElement = document.getElementById('cv-preview');
@@ -3583,7 +3584,7 @@ export default function CVBuilder() {
     }
   };
 
-  const exportAsTXT = async (options: any) => {
+  const exportAsTXT = async (_options: any) => {
     try {
       let txtContent = '';
       
