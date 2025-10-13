@@ -38,29 +38,31 @@ jobs:
           "gemini-table")
             echo "🔧 Creating Gemini API keys table..."
             ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
-              cd /home/timesovh/public_html/naqashthaheem.com && 
+              cd /home/timesovh/naqashthaheem.com/public_html && 
               php artisan migrate --path=database/migrations/2025_10_09_234758_create_gemini_api_keys_table.php --force
             "
             ;;
           "fresh-setup")
             echo "🔧 Running fresh database setup..."
             ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
-              cd /home/timesovh/public_html/naqashthaheem.com && 
+              cd /home/timesovh/naqashthaheem.com/public_html && 
               php artisan migrate --path=database/migrations/2025_10_13_020517_create_fresh_database_setup.php --force &&
-              php artisan db:seed --class=FreshDatabaseSeeder
+              php artisan db:seed --class=FreshDatabaseSeeder &&
+              php artisan config:cache &&
+              php artisan route:cache
             "
             ;;
           "all-migrations")
             echo "🔧 Running all migrations..."
             ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
-              cd /home/timesovh/public_html/naqashthaheem.com && 
+              cd /home/timesovh/naqashthaheem.com/public_html && 
               php artisan migrate --force
             "
             ;;
           "check-status")
             echo "🔍 Checking database status..."
             ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
-              cd /home/timesovh/public_html/naqashthaheem.com && 
+              cd /home/timesovh/naqashthaheem.com/public_html && 
               php artisan migrate:status
             "
             ;;

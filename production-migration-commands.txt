@@ -1,0 +1,44 @@
+#!/bin/bash
+# Production Migration Commands
+# Copy and paste these commands on your production server after SSH login
+
+# Step 1: Navigate to application directory
+cd /home/timesovh/naqashthaheem.com/public_html
+
+# Step 2: Check current status
+echo "Checking migration status..."
+php artisan migrate:status
+
+# Step 3: Run fresh database migration
+echo "Running fresh database migration..."
+php artisan migrate --path=database/migrations/2025_10_13_020517_create_fresh_database_setup.php --force
+
+# Step 4: Recreate migrations table (if needed)
+echo "Ensuring migrations table exists..."
+php artisan migrate:install
+
+# Step 5: Run database seeder
+echo "Seeding database with initial data..."
+php artisan db:seed --class=FreshDatabaseSeeder
+
+# Step 6: Clear and cache configurations
+echo "Clearing and caching configurations..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Step 7: Verify tables were created
+echo "Verifying database setup..."
+php artisan tinker --execute="echo 'Tables created: ' . DB::table('information_schema.tables')->where('table_schema', 'public')->count();"
+
+# Step 8: Test Gemini API keys
+echo "Testing Gemini API keys..."
+php artisan tinker --execute="echo 'Gemini API Keys: ' . DB::table('gemini_api_keys')->count();"
+
+echo ""
+echo "Migration completed!"
+echo "Admin user: naqash263@gmail.com / password123"
+echo "Next steps:"
+echo "1. Test the API endpoint: https://naqashthaheem.com/api/admin/gemini-api-keys"
+echo "2. Replace the dummy Gemini API key with your real one"
+echo "3. Test all functionality"
