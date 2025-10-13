@@ -26,3 +26,4 @@ class LargeFileUpload
         return $next($request);
     }
 }
+

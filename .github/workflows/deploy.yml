@@ -297,7 +297,13 @@ jobs:
             echo 'GOOGLE_REDIRECT_URI=' >> .env
           fi
           
-              php artisan key:generate --force
+              # Only generate APP_KEY if it doesn't exist
+              if ! grep -q "APP_KEY=base64:" .env; then
+                echo -e "${BLUE}🔑 Generating APP_KEY...${NC}"
+                php artisan key:generate --force
+              else
+                echo -e "${GREEN}✅ APP_KEY already exists, keeping it${NC}"
+              fi
               
               # Generate JWT secret
               echo -e "${BLUE}🔑 Generating JWT secret...${NC}"
