@@ -1,0 +1,80 @@
+name: Migrate Production Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration_type:
+        description: 'Type of migration to run'
+        required: true
+        default: 'gemini-table'
+        type: choice
+        options:
+        - gemini-table
+        - all-migrations
+        - check-status
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        
+    - name: Add server to known hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Run Database Migration
+      run: |
+        case "${{ github.event.inputs.migration_type }}" in
+          "gemini-table")
+            echo "🔧 Creating Gemini API keys table..."
+            ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
+              cd /home/timesovh/public_html/naqashthaheem.com && 
+              php artisan migrate --path=database/migrations/2025_10_09_234758_create_gemini_api_keys_table.php --force
+            "
+            ;;
+          "all-migrations")
+            echo "🔧 Running all migrations..."
+            ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
+              cd /home/timesovh/public_html/naqashthaheem.com && 
+              php artisan migrate --force
+            "
+            ;;
+          "check-status")
+            echo "🔍 Checking database status..."
+            ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
+              cd /home/timesovh/public_html/naqashthaheem.com && 
+              php artisan migrate:status
+            "
+            ;;
+        esac
+        
+    - name: Verify Migration
+      run: |
+        echo "🧪 Testing API endpoints..."
+        
+        # Test health endpoint
+        curl -f https://naqashthaheem.com/api/health || echo "Health check failed"
+        
+        # Test database debug endpoint
+        curl -f https://naqashthaheem.com/api/debug/database || echo "Debug endpoint failed"
+        
+    - name: Create Summary
+      run: |
+        echo "## Migration Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Migration Type**: ${{ github.event.inputs.migration_type }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: Completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **Timestamp**: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+        echo "1. Test the Gemini API keys endpoint" >> $GITHUB_STEP_SUMMARY
+        echo "2. Check the admin panel functionality" >> $GITHUB_STEP_SUMMARY
+        echo "3. Add your actual Gemini API key" >> $GITHUB_STEP_SUMMARY
