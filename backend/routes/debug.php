@@ -66,3 +66,62 @@ Route::get('/debug/gemini-api-keys', function () {
         ], 500);
     }
 });
+
+Route::get('/debug/auth-test', function () {
+    try {
+        // Test if we can access users table
+        $users = DB::table('users')->get();
+        
+        return response()->json([
+            'success' => true,
+            'users_count' => $users->count(),
+            'users' => $users->take(3), // Show first 3 users
+            'connection' => DB::connection()->getDatabaseName(),
+            'driver' => DB::connection()->getDriverName()
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'connection' => DB::connection()->getDatabaseName(),
+            'driver' => DB::connection()->getDriverName()
+        ], 500);
+    }
+});
+
+Route::get('/debug/all-connections', function () {
+    try {
+        $connections = [];
+        
+        // Check default connection
+        $defaultConnection = config('database.default');
+        $connections['default'] = [
+            'name' => $defaultConnection,
+            'database' => config("database.connections.{$defaultConnection}.database"),
+            'driver' => config("database.connections.{$defaultConnection}.driver"),
+            'host' => config("database.connections.{$defaultConnection}.host"),
+        ];
+        
+        // Check if we can query users
+        try {
+            $users = DB::table('users')->count();
+            $connections['default']['users_count'] = $users;
+        } catch (Exception $e) {
+            $connections['default']['users_error'] = $e->getMessage();
+        }
+        
+        // Check environment variables
+        $connections['env'] = [
+            'DB_CONNECTION' => env('DB_CONNECTION'),
+            'DB_DATABASE' => env('DB_DATABASE'),
+            'DB_HOST' => env('DB_HOST'),
+        ];
+        
+        return response()->json($connections);
+    } catch (Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+});
