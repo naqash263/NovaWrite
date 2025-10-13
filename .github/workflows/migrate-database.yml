@@ -9,6 +9,7 @@ on:
         default: 'gemini-table'
         type: choice
         options:
+        - fresh-setup
         - gemini-table
         - all-migrations
         - check-status
@@ -39,6 +40,14 @@ jobs:
             ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
               cd /home/timesovh/public_html/naqashthaheem.com && 
               php artisan migrate --path=database/migrations/2025_10_09_234758_create_gemini_api_keys_table.php --force
+            "
+            ;;
+          "fresh-setup")
+            echo "🔧 Running fresh database setup..."
+            ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
+              cd /home/timesovh/public_html/naqashthaheem.com && 
+              php artisan migrate --path=database/migrations/2025_10_13_020517_create_fresh_database_setup.php --force &&
+              php artisan db:seed --class=FreshDatabaseSeeder
             "
             ;;
           "all-migrations")
