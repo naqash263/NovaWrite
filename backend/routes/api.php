@@ -2,6 +2,9 @@
 
 use Illuminate\Http\Request;
 
+// Include debug routes
+require_once __DIR__ . '/debug.php';
+
 // Health check endpoint (no authentication required)
 Route::get('/health', function () {
     return response()->json([
