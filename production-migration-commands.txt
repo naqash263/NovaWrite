@@ -2,8 +2,8 @@
 # Production Migration Commands
 # Copy and paste these commands on your production server after SSH login
 
-# Step 1: Navigate to application directory
-cd /home/timesovh/naqashthaheem.com/public_html
+# Step 1: Navigate to backend directory
+cd /home/timesovh/naqashthaheem.com/backend
 
 # Step 2: Check current status
 echo "Checking migration status..."
