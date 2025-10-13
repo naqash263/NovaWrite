@@ -125,3 +125,60 @@ Route::get('/debug/all-connections', function () {
         ], 500);
     }
 });
+
+Route::post('/debug/create-gemini-table', function () {
+    try {
+        // Check if gemini_api_keys table exists
+        $tables = DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'gemini_api_keys'");
+        $tableExists = count($tables) > 0;
+        
+        if ($tableExists) {
+            return response()->json([
+                'success' => true,
+                'message' => 'gemini_api_keys table already exists',
+                'count' => DB::table('gemini_api_keys')->count()
+            ]);
+        }
+        
+        // Create the table
+        DB::statement("
+            CREATE TABLE gemini_api_keys (
+                id BIGSERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                api_key TEXT NOT NULL,
+                max_requests INTEGER NOT NULL DEFAULT 100,
+                total_requests INTEGER NOT NULL DEFAULT 100,
+                used_requests INTEGER NOT NULL DEFAULT 0,
+                is_active BOOLEAN NOT NULL DEFAULT true,
+                created_at TIMESTAMP(0) NULL,
+                updated_at TIMESTAMP(0) NULL
+            )
+        ");
+        
+        // Insert a sample API key
+        $sampleApiKey = "AIzaSyDummyKeyReplaceWithYourActualKey123456789";
+        DB::table('gemini_api_keys')->insert([
+            'name' => 'admin',
+            'api_key' => encrypt($sampleApiKey),
+            'max_requests' => 100,
+            'total_requests' => 100,
+            'used_requests' => 0,
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'gemini_api_keys table created successfully with sample data',
+            'count' => DB::table('gemini_api_keys')->count()
+        ]);
+        
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+});
