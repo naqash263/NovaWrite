@@ -202,32 +202,125 @@ class GeminiApiController extends Controller
     /**
      * Test an API key
      */
-    public function test(Request $request): JsonResponse
+    public function test(Request $request, $id = null): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'api_key' => 'required|string'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'API key is required'
-            ], 422);
-        }
-
         try {
+            // If ID is provided, fetch the API key from database
+            if ($id) {
+                $apiKey = GeminiApiKey::findOrFail($id);
+                
+                // Decrypt the API key
+                try {
+                    $decryptedKey = decrypt($apiKey->api_key);
+                    // If the result doesn't look like an API key, try double decrypt
+                    if (strpos($decryptedKey, 'AIza') !== 0) {
+                        $decryptedKey = decrypt($decryptedKey);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to decrypt API key for testing: ' . $e->getMessage());
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to decrypt API key for testing'
+                    ], 500);
+                }
+                
+                $isValid = $this->validateApiKey($decryptedKey);
+                $details = $this->getApiKeyDetails($decryptedKey);
+                
+                return response()->json([
+                    'success' => true,
+                    'valid' => $isValid,
+                    'message' => $isValid ? 'API key is valid and ready to use' : 'API key is invalid or has issues',
+                    'details' => $details
+                ]);
+            }
+            
+            // Fallback to request-based testing (for backward compatibility)
+            $validator = Validator::make($request->all(), [
+                'api_key' => 'required|string'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'API key is required'
+                ], 422);
+            }
+
             $isValid = $this->validateApiKey($request->api_key);
+            $details = $this->getApiKeyDetails($request->api_key);
             
             return response()->json([
                 'success' => true,
                 'valid' => $isValid,
-                'message' => $isValid ? 'API key is valid' : 'API key is invalid'
+                'message' => $isValid ? 'API key is valid and ready to use' : 'API key is invalid or has issues',
+                'details' => $details
             ]);
         } catch (\Exception $e) {
             Log::error('Error testing Gemini API key: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to test API key'
+                'message' => 'Failed to test API key: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Check health of all API keys
+     */
+    public function checkApiKeysHealth(): JsonResponse
+    {
+        try {
+            $apiKeys = GeminiApiKey::where('is_active', true)->get();
+            $healthResults = [];
+
+            foreach ($apiKeys as $apiKey) {
+                try {
+                    // Try single decrypt first
+                    $decryptedKey = decrypt($apiKey->api_key);
+                    
+                    // If the result doesn't look like an API key, try double decrypt
+                    if (strpos($decryptedKey, 'AIza') !== 0) {
+                        $decryptedKey = decrypt($decryptedKey);
+                    }
+                    
+                    $details = $this->getApiKeyDetails($decryptedKey);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to decrypt API key ' . $apiKey->name . ': ' . $e->getMessage());
+                    $details = [
+                        'status' => 'error',
+                        'error_message' => 'Failed to decrypt API key',
+                        'quota_status' => 'unknown'
+                    ];
+                }
+                
+                $healthResults[] = [
+                    'id' => $apiKey->id,
+                    'name' => $apiKey->name,
+                    'is_healthy' => $details['status'] === 'valid',
+                    'details' => $details,
+                    'usage' => [
+                        'used' => $apiKey->used_requests,
+                        'total' => $apiKey->total_requests,
+                        'remaining' => $apiKey->total_requests - $apiKey->used_requests
+                    ]
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total_keys' => $apiKeys->count(),
+                    'healthy_keys' => collect($healthResults)->where('is_healthy', true)->count(),
+                    'unhealthy_keys' => collect($healthResults)->where('is_healthy', false)->count(),
+                    'keys' => $healthResults
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error checking API keys health: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to check API keys health'
             ], 500);
         }
     }
@@ -428,29 +521,136 @@ class GeminiApiController extends Controller
     }
 
     /**
+     * Get detailed information about an API key
+     */
+    private function getApiKeyDetails(string $apiKey): array
+    {
+        try {
+            $response = \Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => 'Test']
+                        ]
+                    ]
+                ]
+            ]);
+
+            $responseData = $response->json();
+            
+            if ($response->successful() && isset($responseData['candidates'])) {
+                return [
+                    'status' => 'valid',
+                    'http_status' => $response->status(),
+                    'response_time' => $response->transferStats->getHandlerStat('total_time') ?? 'unknown',
+                    'model_accessible' => true,
+                    'quota_status' => 'available'
+                ];
+            } else {
+                $error = $responseData['error'] ?? [];
+                return [
+                    'status' => 'invalid',
+                    'http_status' => $response->status(),
+                    'error_code' => $error['code'] ?? 'unknown',
+                    'error_message' => $error['message'] ?? 'Unknown error',
+                    'quota_status' => $this->checkQuotaStatus($error)
+                ];
+            }
+        } catch (\Exception $e) {
+            return [
+                'status' => 'error',
+                'error_message' => $e->getMessage(),
+                'quota_status' => 'unknown'
+            ];
+        }
+    }
+
+    /**
+     * Check quota status from error message
+     */
+    private function checkQuotaStatus(array $error): string
+    {
+        if (empty($error)) return 'unknown';
+        
+        $message = $error['message'] ?? '';
+        
+        if (strpos($message, 'quota') !== false) {
+            return 'quota_exceeded';
+        } elseif (strpos($message, 'rate') !== false) {
+            return 'rate_limited';
+        } elseif (strpos($message, 'limit') !== false) {
+            return 'limit_exceeded';
+        } elseif (in_array($error['code'] ?? 0, [400, 401, 403])) {
+            return 'invalid_key';
+        }
+        
+        return 'unknown';
+    }
+
+    /**
      * Validate Gemini API key by making a test request
      */
     private function validateApiKey(string $apiKey): bool
-{
-    try {
-        $response = \Http::withHeaders([
-            'Content-Type' => 'application/json',
-        ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => 'Test']
+    {
+        try {
+            $response = \Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => 'Test']
+                        ]
                     ]
                 ]
-            ]
-        ]);
+            ]);
 
-        return $response->successful();
-    } catch (\Exception $e) {
-        Log::error('Admin API key validation failed: ' . $e->getMessage());
-        return false;
+            // Check if the response is successful
+            if (!$response->successful()) {
+                Log::warning('Admin API key validation failed - HTTP error: ' . $response->status() . ' - ' . $response->body());
+                return false;
+            }
+
+            // Parse the response to check for API-specific errors
+            $responseData = $response->json();
+            
+            // Check for Gemini API specific error conditions
+            if (isset($responseData['error'])) {
+                $error = $responseData['error'];
+                Log::warning('Admin API key validation failed - API error: ' . json_encode($error));
+                
+                // Check for specific error conditions that indicate invalid key
+                if (isset($error['code']) && in_array($error['code'], [400, 401, 403])) {
+                    return false;
+                }
+                
+                // Check for quota exceeded or rate limiting
+                if (isset($error['message']) && (
+                    strpos($error['message'], 'quota') !== false ||
+                    strpos($error['message'], 'rate') !== false ||
+                    strpos($error['message'], 'limit') !== false
+                )) {
+                    // These are not key validation failures, but usage issues
+                    Log::info('Admin API key validation - quota/rate limit detected, but key is valid');
+                    return true;
+                }
+            }
+
+            // Check if we got a valid response with content
+            if (!isset($responseData['candidates']) || empty($responseData['candidates'])) {
+                Log::warning('Admin API key validation failed - no valid response content');
+                return false;
+            }
+
+            Log::info('Admin API key validation successful');
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Admin API key validation failed: ' . $e->getMessage());
+            return false;
+        }
     }
-}
 
 
 }

@@ -658,9 +658,11 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     
     // Gemini API Management
     Route::apiResource('gemini-api-keys', \App\Http\Controllers\Api\Admin\GeminiApiController::class);
-    Route::post('gemini-api-keys/{id}/test', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'test']);
+    // Specific routes must come before parameterized routes
     Route::get('gemini-api-keys/available', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'getAvailableKeys']);
     Route::get('gemini-api-keys/comprehensive-stats', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'getComprehensiveStats']);
+    Route::get('gemini-api-keys/health-check', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'checkApiKeysHealth']);
+    Route::post('gemini-api-keys/{id}/test', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'test']);
     
     // User API Key Management (Admin only)
     Route::get('user-api-keys', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'getUserApiKeys']);

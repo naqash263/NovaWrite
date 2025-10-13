@@ -229,20 +229,64 @@ export default function GeminiApiManagement() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ api_key: 'test' })
+        body: JSON.stringify({})
       });
 
       const result = await response.json();
       
       if (result.success && result.valid) {
-        setSuccess('API key is working correctly');
+        const details = result.details || {};
+        const message = `API key is working correctly. Status: ${details.status}, Response time: ${details.response_time}s, Quota: ${details.quota_status}`;
+        setSuccess(message);
       } else {
-        setError('API key test failed');
+        const details = result.details || {};
+        const message = `API key test failed. Status: ${details.status}, Error: ${details.error_message || 'Unknown error'}`;
+        setError(message);
       }
     } catch (error) {
       setError('Failed to test API key');
     } finally {
       setTesting(null);
+    }
+  };
+
+  const handleHealthCheck = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      console.log('Starting health check...');
+      const response = await fetch('/api/admin/gemini-api-keys/health-check', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      console.log('Health check response status:', response.status);
+      const result = await response.json();
+      console.log('Health check result:', result);
+      
+      if (result.success) {
+        const data = result.data;
+        const message = `Health Check Complete: ${data.healthy_keys}/${data.total_keys} keys healthy. ${data.unhealthy_keys} keys have issues.`;
+        setSuccess(message);
+        
+        // Show detailed results
+        if (data.unhealthy_keys > 0) {
+          const unhealthyKeys = data.keys.filter((key: any) => !key.is_healthy);
+          const unhealthyNames = unhealthyKeys.map((key: any) => key.name).join(', ');
+          setError(`Unhealthy keys: ${unhealthyNames}`);
+        }
+      } else {
+        console.log('Health check failed:', result);
+        setError('Health check failed');
+      }
+    } catch (error) {
+      console.error('Health check error:', error);
+      setError('Failed to perform health check');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -524,16 +568,25 @@ export default function GeminiApiManagement() {
           <>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-900">Admin API Keys</h2>
-              <Button
-                onClick={() => {
-                  setShowAddModal(true);
-                  setEditingKey(null);
-                  setFormData({ name: '', api_key: '', max_requests: 5, is_active: true });
-                }}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Add API Key
-              </Button>
+              <div className="flex space-x-3">
+                <Button
+                  onClick={handleHealthCheck}
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                >
+                  {loading ? 'Checking...' : 'Health Check'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowAddModal(true);
+                    setEditingKey(null);
+                    setFormData({ name: '', api_key: '', max_requests: 5, is_active: true });
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Add API Key
+                </Button>
+              </div>
             </div>
 
         {/* API Keys Table */}
