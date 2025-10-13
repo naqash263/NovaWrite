@@ -57,18 +57,23 @@ return new class extends Migration
 
     private function dropAllTables(): void
     {
-        $tables = [
-            'user_activities', 'cv_templates', 'user_api_keys', 'gemini_api_keys',
-            'home_settings', 'smtp_configurations', 'email_templates', 'test_attempts',
-            'lesson_tests', 'lesson_progress', 'lesson_files', 'course_files',
-            'enrollments', 'lessons', 'courses', 'workflow_downloads', 'workflow_files',
-            'workflows', 'workflow_categories', 'activity_logs', 'files', 'posts',
-            'categories', 'jobs', 'cache', 'users'
-        ];
-
+        // Get all table names from the current schema
+        $tables = DB::select("
+            SELECT tablename 
+            FROM pg_tables 
+            WHERE schemaname = 'public'
+        ");
+        
+        // Disable foreign key checks temporarily
+        DB::statement('SET session_replication_role = replica;');
+        
+        // Drop all tables
         foreach ($tables as $table) {
-            Schema::dropIfExists($table);
+            DB::statement("DROP TABLE IF EXISTS \"{$table->tablename}\" CASCADE");
         }
+        
+        // Re-enable foreign key checks
+        DB::statement('SET session_replication_role = DEFAULT;');
     }
 
     private function createUsersTable(): void
