@@ -965,7 +965,7 @@ const HomeSettings: React.FC = () => {
         imageFormData.append('image', selectedFile);
         imageFormData.append('key', formData.key);
         
-        const uploadResponse = await apiClient.post('/admin/home-settings/upload-image', imageFormData, {
+        await apiClient.post('/admin/home-settings/upload-image', imageFormData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
