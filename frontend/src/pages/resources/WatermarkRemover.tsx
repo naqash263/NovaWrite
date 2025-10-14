@@ -248,7 +248,10 @@ export default function WatermarkRemover() {
       const formData = new FormData();
       formData.append('video', selectedFile);
 
-      const uploadResponse = await fetch('http://localhost:8001/chunked-upload.php', {
+      const API_BASE = import.meta.env.VITE_API_URL 
+        ? import.meta.env.VITE_API_URL.replace('/api', '') 
+        : (import.meta.env.VITE_APP_URL || 'http://localhost:8001');
+      const uploadResponse = await fetch(`${API_BASE}/chunked-upload.php`, {
         method: 'POST',
         body: formData,
       });

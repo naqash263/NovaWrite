@@ -4,7 +4,13 @@ export const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api',
   
   // Storage URL for file uploads and static assets
-  STORAGE_URL: import.meta.env.VITE_API_URL?.replace('/api', '') || import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8001',
+  STORAGE_URL: (() => {
+    const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
+    if (apiUrl) {
+      return apiUrl.replace('/api', '');
+    }
+    return import.meta.env.VITE_APP_URL || 'http://localhost:8001';
+  })(),
   
   // Full storage URL for file paths
   getStorageUrl: (filePath: string) => {

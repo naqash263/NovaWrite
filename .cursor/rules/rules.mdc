@@ -3,7 +3,7 @@ alwaysApply: true
 ---
 Always Remember Production Structure is like below
 
-/home/username/
+/home/timesovh/
 └── naqashthaheem.com/
     ├── public_html/          # Main website (accessible via domain)
     │   ├── index.html        # React frontend

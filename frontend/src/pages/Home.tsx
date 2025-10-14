@@ -81,7 +81,8 @@ export default function Home() {
     if (!setting || setting.type !== 'image') return defaultValue;
     // If setting has image_url but it's using wrong port, construct correct URL
     if (setting.value) {
-      return `http://localhost:8001/storage/${setting.value}`;
+      const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || import.meta.env.VITE_APP_URL || 'http://localhost:8001';
+      return `${baseUrl}/storage/${setting.value}`;
     }
     return defaultValue;
   };
