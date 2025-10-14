@@ -303,13 +303,17 @@ UPDATE workflows SET user_id = 1 WHERE user_id IS NULL;
 
 ## 📝 Environment Variables to Check
 
-Ensure these are set in production `.env`:
+### **Backend `.env` (Laravel)**
+
+Ensure these are set in production `backend/.env`:
 
 ```bash
-# App
+# App Configuration
+APP_NAME=NovaWrite
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://naqashthaheem.com
+APP_URL=https://naqashthaheem.com  # ⚠️ CRITICAL for storage URLs!
+APP_KEY=base64:your_app_key_here
 
 # Database
 DB_CONNECTION=pgsql
@@ -319,11 +323,13 @@ DB_DATABASE=novawrite_production
 DB_USERNAME=your_user
 DB_PASSWORD=your_password
 
-# JWT
+# JWT Authentication
 JWT_SECRET=your_jwt_secret_here
 JWT_TTL=60
+JWT_REFRESH_TTL=20160
+JWT_ALGO=HS256
 
-# Mail
+# Mail Configuration
 MAIL_MAILER=smtp
 MAIL_HOST=naqashthaheem.com
 MAIL_PORT=465
@@ -338,8 +344,50 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback
 
-# Frontend
+# Session & Cache
+SESSION_DRIVER=file
+CACHE_DRIVER=file
+QUEUE_CONNECTION=sync
+
+# Filesystem (public disk for uploads)
+FILESYSTEM_DISK=public
+```
+
+### **Frontend `.env` (Vite)**
+
+Ensure these are set in production `frontend/.env`:
+
+```bash
+# API Configuration
 VITE_API_URL=https://naqashthaheem.com/api
+
+# App Configuration
+VITE_APP_NAME=NovaWrite
+VITE_APP_URL=https://naqashthaheem.com
+```
+
+### **⚠️ CRITICAL: APP_URL Configuration**
+
+The `APP_URL` in backend `.env` is **CRITICAL** because:
+
+1. **Storage URLs:** `Storage::url()` uses this to generate asset URLs
+2. **Email Links:** Password reset and verification links use this
+3. **OAuth Redirects:** Google OAuth callback URLs use this
+
+**Development:**
+```bash
+APP_URL=http://localhost:8001
+```
+
+**Production:**
+```bash
+APP_URL=https://naqashthaheem.com
+```
+
+**After changing APP_URL, always run:**
+```bash
+php artisan config:clear
+php artisan config:cache
 ```
 
 ---

@@ -55,10 +55,20 @@ export function useHomeSettings() {
     if (!homeSettings) return defaultValue;
     const setting = homeSettings.settings.find(s => s.key === key);
     if (!setting || setting.type !== 'image') return defaultValue;
-    // If setting has value, construct correct URL with port 8001
-    if (setting.value) {
-      return `http://localhost:8001/storage/${setting.value}`;
+    
+    // Use image_url from API if available (backend generates correct URL)
+    if (setting.image_url) {
+      return setting.image_url;
     }
+    
+    // Fallback: construct URL using environment variable
+    if (setting.value) {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      // Remove /api from base URL if present
+      const storageBaseUrl = baseUrl.replace('/api', '');
+      return `${storageBaseUrl}/storage/${setting.value}`;
+    }
+    
     return defaultValue;
   };
 
