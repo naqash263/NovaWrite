@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -10,7 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('ALTER TABLE workflows ALTER COLUMN instructions DROP NOT NULL');
+        if (Schema::hasTable('workflows')) {
+            Schema::table('workflows', function (Blueprint $table) {
+                if (Schema::hasColumn('workflows', 'instructions')) {
+                    $table->text('instructions')->nullable()->change();
+                }
+            });
+        }
     }
 
     /**
@@ -18,7 +25,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('ALTER TABLE workflows ALTER COLUMN instructions SET NOT NULL');
+        if (Schema::hasTable('workflows')) {
+            Schema::table('workflows', function (Blueprint $table) {
+                if (Schema::hasColumn('workflows', 'instructions')) {
+                    $table->text('instructions')->nullable(false)->change();
+                }
+            });
+        }
     }
 };
 

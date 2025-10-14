@@ -965,13 +965,14 @@ const HomeSettings: React.FC = () => {
         imageFormData.append('image', selectedFile);
         imageFormData.append('key', formData.key);
         
-        await apiClient.post('/admin/home-settings/upload-image', imageFormData, {
+        const uploadResponse = await apiClient.post('/admin/home-settings/upload-image', imageFormData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
         
         // The upload endpoint creates/updates the setting, so we're done
+        console.log('Upload successful:', uploadResponse.data);
         setUploadingImage(false);
         setShowModal(false);
         setEditingSetting(null);
