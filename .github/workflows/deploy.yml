@@ -293,9 +293,32 @@ jobs:
             echo 'JWT_ALGO=HS256' >> .env
             echo 'JWT_TTL=60' >> .env
             echo '' >> .env
-            echo 'GOOGLE_CLIENT_ID=' >> .env
-            echo 'GOOGLE_CLIENT_SECRET=' >> .env
-            echo 'GOOGLE_REDIRECT_URI=' >> .env
+            echo 'GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}' >> .env
+            echo 'GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}' >> .env
+            echo 'GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback' >> .env
+          fi
+          
+          # Update Google OAuth credentials if .env exists
+          echo -e "${BLUE}🔐 Configuring Google OAuth...${NC}"
+          if ! grep -q "^GOOGLE_CLIENT_ID=" .env || grep -q "^GOOGLE_CLIENT_ID=$" .env; then
+            sed -i '/^GOOGLE_CLIENT_ID=/d' .env
+            echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          else
+            sed -i "s|^GOOGLE_CLIENT_ID=.*|GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}|" .env
+          fi
+          
+          if ! grep -q "^GOOGLE_CLIENT_SECRET=" .env || grep -q "^GOOGLE_CLIENT_SECRET=$" .env; then
+            sed -i '/^GOOGLE_CLIENT_SECRET=/d' .env
+            echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+          else
+            sed -i "s|^GOOGLE_CLIENT_SECRET=.*|GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}|" .env
+          fi
+          
+          if ! grep -q "^GOOGLE_REDIRECT_URI=" .env || grep -q "^GOOGLE_REDIRECT_URI=$" .env; then
+            sed -i '/^GOOGLE_REDIRECT_URI=/d' .env
+            echo 'GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback' >> .env
+          else
+            sed -i 's|^GOOGLE_REDIRECT_URI=.*|GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback|' .env
           fi
           
               # Only generate APP_KEY if it doesn't exist

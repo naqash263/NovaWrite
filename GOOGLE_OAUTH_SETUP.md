@@ -1,154 +1,388 @@
-# Google OAuth Login Setup
+# 🔐 Google OAuth Setup Guide
 
-This guide will help you set up Google OAuth login for your Laravel/React application.
+## 🐛 Current Issue
 
-## Prerequisites
+**Symptom:**
+- Google login button doesn't work
+- Getting errors about missing client_id or client_secret
+- OAuth redirect fails
 
-1. **Google Cloud Console Account** - You need access to Google Cloud Console
-2. **Domain Configuration** - Your application should be running on a proper domain (for production)
+**Root Cause:**
+Google OAuth credentials (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`) are not configured on the production server.
 
-## Step 1: Create Google OAuth Application
+---
+
+## ✅ Solution
+
+### **Step 1: Get Google OAuth Credentials**
+
+If you don't have Google OAuth credentials yet:
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the Google+ API:
-   - Go to "APIs & Services" > "Library"
-   - Search for "Google+ API" and enable it
-   - Also enable "Google OAuth2 API"
+2. Create a new project or select existing project
+3. Enable **Google+ API**
+4. Go to **Credentials** → **Create Credentials** → **OAuth 2.0 Client ID**
+5. Configure OAuth consent screen if not done already
+6. For Application type, select **Web application**
+7. Add Authorized redirect URIs:
+   - `https://naqashthaheem.com/auth/google/callback`
+   - `http://localhost:8001/auth/google/callback` (for local testing)
+8. Copy your **Client ID** and **Client Secret**
 
-4. Create OAuth 2.0 credentials:
-   - Go to "APIs & Services" > "Credentials"
-   - Click "Create Credentials" > "OAuth 2.0 Client IDs"
-   - Choose "Web application"
-   - Set the name (e.g., "Portfolio OAuth")
+---
 
-5. Configure redirect URIs:
-   - **Development**: `http://localhost:3000/auth/google/callback`
-   - **Production**: `https://yourdomain.com/auth/google/callback`
+### **Step 2: Update Production .env File**
 
-6. Note down your:
-   - **Client ID** (looks like: `123456789-abcdefg.apps.googleusercontent.com`)
-   - **Client Secret** (looks like: `GOCSPX-abcdefghijklmnopqrstuvwxyz`)
+SSH to your production server and update the `.env` file:
 
-## Step 2: Configure Backend Environment
+```bash
+# SSH to production server
+ssh your-server
 
-Add the following variables to your `.env` file:
+# Navigate to backend directory
+cd /home/timesovh/naqashthaheem.com/backend
 
-```env
-# Google OAuth Configuration
-GOOGLE_CLIENT_ID=your_google_client_id_here
-GOOGLE_CLIENT_SECRET=your_google_client_secret_here
-GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
-
-# For production, use your actual domain:
-# GOOGLE_REDIRECT_URI=https://yourdomain.com/auth/google/callback
+# Edit .env file
+nano .env
+# OR
+vi .env
 ```
 
-## Step 3: Frontend Configuration
+**Add or update these lines:**
 
-The frontend is already configured to work with the Google OAuth flow. The callback URL should match what you set in Google Cloud Console.
+```bash
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your-client-id-here.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret-here
+GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback
+```
 
-## Step 4: Test the Integration
+**Example:**
+```bash
+GOOGLE_CLIENT_ID=123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-YourSecretKeyHere
+GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback
+```
 
-1. **Start your backend server**:
-   ```bash
-   cd backend
-   php artisan serve
-   ```
+**Save and exit** (Ctrl+X, then Y, then Enter for nano)
 
-2. **Start your frontend server**:
-   ```bash
-   cd frontend
-   npm run dev
-   ```
+---
 
-3. **Test the login flow**:
-   - Go to `/login` page
-   - Click "Continue with Google"
-   - You should be redirected to Google's OAuth consent screen
-   - After authorization, you should be logged in and redirected appropriately
+### **Step 3: Clear Config Cache**
 
-## Step 5: Production Deployment
+After updating `.env`, clear Laravel's config cache:
 
-### Backend Updates
-1. Update your `.env` file with production values:
-   ```env
-   GOOGLE_REDIRECT_URI=https://yourdomain.com/auth/google/callback
-   ```
+```bash
+cd /home/timesovh/naqashthaheem.com/backend
 
-2. Clear and cache the configuration:
-   ```bash
-   php artisan config:clear
-   php artisan config:cache
-   ```
+# Clear config cache
+php artisan config:clear
 
-### Frontend Updates
-1. Update your frontend build configuration if needed
-2. Ensure the callback URL matches your production domain
+# Rebuild config cache
+php artisan config:cache
 
-### Google Cloud Console Updates
-1. Add your production domain to authorized origins
-2. Add your production callback URL to redirect URIs
+# Verify the config is loaded
+php artisan tinker --execute="echo config('services.google.client_id');"
+# Should output your client ID
 
-## API Endpoints
+php artisan tinker --execute="echo config('services.google.redirect');"
+# Should output: https://naqashthaheem.com/auth/google/callback
+```
 
-The following endpoints are available for Google OAuth:
+---
 
-### Public Endpoints
-- `GET /api/auth/google/redirect` - Get Google OAuth redirect URL
-- `POST /api/auth/google/callback` - Handle Google OAuth callback
+### **Step 4: Restart Services**
 
-### Authenticated Endpoints
-- `GET /api/auth/google/status` - Check if Google account is linked
-- `POST /api/auth/google/unlink` - Unlink Google account
-- `POST /api/auth/google/set-password` - Set password for Google OAuth users
+```bash
+# Restart PHP-FPM
+sudo systemctl restart php8.2-fpm
 
-## Features Included
+# OR restart web server
+/scripts/restartsrv_httpd
+```
 
-1. **New User Registration**: Automatically creates new users from Google accounts
-2. **Account Linking**: Links Google accounts to existing email matches
-3. **Avatar Integration**: Uses Google profile pictures as user avatars
-4. **Email Verification**: Google emails are automatically verified
-5. **Secure Authentication**: Full JWT token integration
-6. **Activity Logging**: All Google OAuth activities are logged
-7. **Account Management**: Users can unlink Google accounts and set passwords
+---
 
-## Security Considerations
+### **Step 5: Update Google Cloud Console**
 
-1. **HTTPS Required**: For production, always use HTTPS
-2. **Domain Verification**: Verify domains in Google Cloud Console
-3. **Environment Variables**: Keep client secrets secure and never commit them
-4. **CORS Configuration**: Ensure proper CORS settings for your domains
-5. **Rate Limiting**: Consider implementing rate limiting for OAuth endpoints
+Make sure your Google OAuth credentials have the correct redirect URIs:
 
-## Troubleshooting
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to **APIs & Services** → **Credentials**
+3. Click on your OAuth 2.0 Client ID
+4. Under **Authorized redirect URIs**, ensure you have:
+   - `https://naqashthaheem.com/auth/google/callback`
+5. Save changes
 
-### Common Issues
+---
 
-1. **"redirect_uri_mismatch" error**:
-   - Check that your redirect URI in Google Cloud Console exactly matches your application URL
-   - Ensure no trailing slashes or case mismatches
+## 🔧 For GitHub Actions Automation
 
-2. **"invalid_client" error**:
-   - Verify your client ID and secret are correct
-   - Check that the OAuth consent screen is configured
+To automate this in future deployments, add to `.github/workflows/deploy.yml`:
 
-3. **Popup blocked**:
-   - Users need to allow popups for your domain
-   - Consider implementing a fallback redirect method
+```yaml
+- name: Configure Google OAuth
+  run: |
+    ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
+      cd ~/naqashthaheem.com/backend
+      
+      # Update Google OAuth settings if not already set
+      if ! grep -q "^GOOGLE_CLIENT_ID=" .env; then
+        echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+      else
+        sed -i 's|^GOOGLE_CLIENT_ID=.*|GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}|' .env
+      fi
+      
+      if ! grep -q "^GOOGLE_CLIENT_SECRET=" .env; then
+        echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+      else
+        sed -i 's|^GOOGLE_CLIENT_SECRET=.*|GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}|' .env
+      fi
+      
+      if ! grep -q "^GOOGLE_REDIRECT_URI=" .env; then
+        echo "GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback" >> .env
+      else
+        sed -i 's|^GOOGLE_REDIRECT_URI=.*|GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback|' .env
+      fi
+      
+      # Clear and rebuild config cache
+      php artisan config:clear
+      php artisan config:cache
+    EOF
+```
 
-4. **CORS errors**:
-   - Ensure your backend CORS configuration allows your frontend domain
-   - Check that credentials are included in requests
+**Then add GitHub Secrets:**
+1. Go to your GitHub repository
+2. Settings → Secrets and variables → Actions
+3. Add new repository secrets:
+   - `GOOGLE_CLIENT_ID` = your Google client ID
+   - `GOOGLE_CLIENT_SECRET` = your Google client secret
 
-### Debug Mode
+---
 
-To enable debug mode for OAuth issues, you can check the activity logs in the admin panel or monitor the Laravel logs.
+## 🧪 Testing
 
-## Support
+### **Test Locally:**
 
-If you encounter issues:
-1. Check the browser console for JavaScript errors
-2. Check Laravel logs for backend errors
-3. Verify all environment variables are set correctly
-4. Ensure Google Cloud Console configuration matches your setup
+1. **Check Backend Config:**
+```bash
+cd backend
+php artisan tinker
+>>> config('services.google.client_id')
+# Should output your client ID
+
+>>> config('services.google.redirect')
+# Should output: http://localhost:8001/auth/google/callback (locally)
+```
+
+2. **Test Frontend:**
+   - Go to: http://localhost:3000/login
+   - Click "Sign in with Google"
+   - Should redirect to Google OAuth page
+   - After authorizing, should redirect back to your app
+
+### **Test on Production:**
+
+1. **Check Backend Config:**
+```bash
+ssh your-server
+cd /home/timesovh/naqashthaheem.com/backend
+php artisan tinker --execute="echo config('services.google.client_id');"
+# Should output your client ID
+
+php artisan tinker --execute="echo config('services.google.redirect');"
+# Should output: https://naqashthaheem.com/auth/google/callback
+```
+
+2. **Test API Endpoint:**
+```bash
+# Test the Google URL endpoint
+curl -H "Accept: application/json" \
+  https://naqashthaheem.com/api/auth/google/url
+
+# Should return JSON with:
+# {
+#   "url": "https://accounts.google.com/o/oauth2/auth?client_id=...",
+#   "state": "..."
+# }
+```
+
+3. **Test in Browser:**
+   - Go to: https://naqashthaheem.com/login
+   - Open browser console (F12)
+   - Click "Sign in with Google"
+   - Check console for any errors
+   - Should redirect to Google OAuth page
+   - After authorizing, should redirect back and log you in
+
+---
+
+## 🚨 Common Issues
+
+### **Issue 1: "redirect_uri_mismatch" Error**
+
+**Error Message:**
+```
+Error 400: redirect_uri_mismatch
+The redirect URI in the request: https://naqashthaheem.com/auth/google/callback
+does not match the ones authorized for the OAuth client.
+```
+
+**Solution:**
+1. Go to Google Cloud Console
+2. Update Authorized redirect URIs to include: `https://naqashthaheem.com/auth/google/callback`
+3. Save and wait a few minutes for changes to propagate
+
+---
+
+### **Issue 2: Client ID is null or undefined**
+
+**Error in console:**
+```
+client_id: null
+```
+
+**Solution:**
+```bash
+# Check if environment variables are set
+grep "^GOOGLE_" /home/timesovh/naqashthaheem.com/backend/.env
+
+# If missing, add them
+echo "GOOGLE_CLIENT_ID=your-id-here" >> .env
+echo "GOOGLE_CLIENT_SECRET=your-secret-here" >> .env
+echo "GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback" >> .env
+
+# Clear and rebuild config
+php artisan config:clear
+php artisan config:cache
+```
+
+---
+
+### **Issue 3: "Invalid client" Error**
+
+**Error Message:**
+```
+Error: invalid_client
+The OAuth client was not found.
+```
+
+**Solution:**
+- Double-check your `GOOGLE_CLIENT_ID` matches exactly what's in Google Cloud Console
+- Make sure there are no extra spaces or line breaks
+- Verify the credentials are for the correct Google Cloud project
+
+---
+
+### **Issue 4: Frontend Shows "Failed to initialize Google login"**
+
+**Check Backend Logs:**
+```bash
+tail -50 /home/timesovh/naqashthaheem.com/backend/storage/logs/laravel.log | grep -i google
+```
+
+**Common causes:**
+- Config cache not cleared
+- Environment variables not set
+- Wrong redirect URI
+
+---
+
+## 📋 Environment Variables Summary
+
+### **Local Development** (`.env`):
+```bash
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:8001/auth/google/callback
+```
+
+### **Production** (`.env`):
+```bash
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback
+```
+
+### **Google Cloud Console** (Authorized redirect URIs):
+```
+https://naqashthaheem.com/auth/google/callback
+http://localhost:8001/auth/google/callback
+```
+
+---
+
+## 🔒 Security Notes
+
+1. **Never commit credentials to Git:**
+   - ✅ `.env` is in `.gitignore`
+   - ✅ Use GitHub Secrets for CI/CD
+
+2. **Use different credentials for production and development:**
+   - Recommended but optional
+   - Helps with security and debugging
+
+3. **Restrict OAuth consent screen:**
+   - In Google Cloud Console, configure who can use your OAuth app
+   - For production, you might want to verify your app with Google
+
+---
+
+## 📊 Verification Checklist
+
+After setup, verify:
+
+- [ ] `GOOGLE_CLIENT_ID` set in production `.env`
+- [ ] `GOOGLE_CLIENT_SECRET` set in production `.env`
+- [ ] `GOOGLE_REDIRECT_URI` set to `https://naqashthaheem.com/auth/google/callback`
+- [ ] Config cache cleared and rebuilt
+- [ ] PHP-FPM restarted
+- [ ] Google Cloud Console has correct redirect URI
+- [ ] API endpoint `/api/auth/google/url` returns valid URL
+- [ ] Frontend Google login button works
+- [ ] Can successfully log in with Google account
+- [ ] User created in database with `google_id`
+- [ ] JWT token returned and stored
+
+---
+
+## 🎯 Quick Fix Commands
+
+```bash
+# SSH to production
+ssh your-server
+
+# Navigate to backend
+cd /home/timesovh/naqashthaheem.com/backend
+
+# Add Google OAuth credentials (replace with your actual values)
+echo "GOOGLE_CLIENT_ID=your-client-id-here" >> .env
+echo "GOOGLE_CLIENT_SECRET=your-secret-here" >> .env
+echo "GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback" >> .env
+
+# Clear and rebuild config
+php artisan config:clear && php artisan config:cache
+
+# Restart services
+sudo systemctl restart php8.2-fpm
+
+# Verify
+php artisan tinker --execute="echo 'Client ID: ' . config('services.google.client_id') . PHP_EOL; echo 'Redirect: ' . config('services.google.redirect') . PHP_EOL;"
+```
+
+---
+
+## 🎉 Success Indicators
+
+**Everything is working when:**
+
+- ✅ `/api/auth/google/url` returns URL with client_id
+- ✅ Google login button redirects to Google OAuth page
+- ✅ After authorizing, redirects back to your app
+- ✅ User is logged in successfully
+- ✅ No errors in browser console
+- ✅ No errors in Laravel logs
+
+---
+
+**Follow these steps and your Google OAuth will be fully functional!** 🚀
