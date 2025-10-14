@@ -1564,12 +1564,399 @@ const takeCourseAndQuiz = async (token, courseId, lessonId) => {
 
 ---
 
+## 🔐 Admin API Endpoints
+
+All admin endpoints require authentication and admin role. Use either:
+- **JWT Token** from `/auth/login`
+- **API Token** from Admin Dashboard → API Tokens
+
+### Posts Management
+
+#### Create Post
+**POST** `/admin/posts`
+
+**Headers:**
+```
+Authorization: Bearer YOUR_TOKEN
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "title": "My Blog Post",
+  "content": "<p>Post content here</p>",
+  "excerpt": "Brief summary",
+  "slug": "my-blog-post",
+  "category_id": 1,
+  "is_published": true
+}
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "title": "My Blog Post",
+  "slug": "my-blog-post",
+  "content": "<p>Post content here</p>",
+  "is_published": true,
+  ...
+}
+```
+
+#### Update Post
+**PUT** `/admin/posts/{id}`
+
+**Body:** (all fields optional)
+```json
+{
+  "title": "Updated Title",
+  "content": "<p>Updated content</p>",
+  "category_id": 1
+}
+```
+
+#### Delete Post
+**DELETE** `/admin/posts/{id}`
+
+---
+
+### Workflows Management
+
+#### Create Workflow
+**POST** `/admin/workflows`
+
+**Body:**
+```json
+{
+  "title": "Automation Workflow",
+  "summary": "Brief workflow summary",
+  "description": "<p>Detailed description</p>",
+  "slug": "automation-workflow",
+  "workflow_category_id": 1,
+  "status": "draft",
+  "is_published": false
+}
+```
+
+**Note:** `status` must be one of: `draft`, `published`
+
+**Response:**
+```json
+{
+  "id": 1,
+  "title": "Automation Workflow",
+  "status": "draft",
+  ...
+}
+```
+
+#### Update Workflow
+**PUT** `/admin/workflows/{id}`
+
+**Body:** (all fields optional)
+```json
+{
+  "title": "Updated Workflow",
+  "workflow_category_id": 1,
+  "status": "draft"
+}
+```
+
+#### Delete Workflow
+**DELETE** `/admin/workflows/{id}`
+
+---
+
+### Workflow Files Management
+
+#### Complete Process: Create Workflow with Files
+
+**Step-by-Step Workflow:**
+
+```mermaid
+graph LR
+    A[Upload Files] --> B[Create Workflow]
+    B --> C[Attach Files to Workflow]
+    C --> D[Publish Workflow]
+```
+
+**1. Upload Files First**
+```bash
+# Upload file (returns file_id)
+curl -X POST "http://localhost:8001/api/files" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@diagram.png"
+```
+
+**Response:**
+```json
+{
+  "message": "File uploaded successfully.",
+  "file": {
+    "id": 6,
+    "name": "diagram",
+    "original_name": "diagram.png",
+    "path": "uploads/1760411843_diagram.png",
+    "mime_type": "image/png",
+    "size": 1024,
+    "is_public": true,
+    ...
+  }
+}
+```
+
+**2. Create Workflow**
+```bash
+curl -X POST "http://localhost:8001/api/admin/workflows" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Customer Onboarding Workflow",
+    "summary": "Automated customer onboarding process",
+    "description": "<p>Complete workflow for onboarding new customers</p>",
+    "slug": "customer-onboarding",
+    "workflow_category_id": 1,
+    "status": "draft",
+    "is_published": false
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": 14,
+  "title": "Customer Onboarding Workflow",
+  "slug": "customer-onboarding",
+  "status": "draft",
+  ...
+}
+```
+
+**3. Attach Files to Workflow**
+
+**POST** `/admin/workflows/{id}/files`
+
+```bash
+curl -X POST "http://localhost:8001/api/admin/workflows/14/files" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_id": 6,
+    "display_name": "Workflow Process Diagram",
+    "description": "Main process flow showing all steps",
+    "sort_order": 1
+  }'
+```
+
+**Required Fields:**
+- `file_id` (integer) - ID from step 1
+- `display_name` (string) - Display name for the file
+
+**Optional Fields:**
+- `description` (string) - File description
+- `sort_order` (integer) - Display order (default: 0)
+
+**Response:**
+```json
+{
+  "id": 1,
+  "workflow_id": 14,
+  "file_id": 6,
+  "display_name": "Workflow Process Diagram",
+  "description": "Main process flow showing all steps",
+  "sort_order": 1,
+  "created_at": "2025-10-14T03:30:46.000000Z",
+  "file": {
+    "id": 6,
+    "name": "diagram",
+    "original_name": "diagram.png",
+    "path": "uploads/1760411843_diagram.png",
+    ...
+  }
+}
+```
+
+**4. Attach Multiple Files (Optional)**
+
+Repeat step 3 for each file:
+```bash
+# Attach second file
+curl -X POST "http://localhost:8001/api/admin/workflows/14/files" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_id": 7,
+    "display_name": "Implementation Guide",
+    "description": "Step-by-step implementation guide PDF",
+    "sort_order": 2
+  }'
+```
+
+**5. Publish Workflow (Optional)**
+```bash
+curl -X PUT "http://localhost:8001/api/admin/workflows/14" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "published",
+    "is_published": true
+  }'
+```
+
+#### Detach File from Workflow
+
+**DELETE** `/admin/workflows/{workflow_id}/files/{workflow_file_id}`
+
+```bash
+curl -X DELETE "http://localhost:8001/api/admin/workflows/14/files/1" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "message": "File detached successfully"
+}
+```
+
+**Note:** Use the `workflow_file` ID (returned when attaching), not the original `file_id`.
+
+#### Get Workflow with Files
+
+**GET** `/workflows/{slug}`
+
+```bash
+curl "http://localhost:8001/api/workflows/customer-onboarding" \
+  -H "Accept: application/json"
+```
+
+**Response includes files array:**
+```json
+{
+  "id": 14,
+  "title": "Customer Onboarding Workflow",
+  "slug": "customer-onboarding",
+  "files": [
+    {
+      "id": 1,
+      "display_name": "Workflow Process Diagram",
+      "description": "Main process flow showing all steps",
+      "sort_order": 1,
+      "file": {
+        "id": 6,
+        "original_name": "diagram.png",
+        "path": "uploads/1760411843_diagram.png",
+        "mime_type": "image/png"
+      }
+    }
+  ],
+  ...
+}
+```
+
+---
+
+### Courses Management
+
+#### Create Course
+**POST** `/admin/courses`
+
+**Body:**
+```json
+{
+  "title": "My Course",
+  "description": "<p>Course description</p>",
+  "level": "beginner",
+  "duration_hours": 20,
+  "is_published": true
+}
+```
+
+**Note:** `level` must be one of: `beginner`, `intermediate`, `advanced`
+
+**Response:**
+```json
+{
+  "id": 1,
+  "title": "My Course",
+  "slug": "my-course",
+  "level": "beginner",
+  "duration_hours": 20,
+  ...
+}
+```
+
+#### Update Course
+**PUT** `/admin/courses/{id}`
+
+**Body:** (all fields optional)
+```json
+{
+  "title": "Updated Course Title",
+  "level": "advanced",
+  "duration_hours": 30
+}
+```
+
+#### Delete Course
+**DELETE** `/admin/courses/{id}`
+
+---
+
 ## 🚀 Getting Started
 
-1. **Register** a new account using `/auth/register`
-2. **Login** to get your JWT token using `/auth/login`
-3. **Upload** images using `/files` endpoint
-4. **Create** content using the appropriate endpoints with the image URLs
-5. **Use** the JWT token in the Authorization header for all protected endpoints
+### Authentication Methods
+
+**Option A - JWT Token (Temporary):**
+1. Register via `/auth/register` or login via `/auth/login`
+2. Use the returned JWT token
+3. Token expires after 1 hour (30 days if "Remember Me" checked)
+4. Best for: User-specific operations, testing
+
+**Option B - API Token (Permanent):**
+1. Login to Admin Dashboard
+2. Go to **API Tokens** section
+3. Create a new API token with desired permissions
+4. Token never expires (unless you set an expiration date)
+5. Best for: Automated integrations, scripts, production use
+
+### Using Your Token
+
+Include the token in all API requests:
+```
+Authorization: Bearer YOUR_TOKEN
+```
+
+### Example cURL Request
+```bash
+curl -X POST http://localhost:8001/api/admin/posts \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Test Post",
+    "content": "<p>Content</p>",
+    "excerpt": "Summary",
+    "slug": "test-post",
+    "category_id": 1,
+    "is_published": true
+  }'
+```
+
+### ✅ Verified API Operations
+
+All endpoints have been tested and verified:
+
+| API | GET | CREATE | UPDATE | DELETE |
+|-----|-----|--------|--------|--------|
+| **Posts** | ✅ | ✅ | ✅ | ✅ |
+| **Workflows** | ✅ | ✅ | ✅ | ✅ |
+| **Courses** | ✅ | ✅ | ✅ | ✅ |
+
+**Test Token (Full Access):**
+```
+W6bcN3U0WHKlvzASEMRyKDf6qqtxpqoOG6zMdCF7E3F5q82EgKsDaGzy0sO29ByK
+```
 
 For more information or support, contact: naqash263@gmail.com

@@ -1,6 +1,9 @@
 import { useSEO } from '../utils/seo';
+import { useHomeSettings } from '../hooks/useHomeSettings';
 
 export default function About() {
+  const { getImageUrl } = useHomeSettings();
+  
   useSEO({
     title: 'About | Naqash Thaheem',
     description: 'Systems Analyst and Automation Specialist with 8+ years of experience in building AI-powered automation workflows, CRM integrations, and scalable web platforms.',
@@ -12,7 +15,7 @@ export default function About() {
       <div 
         className="relative bg-cover bg-center py-20 mb-16"
         style={{
-          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9)), url('/images/ai_artificial_intell_c522e573.jpg')`
+          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9)), url('${getImageUrl('about_image', '/images/ai_artificial_intell_c522e573.jpg')}')`
         }}
       >
         <div className="max-w-4xl mx-auto px-4 text-center">

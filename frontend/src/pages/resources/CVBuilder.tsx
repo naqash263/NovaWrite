@@ -1648,7 +1648,7 @@ const SummaryStep = ({ data, onDataChange }: { data: CVData, onDataChange: (data
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
           />
           <p className="text-sm text-gray-500">
-            {data.professionalSummary.length} characters (recommended: 150-300 characters)
+            {(data.professionalSummary || '').length} characters (recommended: 150-300 characters)
           </p>
         </div>
       </div>
@@ -2759,8 +2759,33 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
           {/* ATS-Friendly Template Grid */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <h3 className="text-xl font-semibold text-gray-900 mb-6">Choose Your ATS-Friendly Template</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {templates.map((template) => (
+            
+            {templates.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="mb-6">
+                  <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+        </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">CV Templates Coming Soon!</h3>
+                <p className="text-lg text-gray-600 mb-4">We're working on bringing you amazing professional CV templates.</p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
+                  <h4 className="font-semibold text-blue-900 mb-2">🚀 What to expect:</h4>
+                  <ul className="text-sm text-blue-800 text-left space-y-2">
+                    <li>✓ ATS-optimized templates (score 8-10/10)</li>
+                    <li>✓ Multiple professional categories (Executive, Tech, Creative, etc.)</li>
+                    <li>✓ Fully customizable colors, fonts, and layouts</li>
+                    <li>✓ One-click PDF export</li>
+                    <li>✓ Mobile-friendly design</li>
+                  </ul>
+      </div>
+                <p className="mt-6 text-sm text-gray-500">
+                  Contact the admin to add CV templates to get started!
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {templates.map((template) => (
                 <div 
                   key={template.id}
                   className={`relative rounded-lg border-2 overflow-hidden cursor-pointer transition-all hover:shadow-xl ${
@@ -2811,7 +2836,8 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
           </div>
           
           {/* Template Selection Guide */}

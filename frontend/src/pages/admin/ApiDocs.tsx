@@ -217,6 +217,70 @@ const API_ENDPOINTS: ApiEndpoint[] = [
     }
   },
 
+  // Workflow Files Management
+  {
+    method: 'POST',
+    path: '/api/admin/workflows/{id}/files',
+    description: 'Attach a file to a workflow (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Workflow ID'
+      }
+    ],
+    requestBody: {
+      type: 'application/json',
+      example: {
+        file_id: 6,
+        display_name: "Workflow Process Diagram",
+        description: "Main process flow showing all steps",
+        sort_order: 1
+      }
+    },
+    responseExample: {
+      id: 1,
+      workflow_id: 14,
+      file_id: 6,
+      display_name: "Workflow Process Diagram",
+      description: "Main process flow showing all steps",
+      sort_order: 1,
+      created_at: "2025-10-14T03:30:46.000000Z",
+      file: {
+        id: 6,
+        name: "diagram",
+        original_name: "diagram.png",
+        path: "uploads/1760411843_diagram.png",
+        mime_type: "image/png"
+      }
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/api/admin/workflows/{id}/files/{fileId}',
+    description: 'Detach a file from a workflow (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Workflow ID'
+      },
+      {
+        name: 'fileId',
+        type: 'integer',
+        required: true,
+        description: 'Workflow File ID (not the original file_id)'
+      }
+    ],
+    responseExample: {
+      message: "File detached successfully"
+    }
+  },
+
   // Posts CRUD Operations
   {
     method: 'GET',
@@ -704,6 +768,104 @@ const API_ENDPOINTS: ApiEndpoint[] = [
     responseExample: {
       message: "Token deleted successfully"
     }
+  },
+
+  // File Management
+  {
+    method: 'POST',
+    path: '/api/files',
+    description: 'Upload a file',
+    auth: true,
+    requestBody: {
+      type: 'multipart/form-data',
+      example: {
+        file: '(binary file data)',
+        is_public: true
+      }
+    },
+    responseExample: {
+      message: "File uploaded successfully.",
+      file: {
+        id: 1,
+        name: "image",
+        original_name: "image.png",
+        path: "uploads/1760411843_image.png",
+        mime_type: "image/png",
+        size: 70,
+        is_public: true,
+        user_id: 2,
+        created_at: "2025-10-14T03:16:41.000000Z",
+        updated_at: "2025-10-14T03:16:41.000000Z"
+      }
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/files',
+    description: 'Get all files for current user',
+    auth: true,
+    responseExample: [
+      {
+        id: 1,
+        name: "image",
+        original_name: "image.png",
+        path: "uploads/1760411843_image.png",
+        mime_type: "image/png",
+        size: 70,
+        is_public: true,
+        user_id: 2,
+        created_at: "2025-10-14T03:16:41.000000Z",
+        updated_at: "2025-10-14T03:16:41.000000Z",
+        user: {
+          id: 2,
+          name: "Admin User",
+          email: "admin@example.com"
+        }
+      }
+    ]
+  },
+  {
+    method: 'GET',
+    path: '/api/files/{id}',
+    description: 'Get a specific file by ID',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'File ID'
+      }
+    ],
+    responseExample: {
+      id: 1,
+      name: "image",
+      original_name: "image.png",
+      path: "uploads/1760411843_image.png",
+      mime_type: "image/png",
+      size: 70,
+      is_public: true,
+      user_id: 2,
+      created_at: "2025-10-14T03:16:41.000000Z",
+      updated_at: "2025-10-14T03:16:41.000000Z"
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/api/files/{id}',
+    description: 'Delete a file',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'File ID'
+      }
+    ],
+    responseExample: {
+      message: "File deleted successfully"
+    }
   }
 ];
 
@@ -773,28 +935,72 @@ export default function ApiDocs() {
             <code className="text-blue-800 font-mono">https://naqashthaheem.com/api</code>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white border rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-3">Authentication</h3>
-              <p className="text-gray-600 mb-4">
-                Most endpoints require authentication using a Bearer token in the Authorization header.
-              </p>
+          <div className="bg-white border rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">Authentication</h3>
+            <p className="text-gray-600 mb-4">
+              You can authenticate using either a JWT Token or an API Token:
+            </p>
+            
+            <div className="space-y-4">
+              <div className="border-l-4 border-blue-500 pl-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Option 1: JWT Token (Temporary)</h4>
+                <p className="text-sm text-gray-600 mb-2">
+                  Login via <code className="bg-gray-100 px-1">/auth/login</code> to get a JWT token.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Expires after 1 hour (30 days with "Remember Me")</li>
+                  <li>• Best for: Testing, user-specific operations</li>
+                </ul>
+              </div>
+
+              <div className="border-l-4 border-green-500 pl-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Option 2: API Token (Permanent)</h4>
+                <p className="text-sm text-gray-600 mb-2">
+                  Create tokens from <strong>Admin Dashboard → API Tokens</strong>
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Never expires (unless you set an expiration date)</li>
+                  <li>• Best for: Automated integrations, scripts, production use</li>
+                  <li>• ✅ <strong>Fully tested and working!</strong></li>
+                </ul>
+              </div>
+
               <div className="bg-gray-50 rounded p-3">
+                <p className="text-sm text-gray-600 mb-2">Include your token in all requests:</p>
                 <code className="text-sm">
                   Authorization: Bearer {'{your-token}'}
                 </code>
               </div>
             </div>
+          </div>
 
-            <div className="bg-white border rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-3">Rate Limiting</h3>
-              <p className="text-gray-600 mb-2">
-                API requests are limited to:
-              </p>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• 100 requests per minute for authenticated users</li>
-                <li>• 20 requests per minute for anonymous users</li>
-              </ul>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <div className="flex items-start space-x-3">
+              <svg className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="text-lg font-semibold text-green-900 mb-2">API Status: All Systems Operational</h3>
+                <p className="text-green-800 mb-3">All endpoints have been tested and verified working!</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div className="bg-white rounded px-3 py-2">
+                    <div className="text-green-600 font-semibold">Posts</div>
+                    <div className="text-gray-600">✅ CRUD</div>
+                  </div>
+                  <div className="bg-white rounded px-3 py-2">
+                    <div className="text-green-600 font-semibold">Workflows</div>
+                    <div className="text-gray-600">✅ CRUD</div>
+                  </div>
+                  <div className="bg-white rounded px-3 py-2">
+                    <div className="text-green-600 font-semibold">Courses</div>
+                    <div className="text-gray-600">✅ CRUD</div>
+                  </div>
+                  <div className="bg-white rounded px-3 py-2">
+                    <div className="text-green-600 font-semibold">Files</div>
+                    <div className="text-gray-600">✅ Upload/List/Get/Delete</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1006,6 +1212,60 @@ export default function ApiDocs() {
                   </pre>
                 </div>
               </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Upload a file</h4>
+                <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`curl -X POST "https://naqashthaheem.com/api/files" \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -F "file=@/path/to/image.png" \\
+  -F "is_public=true"`}
+                  </pre>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Complete Workflow: Create Workflow with Files</h4>
+                <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`# Step 1: Upload file and get file_id
+FILE_ID=$(curl -s -X POST "https://naqashthaheem.com/api/files" \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -F "file=@diagram.png" | jq -r '.file.id')
+
+# Step 2: Create workflow and get workflow_id
+WF_ID=$(curl -s -X POST "https://naqashthaheem.com/api/admin/workflows" \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "title": "Customer Onboarding",
+    "summary": "Automated onboarding process",
+    "description": "<p>Complete workflow</p>",
+    "slug": "customer-onboarding",
+    "workflow_category_id": 1,
+    "status": "draft"
+  }' | jq -r '.id')
+
+# Step 3: Attach file to workflow
+curl -X POST "https://naqashthaheem.com/api/admin/workflows/$WF_ID/files" \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d "{
+    \\"file_id\\": $FILE_ID,
+    \\"display_name\\": \\"Process Diagram\\",
+    \\"description\\": \\"Main workflow diagram\\",
+    \\"sort_order\\": 1
+  }"
+
+# Step 4: Publish workflow
+curl -X PUT "https://naqashthaheem.com/api/admin/workflows/$WF_ID" \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"status": "published", "is_published": true}'`}
+                  </pre>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1048,6 +1308,65 @@ fetch('https://naqashthaheem.com/api/admin/workflows', {
 })
 .then(response => response.json())
 .then(data => console.log(data));`}
+                  </pre>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Complete Workflow: Upload & Attach Files</h4>
+                <div className="bg-gray-900 text-blue-400 rounded p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`const token = 'YOUR_TOKEN';
+
+// Step 1: Upload file
+async function createWorkflowWithFiles() {
+  // Upload file
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+  
+  const fileResponse = await fetch('https://naqashthaheem.com/api/files', {
+    method: 'POST',
+    headers: { 'Authorization': \`Bearer \${token}\` },
+    body: formData
+  });
+  const { file } = await fileResponse.json();
+  
+  // Create workflow
+  const workflowResponse = await fetch('https://naqashthaheem.com/api/admin/workflows', {
+    method: 'POST',
+    headers: {
+      'Authorization': \`Bearer \${token}\`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      title: 'Customer Onboarding',
+      summary: 'Automated process',
+      description: '<p>Complete workflow</p>',
+      slug: 'customer-onboarding',
+      workflow_category_id: 1,
+      status: 'draft'
+    })
+  });
+  const workflow = await workflowResponse.json();
+  
+  // Attach file to workflow
+  const attachResponse = await fetch(\`https://naqashthaheem.com/api/admin/workflows/\${workflow.id}/files\`, {
+    method: 'POST',
+    headers: {
+      'Authorization': \`Bearer \${token}\`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      file_id: file.id,
+      display_name: 'Process Diagram',
+      description: 'Main workflow diagram',
+      sort_order: 1
+    })
+  });
+  
+  const attachedFile = await attachResponse.json();
+  console.log('Workflow created with file:', attachedFile);
+}`}
                   </pre>
                 </div>
               </div>

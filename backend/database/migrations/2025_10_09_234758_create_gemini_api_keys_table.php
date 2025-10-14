@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('gemini_api_keys')) {
         Schema::create('gemini_api_keys', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
+        }
     }
 
     /**

@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('email_templates')) {
         Schema::create('email_templates', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique(); // Template identifier (e.g., 'welcome', 'password_reset')
@@ -27,6 +28,7 @@ return new class extends Migration
             $table->index(['is_active', 'category']);
             $table->index('name');
         });
+        }
     }
 
     /**

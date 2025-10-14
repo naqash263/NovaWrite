@@ -74,6 +74,18 @@ export default function Home() {
     return setting ? setting.value === '1' : defaultValue;
   };
 
+  // Helper function to get image URL
+  const getImageUrl = (key: string, defaultValue: string = '') => {
+    if (!homeSettings) return defaultValue;
+    const setting = homeSettings.settings.find(s => s.key === key);
+    if (!setting || setting.type !== 'image') return defaultValue;
+    // If setting has image_url but it's using wrong port, construct correct URL
+    if (setting.value) {
+      return `http://localhost:8001/storage/${setting.value}`;
+    }
+    return defaultValue;
+  };
+
   useSEO({
     title: 'Naqash Thaheem - Global AI Automation Expert & Systems Analyst',
     description: 'Global AI automation specialist offering workflow automation, CRM integration, Power BI dashboards, and business intelligence solutions worldwide. 8+ years experience with n8n, Make.com, OpenAI, and Zoho CRM. Remote services available.',
@@ -254,7 +266,7 @@ export default function Home() {
       <section 
         className="relative text-white py-24 md:py-32 bg-cover bg-center bg-no-repeat overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.9) 0%, rgba(29, 78, 216, 0.85) 50%, rgba(30, 64, 175, 0.9) 100%), url('/images/modern_technology_ab_8cef6e70.jpg')`
+          backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.9) 0%, rgba(29, 78, 216, 0.85) 50%, rgba(30, 64, 175, 0.9) 100%), url('${getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')}')`
         }}
       >
         {/* Animated background elements */}
@@ -269,8 +281,8 @@ export default function Home() {
             {/* Profile Image with enhanced animation */}
             <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
               <LazyImage 
-                src="/images/professional_busines_b4d6588a.jpg" 
-                alt="Naqash Thaheem"
+                src={getImageUrl('profile_image', '/images/professional_busines_b4d6588a.jpg')} 
+                alt={getSettingValue('profile_alt_text', 'Naqash Thaheem')}
                 className="w-40 h-40 md:w-48 md:h-48 rounded-full mx-auto border-4 border-white shadow-2xl object-cover ring-4 ring-blue-300 ring-opacity-50"
               />
             </div>

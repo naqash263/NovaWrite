@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('api_tokens', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('token', 64)->unique();
-            $table->text('permissions')->nullable(); // JSON array of permissions
-            $table->timestamp('last_used_at')->nullable();
-            $table->timestamp('expires_at')->nullable();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('api_tokens')) {
+            Schema::create('api_tokens', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('token', 64)->unique();
+                $table->text('permissions')->nullable(); // JSON array of permissions
+                $table->timestamp('last_used_at')->nullable();
+                $table->timestamp('expires_at')->nullable();
+                $table->foreignId('user_id')->constrained()->onDelete('cascade');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

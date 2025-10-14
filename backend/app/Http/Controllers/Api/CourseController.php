@@ -184,10 +184,8 @@ class CourseController extends Controller
 
     public function adminIndex()
     {
-        if (!Auth::check() || !Auth::user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
+        // Authorization is handled by AdminMiddleware
+        
         $courses = Course::withCount(['lessons', 'courseFiles'])
             ->orderBy('order')
             ->orderBy('created_at', 'desc')
@@ -198,10 +196,8 @@ class CourseController extends Controller
 
     public function store(Request $request)
     {
-        if (!Auth::check() || !Auth::user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
+        // Authorization is handled by AdminMiddleware
+        
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -243,10 +239,8 @@ class CourseController extends Controller
 
     public function update(Request $request, $id)
     {
-        if (!Auth::check() || !Auth::user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
+        // Authorization is handled by AdminMiddleware
+        
         $course = Course::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -292,10 +286,8 @@ class CourseController extends Controller
 
     public function destroy($id)
     {
-        if (!Auth::check() || !Auth::user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
+        // Authorization is handled by AdminMiddleware
+        
         $course = Course::findOrFail($id);
         $course->delete();
 

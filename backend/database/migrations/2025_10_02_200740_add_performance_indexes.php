@@ -12,22 +12,22 @@ return new class extends Migration
         // Add indexes for posts table (only if they don't exist)
         if (Schema::hasTable('posts')) {
             Schema::table('posts', function (Blueprint $table) {
-                if (!$this->indexExists('posts', 'posts_published_index')) {
+                if (Schema::hasColumn('posts', 'is_published') && Schema::hasColumn('posts', 'published_at') && !$this->indexExists('posts', 'posts_published_index')) {
                     $table->index(['is_published', 'published_at'], 'posts_published_index');
                 }
-                if (!$this->indexExists('posts', 'posts_category_published_index')) {
+                if (Schema::hasColumn('posts', 'category_id') && Schema::hasColumn('posts', 'is_published') && !$this->indexExists('posts', 'posts_category_published_index')) {
                     $table->index(['category_id', 'is_published'], 'posts_category_published_index');
                 }
-                if (!$this->indexExists('posts', 'posts_user_published_index')) {
+                if (Schema::hasColumn('posts', 'user_id') && Schema::hasColumn('posts', 'is_published') && !$this->indexExists('posts', 'posts_user_published_index')) {
                     $table->index(['user_id', 'is_published'], 'posts_user_published_index');
                 }
-                if (!$this->indexExists('posts', 'posts_views_index')) {
+                if (Schema::hasColumn('posts', 'views') && !$this->indexExists('posts', 'posts_views_index')) {
                     $table->index('views', 'posts_views_index');
                 }
-                if (!$this->indexExists('posts', 'posts_created_at_index')) {
+                if (Schema::hasColumn('posts', 'created_at') && !$this->indexExists('posts', 'posts_created_at_index')) {
                     $table->index('created_at', 'posts_created_at_index');
                 }
-                if (!$this->indexExists('posts', 'posts_approval_status_index')) {
+                if (Schema::hasColumn('posts', 'approval_status') && !$this->indexExists('posts', 'posts_approval_status_index')) {
                     $table->index('approval_status', 'posts_approval_status_index');
                 }
             });
@@ -36,16 +36,16 @@ return new class extends Migration
         // Add indexes for workflows table (only if they don't exist)
         if (Schema::hasTable('workflows')) {
             Schema::table('workflows', function (Blueprint $table) {
-                if (!$this->indexExists('workflows', 'workflows_status_created_index')) {
+                if (Schema::hasColumn('workflows', 'status') && Schema::hasColumn('workflows', 'created_at') && !$this->indexExists('workflows', 'workflows_status_created_index')) {
                     $table->index(['status', 'created_at'], 'workflows_status_created_index');
                 }
-                if (!$this->indexExists('workflows', 'workflows_category_status_index')) {
+                if (Schema::hasColumn('workflows', 'workflow_category_id') && Schema::hasColumn('workflows', 'status') && !$this->indexExists('workflows', 'workflows_category_status_index')) {
                     $table->index(['workflow_category_id', 'status'], 'workflows_category_status_index');
                 }
-                if (!$this->indexExists('workflows', 'workflows_user_status_index')) {
+                if (Schema::hasColumn('workflows', 'created_by') && Schema::hasColumn('workflows', 'status') && !$this->indexExists('workflows', 'workflows_user_status_index')) {
                     $table->index(['created_by', 'status'], 'workflows_user_status_index');
                 }
-                if (!$this->indexExists('workflows', 'workflows_approval_status_index')) {
+                if (Schema::hasColumn('workflows', 'approval_status') && Schema::hasColumn('workflows', 'status') && !$this->indexExists('workflows', 'workflows_approval_status_index')) {
                     $table->index(['approval_status', 'status'], 'workflows_approval_status_index');
                 }
             });
@@ -54,10 +54,10 @@ return new class extends Migration
         // Add indexes for users table (only if they don't exist)
         if (Schema::hasTable('users')) {
             Schema::table('users', function (Blueprint $table) {
-                if (!$this->indexExists('users', 'users_role_index')) {
+                if (Schema::hasColumn('users', 'role') && !$this->indexExists('users', 'users_role_index')) {
                     $table->index('role', 'users_role_index');
                 }
-                if (!$this->indexExists('users', 'users_created_at_index')) {
+                if (Schema::hasColumn('users', 'created_at') && !$this->indexExists('users', 'users_created_at_index')) {
                     $table->index('created_at', 'users_created_at_index');
                 }
             });
@@ -66,7 +66,7 @@ return new class extends Migration
         // Add indexes for categories table (only if they don't exist)
         if (Schema::hasTable('categories')) {
             Schema::table('categories', function (Blueprint $table) {
-                if (!$this->indexExists('categories', 'categories_slug_index')) {
+                if (Schema::hasColumn('categories', 'slug') && !$this->indexExists('categories', 'categories_slug_index')) {
                     $table->index('slug', 'categories_slug_index');
                 }
             });
@@ -75,7 +75,7 @@ return new class extends Migration
         // Add indexes for workflow_categories table (only if they don't exist)
         if (Schema::hasTable('workflow_categories')) {
             Schema::table('workflow_categories', function (Blueprint $table) {
-                if (!$this->indexExists('workflow_categories', 'workflow_categories_slug_index')) {
+                if (Schema::hasColumn('workflow_categories', 'slug') && !$this->indexExists('workflow_categories', 'workflow_categories_slug_index')) {
                     $table->index('slug', 'workflow_categories_slug_index');
                 }
             });

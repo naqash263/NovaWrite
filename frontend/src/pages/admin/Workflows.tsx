@@ -126,15 +126,26 @@ export default function Workflows() {
 
   const uploadFileMutation = useMutation({
     mutationFn: async ({ workflowId, file, description }: { workflowId: number; file: File; description: string }) => {
+      // Step 1: Upload file to /api/files
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('description', description);
       
-      const response = await apiClient.post(`/admin/workflows/${workflowId}/files`, formData, {
+      const uploadResponse = await apiClient.post('/files', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      
+      const fileId = uploadResponse.data.file.id;
+      
+      // Step 2: Attach file to workflow
+      const response = await apiClient.post(`/admin/workflows/${workflowId}/files`, {
+        file_id: fileId,
+        display_name: file.name,
+        description: description || '',
+        sort_order: 0
+      });
+      
       return response.data;
     },
     onSuccess: () => {

@@ -33,6 +33,8 @@ const HomeSettings: React.FC = () => {
   const [showKeySuggestions, setShowKeySuggestions] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Predefined settings with helpful descriptions and examples
   const predefinedSettings = {
@@ -243,6 +245,13 @@ const HomeSettings: React.FC = () => {
     },
 
     // Images
+    'profile_image': {
+      title: 'Profile Photo',
+      description: 'Your professional profile photo displayed in the hero section',
+      example: 'profile.jpg',
+      category: 'Images',
+      icon: '👤'
+    },
     'hero_image': {
       title: 'Hero Background Image',
       description: 'Background image for the hero section',
@@ -251,11 +260,25 @@ const HomeSettings: React.FC = () => {
       icon: '🖼️'
     },
     'about_image': {
-      title: 'About Section Image',
-      description: 'Image displayed in the about section',
-      example: 'about-image.jpg',
+      title: 'About Page Hero Background',
+      description: 'Background image for the About page hero section',
+      example: 'about-bg.jpg',
       category: 'Images',
       icon: '🖼️'
+    },
+    'contact_image': {
+      title: 'Contact Page Hero Background',
+      description: 'Background image for the Contact page hero section',
+      example: 'contact-bg.jpg',
+      category: 'Images',
+      icon: '📧'
+    },
+    'workflows_image': {
+      title: 'Workflows Page Hero Background',
+      description: 'Background image for the Workflows page hero section',
+      example: 'workflows-bg.jpg',
+      category: 'Images',
+      icon: '⚙️'
     },
     'logo_image': {
       title: 'Logo Image',
@@ -825,7 +848,6 @@ const HomeSettings: React.FC = () => {
     }
   };
   const [uploading, setUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Helper function to get predefined setting info
   const getPredefinedInfo = (key: string) => {
@@ -936,6 +958,38 @@ const HomeSettings: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // If it's an image type and a file is selected, upload the image first
+      if (formData.type === 'image' && selectedFile) {
+        setUploadingImage(true);
+        const imageFormData = new FormData();
+        imageFormData.append('image', selectedFile);
+        imageFormData.append('key', formData.key);
+        
+        const uploadResponse = await apiClient.post('/admin/home-settings/upload-image', imageFormData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        // The upload endpoint creates/updates the setting, so we're done
+        setUploadingImage(false);
+        setShowModal(false);
+        setEditingSetting(null);
+        setSelectedFile(null);
+        setFormData({
+          key: '',
+          type: 'text',
+          value: '',
+          title: '',
+          description: '',
+          is_active: true,
+          sort_order: 0,
+        });
+        fetchSettings();
+        return;
+      }
+      
+      // For non-image types, proceed with normal save
       if (editingSetting) {
         await apiClient.put(`/admin/home-settings/${editingSetting.id}`, formData);
       } else {
@@ -943,6 +997,7 @@ const HomeSettings: React.FC = () => {
       }
       setShowModal(false);
       setEditingSetting(null);
+      setSelectedFile(null);
       setFormData({
         key: '',
         type: 'text',
@@ -955,6 +1010,7 @@ const HomeSettings: React.FC = () => {
       fetchSettings();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to save setting');
+      setUploadingImage(false);
     }
   };
 
@@ -1535,9 +1591,10 @@ const HomeSettings: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={uploadingImage}
                 >
-                  {editingSetting ? 'Update' : 'Create'}
+                  {uploadingImage ? 'Uploading...' : (editingSetting ? 'Update' : 'Create')}
                 </button>
               </div>
             </form>

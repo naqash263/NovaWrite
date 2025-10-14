@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('cv_templates')) {
         Schema::create('cv_templates', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->index(['is_active', 'category']);
             $table->index('is_default');
         });
+        }
     }
 
     /**

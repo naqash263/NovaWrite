@@ -5,6 +5,7 @@ import { useSEO } from '../utils/seo';
 import { WorkflowCardSkeleton } from '../components/Skeleton';
 import WorkflowDownloadModal from '../components/WorkflowDownloadModal';
 import LazyImage from '../components/LazyImage';
+import { useHomeSettings } from '../hooks/useHomeSettings';
 
 interface WorkflowCategory {
   id: number;
@@ -41,6 +42,7 @@ export default function Workflows() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const { getImageUrl } = useHomeSettings();
   const [expandedWorkflows, setExpandedWorkflows] = useState<Set<number>>(new Set());
   const [downloadModal, setDownloadModal] = useState<{
     isOpen: boolean;
@@ -162,7 +164,7 @@ export default function Workflows() {
         }}
       >
         <LazyImage
-          src="/images/ai_artificial_intell_c522e573.jpg"
+          src={getImageUrl('workflows_image', '/images/ai_artificial_intell_c522e573.jpg')}
           alt="AI Automation Background"
           className="absolute inset-0 w-full h-full object-cover -z-10"
           placeholder="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSIzMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzI1NjNlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QXV0b21hdGlvbiBXb3JrZmxvd3M8L3RleHQ+PC9zdmc+"

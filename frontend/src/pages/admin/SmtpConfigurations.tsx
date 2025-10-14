@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useToast } from '../../hooks/use-toast';
 import { useConfirm } from '../../hooks/use-confirm';
+import apiClient from '../../api/axios';
 
 interface SmtpConfiguration {
   id: number;
@@ -105,17 +106,8 @@ const SmtpConfigurations: React.FC = () => {
   const fetchConfigurations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/smtp-configurations', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setConfigurations(data.data || []);
-      }
+      const response = await apiClient.get('/admin/smtp-configurations');
+      setConfigurations(response.data.data || []);
     } catch (error) {
       console.error('Error fetching configurations:', error);
     } finally {
@@ -126,27 +118,15 @@ const SmtpConfigurations: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingConfiguration 
-        ? `/api/admin/smtp-configurations/${editingConfiguration.id}`
-        : '/api/admin/smtp-configurations';
-      
-      const method = editingConfiguration ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        setShowModal(false);
-        setEditingConfiguration(null);
-        resetForm();
-        fetchConfigurations();
+      if (editingConfiguration) {
+        await apiClient.put(`/admin/smtp-configurations/${editingConfiguration.id}`, formData);
+      } else {
+        await apiClient.post('/admin/smtp-configurations', formData);
       }
+      setShowModal(false);
+      setEditingConfiguration(null);
+      resetForm();
+      fetchConfigurations();
     } catch (error) {
       console.error('Error saving configuration:', error);
     }
@@ -182,26 +162,15 @@ const SmtpConfigurations: React.FC = () => {
     
     if (confirmed) {
       try {
-        const response = await fetch(`/api/admin/smtp-configurations/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+        await apiClient.delete(`/admin/smtp-configurations/${id}`);
+        fetchConfigurations();
+      } catch (error: any) {
+        addToast({
+          type: 'error',
+          title: 'Delete Failed',
+          description: error.response?.data?.message || 'Failed to delete configuration',
+          duration: 5000
         });
-
-        if (response.ok) {
-          fetchConfigurations();
-        } else {
-          const error = await response.json();
-          addToast({
-            type: 'error',
-            title: 'Delete Failed',
-            description: error.message || 'Failed to delete configuration',
-            duration: 5000
-          });
-        }
-      } catch (error) {
-        console.error('Error deleting configuration:', error);
       }
     }
   };
@@ -224,19 +193,13 @@ const SmtpConfigurations: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`/api/admin/smtp-configurations/${configuration.id}/test`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ test_email: testEmail })
+      const response = await apiClient.post(`/admin/smtp-configurations/${configuration.id}/test`, { 
+        test_email: testEmail 
       });
 
-      const result = await response.json();
-      setTestResult(result);
+      setTestResult(response.data);
       
-      if (result.success) {
+      if (response.data.success) {
         fetchConfigurations(); // Refresh to get updated test results
       }
     } catch (error) {
@@ -249,16 +212,8 @@ const SmtpConfigurations: React.FC = () => {
 
   const handleSetActive = async (id: number) => {
     try {
-      const response = await fetch(`/api/admin/smtp-configurations/${id}/set-active`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        fetchConfigurations();
-      }
+      await apiClient.post(`/admin/smtp-configurations/${id}/set-active`);
+      fetchConfigurations();
     } catch (error) {
       console.error('Error setting active:', error);
     }
@@ -266,16 +221,8 @@ const SmtpConfigurations: React.FC = () => {
 
   const handleSetDefault = async (id: number) => {
     try {
-      const response = await fetch(`/api/admin/smtp-configurations/${id}/set-default`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        fetchConfigurations();
-      }
+      await apiClient.post(`/admin/smtp-configurations/${id}/set-default`);
+      fetchConfigurations();
     } catch (error) {
       console.error('Error setting default:', error);
     }
@@ -283,16 +230,8 @@ const SmtpConfigurations: React.FC = () => {
 
   const handleDuplicate = async (configuration: SmtpConfiguration) => {
     try {
-      const response = await fetch(`/api/admin/smtp-configurations/${configuration.id}/duplicate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        fetchConfigurations();
-      }
+      await apiClient.post(`/admin/smtp-configurations/${configuration.id}/duplicate`);
+      fetchConfigurations();
     } catch (error) {
       console.error('Error duplicating configuration:', error);
     }

@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('test_attempts')) {
         Schema::create('test_attempts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->json('feedback')->nullable(); // Store feedback for each question
             $table->timestamps();
         });
+        }
     }
 
     /**

@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('smtp_configurations')) {
         Schema::create('smtp_configurations', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique(); // Configuration name (e.g., 'default', 'backup')
@@ -33,6 +34,7 @@ return new class extends Migration
             
             $table->index(['is_active', 'is_default']);
         });
+        }
     }
 
     /**

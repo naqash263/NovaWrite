@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useSEO } from '../utils/seo';
 import apiClient from '../api/axios';
+import { useHomeSettings } from '../hooks/useHomeSettings';
 
 export default function Contact() {
+  const { getImageUrl } = useHomeSettings();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -55,7 +57,7 @@ export default function Contact() {
       <div 
         className="relative bg-cover bg-center py-20 mb-16"
         style={{
-          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9)), url('/images/business_analytics_d_948bb4c2.jpg')`
+          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9)), url('${getImageUrl('contact_image', '/images/business_analytics_d_948bb4c2.jpg')}')`
         }}
       >
         <div className="max-w-4xl mx-auto px-4 text-center">

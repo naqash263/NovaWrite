@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('user_api_keys')) {
         Schema::create('user_api_keys', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
@@ -23,6 +24,7 @@ return new class extends Migration
             
             $table->index(['user_id', 'is_active']);
         });
+        }
     }
 
     /**

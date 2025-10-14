@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('lesson_tests')) {
         Schema::create('lesson_tests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('lesson_id')->constrained()->onDelete('cascade');
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->integer('order')->default(0);
             $table->timestamps();
         });
+        }
     }
 
     /**

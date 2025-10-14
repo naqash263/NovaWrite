@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useAuth } from '../../hooks/useAuth';
+import apiClient from '../../api/axios';
 
 interface CvTemplate {
   id: number;
@@ -527,12 +528,8 @@ export default function CvTemplates() {
       if (activeFilter !== 'all') params.append('is_active', activeFilter === 'active' ? 'true' : 'false');
 
       console.log('Loading templates...');
-      const response = await fetch(`/api/admin/cv-templates?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
+      const response = await apiClient.get(`/admin/cv-templates?${params}`);
+      const data = response.data;
       
       console.log('Templates response:', data);
       
@@ -576,30 +573,29 @@ export default function CvTemplates() {
         formDataToSend.append('thumbnail', formData.thumbnail);
       }
 
-      const url = editingTemplate 
-        ? `/api/admin/cv-templates/${editingTemplate.id}`
-        : '/api/admin/cv-templates';
-      
-      const method = editingTemplate ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formDataToSend
-      });
+      let response;
+      if (editingTemplate) {
+        response = await apiClient.put(`/admin/cv-templates/${editingTemplate.id}`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      } else {
+        response = await apiClient.post('/admin/cv-templates', formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      }
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (response.data.success || response.data.template) {
         setSuccess(editingTemplate ? 'Template updated successfully' : 'Template created successfully');
         setShowAddModal(false);
         setEditingTemplate(null);
         resetForm();
         loadTemplates();
       } else {
-        setError(result.message || 'Failed to save template');
+        setError(response.data.message || 'Failed to save template');
       }
     } catch (error) {
       console.error('Error saving template:', error);
@@ -758,20 +754,13 @@ export default function CvTemplates() {
     if (!confirm('Are you sure you want to delete this template?')) return;
 
     try {
-      const response = await fetch(`/api/admin/cv-templates/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await apiClient.delete(`/admin/cv-templates/${id}`);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (response.data.success) {
         setSuccess('Template deleted successfully');
         loadTemplates();
       } else {
-        setError(result.message || 'Failed to delete template');
+        setError(response.data.message || 'Failed to delete template');
       }
     } catch (error) {
       console.error('Error deleting template:', error);
@@ -781,20 +770,13 @@ export default function CvTemplates() {
 
   const handleToggle = async (id: number) => {
     try {
-      const response = await fetch(`/api/admin/cv-templates/${id}/toggle`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await apiClient.post(`/admin/cv-templates/${id}/toggle`);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (response.data.success) {
         setSuccess('Template status updated successfully');
         loadTemplates();
       } else {
-        setError(result.message || 'Failed to update template status');
+        setError(response.data.message || 'Failed to update template status');
       }
     } catch (error) {
       console.error('Error toggling template:', error);
@@ -804,20 +786,13 @@ export default function CvTemplates() {
 
   const handleSetDefault = async (id: number) => {
     try {
-      const response = await fetch(`/api/admin/cv-templates/${id}/set-default`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await apiClient.post(`/admin/cv-templates/${id}/set-default`);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (response.data.success) {
         setSuccess('Default template updated successfully');
         loadTemplates();
       } else {
-        setError(result.message || 'Failed to set default template');
+        setError(response.data.message || 'Failed to set default template');
       }
     } catch (error) {
       console.error('Error setting default template:', error);

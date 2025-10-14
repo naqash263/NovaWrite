@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('home_settings')) {
         Schema::create('home_settings', function (Blueprint $table) {
             $table->id();
             $table->string('key')->unique(); // e.g., 'hero_image', 'notification_message', 'featured_courses_banner'
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->integer('sort_order')->default(0);
             $table->timestamps();
         });
+        }
     }
 
     /**

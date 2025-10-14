@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('cv_templates', function (Blueprint $table) {
-            $table->json('field_mappings')->nullable()->after('customizable_options');
+            if (!Schema::hasColumn('cv_templates', 'field_mappings')) {
+                $table->json('field_mappings')->nullable()->after('customizable_options');
+            }
         });
     }
 

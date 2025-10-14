@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('lesson_progress')) {
         Schema::create('lesson_progress', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
@@ -24,6 +25,7 @@ return new class extends Migration
             // Ensure one progress record per user per lesson
             $table->unique(['user_id', 'lesson_id']);
         });
+        }
     }
 
     /**

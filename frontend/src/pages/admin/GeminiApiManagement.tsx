@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useAuth } from '../../hooks/useAuth';
+import apiClient from '../../api/axios';
 
 interface GeminiApiKey {
   id: number;
@@ -96,12 +97,8 @@ export default function GeminiApiManagement() {
 
   const loadApiKeys = async () => {
     try {
-      const response = await fetch('/api/admin/gemini-api-keys', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
+      const response = await apiClient.get('/admin/gemini-api-keys');
+      const data = response.data;
       
       if (data.success) {
         setApiKeys(data.data.api_keys);
@@ -116,12 +113,8 @@ export default function GeminiApiManagement() {
 
   const loadUserApiKeys = async () => {
     try {
-      const response = await fetch('/api/admin/user-api-keys', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
+      const response = await apiClient.get('/admin/user-api-keys');
+      const data = response.data;
       if (data.success) {
         setUserApiKeys(data.data.user_api_keys);
       }
@@ -132,12 +125,8 @@ export default function GeminiApiManagement() {
 
   const loadComprehensiveStats = async () => {
     try {
-      const response = await fetch('/api/admin/gemini-api-keys/comprehensive-stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
+      const response = await apiClient.get('/admin/gemini-api-keys/comprehensive-stats');
+      const data = response.data;
       if (data.success) {
         setStats(data.data);
       }
@@ -152,22 +141,14 @@ export default function GeminiApiManagement() {
     setSuccess('');
 
     try {
-      const url = editingKey 
-        ? `/api/admin/gemini-api-keys/${editingKey.id}`
-        : '/api/admin/gemini-api-keys';
-      
-      const method = editingKey ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(formData)
-      });
+      let response;
+      if (editingKey) {
+        response = await apiClient.put(`/admin/gemini-api-keys/${editingKey.id}`, formData);
+      } else {
+        response = await apiClient.post('/admin/gemini-api-keys', formData);
+      }
 
-      const result = await response.json();
+      const result = response.data;
 
       if (result.success) {
         setSuccess(editingKey ? 'API key updated successfully' : 'API key added successfully');
@@ -199,14 +180,8 @@ export default function GeminiApiManagement() {
     if (!confirm('Are you sure you want to delete this API key?')) return;
 
     try {
-      const response = await fetch(`/api/admin/gemini-api-keys/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      const result = await response.json();
+      const response = await apiClient.delete(`/admin/gemini-api-keys/${id}`);
+      const result = response.data;
 
       if (result.success) {
         setSuccess('API key deleted successfully');
@@ -223,16 +198,8 @@ export default function GeminiApiManagement() {
   const handleTest = async (id: number) => {
     setTesting(id);
     try {
-      const response = await fetch(`/api/admin/gemini-api-keys/${id}/test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({})
-      });
-
-      const result = await response.json();
+      const response = await apiClient.post(`/admin/gemini-api-keys/${id}/test`, {});
+      const result = response.data;
       
       if (result.success && result.valid) {
         const details = result.details || {};
@@ -257,14 +224,8 @@ export default function GeminiApiManagement() {
     
     try {
       console.log('Starting health check...');
-      const response = await fetch('/api/admin/gemini-api-keys/health-check', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      console.log('Health check response status:', response.status);
-      const result = await response.json();
+      const response = await apiClient.get('/admin/gemini-api-keys/health-check');
+      const result = response.data;
       console.log('Health check result:', result);
       
       if (result.success) {
@@ -292,19 +253,12 @@ export default function GeminiApiManagement() {
 
   const toggleActive = async (key: GeminiApiKey) => {
     try {
-      const response = await fetch(`/api/admin/gemini-api-keys/${key.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          is_active: !key.is_active
-        })
+      const response = await apiClient.put(`/admin/gemini-api-keys/${key.id}`, {
+        ...formData,
+        is_active: !key.is_active
       });
 
-      const result = await response.json();
+      const result = response.data;
 
       if (result.success) {
         setSuccess(`API key ${!key.is_active ? 'activated' : 'deactivated'} successfully`);
@@ -336,16 +290,8 @@ export default function GeminiApiManagement() {
     setSuccess('');
 
     try {
-      const response = await fetch(`/api/admin/user-api-keys/${editingUserKey.id}/quota`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(userKeyFormData)
-      });
-
-      const result = await response.json();
+      const response = await apiClient.put(`/admin/user-api-keys/${editingUserKey.id}/quota`, userKeyFormData);
+      const result = response.data;
 
       if (result.success) {
         setSuccess('User API key quota updated successfully');
@@ -366,14 +312,8 @@ export default function GeminiApiManagement() {
     if (!confirm('Are you sure you want to reset usage for this user API key?')) return;
 
     try {
-      const response = await fetch(`/api/admin/user-api-keys/${userKey.id}/reset-usage`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      const result = await response.json();
+      const response = await apiClient.post(`/admin/user-api-keys/${userKey.id}/reset-usage`);
+      const result = response.data;
 
       if (result.success) {
         setSuccess('User API key usage reset successfully');
@@ -391,14 +331,8 @@ export default function GeminiApiManagement() {
     if (!confirm('Are you sure you want to delete this user API key? This action cannot be undone.')) return;
 
     try {
-      const response = await fetch(`/api/admin/user-api-keys/${userKey.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      const result = await response.json();
+      const response = await apiClient.delete(`/admin/user-api-keys/${userKey.id}`);
+      const result = response.data;
 
       if (result.success) {
         setSuccess('User API key deleted successfully');
