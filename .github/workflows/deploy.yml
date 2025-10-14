@@ -142,12 +142,10 @@ jobs:
           
           # Create production environment file
           echo -e "${BLUE}📝 Creating production environment file...${NC}"
-          cat > .env << 'ENVEOF'
-VITE_API_URL=https://naqashthaheem.com/api
-VITE_APP_URL=https://naqashthaheem.com
-VITE_APP_NAME=Naqash Thaheem
-VITE_APP_ENV=production
-ENVEOF
+          echo "VITE_API_URL=https://naqashthaheem.com/api" > .env
+          echo "VITE_APP_URL=https://naqashthaheem.com" >> .env
+          echo "VITE_APP_NAME=Naqash Thaheem" >> .env
+          echo "VITE_APP_ENV=production" >> .env
           
           # Build frontend
           echo -e "${BLUE}🔨 Building frontend...${NC}"
