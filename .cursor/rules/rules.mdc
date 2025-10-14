@@ -1,16 +1,165 @@
 ---
 alwaysApply: true
 ---
-Always Remember Production Structure is like below
 
+# Production Structure
 /home/timesovh/
 └── naqashthaheem.com/
     ├── public_html/          # Main website (accessible via domain)
     │   ├── index.html        # React frontend
     │   ├── assets/           # Frontend assets
+    │   ├── storage/          # Symlink to backend/storage/app/public
     │   └── api/              # Laravel backend
     │       └── public/       # Laravel public files
+    │           └── storage/  # Symlink to backend/storage/app/public
     ├── backend/              # Source code
+    │   └── storage/app/public/  # Actual file storage
     ├── frontend/             # Source code
     └── other files...
+
+# CRITICAL RULES - ALWAYS FOLLOW
+
+## 1. Environment Variables
+- ❌ NEVER hardcode localhost URLs in source code
+- ✅ ALWAYS use environment variables: import.meta.env.VITE_API_URL
+- ✅ ALWAYS provide fallbacks that use VITE_APP_URL first, then localhost
+- ⚠️ CRITICAL: Backend APP_URL must be https://naqashthaheem.com (affects all storage URLs)
+- ⚠️ CRITICAL: Frontend VITE_API_URL must be https://naqashthaheem.com/api
+
+## 2. Database Migrations
+- ❌ NEVER run direct SQL commands (ALTER TABLE, etc.)
+- ✅ ALWAYS create proper migration files
+- ✅ ALWAYS include Schema::hasColumn() checks
+- ✅ ALWAYS include Schema::hasTable() checks
+- ✅ ALWAYS make migrations idempotent (safe to run multiple times)
+- ✅ ALWAYS test migrations locally before deploying
+
+## 3. Storage & File URLs
+- ❌ NEVER construct storage URLs manually with hardcoded domains
+- ✅ ALWAYS use Storage::disk('public')->url() in backend
+- ✅ ALWAYS use API-provided image_url in frontend
+- ✅ ALWAYS ensure APP_URL is correct (storage URLs depend on it)
+- ⚠️ CRITICAL: Storage symlinks must exist in BOTH locations:
+  - public_html/api/public/storage
+  - public_html/storage
+
+## 4. Frontend Build
+- ❌ NEVER deploy frontend without checking for localhost URLs
+- ✅ ALWAYS verify: grep -r "localhost" dist/ before deploying
+- ✅ ALWAYS use .env.production for production builds
+- ✅ ALWAYS set VITE_APP_URL in addition to VITE_API_URL
+- ✅ ALWAYS clear browser cache after deployment
+
+## 5. API Development
+- ❌ NEVER use Auth::check() in controllers when middleware already checks
+- ✅ ALWAYS rely on middleware for authentication
+- ✅ ALWAYS validate required fields in API requests
+- ✅ ALWAYS test with both JWT tokens AND API tokens
+- ✅ ALWAYS check nullable constraints before inserting data
+
+## 6. File Uploads
+- ❌ NEVER upload files directly to workflow/course endpoints
+- ✅ ALWAYS use two-step process:
+  1. Upload to /api/files (get file_id)
+  2. Attach file_id to resource
+- ✅ ALWAYS check file_id field name (underscore, not space)
+
+## 7. Cache Management
+- ⚠️ CRITICAL: After changing APP_URL, ALWAYS run:
+  - php artisan config:clear
+  - php artisan config:cache
+  - Restart PHP-FPM
+- ✅ ALWAYS clear caches after deployment
+- ✅ ALWAYS rebuild config cache in production
+
+## 8. GitHub Actions
+- ❌ NEVER use heredoc (<<) syntax in YAML scripts
+- ✅ ALWAYS use echo statements for multi-line content
+- ✅ ALWAYS export environment variables before building
+- ✅ ALWAYS verify secrets are set in GitHub repository
+
+## 9. Testing Before Production
+- ✅ ALWAYS test all CRUD operations (Create, Read, Update, Delete)
+- ✅ ALWAYS test file uploads
+- ✅ ALWAYS test with API tokens (not just JWT)
+- ✅ ALWAYS verify storage URLs in API responses
+- ✅ ALWAYS check database schema matches code expectations
+
+## 10. Production Deployment Checklist
+- [ ] All migrations have safety checks
+- [ ] No localhost URLs in code
+- [ ] Frontend .env has production URLs
+- [ ] Backend APP_URL set correctly
+- [ ] Storage symlinks created
+- [ ] Permissions set (775 for storage)
+- [ ] Caches cleared and rebuilt
+- [ ] Browser cache cleared after deployment
+
+# Common Mistakes & Solutions
+
+## Mistake 1: Images showing localhost URLs
+**Cause:** APP_URL not set or config cache not cleared
+**Solution:** 
+```bash
+# Backend
+sed -i 's|APP_URL=.*|APP_URL=https://naqashthaheem.com|' backend/.env
+php artisan config:clear && php artisan config:cache
+
+# Frontend  
+echo "VITE_API_URL=https://naqashthaheem.com/api" > frontend/.env
+npm run build
+```
+
+## Mistake 2: Storage files return 404
+**Cause:** Missing symlinks
+**Solution:**
+```bash
+cd public_html/api/public
+ln -sf ../../../backend/storage/app/public storage
+cd ../../
+ln -sf ../backend/storage/app/public storage
+```
+
+## Mistake 3: Migration fails with "column already exists"
+**Cause:** Missing Schema::hasColumn() check
+**Solution:** Always wrap column additions:
+```php
+if (!Schema::hasColumn('table', 'column')) {
+    $table->string('column');
+}
+```
+
+## Mistake 4: 422 Unprocessable Content on file attach
+**Cause:** Sending wrong field names or wrong data format
+**Solution:** Check API expects file_id (underscore), not "file id"
+
+## Mistake 5: Frontend build has localhost URLs
+**Cause:** Built with wrong .env or hardcoded URLs
+**Solution:**
+- Remove ALL hardcoded localhost URLs
+- Use environment variables everywhere
+- Verify build: grep -r "localhost" dist/
+
+## Mistake 6: API keys not showing (500 error)
+**Cause:** Model tries to decrypt fields during JSON serialization, fails and crashes
+**Solution:**
+```php
+// Always hide encrypted fields from JSON
+protected $hidden = ['api_key'];
+
+// Always handle decryption errors gracefully
+protected function apiKey(): Attribute {
+    return Attribute::make(
+        get: function ($value) {
+            try {
+                return decrypt($value);
+            } catch (\Exception $e) {
+                \Log::warning("Decryption failed: " . $e->getMessage());
+                return null;
+            }
+        }
+    );
+}
+```
+
 -Always make changes and keep it prepare for production

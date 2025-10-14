@@ -100,12 +100,22 @@ export default function GeminiApiManagement() {
       const response = await apiClient.get('/admin/gemini-api-keys');
       const data = response.data;
       
+      console.log('API Response:', data);
+      console.log('API Keys:', data.data?.api_keys);
+      console.log('Stats:', data.data?.statistics);
+      
       if (data.success) {
-        setApiKeys(data.data.api_keys);
-        setStats(data.data.statistics);
+        setApiKeys(data.data.api_keys || []);
+        setStats(data.data.statistics || {
+          total_keys: 0,
+          total_requests: 0,
+          used_requests: 0,
+          available_requests: 0
+        });
       }
     } catch (error) {
       console.error('Failed to load API keys:', error);
+      setError('Failed to load API keys. Please check console for details.');
     } finally {
       setLoading(false);
     }
@@ -536,63 +546,87 @@ export default function GeminiApiManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {apiKeys.map((key) => (
-                <tr key={key.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{key.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {key.used_requests} / {key.total_requests}
+              {apiKeys.length > 0 ? (
+                apiKeys.map((key) => (
+                  <tr key={key.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{key.name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {key.used_requests} / {key.total_requests}
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${(key.used_requests / key.total_requests) * 100}%` }}
+                        ></div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        key.is_active 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {key.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(key.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => handleEdit(key)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleTest(key.id)}
+                        disabled={testing === key.id}
+                        className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                      >
+                        {testing === key.id ? 'Testing...' : 'Test'}
+                      </button>
+                      <button
+                        onClick={() => toggleActive(key)}
+                        className={`${key.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
+                      >
+                        {key.is_active ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(key.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center">
+                    <div className="text-gray-500">
+                      <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
+                      <p className="text-sm font-medium text-gray-900 mb-1">No Admin API keys found</p>
+                      <p className="text-sm text-gray-500 mb-4">Get started by adding your first Gemini API key</p>
+                      <Button
+                        onClick={() => {
+                          setShowAddModal(true);
+                          setEditingKey(null);
+                          setFormData({ name: '', api_key: '', max_requests: 5, is_active: true });
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        Add Your First API Key
+                      </Button>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${(key.used_requests / key.total_requests) * 100}%` }}
-                      ></div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      key.is_active 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {key.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(key.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleEdit(key)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleTest(key.id)}
-                      disabled={testing === key.id}
-                      className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                    >
-                      {testing === key.id ? 'Testing...' : 'Test'}
-                    </button>
-                    <button
-                      onClick={() => toggleActive(key)}
-                      className={`${key.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
-                    >
-                      {key.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(key.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

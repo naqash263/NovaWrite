@@ -27,18 +27,40 @@ class GeminiApiKey extends Model
     ];
 
     protected $hidden = [
-        // 'api_key' - Commented out to allow access to decrypted API key
+        'api_key' // Hide encrypted key from JSON responses
     ];
 
     /**
      * Get the decrypted API key
+     * Returns null if decryption fails to prevent breaking API responses
      */
     protected function apiKey(): Attribute
     {
         return Attribute::make(
-            get: fn (string $value) => decrypt($value),
+            get: function (string $value) {
+                try {
+                    return decrypt($value);
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to decrypt API key for ' . $this->name . ': ' . $e->getMessage());
+                    return null;
+                }
+            },
             set: fn (string $value) => encrypt($value),
         );
+    }
+    
+    /**
+     * Get the API key safely (for display purposes)
+     * Returns masked string instead of actual key
+     */
+    public function getMaskedApiKeyAttribute(): string
+    {
+        try {
+            $decrypted = decrypt($this->attributes['api_key']);
+            return substr($decrypted, 0, 10) . '...' . substr($decrypted, -4);
+        } catch (\Exception $e) {
+            return '••••••••••';
+        }
     }
 
     /**
