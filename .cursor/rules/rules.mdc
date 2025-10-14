@@ -1,7 +1,6 @@
 ---
-alwaysApply: false
+alwaysApply: true
 ---
-
 Always Remember Production Structure is like below
 
 /home/username/
