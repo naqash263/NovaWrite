@@ -142,9 +142,12 @@ jobs:
           
           # Create production environment file
           echo -e "${BLUE}📝 Creating production environment file...${NC}"
-          echo "VITE_API_URL=https://naqashthaheem.com/api" > .env
-          echo "VITE_APP_NAME=Naqash Thaheem" >> .env
-          echo "VITE_APP_ENV=production" >> .env
+          cat > .env << 'ENVEOF'
+VITE_API_URL=https://naqashthaheem.com/api
+VITE_APP_URL=https://naqashthaheem.com
+VITE_APP_NAME=Naqash Thaheem
+VITE_APP_ENV=production
+ENVEOF
           
           # Build frontend
           echo -e "${BLUE}🔨 Building frontend...${NC}"
@@ -315,14 +318,48 @@ jobs:
               php artisan route:cache
               php artisan view:cache
           
+          # Ensure APP_URL is set correctly for storage URLs
+          echo -e "${BLUE}🔧 Configuring APP_URL for production...${NC}"
+          if ! grep -q "^APP_URL=https://naqashthaheem.com" .env; then
+            sed -i 's|^APP_URL=.*|APP_URL=https://naqashthaheem.com|' .env
+            echo -e "${GREEN}✅ APP_URL updated to https://naqashthaheem.com${NC}"
+            # Clear config cache to pick up new APP_URL
+            php artisan config:clear
+          fi
+          
           # Run migrations
           echo -e "${BLUE}🗄️ Running database migrations...${NC}"
           php artisan migrate --force
           
+          # Create storage symlink
+          echo -e "${BLUE}🔗 Creating storage symlink...${NC}"
+          php artisan storage:link || echo -e "${YELLOW}⚠️ Symlink may already exist${NC}"
+          
+          # Create symlink in public_html/api/public for Laravel
+          cd ~/naqashthaheem.com/public_html/api/public
+          if [ ! -L "storage" ]; then
+            ln -sf ../../../backend/storage/app/public storage
+            echo -e "${GREEN}✅ Storage symlink created in api/public${NC}"
+          else
+            echo -e "${GREEN}✅ Storage symlink already exists in api/public${NC}"
+          fi
+          
+          # Create symlink in public_html for direct access
+          cd ~/naqashthaheem.com/public_html
+          if [ ! -L "storage" ]; then
+            ln -sf ../backend/storage/app/public storage
+            echo -e "${GREEN}✅ Storage symlink created in public_html${NC}"
+          else
+            echo -e "${GREEN}✅ Storage symlink already exists in public_html${NC}"
+          fi
+          
+          # Back to backend directory
+          cd ~/naqashthaheem.com/backend
+          
           # Set permissions
           echo -e "${BLUE}🔐 Setting permissions...${NC}"
-          chmod -R 755 storage/
-          chmod -R 755 bootstrap/cache/
+          chmod -R 775 storage/
+          chmod -R 775 bootstrap/cache/
           
           # Deploy frontend to public_html (inside naqashthaheem.com)
           echo -e "${BLUE}📁 Deploying frontend to public_html...${NC}"
