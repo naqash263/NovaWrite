@@ -10,6 +10,7 @@ interface Lesson {
   title: string;
   content: string;
   video_url: string | null;
+  thumbnail: string | null;
   duration_minutes: number;
   order: number;
   is_free_preview: boolean;
@@ -140,7 +141,7 @@ export default function AdminLessons() {
       addToast({
         title: 'Error',
         description: 'Failed to load lessons',
-        variant: 'destructive',
+        type: 'error',
       });
       setLessons([]); // Set empty array on error
     } finally {
@@ -190,7 +191,7 @@ export default function AdminLessons() {
             console.log('Creating new quiz');
             await apiClient.post(`/admin/lessons/${lesson.id}/tests`, formData.quiz);
           }
-        } catch (quizError) {
+        } catch (quizError: any) {
           console.error('Error saving quiz:', quizError);
           console.error('Quiz data being sent:', formData.quiz);
           if (quizError.response?.data?.errors) {
