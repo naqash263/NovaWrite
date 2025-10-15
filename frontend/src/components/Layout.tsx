@@ -81,6 +81,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       { path: '/admin/workflows', label: 'Workflows', icon: '⚡' },
       { path: '/admin/courses', label: 'Courses', icon: '📚' },
       { path: '/admin/files', label: 'Files', icon: '📁' },
+      { path: '/admin/monitoring', label: 'Monitoring', icon: '🏥' },
     ];
 
     // Settings dropdown menu items (moved from main navigation)

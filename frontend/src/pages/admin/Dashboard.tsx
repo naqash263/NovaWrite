@@ -288,6 +288,83 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* System Health & Monitoring */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">System Health & Monitoring</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <QuickAction
+            to="/admin/monitoring"
+            title="System Monitoring"
+            description="Real-time health monitoring and system status"
+            color="bg-green-50 text-green-600"
+            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
+          />
+          <a
+            href="https://naqashthaheem.com/api/health"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-blue-200 transition-all duration-200"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg transition-colors group-hover:scale-110 duration-200 bg-blue-50 text-blue-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">Basic Health Check</h3>
+                <p className="text-gray-600 text-sm mt-1">Quick API health status</p>
+              </div>
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </div>
+          </a>
+          <a
+            href="https://naqashthaheem.com/api/health/comprehensive"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-blue-200 transition-all duration-200"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg transition-colors group-hover:scale-110 duration-200 bg-purple-50 text-purple-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">Comprehensive Health</h3>
+                <p className="text-gray-600 text-sm mt-1">Detailed system health report</p>
+              </div>
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </div>
+          </a>
+          <a
+            href="https://naqashthaheem.com/api/health/database"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-blue-200 transition-all duration-200"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg transition-colors group-hover:scale-110 duration-200 bg-orange-50 text-orange-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">Database Health</h3>
+                <p className="text-gray-600 text-sm mt-1">Database connectivity and performance</p>
+              </div>
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </div>
+          </a>
+        </div>
+      </div>
+
       {/* Recent Activity - We'll add this later with actual data */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-6">Popular User Groups</h2>

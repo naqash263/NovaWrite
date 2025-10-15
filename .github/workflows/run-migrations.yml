@@ -1,0 +1,39 @@
+name: Run Production Migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "RUN" to confirm running migrations'
+        required: true
+        default: ''
+
+jobs:
+  run-migrations:
+    if: github.event.inputs.confirm == 'RUN'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Run Production Migrations
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: 21098
+        script: |
+          cd ~/naqashthaheem.com/backend
+          echo "📋 Current migration status:"
+          php artisan migrate:status
+          echo "🔄 Running pending migrations..."
+          php artisan migrate --force
+          echo "🧹 Clearing caches..."
+          php artisan config:clear
+          php artisan route:clear
+          php artisan cache:clear
+          php artisan view:clear
+          echo "🔄 Rebuilding configuration cache..."
+          php artisan config:cache
+          echo "📋 Verifying health routes are available:"
+          php artisan route:list --path=api/health
+          echo "✅ Production migrations and cache clearing completed!"

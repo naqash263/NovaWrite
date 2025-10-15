@@ -155,6 +155,97 @@ const Monitoring: React.FC = () => {
           )}
         </div>
 
+        {/* Quick Health Check Links */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Health Check Links</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <a
+              href="https://naqashthaheem.com/api/health"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">Basic Health</h3>
+                  <p className="text-sm text-gray-500">Quick API status</p>
+                </div>
+                <svg className="w-4 h-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </div>
+            </a>
+            <a
+              href="https://naqashthaheem.com/api/health/comprehensive"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">Comprehensive</h3>
+                  <p className="text-sm text-gray-500">Detailed system report</p>
+                </div>
+                <svg className="w-4 h-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </div>
+            </a>
+            <a
+              href="https://naqashthaheem.com/api/health/database"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">Database</h3>
+                  <p className="text-sm text-gray-500">DB connectivity & performance</p>
+                </div>
+                <svg className="w-4 h-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </div>
+            </a>
+            <a
+              href="https://naqashthaheem.com/api/health/storage"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">Storage</h3>
+                  <p className="text-sm text-gray-500">File system health</p>
+                </div>
+                <svg className="w-4 h-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </div>
+            </a>
+          </div>
+        </div>
+
         {/* Overall Status */}
         {monitoringData && (
           <div className="mb-8">
