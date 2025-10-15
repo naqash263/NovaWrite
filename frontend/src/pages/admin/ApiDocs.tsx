@@ -213,22 +213,180 @@ const API_ENDPOINTS: ApiEndpoint[] = [
   {
     method: 'GET',
     path: '/api/workflows',
-    description: 'Get all published workflows',
+    description: 'Get all published workflows with advanced filtering',
     auth: false,
+    parameters: [
+      {
+        name: 'search',
+        type: 'string',
+        required: false,
+        description: 'Search in title, description, or instructions'
+      },
+      {
+        name: 'category_id',
+        type: 'integer',
+        required: false,
+        description: 'Filter by workflow category ID'
+      },
+      {
+        name: 'category_slug',
+        type: 'string',
+        required: false,
+        description: 'Filter by workflow category slug'
+      },
+      {
+        name: 'featured',
+        type: 'boolean',
+        required: false,
+        description: 'Filter featured workflows (true/false)'
+      },
+      {
+        name: 'date_from',
+        type: 'date',
+        required: false,
+        description: 'Filter workflows published from this date'
+      },
+      {
+        name: 'date_to',
+        type: 'date',
+        required: false,
+        description: 'Filter workflows published until this date'
+      },
+      {
+        name: 'created_from',
+        type: 'date',
+        required: false,
+        description: 'Filter workflows created from this date'
+      },
+      {
+        name: 'created_to',
+        type: 'date',
+        required: false,
+        description: 'Filter workflows created until this date'
+      },
+      {
+        name: 'updated_from',
+        type: 'date',
+        required: false,
+        description: 'Filter workflows updated from this date'
+      },
+      {
+        name: 'updated_to',
+        type: 'date',
+        required: false,
+        description: 'Filter workflows updated until this date'
+      },
+      {
+        name: 'year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by published year'
+      },
+      {
+        name: 'created_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created year'
+      },
+      {
+        name: 'updated_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated year'
+      },
+      {
+        name: 'month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by published month (1-12)'
+      },
+      {
+        name: 'created_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created month (1-12)'
+      },
+      {
+        name: 'updated_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated month (1-12)'
+      },
+      {
+        name: 'recent_days',
+        type: 'integer',
+        required: false,
+        description: 'Get workflows from last N days (created)'
+      },
+      {
+        name: 'recent_updated_days',
+        type: 'integer',
+        required: false,
+        description: 'Get workflows updated in last N days'
+      },
+      {
+        name: 'min_downloads',
+        type: 'integer',
+        required: false,
+        description: 'Minimum download count'
+      },
+      {
+        name: 'author_id',
+        type: 'integer',
+        required: false,
+        description: 'Filter by author ID'
+      },
+      {
+        name: 'sort_by',
+        type: 'string',
+        required: false,
+        description: 'Sort by: published_at, created_at, updated_at, title, downloads'
+      },
+      {
+        name: 'sort_order',
+        type: 'string',
+        required: false,
+        description: 'Sort order: asc or desc'
+      },
+      {
+        name: 'per_page',
+        type: 'integer',
+        required: false,
+        description: 'Number of workflows per page (max 100)'
+      },
+      {
+        name: 'paginate',
+        type: 'boolean',
+        required: false,
+        description: 'Enable pagination (true/false)'
+      }
+    ],
     responseExample: [
       {
         id: 1,
         title: "Lead Qualification Automation",
         slug: "lead-qualification-automation",
-        summary: "Automatically qualify and score leads",
-        tools: ["n8n", "Zoho CRM"],
-        benefits: ["Faster processing", "Better accuracy"],
-        status: "published",
+        description: "Automatically qualify and score leads",
+        instructions: "Step-by-step instructions...",
+        downloads: 245,
         is_featured: true,
+        published_at: "2024-01-01T00:00:00Z",
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
         category: {
           id: 1,
-          name: "CRM Automation"
-        }
+          name: "CRM Automation",
+          slug: "crm-automation"
+        },
+        files: [
+          {
+            id: 1,
+            file: {
+              name: "workflow-template.json",
+              url: "https://example.com/files/workflow-template.json"
+            }
+          }
+        ]
       }
     ]
   },
@@ -265,18 +423,168 @@ const API_ENDPOINTS: ApiEndpoint[] = [
   {
     method: 'GET',
     path: '/api/courses',
-    description: 'Get all published courses',
+    description: 'Get all published courses with advanced filtering',
     auth: false,
+    parameters: [
+      {
+        name: 'search',
+        type: 'string',
+        required: false,
+        description: 'Search in title, description, or what_you_learn'
+      },
+      {
+        name: 'level',
+        type: 'string',
+        required: false,
+        description: 'Filter by course level (beginner, intermediate, advanced)'
+      },
+      {
+        name: 'min_duration',
+        type: 'integer',
+        required: false,
+        description: 'Minimum duration in hours'
+      },
+      {
+        name: 'max_duration',
+        type: 'integer',
+        required: false,
+        description: 'Maximum duration in hours'
+      },
+      {
+        name: 'date_from',
+        type: 'date',
+        required: false,
+        description: 'Filter courses published from this date'
+      },
+      {
+        name: 'date_to',
+        type: 'date',
+        required: false,
+        description: 'Filter courses published until this date'
+      },
+      {
+        name: 'created_from',
+        type: 'date',
+        required: false,
+        description: 'Filter courses created from this date'
+      },
+      {
+        name: 'created_to',
+        type: 'date',
+        required: false,
+        description: 'Filter courses created until this date'
+      },
+      {
+        name: 'updated_from',
+        type: 'date',
+        required: false,
+        description: 'Filter courses updated from this date'
+      },
+      {
+        name: 'updated_to',
+        type: 'date',
+        required: false,
+        description: 'Filter courses updated until this date'
+      },
+      {
+        name: 'year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by published year'
+      },
+      {
+        name: 'created_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created year'
+      },
+      {
+        name: 'updated_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated year'
+      },
+      {
+        name: 'month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by published month (1-12)'
+      },
+      {
+        name: 'created_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created month (1-12)'
+      },
+      {
+        name: 'updated_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated month (1-12)'
+      },
+      {
+        name: 'recent_days',
+        type: 'integer',
+        required: false,
+        description: 'Get courses from last N days (created)'
+      },
+      {
+        name: 'recent_updated_days',
+        type: 'integer',
+        required: false,
+        description: 'Get courses updated in last N days'
+      },
+      {
+        name: 'min_enrollments',
+        type: 'integer',
+        required: false,
+        description: 'Minimum enrollment count'
+      },
+      {
+        name: 'min_lessons',
+        type: 'integer',
+        required: false,
+        description: 'Minimum lesson count'
+      },
+      {
+        name: 'sort_by',
+        type: 'string',
+        required: false,
+        description: 'Sort by: created_at, updated_at, published_at, title, duration_hours, order'
+      },
+      {
+        name: 'sort_order',
+        type: 'string',
+        required: false,
+        description: 'Sort order: asc or desc'
+      },
+      {
+        name: 'per_page',
+        type: 'integer',
+        required: false,
+        description: 'Number of courses per page (max 100)'
+      },
+      {
+        name: 'paginate',
+        type: 'boolean',
+        required: false,
+        description: 'Enable pagination (true/false)'
+      }
+    ],
     responseExample: [
       {
         id: 1,
         title: "React Development Course",
         slug: "react-development-course",
         description: "Learn React from scratch",
+        image_url: "https://example.com/course-image.jpg",
+        what_you_learn: "React fundamentals, hooks, state management",
         duration_hours: 40,
         level: "beginner",
-        lessons_count: 10,
-        enrolled_users_count: 25,
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+        lessons_count: 12,
+        enrolled_users_count: 156,
         is_enrolled: false
       }
     ]
@@ -882,8 +1190,112 @@ const API_ENDPOINTS: ApiEndpoint[] = [
   {
     method: 'GET',
     path: '/api/categories',
-    description: 'Get all categories',
+    description: 'Get all categories with advanced filtering',
     auth: false,
+    parameters: [
+      {
+        name: 'search',
+        type: 'string',
+        required: false,
+        description: 'Search in name or description'
+      },
+      {
+        name: 'min_posts',
+        type: 'integer',
+        required: false,
+        description: 'Minimum number of posts in category'
+      },
+      {
+        name: 'max_posts',
+        type: 'integer',
+        required: false,
+        description: 'Maximum number of posts in category'
+      },
+      {
+        name: 'created_from',
+        type: 'date',
+        required: false,
+        description: 'Filter categories created from this date'
+      },
+      {
+        name: 'created_to',
+        type: 'date',
+        required: false,
+        description: 'Filter categories created until this date'
+      },
+      {
+        name: 'updated_from',
+        type: 'date',
+        required: false,
+        description: 'Filter categories updated from this date'
+      },
+      {
+        name: 'updated_to',
+        type: 'date',
+        required: false,
+        description: 'Filter categories updated until this date'
+      },
+      {
+        name: 'created_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created year'
+      },
+      {
+        name: 'updated_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated year'
+      },
+      {
+        name: 'created_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created month (1-12)'
+      },
+      {
+        name: 'updated_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated month (1-12)'
+      },
+      {
+        name: 'recent_days',
+        type: 'integer',
+        required: false,
+        description: 'Get categories from last N days (created)'
+      },
+      {
+        name: 'recent_updated_days',
+        type: 'integer',
+        required: false,
+        description: 'Get categories updated in last N days'
+      },
+      {
+        name: 'sort_by',
+        type: 'string',
+        required: false,
+        description: 'Sort by: name, created_at, updated_at, posts_count'
+      },
+      {
+        name: 'sort_order',
+        type: 'string',
+        required: false,
+        description: 'Sort order: asc or desc'
+      },
+      {
+        name: 'per_page',
+        type: 'integer',
+        required: false,
+        description: 'Number of categories per page (max 100)'
+      },
+      {
+        name: 'paginate',
+        type: 'boolean',
+        required: false,
+        description: 'Enable pagination (true/false)'
+      }
+    ],
     responseExample: [
       {
         id: 1,
@@ -891,7 +1303,8 @@ const API_ENDPOINTS: ApiEndpoint[] = [
         slug: "ai-automation",
         description: "Articles about AI automation",
         posts_count: 5,
-        created_at: "2025-10-04T08:31:23.000000Z"
+        created_at: "2025-10-04T08:31:23.000000Z",
+        updated_at: "2025-10-04T08:31:23.000000Z"
       }
     ]
   },
@@ -987,16 +1400,128 @@ const API_ENDPOINTS: ApiEndpoint[] = [
   {
     method: 'GET',
     path: '/api/tags',
-    description: 'Get all tags',
+    description: 'Get all tags with advanced filtering',
     auth: false,
+    parameters: [
+      {
+        name: 'search',
+        type: 'string',
+        required: false,
+        description: 'Search in name or description'
+      },
+      {
+        name: 'min_posts',
+        type: 'integer',
+        required: false,
+        description: 'Minimum number of posts using this tag'
+      },
+      {
+        name: 'max_posts',
+        type: 'integer',
+        required: false,
+        description: 'Maximum number of posts using this tag'
+      },
+      {
+        name: 'color',
+        type: 'string',
+        required: false,
+        description: 'Filter by tag color (hex code)'
+      },
+      {
+        name: 'created_from',
+        type: 'date',
+        required: false,
+        description: 'Filter tags created from this date'
+      },
+      {
+        name: 'created_to',
+        type: 'date',
+        required: false,
+        description: 'Filter tags created until this date'
+      },
+      {
+        name: 'updated_from',
+        type: 'date',
+        required: false,
+        description: 'Filter tags updated from this date'
+      },
+      {
+        name: 'updated_to',
+        type: 'date',
+        required: false,
+        description: 'Filter tags updated until this date'
+      },
+      {
+        name: 'created_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created year'
+      },
+      {
+        name: 'updated_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated year'
+      },
+      {
+        name: 'created_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created month (1-12)'
+      },
+      {
+        name: 'updated_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated month (1-12)'
+      },
+      {
+        name: 'recent_days',
+        type: 'integer',
+        required: false,
+        description: 'Get tags from last N days (created)'
+      },
+      {
+        name: 'recent_updated_days',
+        type: 'integer',
+        required: false,
+        description: 'Get tags updated in last N days'
+      },
+      {
+        name: 'sort_by',
+        type: 'string',
+        required: false,
+        description: 'Sort by: name, created_at, updated_at, posts_count'
+      },
+      {
+        name: 'sort_order',
+        type: 'string',
+        required: false,
+        description: 'Sort order: asc or desc'
+      },
+      {
+        name: 'per_page',
+        type: 'integer',
+        required: false,
+        description: 'Number of tags per page (max 100)'
+      },
+      {
+        name: 'paginate',
+        type: 'boolean',
+        required: false,
+        description: 'Enable pagination (true/false)'
+      }
+    ],
     responseExample: [
       {
         id: 1,
         name: "React",
         slug: "react",
         description: "React.js related content",
+        color: "#61DAFB",
         posts_count: 3,
-        created_at: "2025-10-04T08:31:23.000000Z"
+        created_at: "2025-10-04T08:31:23.000000Z",
+        updated_at: "2025-10-04T08:31:23.000000Z"
       }
     ]
   },
@@ -1092,15 +1617,121 @@ const API_ENDPOINTS: ApiEndpoint[] = [
   {
     method: 'GET',
     path: '/api/workflow-categories',
-    description: 'Get all workflow categories',
+    description: 'Get all workflow categories with advanced filtering',
     auth: false,
+    parameters: [
+      {
+        name: 'search',
+        type: 'string',
+        required: false,
+        description: 'Search in name or description'
+      },
+      {
+        name: 'min_workflows',
+        type: 'integer',
+        required: false,
+        description: 'Minimum number of workflows in category'
+      },
+      {
+        name: 'max_workflows',
+        type: 'integer',
+        required: false,
+        description: 'Maximum number of workflows in category'
+      },
+      {
+        name: 'created_from',
+        type: 'date',
+        required: false,
+        description: 'Filter categories created from this date'
+      },
+      {
+        name: 'created_to',
+        type: 'date',
+        required: false,
+        description: 'Filter categories created until this date'
+      },
+      {
+        name: 'updated_from',
+        type: 'date',
+        required: false,
+        description: 'Filter categories updated from this date'
+      },
+      {
+        name: 'updated_to',
+        type: 'date',
+        required: false,
+        description: 'Filter categories updated until this date'
+      },
+      {
+        name: 'created_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created year'
+      },
+      {
+        name: 'updated_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated year'
+      },
+      {
+        name: 'created_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created month (1-12)'
+      },
+      {
+        name: 'updated_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated month (1-12)'
+      },
+      {
+        name: 'recent_days',
+        type: 'integer',
+        required: false,
+        description: 'Get categories from last N days (created)'
+      },
+      {
+        name: 'recent_updated_days',
+        type: 'integer',
+        required: false,
+        description: 'Get categories updated in last N days'
+      },
+      {
+        name: 'sort_by',
+        type: 'string',
+        required: false,
+        description: 'Sort by: name, created_at, updated_at, workflows_count'
+      },
+      {
+        name: 'sort_order',
+        type: 'string',
+        required: false,
+        description: 'Sort order: asc or desc'
+      },
+      {
+        name: 'per_page',
+        type: 'integer',
+        required: false,
+        description: 'Number of categories per page (max 100)'
+      },
+      {
+        name: 'paginate',
+        type: 'boolean',
+        required: false,
+        description: 'Enable pagination (true/false)'
+      }
+    ],
     responseExample: [
       {
         id: 1,
         name: "AI & Machine Learning",
         slug: "ai-machine-learning",
         description: "Workflows leveraging artificial intelligence and machine learning",
-        created_at: "2025-10-15T18:33:33.000000Z"
+        workflows_count: 15,
+        created_at: "2025-10-15T18:33:33.000000Z",
+        updated_at: "2025-10-15T18:33:33.000000Z"
       }
     ]
   },
@@ -3488,6 +4119,156 @@ async function getCvTemplates() {
 }`}
                   </pre>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Advanced Filtering Examples Section */}
+      {activeTab === 'examples' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Advanced Filtering Examples</h2>
+          
+          <div className="space-y-8">
+            {/* Posts Filtering Examples */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Posts API Filtering Examples</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-700 mb-2">Search posts by keyword and date range:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/posts?search=react&date_from=2024-01-01&date_to=2024-12-31&sort_by=published_at&sort_order=desc`}
+                </pre>
+                
+                <h4 className="font-medium text-gray-700 mb-2 mt-4">Filter posts by category and tags:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/posts?category_id=1&tags=1,2,3&featured=true&per_page=20`}
+                </pre>
+                
+                <h4 className="font-medium text-gray-700 mb-2 mt-4">Get recent posts with minimum views:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/posts?recent_days=30&min_views=100&sort_by=views&sort_order=desc`}
+                </pre>
+              </div>
+            </div>
+
+            {/* Workflows Filtering Examples */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Workflows API Filtering Examples</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-700 mb-2">Search workflows by category and downloads:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/workflows?category_slug=automation&min_downloads=50&featured=true&paginate=true`}
+                </pre>
+                
+                <h4 className="font-medium text-gray-700 mb-2 mt-4">Get recently updated workflows:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/workflows?recent_updated_days=7&sort_by=updated_at&sort_order=desc`}
+                </pre>
+              </div>
+            </div>
+
+            {/* Courses Filtering Examples */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Courses API Filtering Examples</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-700 mb-2">Filter courses by level and duration:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/courses?level=beginner&min_duration=10&max_duration=40&sort_by=duration_hours`}
+                </pre>
+                
+                <h4 className="font-medium text-gray-700 mb-2 mt-4">Get popular courses with minimum enrollments:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/courses?min_enrollments=100&min_lessons=5&sort_by=enrollments_count&sort_order=desc`}
+                </pre>
+              </div>
+            </div>
+
+            {/* Categories Filtering Examples */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Categories API Filtering Examples</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-700 mb-2">Filter categories by post count:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/categories?min_posts=5&sort_by=posts_count&sort_order=desc`}
+                </pre>
+                
+                <h4 className="font-medium text-gray-700 mb-2 mt-4">Search categories by name:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/categories?search=AI&sort_by=name`}
+                </pre>
+              </div>
+            </div>
+
+            {/* Tags Filtering Examples */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Tags API Filtering Examples</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-700 mb-2">Filter tags by color and usage:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/tags?color=%2361DAFB&min_posts=3&sort_by=posts_count&sort_order=desc`}
+                </pre>
+                
+                <h4 className="font-medium text-gray-700 mb-2 mt-4">Get recently created tags:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/tags?recent_days=30&sort_by=created_at&sort_order=desc`}
+                </pre>
+              </div>
+            </div>
+
+            {/* Workflow Categories Filtering Examples */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Workflow Categories API Filtering Examples</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-700 mb-2">Filter workflow categories by workflow count:</h4>
+                <pre className="text-sm text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+{`GET /api/workflow-categories?min_workflows=10&sort_by=workflows_count&sort_order=desc`}
+                </pre>
+              </div>
+            </div>
+
+            {/* Common Filtering Patterns */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Common Filtering Patterns</h3>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-800 mb-2">Date Range Filtering:</h4>
+                <pre className="text-sm text-blue-700 bg-white p-3 rounded border overflow-x-auto">
+{`# Get content from specific year
+?year=2024
+
+# Get content from specific month
+?year=2024&month=12
+
+# Get content from date range
+?created_from=2024-01-01&created_to=2024-12-31
+
+# Get recent content (last 30 days)
+?recent_days=30`}
+                </pre>
+                
+                <h4 className="font-medium text-blue-800 mb-2 mt-4">Popular Content Filtering:</h4>
+                <pre className="text-sm text-blue-700 bg-white p-3 rounded border overflow-x-auto">
+{`# Popular posts
+?min_views=100&sort_by=views&sort_order=desc
+
+# Popular workflows
+?min_downloads=50&sort_by=downloads&sort_order=desc
+
+# Popular courses
+?min_enrollments=100&sort_by=enrollments_count&sort_order=desc`}
+                </pre>
+                
+                <h4 className="font-medium text-blue-800 mb-2 mt-4">Pagination and Sorting:</h4>
+                <pre className="text-sm text-blue-700 bg-white p-3 rounded border overflow-x-auto">
+{`# Paginated results
+?paginate=true&per_page=20&page=2
+
+# Custom sorting
+?sort_by=created_at&sort_order=asc
+
+# Multiple sort fields (use primary sort field)
+?sort_by=featured,created_at&sort_order=desc,desc`}
+                </pre>
               </div>
             </div>
           </div>
