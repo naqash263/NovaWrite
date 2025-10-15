@@ -5,15 +5,17 @@ use Illuminate\Http\Request;
 // Include debug routes
 require_once __DIR__ . '/debug.php';
 
-// Health check endpoint (no authentication required)
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'ok',
-        'timestamp' => now(),
-        'version' => '1.0.0',
-        'environment' => app()->environment(),
-    ]);
-});
+// Health check endpoints (no authentication required)
+Route::get('/health', [App\Http\Controllers\Api\HealthController::class, 'basic']);
+Route::get('/health/comprehensive', [App\Http\Controllers\Api\HealthController::class, 'comprehensive']);
+Route::get('/health/database', [App\Http\Controllers\Api\HealthController::class, 'database']);
+Route::get('/health/storage', [App\Http\Controllers\Api\HealthController::class, 'storage']);
+
+// Alert endpoints (no authentication required for critical alerts)
+Route::post('/alerts/critical', [App\Http\Controllers\Api\AlertController::class, 'sendCriticalAlert']);
+Route::get('/alerts/recent', [App\Http\Controllers\Api\AlertController::class, 'getRecentAlerts']);
+Route::get('/alerts/stats', [App\Http\Controllers\Api\AlertController::class, 'getAlertStats']);
+Route::post('/alerts/test', [App\Http\Controllers\Api\AlertController::class, 'testAlert']);
 
 // Watermark Remover API (public with rate limiting) - moved to top for testing
 Route::prefix('watermark-remover')->group(function () {

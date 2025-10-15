@@ -44,6 +44,7 @@ const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
 const UserActivities = lazy(() => import('./pages/admin/UserActivities'));
 const HomeSettings = lazy(() => import('./pages/admin/HomeSettings'));
 const GeminiApiManagement = lazy(() => import('./pages/admin/GeminiApiManagement'));
+const Monitoring = lazy(() => import('./pages/admin/Monitoring'));
 const CvTemplates = lazy(() => import('./pages/admin/CvTemplates'));
 const CvTemplateCreate = lazy(() => import('./pages/admin/CvTemplateCreate'));
 const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
@@ -101,6 +102,7 @@ function App() {
               <Route path="/admin/user-activities" element={<ProtectedRoute><UserActivities /></ProtectedRoute>} />
               <Route path="/admin/home-settings" element={<ProtectedRoute><HomeSettings /></ProtectedRoute>} />
               <Route path="/admin/gemini-api" element={<ProtectedRoute><GeminiApiManagement /></ProtectedRoute>} />
+              <Route path="/admin/monitoring" element={<ProtectedRoute><Monitoring /></ProtectedRoute>} />
               <Route path="/admin/cv-templates" element={<ProtectedRoute><CvTemplates /></ProtectedRoute>} />
               <Route path="/admin/cv-templates/create" element={<ProtectedRoute><CvTemplateCreate /></ProtectedRoute>} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
