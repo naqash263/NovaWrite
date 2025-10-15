@@ -13,6 +13,9 @@ class LessonTest extends Model
         'lesson_id',
         'title',
         'description',
+        'question',
+        'options',
+        'correct_answer',
         'questions',
         'passing_score',
         'time_limit_minutes',
@@ -22,6 +25,7 @@ class LessonTest extends Model
 
     protected $casts = [
         'questions' => 'array',
+        'options' => 'array',
         'is_active' => 'boolean',
     ];
 

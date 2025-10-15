@@ -23,15 +23,27 @@ class LessonTestController extends Controller
         }
 
         $lesson = Lesson::findOrFail($lessonId);
+        
+        // Check if user is enrolled in the course
+        if (!$user->isEnrolledIn($lesson->course_id)) {
+            return response()->json([
+                'message' => 'You must enroll in this course first',
+                'error' => 'Not enrolled'
+            ], 403);
+        }
+        
         $test = $lesson->activeTest();
 
         if (!$test) {
             return response()->json(['message' => 'No test available for this lesson'], 404);
         }
 
-        // Check if user can access this lesson
+        // Check if user can access this lesson (sequential access)
         if (!$lesson->canBeAccessedByUser($user->id)) {
-            return response()->json(['message' => 'Complete previous lessons first'], 403);
+            return response()->json([
+                'message' => 'Complete previous lessons first',
+                'error' => 'Prerequisites not met'
+            ], 403);
         }
 
         return response()->json([
@@ -52,15 +64,27 @@ class LessonTestController extends Controller
         }
 
         $lesson = Lesson::findOrFail($lessonId);
+        
+        // Check if user is enrolled in the course
+        if (!$user->isEnrolledIn($lesson->course_id)) {
+            return response()->json([
+                'message' => 'You must enroll in this course first',
+                'error' => 'Not enrolled'
+            ], 403);
+        }
+        
         $test = $lesson->activeTest();
 
         if (!$test) {
             return response()->json(['message' => 'No test available for this lesson'], 404);
         }
 
-        // Check if user can access this lesson
+        // Check if user can access this lesson (sequential access)
         if (!$lesson->canBeAccessedByUser($user->id)) {
-            return response()->json(['message' => 'Complete previous lessons first'], 403);
+            return response()->json([
+                'message' => 'Complete previous lessons first',
+                'error' => 'Prerequisites not met'
+            ], 403);
         }
 
         // Check if user has already passed

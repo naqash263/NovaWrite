@@ -56,8 +56,10 @@ interface Course {
 interface QuizQuestion {
   id: number;
   question: string;
+  type: string;
   options: { [key: string]: string };
-  correct_answer: string;
+  correct_answer: string; // Changed back to string (A, B, C, D)
+  points: number;
 }
 
 interface QuizData {
@@ -76,6 +78,7 @@ interface FormData {
   duration_minutes: number;
   is_free_preview: boolean;
   order?: number;
+  thumbnail?: string;
   quiz: QuizData | null;
 }
 
@@ -127,10 +130,19 @@ export default function AdminLessons() {
     try {
       setLoading(true);
       const response = await apiClient.get(`/admin/courses/${courseId}/lessons`);
-      setCourse(response.data.course);
-      setLessons(response.data.lessons);
+      
+      // Handle both old and new API response formats
+      const data = response.data.data || response.data;
+      setCourse(data.course || null);
+      setLessons(data.lessons || []);
     } catch (error) {
       console.error('Error fetching lessons:', error);
+      addToast({
+        title: 'Error',
+        description: 'Failed to load lessons',
+        variant: 'destructive',
+      });
+      setLessons([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -139,16 +151,71 @@ export default function AdminLessons() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Prepare lesson data (without quiz)
+      const lessonData = {
+        title: formData.title,
+        content: formData.content,
+        video_url: formData.video_url,
+        duration_minutes: formData.duration_minutes,
+        is_free_preview: formData.is_free_preview,
+        order: formData.order,
+        thumbnail: formData.thumbnail
+      };
+
+      let lesson;
       if (editingLesson) {
-        await apiClient.put(`/admin/courses/${courseId}/lessons/${editingLesson.id}`, formData);
+        const response = await apiClient.put(`/admin/courses/${courseId}/lessons/${editingLesson.id}`, lessonData);
+        lesson = response.data.data.lesson;
       } else {
-        await apiClient.post(`/admin/courses/${courseId}/lessons`, formData);
+        const response = await apiClient.post(`/admin/courses/${courseId}/lessons`, lessonData);
+        lesson = response.data.data.lesson;
+      }
+
+      // Handle quiz separately if it exists
+      if (formData.quiz && formData.quiz.questions && formData.quiz.questions.length > 0) {
+        console.log('Saving quiz for lesson:', lesson.id);
+        
+        // Check if quiz already exists
+        try {
+          const existingQuizResponse = await apiClient.get(`/admin/lessons/${lesson.id}/tests`);
+          const existingData = existingQuizResponse.data.data || existingQuizResponse.data;
+          
+          if (existingData.tests && existingData.tests.length > 0) {
+            // Update existing quiz
+            const existingQuiz = existingData.tests[0];
+            console.log('Updating existing quiz:', existingQuiz.id);
+            await apiClient.put(`/admin/lessons/${lesson.id}/tests/${existingQuiz.id}`, formData.quiz);
+          } else {
+            // Create new quiz
+            console.log('Creating new quiz');
+            await apiClient.post(`/admin/lessons/${lesson.id}/tests`, formData.quiz);
+          }
+        } catch (quizError) {
+          console.error('Error saving quiz:', quizError);
+          console.error('Quiz data being sent:', formData.quiz);
+          if (quizError.response?.data?.errors) {
+            console.error('Quiz validation errors:', quizError.response.data.errors);
+          }
+          addToast({
+            type: 'warning',
+            title: 'Lesson Saved',
+            description: 'Lesson saved but quiz could not be saved. You can add the quiz later.',
+            duration: 5000
+          });
+        }
       }
       
       setShowForm(false);
       setEditingLesson(null);
       resetForm();
       fetchLessons();
+      
+      addToast({
+        type: 'success',
+        title: 'Success',
+        description: editingLesson ? 'Lesson updated successfully' : 'Lesson created successfully',
+        duration: 3000
+      });
     } catch (error: any) {
       console.error('Error saving lesson:', error);
       if (error.response?.data?.errors) {
@@ -170,8 +237,38 @@ export default function AdminLessons() {
     }
   };
 
-  const handleEdit = (lesson: Lesson) => {
+  const handleEdit = async (lesson: Lesson) => {
     setEditingLesson(lesson);
+    
+    // Load existing quiz if it exists
+    let existingQuiz = null;
+    try {
+      console.log('Fetching quiz for lesson:', lesson.id);
+      const quizResponse = await apiClient.get(`/admin/lessons/${lesson.id}/tests`);
+      console.log('Quiz response:', quizResponse.data);
+      
+      const data = quizResponse.data.data || quizResponse.data;
+      console.log('Quiz data:', data);
+      
+      if (data.tests && data.tests.length > 0) {
+        const quiz = data.tests[0]; // Get the first/active quiz
+        console.log('Found quiz:', quiz);
+        existingQuiz = {
+          title: quiz.title,
+          description: quiz.description || '',
+          questions: quiz.questions || [],
+          passing_score: quiz.passing_score,
+          time_limit_minutes: quiz.time_limit_minutes || 10,
+          is_active: quiz.is_active,
+        };
+        console.log('Existing quiz loaded:', existingQuiz);
+      } else {
+        console.log('No tests found in response');
+      }
+    } catch (error) {
+      console.error('Error loading quiz:', error);
+    }
+    
     setFormData({
       title: lesson.title,
       content: lesson.content,
@@ -179,8 +276,18 @@ export default function AdminLessons() {
       duration_minutes: lesson.duration_minutes,
       is_free_preview: lesson.is_free_preview,
       order: lesson.order,
-      quiz: null, // TODO: Load existing quiz data
+      thumbnail: lesson.thumbnail || '',
+      quiz: existingQuiz,
     });
+    
+    // If quiz exists, also load it into quizData for editing
+    if (existingQuiz) {
+      console.log('Setting quizData:', existingQuiz);
+      setQuizData(existingQuiz);
+    } else {
+      console.log('No quiz to set');
+    }
+    
     setShowForm(true);
   };
 
@@ -203,6 +310,7 @@ export default function AdminLessons() {
       duration_minutes: 10,
       is_free_preview: false,
       order: undefined,
+      thumbnail: '',
       quiz: null,
     });
     setQuizData({
@@ -221,8 +329,10 @@ export default function AdminLessons() {
     const newQuestion: QuizQuestion = {
       id: Date.now(),
       question: '',
+      type: 'multiple_choice',
       options: { A: '', B: '', C: '', D: '' },
-      correct_answer: 'A',
+      correct_answer: 'A', // Changed back to string
+      points: 10,
     };
     setQuizData({
       ...quizData,
@@ -233,9 +343,15 @@ export default function AdminLessons() {
   const updateQuestion = (questionId: number, field: string, value: string) => {
     setQuizData({
       ...quizData,
-      questions: quizData.questions.map(q =>
-        q.id === questionId ? { ...q, [field]: value } : q
-      ),
+      questions: quizData.questions.map(q => {
+        if (q.id === questionId) {
+          if (field === 'points') {
+            return { ...q, [field]: parseInt(value) || 10 };
+          }
+          return { ...q, [field]: value };
+        }
+        return q;
+      }),
     });
   };
 
@@ -430,6 +546,18 @@ export default function AdminLessons() {
                   onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   placeholder="https://youtube.com/watch?v=..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Thumbnail URL
+                </label>
+                <input
+                  type="url"
+                  value={formData.thumbnail || ''}
+                  onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="https://example.com/image.jpg"
                 />
               </div>
             </div>
@@ -867,6 +995,20 @@ export default function AdminLessons() {
                             onChange={(e) => updateQuestion(question.id, 'question', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                             placeholder="Enter the question..."
+                            required
+                          />
+                        </div>
+
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Points *
+                          </label>
+                          <input
+                            type="number"
+                            value={question.points}
+                            onChange={(e) => updateQuestion(question.id, 'points', e.target.value)}
+                            className="w-32 px-3 py-2 border border-gray-300 rounded-lg"
+                            min="1"
                             required
                           />
                         </div>

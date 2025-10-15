@@ -15,6 +15,7 @@ class Workflow extends Model
         'slug',
         'summary',
         'description',
+        'instructions',
         'tools',
         'benefits',
         'tools_used',

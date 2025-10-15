@@ -501,10 +501,25 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::put('courses/{id}', [CourseController::class, 'update']);
     Route::delete('courses/{id}', [CourseController::class, 'destroy']);
 
+    // Course Files Management
+    Route::get('courses/{courseId}/files', [App\Http\Controllers\Api\CourseFileController::class, 'index']);
+    Route::post('courses/{courseId}/files', [App\Http\Controllers\Api\CourseFileController::class, 'store']);
+    Route::get('courses/{courseId}/files/{id}', [App\Http\Controllers\Api\CourseFileController::class, 'show']);
+    Route::put('courses/{courseId}/files/{id}', [App\Http\Controllers\Api\CourseFileController::class, 'update']);
+    Route::delete('courses/{courseId}/files/{id}', [App\Http\Controllers\Api\CourseFileController::class, 'destroy']);
+    Route::post('courses/{courseId}/files/reorder', [App\Http\Controllers\Api\CourseFileController::class, 'reorder']);
+
     Route::get('courses/{courseId}/lessons', [LessonController::class, 'index']);
     Route::post('courses/{courseId}/lessons', [LessonController::class, 'store']);
     Route::put('courses/{courseId}/lessons/{id}', [LessonController::class, 'update']);
     Route::delete('courses/{courseId}/lessons/{id}', [LessonController::class, 'destroy']);
+
+    // Lesson Test Management (Admin)
+    Route::get('lessons/{lessonId}/tests', [App\Http\Controllers\Api\Admin\LessonTestAdminController::class, 'index']);
+    Route::post('lessons/{lessonId}/tests', [App\Http\Controllers\Api\Admin\LessonTestAdminController::class, 'store']);
+    Route::get('lessons/{lessonId}/tests/{id}', [App\Http\Controllers\Api\Admin\LessonTestAdminController::class, 'show']);
+    Route::put('lessons/{lessonId}/tests/{id}', [App\Http\Controllers\Api\Admin\LessonTestAdminController::class, 'update']);
+    Route::delete('lessons/{lessonId}/tests/{id}', [App\Http\Controllers\Api\Admin\LessonTestAdminController::class, 'destroy']);
 
     // Lesson Files Management
     Route::get('lessons/{lessonId}/files', [LessonFileController::class, 'index']);
@@ -547,7 +562,7 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::post('home-settings/upload-image', [HomeSettingsController::class, 'uploadImage']);
     Route::post('home-settings/bulk-update', [HomeSettingsController::class, 'bulkUpdate']);
     Route::post('home-settings/{homeSetting}/toggle-active', [HomeSettingsController::class, 'toggleActive']);
-    
+
     Route::get('workflows', [AdminWorkflowController::class, 'index']);
     Route::post('workflows', [AdminWorkflowController::class, 'store']);
     Route::get('workflows/{id}', [AdminWorkflowController::class, 'show']);

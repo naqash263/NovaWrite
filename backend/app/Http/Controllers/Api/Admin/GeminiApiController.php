@@ -87,6 +87,29 @@ class GeminiApiController extends Controller
         }
 
         try {
+            // Check for duplicate API key
+            $existingKeys = GeminiApiKey::all();
+            foreach ($existingKeys as $existingKey) {
+                try {
+                    $decryptedKey = decrypt($existingKey->api_key);
+                    // If the result doesn't look like an API key, try double decrypt
+                    if (strpos($decryptedKey, 'AIza') !== 0) {
+                        $decryptedKey = decrypt($decryptedKey);
+                    }
+                    
+                    if ($decryptedKey === $request->api_key) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'This API key already exists in the system. Please use a different key.'
+                        ], 409);
+                    }
+                } catch (\Exception $e) {
+                    // If decryption fails, skip this key
+                    Log::warning('Failed to decrypt existing API key for duplicate check: ' . $e->getMessage());
+                    continue;
+                }
+            }
+
             // Test the API key before storing
             $isValid = $this->validateApiKey($request->api_key);
             
@@ -146,6 +169,29 @@ class GeminiApiController extends Controller
             $updateData = $request->only(['name', 'max_requests', 'is_active']);
             
             if ($request->has('api_key')) {
+                // Check for duplicate API key (excluding current key)
+                $existingKeys = GeminiApiKey::where('id', '!=', $id)->get();
+                foreach ($existingKeys as $existingKey) {
+                    try {
+                        $decryptedKey = decrypt($existingKey->api_key);
+                        // If the result doesn't look like an API key, try double decrypt
+                        if (strpos($decryptedKey, 'AIza') !== 0) {
+                            $decryptedKey = decrypt($decryptedKey);
+                        }
+                        
+                        if ($decryptedKey === $request->api_key) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'This API key already exists in the system. Please use a different key.'
+                            ], 409);
+                        }
+                    } catch (\Exception $e) {
+                        // If decryption fails, skip this key
+                        Log::warning('Failed to decrypt existing API key for duplicate check: ' . $e->getMessage());
+                        continue;
+                    }
+                }
+
                 // Test the new API key before updating
                 $isValid = $this->validateApiKey($request->api_key);
                 

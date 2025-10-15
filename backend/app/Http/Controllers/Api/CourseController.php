@@ -117,7 +117,7 @@ class CourseController extends Controller
 
     public function enroll(Request $request, $id)
     {
-        $user = Auth::user();
+        $user = Auth::guard('api')->user();
 
         if (!$user) {
             return response()->json(['message' => 'Unauthorized'], 401);
@@ -136,6 +136,7 @@ class CourseController extends Controller
         Enrollment::create([
             'user_id' => $user->id,
             'course_id' => $course->id,
+            'enrolled_at' => now(),
         ]);
 
         return response()->json([

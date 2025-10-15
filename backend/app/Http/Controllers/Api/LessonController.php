@@ -31,6 +31,7 @@ class LessonController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'video_url' => 'nullable|url|max:500',
+            'thumbnail' => 'nullable|url|max:500',
             'duration_minutes' => 'required|integer|min:1',
             'is_free_preview' => 'boolean',
         ]);
@@ -59,6 +60,7 @@ class LessonController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'video_url' => 'nullable|url|max:500',
+            'thumbnail' => 'nullable|url|max:500',
             'duration_minutes' => 'required|integer|min:1',
             'order' => 'nullable|integer|min:0',
             'is_free_preview' => 'boolean',

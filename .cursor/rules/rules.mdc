@@ -185,4 +185,28 @@ return redirect($frontendUrl . '/auth/success?token=' . $token);
 FRONTEND_URL=https://naqashthaheem.com
 ```
 
+## Mistake 8: Users can access lessons without enrollment
+**Cause:** Missing enrollment check in lesson progress/quiz endpoints
+**Solution:**
+```php
+// ALWAYS check enrollment before allowing lesson access
+$lesson = Lesson::findOrFail($lessonId);
+
+// Check if user is enrolled
+if (!$user->isEnrolledIn($lesson->course_id)) {
+    return response()->json([
+        'message' => 'You must enroll in this course first',
+        'error' => 'Not enrolled'
+    ], 403);
+}
+
+// Then check sequential access
+if (!$lesson->canBeAccessedByUser($user->id)) {
+    return response()->json([
+        'message' => 'Complete previous lessons first',
+        'error' => 'Prerequisites not met'
+    ], 403);
+}
+```
+
 -Always make changes and keep it prepare for production
