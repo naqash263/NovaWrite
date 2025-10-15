@@ -12,8 +12,9 @@ class PostController extends Controller
 {
     public function index(Request $request)
     {
-        // Create cache key based on request parameters
-        $cacheKey = 'posts.index.' . md5(serialize($request->all()));
+        // Create cache key based on request parameters and last update timestamp
+        $lastUpdated = Cache::get('posts.last_updated', now()->subDays(1));
+        $cacheKey = 'posts.index.' . md5(serialize($request->all()) . $lastUpdated->timestamp);
         
         return Cache::remember($cacheKey, 900, function () use ($request) { // 15 minutes cache
             $query = Post::with(['category', 'user', 'tags'])
@@ -190,9 +191,8 @@ class PostController extends Controller
             $post->tags()->attach($request->tags);
         }
 
-        // Clear related caches
-        Cache::forget('posts.popular');
-        Cache::forget('posts.index.*'); // This would need a more sophisticated cache invalidation
+        // Clear related caches - comprehensive cache invalidation
+        $this->clearPostsCache();
 
         return response()->json($post->load(['category', 'user', 'tags']), 201);
     }
@@ -255,6 +255,9 @@ class PostController extends Controller
             $post->tags()->sync($request->tags);
         }
 
+        // Clear related caches
+        $this->clearPostsCache();
+
         return response()->json($post->load(['category', 'user', 'tags']));
     }
 
@@ -262,6 +265,10 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $post->delete();
+        
+        // Clear related caches
+        $this->clearPostsCache();
+        
         return response()->json(['message' => 'Post deleted successfully']);
     }
 
@@ -287,6 +294,52 @@ class PostController extends Controller
             'total' => $total,
             'published' => $published,
             'drafts' => $drafts
+        ]);
+    }
+
+    /**
+     * Clear all posts-related caches
+     */
+    private function clearPostsCache()
+    {
+        // Clear popular posts cache
+        Cache::forget('posts.popular');
+        
+        // Clear individual post caches (we'll clear the most recent ones)
+        $recentPosts = Post::orderBy('created_at', 'desc')->take(10)->get();
+        foreach ($recentPosts as $post) {
+            Cache::forget("post.{$post->id}");
+            Cache::forget("post.{$post->slug}");
+        }
+        
+        // Clear posts index caches with common parameter combinations
+        $commonParams = [
+            '', // No parameters
+            serialize(['page' => 1]),
+            serialize(['page' => 1, 'per_page' => 10]),
+            serialize(['search' => '']),
+            serialize(['category_id' => null]),
+        ];
+        
+        foreach ($commonParams as $params) {
+            $cacheKey = 'posts.index.' . md5($params);
+            Cache::forget($cacheKey);
+        }
+        
+        // Clear cache with current timestamp to force refresh
+        Cache::put('posts.last_updated', now(), 86400); // 24 hours
+    }
+
+    /**
+     * Clear posts cache immediately (useful for testing)
+     */
+    public function clearCache()
+    {
+        $this->clearPostsCache();
+        
+        return response()->json([
+            'message' => 'Posts cache cleared successfully',
+            'cleared_at' => now()
         ]);
     }
 }

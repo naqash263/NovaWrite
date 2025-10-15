@@ -80,11 +80,13 @@ export default function Blog() {
       const response = await apiClient.get(`/posts?${params.toString()}`);
       return response.data;
     },
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // Reduced to 30 seconds
+    gcTime: 2 * 60 * 1000, // Reduced to 2 minutes
     enabled: !debouncedSearch || debouncedSearch.length >= 3,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnMount: true, // Always refetch on mount
   });
 
   const posts = postsData?.data || [];
