@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,11 +21,32 @@ class UserApiKey extends Model
     ];
 
     protected $casts = [
-        'api_key' => 'encrypted',
         'is_active' => 'boolean',
         'requests_per_key' => 'integer',
         'usage_count' => 'integer'
     ];
+    
+    protected $hidden = [
+        'api_key' // Hide encrypted API key from JSON responses
+    ];
+    
+    /**
+     * Get/set the API key with encryption
+     */
+    protected function apiKey(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                try {
+                    return $value ? decrypt($value) : null;
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to decrypt user API key: ' . $e->getMessage());
+                    return null;
+                }
+            },
+            set: fn ($value) => $value ? encrypt($value) : null
+        );
+    }
 
     /**
      * Get the user that owns the API key.

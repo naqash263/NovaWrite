@@ -11,25 +11,20 @@ class LessonController extends Controller
 {
     public function index($courseId)
     {
-        if (!auth()->user() || !auth()->user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $course = Course::findOrFail($courseId);
         $lessons = $course->lessons()->orderBy('order')->get();
         
         return response()->json([
-            'course' => $course,
-            'lessons' => $lessons
+            'success' => true,
+            'data' => [
+                'course' => $course,
+                'lessons' => $lessons
+            ]
         ]);
     }
 
     public function store(Request $request, $courseId)
     {
-        if (!auth()->user() || !auth()->user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $course = Course::findOrFail($courseId);
         
         $validated = $request->validate([
@@ -48,17 +43,16 @@ class LessonController extends Controller
         $lesson = Lesson::create($validated);
 
         return response()->json([
+            'success' => true,
             'message' => 'Lesson created successfully',
-            'lesson' => $lesson
+            'data' => [
+                'lesson' => $lesson
+            ]
         ], 201);
     }
 
     public function update(Request $request, $courseId, $id)
     {
-        if (!auth()->user() || !auth()->user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $lesson = Lesson::where('course_id', $courseId)->findOrFail($id);
 
         $validated = $request->validate([
@@ -73,21 +67,21 @@ class LessonController extends Controller
         $lesson->update($validated);
 
         return response()->json([
+            'success' => true,
             'message' => 'Lesson updated successfully',
-            'lesson' => $lesson
+            'data' => [
+                'lesson' => $lesson
+            ]
         ]);
     }
 
     public function destroy($courseId, $id)
     {
-        if (!auth()->user() || !auth()->user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $lesson = Lesson::where('course_id', $courseId)->findOrFail($id);
         $lesson->delete();
 
         return response()->json([
+            'success' => true,
             'message' => 'Lesson deleted successfully'
         ]);
     }
