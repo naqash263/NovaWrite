@@ -9,10 +9,106 @@ use Illuminate\Support\Str;
 
 class WorkflowCategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $categories = WorkflowCategory::orderBy('name')->get();
+        $query = WorkflowCategory::withCount('workflows');
+
+        // Search filter
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Workflows count filter
+        if ($request->has('min_workflows')) {
+            $query->having('workflows_count', '>=', $request->min_workflows);
+        }
+
+        if ($request->has('max_workflows')) {
+            $query->having('workflows_count', '<=', $request->max_workflows);
+        }
+
+        // Date range filters for created date
+        if ($request->has('created_from')) {
+            $query->whereDate('created_at', '>=', $request->created_from);
+        }
+
+        if ($request->has('created_to')) {
+            $query->whereDate('created_at', '<=', $request->created_to);
+        }
+
+        // Date range filters for updated date
+        if ($request->has('updated_from')) {
+            $query->whereDate('updated_at', '>=', $request->updated_from);
+        }
+
+        if ($request->has('updated_to')) {
+            $query->whereDate('updated_at', '<=', $request->updated_to);
+        }
+
+        // Year filters for different dates
+        if ($request->has('created_year')) {
+            $query->whereYear('created_at', $request->created_year);
+        }
+
+        if ($request->has('updated_year')) {
+            $query->whereYear('updated_at', $request->updated_year);
+        }
+
+        // Month filters for different dates
+        if ($request->has('created_month')) {
+            $query->whereMonth('created_at', $request->created_month);
+        }
+
+        if ($request->has('updated_month')) {
+            $query->whereMonth('updated_at', $request->updated_month);
+        }
+
+        // Recent categories filters
+        if ($request->has('recent_days')) {
+            $days = (int) $request->recent_days;
+            $query->where('created_at', '>=', now()->subDays($days));
+        }
+
+        if ($request->has('recent_updated_days')) {
+            $days = (int) $request->recent_updated_days;
+            $query->where('updated_at', '>=', now()->subDays($days));
+        }
+
+        // Sort options
+        $sortBy = $request->get('sort_by', 'name');
+        $sortOrder = $request->get('sort_order', 'asc');
         
+        $allowedSortFields = ['name', 'created_at', 'updated_at', 'workflows_count'];
+        if (in_array($sortBy, $allowedSortFields)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            // Default sorting
+            $query->orderBy('name', 'asc');
+        }
+
+        // Pagination
+        $perPage = $request->get('per_page', 50);
+        $perPage = min($perPage, 100); // Limit to 100 per page
+
+        if ($request->has('paginate') && $request->paginate) {
+            $categories = $query->paginate($perPage);
+            return response()->json([
+                'success' => true,
+                'data' => $categories->items(),
+                'pagination' => [
+                    'current_page' => $categories->currentPage(),
+                    'last_page' => $categories->lastPage(),
+                    'per_page' => $categories->perPage(),
+                    'total' => $categories->total(),
+                ]
+            ]);
+        }
+
+        $categories = $query->get();
         return response()->json([
             'success' => true,
             'data' => $categories

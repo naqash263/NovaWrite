@@ -19,20 +19,140 @@ class PostController extends Controller
             $query = Post::with(['category', 'user', 'tags'])
                 ->where('is_published', true);
 
+            // Search filter
             if ($request->has('search')) {
                 $search = $request->search;
                 $query->where(function($q) use ($search) {
                     $q->where('title', 'like', "%{$search}%")
                       ->orWhere('excerpt', 'like', "%{$search}%")
-                      ->orWhere('content', 'like', "%{$search}%");
+                      ->orWhere('content', 'like', "%{$search}%")
+                      ->orWhereHas('tags', function($tagQuery) use ($search) {
+                          $tagQuery->where('name', 'like', "%{$search}%");
+                      });
                 });
             }
 
+            // Category filter
             if ($request->has('category_id')) {
                 $query->where('category_id', $request->category_id);
             }
 
-            return $query->orderBy('published_at', 'desc')->paginate(10);
+            // Category slug filter
+            if ($request->has('category_slug')) {
+                $query->whereHas('category', function($q) use ($request) {
+                    $q->where('slug', $request->category_slug);
+                });
+            }
+
+            // Tags filter (multiple tags)
+            if ($request->has('tags')) {
+                $tags = is_array($request->tags) ? $request->tags : explode(',', $request->tags);
+                $query->whereHas('tags', function($q) use ($tags) {
+                    $q->whereIn('tags.id', $tags);
+                });
+            }
+
+            // Tag slugs filter
+            if ($request->has('tag_slugs')) {
+                $tagSlugs = is_array($request->tag_slugs) ? $request->tag_slugs : explode(',', $request->tag_slugs);
+                $query->whereHas('tags', function($q) use ($tagSlugs) {
+                    $q->whereIn('tags.slug', $tagSlugs);
+                });
+            }
+
+            // Date range filters for published date
+            if ($request->has('date_from')) {
+                $query->whereDate('published_at', '>=', $request->date_from);
+            }
+
+            if ($request->has('date_to')) {
+                $query->whereDate('published_at', '<=', $request->date_to);
+            }
+
+            // Date range filters for created date
+            if ($request->has('created_from')) {
+                $query->whereDate('created_at', '>=', $request->created_from);
+            }
+
+            if ($request->has('created_to')) {
+                $query->whereDate('created_at', '<=', $request->created_to);
+            }
+
+            // Date range filters for updated date
+            if ($request->has('updated_from')) {
+                $query->whereDate('updated_at', '>=', $request->updated_from);
+            }
+
+            if ($request->has('updated_to')) {
+                $query->whereDate('updated_at', '<=', $request->updated_to);
+            }
+
+            // Year filters for different dates
+            if ($request->has('year')) {
+                $query->whereYear('published_at', $request->year);
+            }
+
+            if ($request->has('created_year')) {
+                $query->whereYear('created_at', $request->created_year);
+            }
+
+            if ($request->has('updated_year')) {
+                $query->whereYear('updated_at', $request->updated_year);
+            }
+
+            // Month filters for different dates
+            if ($request->has('month')) {
+                $query->whereMonth('published_at', $request->month);
+            }
+
+            if ($request->has('created_month')) {
+                $query->whereMonth('created_at', $request->created_month);
+            }
+
+            if ($request->has('updated_month')) {
+                $query->whereMonth('updated_at', $request->updated_month);
+            }
+
+            // Recent posts filters
+            if ($request->has('recent_days')) {
+                $days = (int) $request->recent_days;
+                $query->where('created_at', '>=', now()->subDays($days));
+            }
+
+            if ($request->has('recent_updated_days')) {
+                $days = (int) $request->recent_updated_days;
+                $query->where('updated_at', '>=', now()->subDays($days));
+            }
+
+            // Author filter
+            if ($request->has('author_id')) {
+                $query->where('user_id', $request->author_id);
+            }
+
+            // Featured posts filter
+            if ($request->has('featured')) {
+                $query->where('is_featured', filter_var($request->featured, FILTER_VALIDATE_BOOLEAN));
+            }
+
+            // Views filter (popular posts)
+            if ($request->has('min_views')) {
+                $query->where('views', '>=', $request->min_views);
+            }
+
+            // Sort options
+            $sortBy = $request->get('sort_by', 'published_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            $allowedSortFields = ['published_at', 'created_at', 'updated_at', 'title', 'views'];
+            if (in_array($sortBy, $allowedSortFields)) {
+                $query->orderBy($sortBy, $sortOrder);
+            }
+
+            // Pagination
+            $perPage = $request->get('per_page', 10);
+            $perPage = min($perPage, 100); // Limit to 100 per page
+
+            return $query->paginate($perPage);
         });
     }
 

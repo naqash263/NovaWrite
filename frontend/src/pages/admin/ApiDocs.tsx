@@ -474,9 +474,153 @@ const API_ENDPOINTS: ApiEndpoint[] = [
   {
     method: 'GET',
     path: '/api/posts',
-    description: 'Get all published posts with pagination',
+    description: 'Get all published posts with advanced filtering',
     auth: false,
     parameters: [
+      {
+        name: 'search',
+        type: 'string',
+        required: false,
+        description: 'Search in title, content, excerpt, or tags'
+      },
+      {
+        name: 'category_id',
+        type: 'integer',
+        required: false,
+        description: 'Filter by category ID'
+      },
+      {
+        name: 'category_slug',
+        type: 'string',
+        required: false,
+        description: 'Filter by category slug'
+      },
+      {
+        name: 'tags',
+        type: 'string|array',
+        required: false,
+        description: 'Filter by tag IDs (comma-separated or array)'
+      },
+      {
+        name: 'tag_slugs',
+        type: 'string|array',
+        required: false,
+        description: 'Filter by tag slugs (comma-separated or array)'
+      },
+      {
+        name: 'date_from',
+        type: 'date',
+        required: false,
+        description: 'Filter posts published from this date'
+      },
+      {
+        name: 'date_to',
+        type: 'date',
+        required: false,
+        description: 'Filter posts published until this date'
+      },
+      {
+        name: 'created_from',
+        type: 'date',
+        required: false,
+        description: 'Filter posts created from this date'
+      },
+      {
+        name: 'created_to',
+        type: 'date',
+        required: false,
+        description: 'Filter posts created until this date'
+      },
+      {
+        name: 'updated_from',
+        type: 'date',
+        required: false,
+        description: 'Filter posts updated from this date'
+      },
+      {
+        name: 'updated_to',
+        type: 'date',
+        required: false,
+        description: 'Filter posts updated until this date'
+      },
+      {
+        name: 'year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by published year'
+      },
+      {
+        name: 'created_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created year'
+      },
+      {
+        name: 'updated_year',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated year'
+      },
+      {
+        name: 'month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by published month (1-12)'
+      },
+      {
+        name: 'created_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by created month (1-12)'
+      },
+      {
+        name: 'updated_month',
+        type: 'integer',
+        required: false,
+        description: 'Filter by updated month (1-12)'
+      },
+      {
+        name: 'recent_days',
+        type: 'integer',
+        required: false,
+        description: 'Get posts from last N days (created)'
+      },
+      {
+        name: 'recent_updated_days',
+        type: 'integer',
+        required: false,
+        description: 'Get posts updated in last N days'
+      },
+      {
+        name: 'author_id',
+        type: 'integer',
+        required: false,
+        description: 'Filter by author ID'
+      },
+      {
+        name: 'featured',
+        type: 'boolean',
+        required: false,
+        description: 'Filter featured posts (true/false)'
+      },
+      {
+        name: 'min_views',
+        type: 'integer',
+        required: false,
+        description: 'Minimum view count'
+      },
+      {
+        name: 'sort_by',
+        type: 'string',
+        required: false,
+        description: 'Sort by: published_at, created_at, updated_at, title, views'
+      },
+      {
+        name: 'sort_order',
+        type: 'string',
+        required: false,
+        description: 'Sort order: asc or desc'
+      },
       {
         name: 'page',
         type: 'integer',
@@ -487,7 +631,7 @@ const API_ENDPOINTS: ApiEndpoint[] = [
         name: 'per_page',
         type: 'integer',
         required: false,
-        description: 'Number of posts per page'
+        description: 'Number of posts per page (max 100)'
       }
     ],
     responseExample: {

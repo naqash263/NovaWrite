@@ -12,14 +12,133 @@ use Illuminate\Support\Facades\Validator;
 
 class CourseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $courses = Course::published()
-            ->with('lessons')
-            ->orderBy('order')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($course) {
+        $query = Course::published()
+            ->with('lessons');
+
+        // Search filter
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('what_you_learn', 'like', "%{$search}%");
+            });
+        }
+
+        // Level filter
+        if ($request->has('level')) {
+            $query->where('level', $request->level);
+        }
+
+        // Duration filter
+        if ($request->has('min_duration')) {
+            $query->where('duration_hours', '>=', $request->min_duration);
+        }
+
+        if ($request->has('max_duration')) {
+            $query->where('duration_hours', '<=', $request->max_duration);
+        }
+
+        // Date range filters for published date
+        if ($request->has('date_from')) {
+            $query->whereDate('published_at', '>=', $request->date_from);
+        }
+
+        if ($request->has('date_to')) {
+            $query->whereDate('published_at', '<=', $request->date_to);
+        }
+
+        // Date range filters for created date
+        if ($request->has('created_from')) {
+            $query->whereDate('created_at', '>=', $request->created_from);
+        }
+
+        if ($request->has('created_to')) {
+            $query->whereDate('created_at', '<=', $request->created_to);
+        }
+
+        // Date range filters for updated date
+        if ($request->has('updated_from')) {
+            $query->whereDate('updated_at', '>=', $request->updated_from);
+        }
+
+        if ($request->has('updated_to')) {
+            $query->whereDate('updated_at', '<=', $request->updated_to);
+        }
+
+        // Year filters for different dates
+        if ($request->has('year')) {
+            $query->whereYear('published_at', $request->year);
+        }
+
+        if ($request->has('created_year')) {
+            $query->whereYear('created_at', $request->created_year);
+        }
+
+        if ($request->has('updated_year')) {
+            $query->whereYear('updated_at', $request->updated_year);
+        }
+
+        // Month filters for different dates
+        if ($request->has('month')) {
+            $query->whereMonth('published_at', $request->month);
+        }
+
+        if ($request->has('created_month')) {
+            $query->whereMonth('created_at', $request->created_month);
+        }
+
+        if ($request->has('updated_month')) {
+            $query->whereMonth('updated_at', $request->updated_month);
+        }
+
+        // Recent courses filters
+        if ($request->has('recent_days')) {
+            $days = (int) $request->recent_days;
+            $query->where('created_at', '>=', now()->subDays($days));
+        }
+
+        if ($request->has('recent_updated_days')) {
+            $days = (int) $request->recent_updated_days;
+            $query->where('updated_at', '>=', now()->subDays($days));
+        }
+
+        // Popularity filters
+        if ($request->has('min_enrollments')) {
+            $query->withCount('enrollments')
+                  ->having('enrollments_count', '>=', $request->min_enrollments);
+        }
+
+        if ($request->has('min_lessons')) {
+            $query->withCount('lessons')
+                  ->having('lessons_count', '>=', $request->min_lessons);
+        }
+
+        // Sort options
+        $sortBy = $request->get('sort_by', 'order');
+        $sortOrder = $request->get('sort_order', 'asc');
+        
+        $allowedSortFields = ['created_at', 'updated_at', 'published_at', 'title', 'duration_hours', 'order'];
+        if (in_array($sortBy, $allowedSortFields)) {
+            if ($sortBy === 'order') {
+                $query->orderBy('order', 'asc')->orderBy('created_at', 'desc');
+            } else {
+                $query->orderBy($sortBy, $sortOrder);
+            }
+        } else {
+            // Default sorting
+            $query->orderBy('order', 'asc')->orderBy('created_at', 'desc');
+        }
+
+        // Pagination
+        $perPage = $request->get('per_page', 20);
+        $perPage = min($perPage, 100); // Limit to 100 per page
+
+        if ($request->has('paginate') && $request->paginate) {
+            $courses = $query->paginate($perPage);
+            $courses->getCollection()->transform(function ($course) {
                 return [
                     'id' => $course->id,
                     'title' => $course->title,
@@ -30,10 +149,28 @@ class CourseController extends Controller
                     'duration_hours' => $course->duration_hours,
                     'level' => $course->level,
                     'lessons_count' => $course->lessons->count(),
-                    'enrolled_users_count' => $course->enrollments()->count(),
+                    'enrolled_users_count' => $course->enrollments_count ?? $course->enrollments()->count(),
                     'is_enrolled' => Auth::check() ? Auth::user()->isEnrolledIn($course->id) : false,
                 ];
             });
+            return response()->json($courses);
+        }
+
+        $courses = $query->get()->map(function ($course) {
+            return [
+                'id' => $course->id,
+                'title' => $course->title,
+                'slug' => $course->slug,
+                'description' => $course->description,
+                'image_url' => $course->image_url,
+                'what_you_learn' => $course->what_you_learn,
+                'duration_hours' => $course->duration_hours,
+                'level' => $course->level,
+                'lessons_count' => $course->lessons->count(),
+                'enrolled_users_count' => $course->enrollments()->count(),
+                'is_enrolled' => Auth::check() ? Auth::user()->isEnrolledIn($course->id) : false,
+            ];
+        });
 
         return response()->json($courses);
     }

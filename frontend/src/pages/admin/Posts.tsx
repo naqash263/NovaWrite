@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import apiClient from '../../api/axios';
 import Pagination from '../../components/Pagination';
 import EnhancedImageUpload from '../../components/EnhancedImageUpload';
+import AdvancedFilters from '../../components/AdvancedFilters';
 import { useSEO } from '../../utils/seo';
 
 interface Post {
@@ -14,6 +15,8 @@ interface Post {
   is_published: boolean;
   category_id: number;
   tags?: Tag[];
+  created_at: string;
+  updated_at: string;
 }
 
 interface Category {
@@ -31,11 +34,21 @@ interface Tag {
 
 export default function Posts() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    status: '',
+    tags: [] as string[],
+    dateFrom: '',
+    dateTo: ''
+  });
   const [pagination, setPagination] = useState({
     currentPage: 1,
     lastPage: 1,
@@ -61,6 +74,94 @@ export default function Posts() {
     fetchCategories();
     fetchTags();
   }, []);
+
+  // Filter configuration
+  const filterConfigs = [
+    {
+      name: 'category',
+      label: 'Category',
+      type: 'select' as const,
+      options: categories.map(cat => ({ value: cat.id.toString(), label: cat.name }))
+    },
+    {
+      name: 'status',
+      label: 'Status',
+      type: 'select' as const,
+      options: [
+        { value: 'published', label: 'Published' },
+        { value: 'draft', label: 'Draft' }
+      ]
+    },
+    {
+      name: 'tags',
+      label: 'Tags',
+      type: 'multiselect' as const,
+      options: tags.map(tag => ({ value: tag.id.toString(), label: tag.name }))
+    },
+    {
+      name: 'dateFrom',
+      label: 'From Date',
+      type: 'date' as const
+    },
+    {
+      name: 'dateTo',
+      label: 'To Date',
+      type: 'date' as const
+    }
+  ];
+
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...posts];
+
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(post =>
+        post.title.toLowerCase().includes(searchLower) ||
+        post.content.toLowerCase().includes(searchLower) ||
+        post.excerpt.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Category filter
+    if (filters.category) {
+      filtered = filtered.filter(post => post.category_id.toString() === filters.category);
+    }
+
+    // Status filter
+    if (filters.status) {
+      filtered = filtered.filter(post => 
+        filters.status === 'published' ? post.is_published : !post.is_published
+      );
+    }
+
+    // Tags filter
+    if (filters.tags.length > 0) {
+      filtered = filtered.filter(post =>
+        post.tags?.some(tag => filters.tags.includes(tag.id.toString()))
+      );
+    }
+
+    // Date filters
+    if (filters.dateFrom) {
+      filtered = filtered.filter(post => {
+        const postDate = new Date(post.created_at || post.updated_at);
+        const fromDate = new Date(filters.dateFrom);
+        return postDate >= fromDate;
+      });
+    }
+
+    if (filters.dateTo) {
+      filtered = filtered.filter(post => {
+        const postDate = new Date(post.created_at || post.updated_at);
+        const toDate = new Date(filters.dateTo);
+        return postDate <= toDate;
+      });
+    }
+
+    setFilteredPosts(filtered);
+  }, [posts, filters]);
 
   const fetchPosts = async (page: number = 1) => {
     setLoading(true);
@@ -328,6 +429,25 @@ export default function Posts() {
         </form>
       )}
 
+      {/* Advanced Filters */}
+      <AdvancedFilters
+        filterConfigs={filterConfigs}
+        filters={filters}
+        onFiltersChange={(newFilters) => setFilters(newFilters as typeof filters)}
+        onApply={() => {}} // Filters are applied automatically via useEffect
+        onClearAll={() => setFilters({
+          search: '',
+          category: '',
+          status: '',
+          tags: [],
+          dateFrom: '',
+          dateTo: ''
+        })}
+        isOpen={showFilters}
+        onToggle={() => setShowFilters(!showFilters)}
+        resultsCount={filteredPosts.length}
+      />
+
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -339,7 +459,7 @@ export default function Posts() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {posts.map((post) => (
+            {filteredPosts.map((post) => (
               <tr key={post.id}>
                 <td className="px-6 py-4 font-medium text-gray-900">{post.title}</td>
                 <td className="px-6 py-4">
