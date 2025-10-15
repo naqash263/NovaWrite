@@ -2287,11 +2287,47 @@ export default function ApiDocs() {
     }
   };
 
-  const filteredEndpoints = API_ENDPOINTS.filter(endpoint =>
-    endpoint.path.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    endpoint.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    endpoint.method.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEndpoints = API_ENDPOINTS.filter(endpoint => {
+    const searchLower = searchTerm.toLowerCase();
+    
+    // Search in multiple fields
+    const searchableFields = [
+      endpoint.path,
+      endpoint.description,
+      endpoint.method,
+      // Search in parameters
+      ...(endpoint.parameters || []).map(p => `${p.name} ${p.type} ${p.description}`),
+      // Search in request body example keys
+      ...(endpoint.requestBody?.example ? Object.keys(endpoint.requestBody.example) : []),
+      // Search in response example keys
+      ...(endpoint.responseExample ? Object.keys(endpoint.responseExample) : []),
+      // Search in auth requirement
+      endpoint.auth ? 'authenticated' : 'public',
+      // Search in specific categories
+      endpoint.path.includes('/admin/') ? 'admin' : '',
+      endpoint.path.includes('/auth/') ? 'authentication' : '',
+      endpoint.path.includes('/workflows') ? 'workflow' : '',
+      endpoint.path.includes('/courses') ? 'course' : '',
+      endpoint.path.includes('/posts') ? 'post' : '',
+      endpoint.path.includes('/files') ? 'file' : '',
+      endpoint.path.includes('/users') ? 'user' : '',
+      endpoint.path.includes('/health') ? 'health' : '',
+      endpoint.path.includes('/bulk') ? 'bulk' : '',
+      endpoint.path.includes('/approval') ? 'approval' : '',
+      endpoint.path.includes('/cache') ? 'cache' : '',
+      endpoint.path.includes('/activity') ? 'activity' : '',
+      endpoint.path.includes('/gemini') ? 'gemini' : '',
+      endpoint.path.includes('/cv-') ? 'cv' : '',
+      endpoint.path.includes('/watermark') ? 'watermark' : '',
+      endpoint.path.includes('/contact') ? 'contact' : '',
+      endpoint.path.includes('/tags') ? 'tag' : '',
+      endpoint.path.includes('/categories') ? 'category' : '',
+    ].filter(Boolean);
+    
+    return searchableFields.some(field => 
+      field.toLowerCase().includes(searchLower)
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -2455,7 +2491,7 @@ export default function ApiDocs() {
               </svg>
               <input
                 type="text"
-                placeholder="Search endpoints by path, method, or description..."
+                placeholder="Search by endpoint, method, description, parameters, data fields, categories (admin, auth, workflow, course, post, file, user, health, bulk, approval, cache, activity, gemini, cv, watermark, contact, tag, category)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -2472,13 +2508,119 @@ export default function ApiDocs() {
               )}
             </div>
             {searchTerm && (
-              <div className="mt-2 text-sm text-gray-600">
-                Found {filteredEndpoints.length} endpoint{filteredEndpoints.length !== 1 ? 's' : ''} matching "{searchTerm}"
+              <div className="mt-2 space-y-2">
+                <div className="text-sm text-gray-600">
+                  Found {filteredEndpoints.length} endpoint{filteredEndpoints.length !== 1 ? 's' : ''} matching "{searchTerm}"
+                </div>
+                
+                {/* Search Suggestions */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs text-gray-500">Try searching for:</span>
+                  {[
+                    'admin', 'auth', 'workflow', 'course', 'post', 'file', 'user', 
+                    'health', 'bulk', 'approval', 'cache', 'activity', 'gemini', 
+                    'cv', 'watermark', 'contact', 'tag', 'category', 'authenticated', 
+                    'public', 'GET', 'POST', 'PUT', 'DELETE', 'stats', 'create', 
+                    'update', 'delete', 'upload', 'download'
+                  ].map(suggestion => (
+                    <button
+                      key={suggestion}
+                      onClick={() => setSearchTerm(suggestion)}
+                      className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
 
-          {filteredEndpoints.map((endpoint, index) => (
+          {searchTerm && filteredEndpoints.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-blue-900 mb-2">Search Results Summary</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                <div className="bg-white rounded px-2 py-1">
+                  <span className="font-medium text-blue-600">Methods:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {[...new Set(filteredEndpoints.map(e => e.method))].map(method => (
+                      <span key={method} className={`px-1 py-0.5 rounded text-xs ${getMethodColor(method)}`}>
+                        {method}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white rounded px-2 py-1">
+                  <span className="font-medium text-blue-600">Auth:</span>
+                  <div className="mt-1">
+                    {filteredEndpoints.filter(e => e.auth).length > 0 && (
+                      <span className="px-1 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs mr-1">
+                        {filteredEndpoints.filter(e => e.auth).length} Auth
+                      </span>
+                    )}
+                    {filteredEndpoints.filter(e => !e.auth).length > 0 && (
+                      <span className="px-1 py-0.5 bg-green-100 text-green-800 rounded text-xs">
+                        {filteredEndpoints.filter(e => !e.auth).length} Public
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-white rounded px-2 py-1">
+                  <span className="font-medium text-blue-600">Categories:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {[...new Set(filteredEndpoints.map(e => {
+                      if (e.path.includes('/admin/')) return 'Admin';
+                      if (e.path.includes('/auth/')) return 'Auth';
+                      if (e.path.includes('/workflows')) return 'Workflow';
+                      if (e.path.includes('/courses')) return 'Course';
+                      if (e.path.includes('/posts')) return 'Post';
+                      if (e.path.includes('/files')) return 'File';
+                      if (e.path.includes('/users')) return 'User';
+                      if (e.path.includes('/health')) return 'Health';
+                      return 'Other';
+                    }))].slice(0, 3).map(cat => (
+                      <span key={cat} className="px-1 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white rounded px-2 py-1">
+                  <span className="font-medium text-blue-600">Total:</span>
+                  <span className="ml-1 text-gray-700">{filteredEndpoints.length} endpoints</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {filteredEndpoints.length === 0 && searchTerm ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+              <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No endpoints found</h3>
+              <p className="text-gray-600 mb-4">No endpoints match your search for "{searchTerm}"</p>
+              
+              <div className="space-y-3 text-left max-w-md mx-auto">
+                <h4 className="font-medium text-gray-900">Search Tips:</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Try searching by category: <code className="bg-gray-200 px-1 rounded">admin</code>, <code className="bg-gray-200 px-1 rounded">auth</code>, <code className="bg-gray-200 px-1 rounded">workflow</code></li>
+                  <li>• Search by HTTP method: <code className="bg-gray-200 px-1 rounded">GET</code>, <code className="bg-gray-200 px-1 rounded">POST</code>, <code className="bg-gray-200 px-1 rounded">PUT</code>, <code className="bg-gray-200 px-1 rounded">DELETE</code></li>
+                  <li>• Search by data fields: <code className="bg-gray-200 px-1 rounded">title</code>, <code className="bg-gray-200 px-1 rounded">email</code>, <code className="bg-gray-200 px-1 rounded">password</code></li>
+                  <li>• Search by authentication: <code className="bg-gray-200 px-1 rounded">authenticated</code>, <code className="bg-gray-200 px-1 rounded">public</code></li>
+                  <li>• Search by functionality: <code className="bg-gray-200 px-1 rounded">upload</code>, <code className="bg-gray-200 px-1 rounded">download</code>, <code className="bg-gray-200 px-1 rounded">stats</code></li>
+                </ul>
+              </div>
+              
+              <button
+                onClick={() => setSearchTerm('')}
+                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Clear Search
+              </button>
+            </div>
+          ) : (
+            filteredEndpoints.map((endpoint, index) => (
             <div key={index} className="bg-white border rounded-lg overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
@@ -2492,6 +2634,11 @@ export default function ApiDocs() {
                         Auth Required
                       </span>
                     )}
+                    {endpoint.path.includes('/admin/') && (
+                      <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                        Admin
+                      </span>
+                    )}
                   </div>
                   <button
                     onClick={() => setSelectedEndpoint(selectedEndpoint?.path === endpoint.path ? null : endpoint)}
@@ -2501,6 +2648,34 @@ export default function ApiDocs() {
                   </button>
                 </div>
                 <p className="text-gray-600 mt-2">{endpoint.description}</p>
+                
+                {/* Quick info about parameters and data */}
+                <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-500">
+                  {endpoint.parameters && endpoint.parameters.length > 0 && (
+                    <span className="flex items-center">
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                      {endpoint.parameters.length} param{endpoint.parameters.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {endpoint.requestBody && (
+                    <span className="flex items-center">
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Request body
+                    </span>
+                  )}
+                  {endpoint.responseExample && (
+                    <span className="flex items-center">
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Response example
+                    </span>
+                  )}
+                </div>
               </div>
 
               {selectedEndpoint?.path === endpoint.path && (
@@ -2556,7 +2731,8 @@ export default function ApiDocs() {
                 </div>
               )}
             </div>
-          ))}
+          ))
+          )}
         </div>
       )}
 
