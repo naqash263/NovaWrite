@@ -20,6 +20,195 @@ interface ApiEndpoint {
 }
 
 const API_ENDPOINTS: ApiEndpoint[] = [
+  // Health Check Endpoints
+  {
+    method: 'GET',
+    path: '/api/health',
+    description: 'Basic health check endpoint',
+    auth: false,
+    responseExample: {
+      status: "ok",
+      timestamp: "2025-10-15T10:00:00Z",
+      uptime: 3600
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/health/comprehensive',
+    description: 'Comprehensive health check with detailed system status',
+    auth: false,
+    responseExample: {
+      status: "ok",
+      timestamp: "2025-10-15T10:00:00Z",
+      services: {
+        database: "healthy",
+        storage: "healthy",
+        cache: "healthy"
+      },
+      uptime: 3600
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/health/database',
+    description: 'Database health check',
+    auth: false,
+    responseExample: {
+      status: "healthy",
+      connection: "ok",
+      response_time: "5ms"
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/health/storage',
+    description: 'Storage health check',
+    auth: false,
+    responseExample: {
+      status: "healthy",
+      disk_space: "85%",
+      writable: true
+    }
+  },
+
+  // Authentication Endpoints
+  {
+    method: 'POST',
+    path: '/api/auth/register',
+    description: 'Register a new user account',
+    auth: false,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        name: "John Doe",
+        email: "john@example.com",
+        password: "password123",
+        password_confirmation: "password123"
+      }
+    },
+    responseExample: {
+      message: "User registered successfully. Please check your email for verification.",
+      user: {
+        id: 1,
+        name: "John Doe",
+        email: "john@example.com",
+        role: "user"
+      }
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/auth/login',
+    description: 'Authenticate user and get access token',
+    auth: false,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        email: "user@example.com",
+        password: "password123"
+      }
+    },
+    responseExample: {
+      user: {
+        id: 1,
+        name: "John Doe",
+        email: "user@example.com",
+        role: "user"
+      },
+      token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/auth/verify-email',
+    description: 'Verify user email address',
+    auth: false,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        token: "verification_token_here"
+      }
+    },
+    responseExample: {
+      message: "Email verified successfully"
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/auth/resend-verification',
+    description: 'Resend email verification',
+    auth: false,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        email: "user@example.com"
+      }
+    },
+    responseExample: {
+      message: "Verification email sent successfully"
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/auth/google',
+    description: 'Initiate Google OAuth login',
+    auth: false,
+    responseExample: {
+      url: "https://accounts.google.com/oauth/authorize?..."
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/auth/google/callback',
+    description: 'Handle Google OAuth callback',
+    auth: false,
+    parameters: [
+      {
+        name: 'code',
+        type: 'string',
+        required: true,
+        description: 'Authorization code from Google'
+      },
+      {
+        name: 'state',
+        type: 'string',
+        required: false,
+        description: 'State parameter for security'
+      }
+    ],
+    responseExample: {
+      user: {
+        id: 1,
+        name: "John Doe",
+        email: "john@gmail.com",
+        role: "user"
+      },
+      token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/auth/logout',
+    description: 'Logout user and invalidate token',
+    auth: true,
+    responseExample: {
+      message: "Successfully logged out"
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/auth/me',
+    description: 'Get current authenticated user information',
+    auth: true,
+    responseExample: {
+      id: 1,
+      name: "John Doe",
+      email: "user@example.com",
+      role: "user",
+      created_at: "2025-10-04T08:31:23.000000Z"
+    }
+  },
+
   // Public Endpoints
   {
     method: 'GET',
@@ -545,6 +734,391 @@ const API_ENDPOINTS: ApiEndpoint[] = [
     }
   },
 
+  // Categories Management
+  {
+    method: 'GET',
+    path: '/api/categories',
+    description: 'Get all categories',
+    auth: false,
+    responseExample: [
+      {
+        id: 1,
+        name: "AI Automation",
+        slug: "ai-automation",
+        description: "Articles about AI automation",
+        posts_count: 5,
+        created_at: "2025-10-04T08:31:23.000000Z"
+      }
+    ]
+  },
+  {
+    method: 'GET',
+    path: '/api/categories/{id}',
+    description: 'Get a specific category by ID',
+    auth: false,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Category ID'
+      }
+    ],
+    responseExample: {
+      id: 1,
+      name: "AI Automation",
+      slug: "ai-automation",
+      description: "Articles about AI automation",
+      posts_count: 5,
+      created_at: "2025-10-04T08:31:23.000000Z"
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/categories',
+    description: 'Create a new category (Admin only)',
+    auth: true,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        name: "New Category",
+        description: "Category description"
+      }
+    },
+    responseExample: {
+      id: 2,
+      name: "New Category",
+      slug: "new-category",
+      description: "Category description",
+      created_at: "2025-10-04T10:00:00.000000Z"
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/api/categories/{id}',
+    description: 'Update a category (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Category ID'
+      }
+    ],
+    requestBody: {
+      type: 'application/json',
+      example: {
+        name: "Updated Category Name",
+        description: "Updated description"
+      }
+    },
+    responseExample: {
+      id: 2,
+      name: "Updated Category Name",
+      slug: "updated-category-name",
+      description: "Updated description",
+      updated_at: "2025-10-04T10:00:00.000000Z"
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/api/categories/{id}',
+    description: 'Delete a category (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Category ID'
+      }
+    ],
+    responseExample: {
+      message: "Category deleted successfully"
+    }
+  },
+
+  // Tags Management
+  {
+    method: 'GET',
+    path: '/api/tags',
+    description: 'Get all tags',
+    auth: false,
+    responseExample: [
+      {
+        id: 1,
+        name: "React",
+        slug: "react",
+        description: "React.js related content",
+        posts_count: 3,
+        created_at: "2025-10-04T08:31:23.000000Z"
+      }
+    ]
+  },
+  {
+    method: 'POST',
+    path: '/api/tags',
+    description: 'Create a new tag (Admin only)',
+    auth: true,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        name: "JavaScript",
+        description: "JavaScript related content"
+      }
+    },
+    responseExample: {
+      id: 2,
+      name: "JavaScript",
+      slug: "javascript",
+      description: "JavaScript related content",
+      created_at: "2025-10-04T10:00:00.000000Z"
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/tags/{id}',
+    description: 'Get a specific tag by ID',
+    auth: false,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Tag ID'
+      }
+    ],
+    responseExample: {
+      id: 1,
+      name: "React",
+      slug: "react",
+      description: "React.js related content",
+      posts_count: 3,
+      created_at: "2025-10-04T08:31:23.000000Z"
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/api/tags/{id}',
+    description: 'Update a tag (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Tag ID'
+      }
+    ],
+    requestBody: {
+      type: 'application/json',
+      example: {
+        name: "Updated Tag Name",
+        description: "Updated description"
+      }
+    },
+    responseExample: {
+      id: 1,
+      name: "Updated Tag Name",
+      slug: "updated-tag-name",
+      description: "Updated description",
+      updated_at: "2025-10-04T10:00:00.000000Z"
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/api/tags/{id}',
+    description: 'Delete a tag (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Tag ID'
+      }
+    ],
+    responseExample: {
+      message: "Tag deleted successfully"
+    }
+  },
+
+  // Workflow Categories Management
+  {
+    method: 'GET',
+    path: '/api/workflow-categories',
+    description: 'Get all workflow categories',
+    auth: false,
+    responseExample: [
+      {
+        id: 1,
+        name: "AI & Machine Learning",
+        slug: "ai-machine-learning",
+        description: "Workflows leveraging artificial intelligence and machine learning",
+        created_at: "2025-10-15T18:33:33.000000Z"
+      }
+    ]
+  },
+  {
+    method: 'POST',
+    path: '/api/admin/workflow-categories',
+    description: 'Create a new workflow category (Admin only)',
+    auth: true,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        name: "Data Analysis",
+        description: "Workflows for collecting, processing, and analyzing data"
+      }
+    },
+    responseExample: {
+      id: 2,
+      name: "Data Analysis",
+      slug: "data-analysis",
+      description: "Workflows for collecting, processing, and analyzing data",
+      created_at: "2025-10-04T10:00:00.000000Z"
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/api/admin/workflow-categories/{id}',
+    description: 'Update a workflow category (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Workflow Category ID'
+      }
+    ],
+    requestBody: {
+      type: 'application/json',
+      example: {
+        name: "Updated Category Name",
+        description: "Updated description"
+      }
+    },
+    responseExample: {
+      id: 2,
+      name: "Updated Category Name",
+      slug: "updated-category-name",
+      description: "Updated description",
+      updated_at: "2025-10-04T10:00:00.000000Z"
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/api/admin/workflow-categories/{id}',
+    description: 'Delete a workflow category (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Workflow Category ID'
+      }
+    ],
+    responseExample: {
+      message: "Workflow category deleted successfully"
+    }
+  },
+
+  // Contact Form
+  {
+    method: 'POST',
+    path: '/api/contact',
+    description: 'Submit contact form',
+    auth: false,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        name: "John Doe",
+        email: "john@example.com",
+        subject: "Inquiry about services",
+        message: "I would like to know more about your automation services."
+      }
+    },
+    responseExample: {
+      message: "Thank you for your message. We will get back to you soon."
+    }
+  },
+
+  // Watermark Remover API
+  {
+    method: 'POST',
+    path: '/api/watermark-remover/upload',
+    description: 'Upload image for watermark removal',
+    auth: false,
+    requestBody: {
+      type: 'multipart/form-data',
+      example: {
+        image: '(binary file data)'
+      }
+    },
+    responseExample: {
+      job_id: "job_123456789",
+      status: "uploaded",
+      message: "Image uploaded successfully. Processing will begin shortly."
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/watermark-remover/process/{jobId}',
+    description: 'Start watermark removal process',
+    auth: false,
+    parameters: [
+      {
+        name: 'jobId',
+        type: 'string',
+        required: true,
+        description: 'Job ID from upload response'
+      }
+    ],
+    responseExample: {
+      job_id: "job_123456789",
+      status: "processing",
+      message: "Watermark removal process started"
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/watermark-remover/status/{jobId}',
+    description: 'Check watermark removal status',
+    auth: false,
+    parameters: [
+      {
+        name: 'jobId',
+        type: 'string',
+        required: true,
+        description: 'Job ID'
+      }
+    ],
+    responseExample: {
+      job_id: "job_123456789",
+      status: "completed",
+      progress: 100,
+      download_url: "https://naqashthaheem.com/api/watermark-remover/download/job_123456789"
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/watermark-remover/download/{jobId}',
+    description: 'Download processed image',
+    auth: false,
+    parameters: [
+      {
+        name: 'jobId',
+        type: 'string',
+        required: true,
+        description: 'Job ID'
+      }
+    ],
+    responseExample: "(Binary file download)"
+  },
+
   // User Management
   {
     method: 'GET',
@@ -770,6 +1344,324 @@ const API_ENDPOINTS: ApiEndpoint[] = [
     }
   },
 
+  // Lesson Management
+  {
+    method: 'GET',
+    path: '/api/courses/{courseId}/lessons',
+    description: 'Get all lessons for a course (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'courseId',
+        type: 'integer',
+        required: true,
+        description: 'Course ID'
+      }
+    ],
+    responseExample: [
+      {
+        id: 1,
+        title: "Introduction to React",
+        slug: "introduction-to-react",
+        content: "Learn the basics of React...",
+        order: 1,
+        duration_minutes: 30,
+        is_published: true,
+        course_id: 1
+      }
+    ]
+  },
+  {
+    method: 'POST',
+    path: '/api/courses/{courseId}/lessons',
+    description: 'Create a new lesson (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'courseId',
+        type: 'integer',
+        required: true,
+        description: 'Course ID'
+      }
+    ],
+    requestBody: {
+      type: 'application/json',
+      example: {
+        title: "Advanced React Hooks",
+        content: "Learn about advanced React hooks...",
+        order: 2,
+        duration_minutes: 45,
+        is_published: true
+      }
+    },
+    responseExample: {
+      id: 2,
+      title: "Advanced React Hooks",
+      slug: "advanced-react-hooks",
+      content: "Learn about advanced React hooks...",
+      order: 2,
+      duration_minutes: 45,
+      is_published: true,
+      course_id: 1,
+      created_at: "2025-10-04T10:00:00.000000Z"
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/api/courses/{courseId}/lessons/{id}',
+    description: 'Update a lesson (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'courseId',
+        type: 'integer',
+        required: true,
+        description: 'Course ID'
+      },
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Lesson ID'
+      }
+    ],
+    requestBody: {
+      type: 'application/json',
+      example: {
+        title: "Updated Lesson Title",
+        is_published: false
+      }
+    },
+    responseExample: {
+      id: 2,
+      title: "Updated Lesson Title",
+      slug: "updated-lesson-title",
+      is_published: false,
+      updated_at: "2025-10-04T10:00:00.000000Z"
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/api/courses/{courseId}/lessons/{id}',
+    description: 'Delete a lesson (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'courseId',
+        type: 'integer',
+        required: true,
+        description: 'Course ID'
+      },
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Lesson ID'
+      }
+    ],
+    responseExample: {
+      message: "Lesson deleted successfully"
+    }
+  },
+
+  // Lesson Progress Management
+  {
+    method: 'POST',
+    path: '/api/lessons/{lessonId}/complete',
+    description: 'Mark a lesson as completed',
+    auth: true,
+    parameters: [
+      {
+        name: 'lessonId',
+        type: 'integer',
+        required: true,
+        description: 'Lesson ID'
+      }
+    ],
+    requestBody: {
+      type: 'application/json',
+      example: {
+        time_spent_minutes: 25,
+        completion_percentage: 100
+      }
+    },
+    responseExample: {
+      message: "Lesson marked as completed",
+      progress: {
+        lesson_id: 1,
+        user_id: 1,
+        completed_at: "2025-10-04T10:00:00.000000Z",
+        time_spent_minutes: 25
+      }
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/lessons/{lessonId}/progress',
+    description: 'Get lesson progress for current user',
+    auth: true,
+    parameters: [
+      {
+        name: 'lessonId',
+        type: 'integer',
+        required: true,
+        description: 'Lesson ID'
+      }
+    ],
+    responseExample: {
+      lesson_id: 1,
+      user_id: 1,
+      is_completed: true,
+      completed_at: "2025-10-04T10:00:00.000000Z",
+      time_spent_minutes: 25,
+      completion_percentage: 100
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/courses/{courseId}/progress',
+    description: 'Get course progress for current user',
+    auth: true,
+    parameters: [
+      {
+        name: 'courseId',
+        type: 'integer',
+        required: true,
+        description: 'Course ID'
+      }
+    ],
+    responseExample: {
+      course_id: 1,
+      user_id: 1,
+      total_lessons: 10,
+      completed_lessons: 5,
+      completion_percentage: 50,
+      total_time_spent: 150
+    }
+  },
+
+  // Lesson Tests
+  {
+    method: 'GET',
+    path: '/api/lessons/{lessonId}/test',
+    description: 'Get lesson test questions',
+    auth: true,
+    parameters: [
+      {
+        name: 'lessonId',
+        type: 'integer',
+        required: true,
+        description: 'Lesson ID'
+      }
+    ],
+    responseExample: {
+      lesson_id: 1,
+      questions: [
+        {
+          id: 1,
+          question: "What is React?",
+          options: ["A library", "A framework", "A language", "A database"],
+          correct_answer: 0
+        }
+      ]
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/lessons/{lessonId}/test/start',
+    description: 'Start a lesson test',
+    auth: true,
+    parameters: [
+      {
+        name: 'lessonId',
+        type: 'integer',
+        required: true,
+        description: 'Lesson ID'
+      }
+    ],
+    responseExample: {
+      attempt_id: 1,
+      lesson_id: 1,
+      started_at: "2025-10-04T10:00:00.000000Z",
+      time_limit_minutes: 30
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/lessons/{lessonId}/test/submit',
+    description: 'Submit lesson test answers',
+    auth: true,
+    parameters: [
+      {
+        name: 'lessonId',
+        type: 'integer',
+        required: true,
+        description: 'Lesson ID'
+      }
+    ],
+    requestBody: {
+      type: 'application/json',
+      example: {
+        attempt_id: 1,
+        answers: [
+          {
+            question_id: 1,
+            selected_answer: 0
+          }
+        ]
+      }
+    },
+    responseExample: {
+      attempt_id: 1,
+      score: 100,
+      passed: true,
+      correct_answers: 1,
+      total_questions: 1,
+      completed_at: "2025-10-04T10:05:00.000000Z"
+    }
+  },
+
+  // Course Enrollment
+  {
+    method: 'POST',
+    path: '/api/courses/{id}/enroll',
+    description: 'Enroll in a course',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Course ID'
+      }
+    ],
+    responseExample: {
+      message: "Successfully enrolled in course",
+      enrollment: {
+        id: 1,
+        user_id: 1,
+        course_id: 1,
+        enrolled_at: "2025-10-04T10:00:00.000000Z"
+      }
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/my-courses',
+    description: 'Get current user enrolled courses',
+    auth: true,
+    responseExample: [
+      {
+        id: 1,
+        title: "React Development Course",
+        slug: "react-development-course",
+        description: "Learn React from scratch",
+        progress_percentage: 50,
+        enrolled_at: "2025-10-04T10:00:00.000000Z"
+      }
+    ]
+  },
+
   // File Management
   {
     method: 'POST',
@@ -865,6 +1757,511 @@ const API_ENDPOINTS: ApiEndpoint[] = [
     ],
     responseExample: {
       message: "File deleted successfully"
+    }
+  },
+
+  // Advanced Admin Endpoints
+  {
+    method: 'GET',
+    path: '/api/admin/posts/stats',
+    description: 'Get posts statistics (Admin only)',
+    auth: true,
+    responseExample: {
+      total_posts: 25,
+      published_posts: 20,
+      draft_posts: 5,
+      total_views: 1500,
+      average_views_per_post: 60
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/admin/workflows/stats',
+    description: 'Get workflows statistics (Admin only)',
+    auth: true,
+    responseExample: {
+      total_workflows: 15,
+      published_workflows: 12,
+      draft_workflows: 3,
+      total_downloads: 250,
+      average_downloads_per_workflow: 16.67
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/admin/users/stats',
+    description: 'Get users statistics (Admin only)',
+    auth: true,
+    responseExample: {
+      total_users: 100,
+      active_users: 85,
+      admin_users: 3,
+      new_users_this_month: 15
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/admin/api-tokens-stats',
+    description: 'Get API tokens statistics (Admin only)',
+    auth: true,
+    responseExample: {
+      total_tokens: 10,
+      active_tokens: 8,
+      expired_tokens: 2,
+      total_requests: 5000
+    }
+  },
+
+  // Bulk Operations
+  {
+    method: 'POST',
+    path: '/api/admin/bulk/posts/delete',
+    description: 'Bulk delete posts (Admin only)',
+    auth: true,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        post_ids: [1, 2, 3]
+      }
+    },
+    responseExample: {
+      message: "3 posts deleted successfully",
+      deleted_count: 3
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/admin/bulk/posts/status',
+    description: 'Bulk update post status (Admin only)',
+    auth: true,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        post_ids: [1, 2, 3],
+        status: "published"
+      }
+    },
+    responseExample: {
+      message: "3 posts updated successfully",
+      updated_count: 3
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/admin/bulk/workflows/delete',
+    description: 'Bulk delete workflows (Admin only)',
+    auth: true,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        workflow_ids: [1, 2, 3]
+      }
+    },
+    responseExample: {
+      message: "3 workflows deleted successfully",
+      deleted_count: 3
+    }
+  },
+
+  // Content Approval
+  {
+    method: 'GET',
+    path: '/api/admin/approval/posts/pending',
+    description: 'Get pending posts for approval (Admin only)',
+    auth: true,
+    responseExample: [
+      {
+        id: 1,
+        title: "Pending Post",
+        author: "John Doe",
+        submitted_at: "2025-10-04T10:00:00.000000Z",
+        status: "pending"
+      }
+    ]
+  },
+  {
+    method: 'POST',
+    path: '/api/admin/approval/posts/{id}/approve',
+    description: 'Approve a post (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Post ID'
+      }
+    ],
+    responseExample: {
+      message: "Post approved successfully"
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/admin/approval/posts/{id}/reject',
+    description: 'Reject a post (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Post ID'
+      }
+    ],
+    requestBody: {
+      type: 'application/json',
+      example: {
+        reason: "Content does not meet quality standards"
+      }
+    },
+    responseExample: {
+      message: "Post rejected successfully"
+    }
+  },
+
+  // Cache Management
+  {
+    method: 'POST',
+    path: '/api/admin/cache/clear',
+    description: 'Clear all cache (Admin only)',
+    auth: true,
+    responseExample: {
+      message: "All cache cleared successfully"
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/admin/cache/stats',
+    description: 'Get cache statistics (Admin only)',
+    auth: true,
+    responseExample: {
+      total_keys: 150,
+      memory_usage: "25MB",
+      hit_rate: 0.85
+    }
+  },
+
+  // Activity Logs
+  {
+    method: 'GET',
+    path: '/api/admin/activity-logs',
+    description: 'Get activity logs (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'page',
+        type: 'integer',
+        required: false,
+        description: 'Page number for pagination'
+      },
+      {
+        name: 'user_id',
+        type: 'integer',
+        required: false,
+        description: 'Filter by user ID'
+      }
+    ],
+    responseExample: [
+      {
+        id: 1,
+        user_id: 1,
+        action: "created_post",
+        description: "Created new post: 'Getting Started with AI'",
+        ip_address: "192.168.1.1",
+        created_at: "2025-10-04T10:00:00.000000Z"
+      }
+    ]
+  },
+  {
+    method: 'GET',
+    path: '/api/admin/activity-logs/stats',
+    description: 'Get activity logs statistics (Admin only)',
+    auth: true,
+    responseExample: {
+      total_activities: 1000,
+      activities_today: 50,
+      most_active_user: "John Doe",
+      top_actions: ["created_post", "updated_workflow", "logged_in"]
+    }
+  },
+
+  // User Groups Management
+  {
+    method: 'GET',
+    path: '/api/admin/user-groups',
+    description: 'Get all user groups (Admin only)',
+    auth: true,
+    responseExample: [
+      {
+        id: 1,
+        name: "Content Creators",
+        color: "#3B82F6",
+        members_count: 5,
+        created_at: "2025-10-04T08:31:23.000000Z"
+      }
+    ]
+  },
+  {
+    method: 'POST',
+    path: '/api/admin/user-groups',
+    description: 'Create a new user group (Admin only)',
+    auth: true,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        name: "New Group",
+        color: "#10B981",
+        description: "Group description"
+      }
+    },
+    responseExample: {
+      id: 2,
+      name: "New Group",
+      color: "#10B981",
+      description: "Group description",
+      members_count: 0,
+      created_at: "2025-10-04T10:00:00.000000Z"
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/admin/user-groups/{id}/members',
+    description: 'Add members to a user group (Admin only)',
+    auth: true,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Group ID'
+      }
+    ],
+    requestBody: {
+      type: 'application/json',
+      example: {
+        user_ids: [1, 2, 3]
+      }
+    },
+    responseExample: {
+      message: "Members added successfully",
+      added_count: 3
+    }
+  },
+
+  // Gemini API Management
+  {
+    method: 'GET',
+    path: '/api/admin/gemini-api-keys',
+    description: 'Get all Gemini API keys (Admin only)',
+    auth: true,
+    responseExample: [
+      {
+        id: 1,
+        name: "Primary Key",
+        is_active: true,
+        usage_count: 150,
+        last_used_at: "2025-10-04T09:00:00.000000Z",
+        created_at: "2025-10-04T08:31:23.000000Z"
+      }
+    ]
+  },
+  {
+    method: 'POST',
+    path: '/api/admin/gemini-api-keys',
+    description: 'Create a new Gemini API key (Admin only)',
+    auth: true,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        name: "New API Key",
+        api_key: "AIzaSyC...",
+        is_active: true
+      }
+    },
+    responseExample: {
+      id: 2,
+      name: "New API Key",
+      is_active: true,
+      usage_count: 0,
+      created_at: "2025-10-04T10:00:00.000000Z"
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/admin/gemini-api-keys/health-check',
+    description: 'Check health of all Gemini API keys (Admin only)',
+    auth: true,
+    responseExample: {
+      total_keys: 3,
+      active_keys: 2,
+      inactive_keys: 1,
+      health_status: "good"
+    }
+  },
+
+  // CV Templates Management
+  {
+    method: 'GET',
+    path: '/api/cv-templates',
+    description: 'Get all CV templates (Public)',
+    auth: false,
+    responseExample: [
+      {
+        id: 1,
+        name: "Modern Professional",
+        category: "professional",
+        ats_score: 9,
+        thumbnail: "/images/cv-template-1.jpg",
+        is_default: true
+      }
+    ]
+  },
+  {
+    method: 'GET',
+    path: '/api/cv-templates/{id}',
+    description: 'Get a specific CV template (Public)',
+    auth: false,
+    parameters: [
+      {
+        name: 'id',
+        type: 'integer',
+        required: true,
+        description: 'Template ID'
+      }
+    ],
+    responseExample: {
+      id: 1,
+      name: "Modern Professional",
+      category: "professional",
+      ats_score: 9,
+      html_content: "<div>Template HTML...</div>",
+      json_config: {"layout": "single-column"},
+      customizable_options: ["colors", "fonts"],
+      field_mappings: {"name": "full_name"}
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/cv-templates/customize',
+    description: 'Customize a CV template (Public)',
+    auth: false,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        template_id: 1,
+        personal_data: {
+          full_name: "John Doe",
+          email: "john@example.com",
+          phone: "+1234567890"
+        },
+        customizations: {
+          colors: {"primary": "#3B82F6"},
+          fonts: {"heading": "Arial"}
+        }
+      }
+    },
+    responseExample: {
+      customized_html: "<div>Customized CV HTML...</div>",
+      download_url: "https://naqashthaheem.com/api/cv-templates/download/custom_123"
+    }
+  },
+
+  // CV AI Routes
+  {
+    method: 'POST',
+    path: '/api/cv-ai/extract',
+    description: 'Extract data from CV using AI',
+    auth: false,
+    requestBody: {
+      type: 'multipart/form-data',
+      example: {
+        cv_file: '(binary file data)'
+      }
+    },
+    responseExample: {
+      extracted_data: {
+        name: "John Doe",
+        email: "john@example.com",
+        phone: "+1234567890",
+        experience: ["Software Engineer at Company A"],
+        education: ["Bachelor in Computer Science"]
+      },
+      confidence_score: 0.95
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/cv-ai/tailor',
+    description: 'Tailor CV for specific job using AI',
+    auth: false,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        cv_data: {
+          name: "John Doe",
+          experience: ["Software Engineer"]
+        },
+        job_description: "Looking for React developer with 3+ years experience",
+        target_role: "Senior React Developer"
+      }
+    },
+    responseExample: {
+      tailored_cv: {
+        optimized_summary: "Experienced React developer with 3+ years...",
+        key_skills: ["React", "JavaScript", "Node.js"],
+        tailored_experience: ["Led React development projects..."]
+      }
+    }
+  },
+
+  // Home Settings
+  {
+    method: 'GET',
+    path: '/api/home-settings',
+    description: 'Get public home settings',
+    auth: false,
+    responseExample: {
+      hero_title: "Welcome to Naqash Thaheem",
+      hero_subtitle: "Systems Analyst & Automation Specialist",
+      featured_workflows: 3,
+      total_courses: 5
+    }
+  },
+  {
+    method: 'GET',
+    path: '/api/admin/home-settings',
+    description: 'Get all home settings (Admin only)',
+    auth: true,
+    responseExample: [
+      {
+        id: 1,
+        key: "hero_title",
+        value: "Welcome to Naqash Thaheem",
+        is_active: true,
+        updated_at: "2025-10-04T10:00:00.000000Z"
+      }
+    ]
+  },
+  {
+    method: 'POST',
+    path: '/api/admin/home-settings',
+    description: 'Create or update home setting (Admin only)',
+    auth: true,
+    requestBody: {
+      type: 'application/json',
+      example: {
+        key: "hero_title",
+        value: "New Hero Title",
+        is_active: true
+      }
+    },
+    responseExample: {
+      id: 1,
+      key: "hero_title",
+      value: "New Hero Title",
+      is_active: true,
+      created_at: "2025-10-04T10:00:00.000000Z"
     }
   }
 ];
@@ -1366,6 +2763,165 @@ async function createWorkflowWithFiles() {
   
   const attachedFile = await attachResponse.json();
   console.log('Workflow created with file:', attachedFile);
+}`}
+                  </pre>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Course Management with Lessons</h4>
+                <div className="bg-gray-900 text-blue-400 rounded p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`const token = 'YOUR_TOKEN';
+
+// Create course with lessons
+async function createCourseWithLessons() {
+  // Create course
+  const courseResponse = await fetch('https://naqashthaheem.com/api/admin/courses', {
+    method: 'POST',
+    headers: {
+      'Authorization': \`Bearer \${token}\`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      title: 'Complete React Course',
+      description: 'Learn React from basics to advanced',
+      duration_hours: 40,
+      level: 'beginner',
+      is_published: true
+    })
+  });
+  const course = await courseResponse.json();
+  
+  // Add lessons
+  const lessons = [
+    { title: 'Introduction to React', order: 1, duration_minutes: 30 },
+    { title: 'Components and Props', order: 2, duration_minutes: 45 },
+    { title: 'State and Lifecycle', order: 3, duration_minutes: 60 }
+  ];
+  
+  for (const lessonData of lessons) {
+    await fetch(\`https://naqashthaheem.com/api/admin/courses/\${course.id}/lessons\`, {
+      method: 'POST',
+      headers: {
+        'Authorization': \`Bearer \${token}\`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...lessonData,
+        content: \`<h1>\${lessonData.title}</h1><p>Lesson content...</p>\`,
+        is_published: true
+      })
+    });
+  }
+  
+  console.log('Course created with lessons:', course.id);
+}`}
+                  </pre>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">User Management & Analytics</h4>
+                <div className="bg-gray-900 text-blue-400 rounded p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`const token = 'YOUR_TOKEN';
+
+// Get comprehensive analytics
+async function getAnalytics() {
+  const [postsStats, workflowsStats, usersStats, activityLogs] = await Promise.all([
+    fetch('https://naqashthaheem.com/api/admin/posts/stats', {
+      headers: { 'Authorization': \`Bearer \${token}\` }
+    }).then(r => r.json()),
+    
+    fetch('https://naqashthaheem.com/api/admin/workflows/stats', {
+      headers: { 'Authorization': \`Bearer \${token}\` }
+    }).then(r => r.json()),
+    
+    fetch('https://naqashthaheem.com/api/admin/users/stats', {
+      headers: { 'Authorization': \`Bearer \${token}\` }
+    }).then(r => r.json()),
+    
+    fetch('https://naqashthaheem.com/api/admin/activity-logs/stats', {
+      headers: { 'Authorization': \`Bearer \${token}\` }
+    }).then(r => r.json())
+  ]);
+  
+  return {
+    posts: postsStats,
+    workflows: workflowsStats,
+    users: usersStats,
+    activity: activityLogs
+  };
+}
+
+// Bulk operations
+async function bulkUpdatePosts() {
+  const response = await fetch('https://naqashthaheem.com/api/admin/bulk/posts/status', {
+    method: 'POST',
+    headers: {
+      'Authorization': \`Bearer \${token}\`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      post_ids: [1, 2, 3, 4, 5],
+      status: 'published'
+    })
+  });
+  
+  const result = await response.json();
+  console.log(\`Updated \${result.updated_count} posts\`);
+}`}
+                  </pre>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">CV AI Integration</h4>
+                <div className="bg-gray-900 text-blue-400 rounded p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`// Extract data from CV using AI
+async function extractCvData(cvFile) {
+  const formData = new FormData();
+  formData.append('cv_file', cvFile);
+  
+  const response = await fetch('https://naqashthaheem.com/api/cv-ai/extract', {
+    method: 'POST',
+    body: formData
+  });
+  
+  const result = await response.json();
+  console.log('Extracted data:', result.extracted_data);
+  console.log('Confidence score:', result.confidence_score);
+  
+  return result.extracted_data;
+}
+
+// Tailor CV for specific job
+async function tailorCv(cvData, jobDescription) {
+  const response = await fetch('https://naqashthaheem.com/api/cv-ai/tailor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      cv_data: cvData,
+      job_description: jobDescription,
+      target_role: 'Senior React Developer'
+    })
+  });
+  
+  const result = await response.json();
+  console.log('Tailored CV:', result.tailored_cv);
+  
+  return result;
+}
+
+// Get available CV templates
+async function getCvTemplates() {
+  const response = await fetch('https://naqashthaheem.com/api/cv-templates');
+  const templates = await response.json();
+  
+  console.log('Available templates:', templates);
+  return templates;
 }`}
                   </pre>
                 </div>
