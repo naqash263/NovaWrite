@@ -2270,6 +2270,15 @@ export default function ApiDocs() {
   const [selectedEndpoint, setSelectedEndpoint] = useState<ApiEndpoint | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'endpoints' | 'examples'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    method: '',
+    auth: '',
+    category: '',
+    hasParameters: '',
+    hasRequestBody: '',
+    hasResponseExample: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
 
   useSEO({
     title: 'API Documentation | Admin Dashboard',
@@ -2324,9 +2333,47 @@ export default function ApiDocs() {
       endpoint.path.includes('/categories') ? 'category' : '',
     ].filter(Boolean);
     
-    return searchableFields.some(field => 
+    // Apply search filter
+    const matchesSearch = searchTerm === '' || searchableFields.some(field => 
       field.toLowerCase().includes(searchLower)
     );
+    
+    // Apply additional filters
+    const matchesMethod = filters.method === '' || endpoint.method === filters.method;
+    const matchesAuth = filters.auth === '' || 
+      (filters.auth === 'authenticated' && endpoint.auth) ||
+      (filters.auth === 'public' && !endpoint.auth);
+    const matchesCategory = filters.category === '' || 
+      (filters.category === 'admin' && endpoint.path.includes('/admin/')) ||
+      (filters.category === 'auth' && endpoint.path.includes('/auth/')) ||
+      (filters.category === 'workflow' && endpoint.path.includes('/workflows')) ||
+      (filters.category === 'course' && endpoint.path.includes('/courses')) ||
+      (filters.category === 'post' && endpoint.path.includes('/posts')) ||
+      (filters.category === 'file' && endpoint.path.includes('/files')) ||
+      (filters.category === 'user' && endpoint.path.includes('/users')) ||
+      (filters.category === 'health' && endpoint.path.includes('/health')) ||
+      (filters.category === 'bulk' && endpoint.path.includes('/bulk')) ||
+      (filters.category === 'approval' && endpoint.path.includes('/approval')) ||
+      (filters.category === 'cache' && endpoint.path.includes('/cache')) ||
+      (filters.category === 'activity' && endpoint.path.includes('/activity')) ||
+      (filters.category === 'gemini' && endpoint.path.includes('/gemini')) ||
+      (filters.category === 'cv' && endpoint.path.includes('/cv-')) ||
+      (filters.category === 'watermark' && endpoint.path.includes('/watermark')) ||
+      (filters.category === 'contact' && endpoint.path.includes('/contact')) ||
+      (filters.category === 'tag' && endpoint.path.includes('/tags')) ||
+      (filters.category === 'category' && endpoint.path.includes('/categories'));
+    const matchesParameters = filters.hasParameters === '' ||
+      (filters.hasParameters === 'yes' && endpoint.parameters && endpoint.parameters.length > 0) ||
+      (filters.hasParameters === 'no' && (!endpoint.parameters || endpoint.parameters.length === 0));
+    const matchesRequestBody = filters.hasRequestBody === '' ||
+      (filters.hasRequestBody === 'yes' && endpoint.requestBody) ||
+      (filters.hasRequestBody === 'no' && !endpoint.requestBody);
+    const matchesResponseExample = filters.hasResponseExample === '' ||
+      (filters.hasResponseExample === 'yes' && endpoint.responseExample) ||
+      (filters.hasResponseExample === 'no' && !endpoint.responseExample);
+    
+    return matchesSearch && matchesMethod && matchesAuth && matchesCategory && 
+           matchesParameters && matchesRequestBody && matchesResponseExample;
   });
 
   return (
@@ -2483,15 +2530,15 @@ export default function ApiDocs() {
       {/* Endpoints Tab */}
       {activeTab === 'endpoints' && (
         <div className="space-y-4">
-          {/* Search Bar */}
+          {/* Search and Filter Bar */}
           <div className="bg-white border rounded-lg p-4">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 mb-4">
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 type="text"
-                placeholder="Search by endpoint, method, description, parameters, data fields, categories (admin, auth, workflow, course, post, file, user, health, bulk, approval, cache, activity, gemini, cv, watermark, contact, tag, category)..."
+                placeholder="Search by endpoint, method, description, parameters, data fields, categories..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -2506,11 +2553,167 @@ export default function ApiDocs() {
                   </svg>
                 </button>
               )}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-3 py-2 rounded-lg border transition-colors ${
+                  showFilters 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+                </svg>
+                Filters
+              </button>
             </div>
-            {searchTerm && (
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="border-t pt-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Method Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">HTTP Method</label>
+                    <select
+                      value={filters.method}
+                      onChange={(e) => setFilters({...filters, method: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="">All Methods</option>
+                      <option value="GET">GET</option>
+                      <option value="POST">POST</option>
+                      <option value="PUT">PUT</option>
+                      <option value="DELETE">DELETE</option>
+                    </select>
+                  </div>
+
+                  {/* Authentication Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Authentication</label>
+                    <select
+                      value={filters.auth}
+                      onChange={(e) => setFilters({...filters, auth: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="">All Endpoints</option>
+                      <option value="authenticated">Authenticated Only</option>
+                      <option value="public">Public Only</option>
+                    </select>
+                  </div>
+
+                  {/* Category Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select
+                      value={filters.category}
+                      onChange={(e) => setFilters({...filters, category: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="">All Categories</option>
+                      <option value="admin">Admin</option>
+                      <option value="auth">Authentication</option>
+                      <option value="workflow">Workflow</option>
+                      <option value="course">Course</option>
+                      <option value="post">Post</option>
+                      <option value="file">File</option>
+                      <option value="user">User</option>
+                      <option value="health">Health</option>
+                      <option value="bulk">Bulk Operations</option>
+                      <option value="approval">Content Approval</option>
+                      <option value="cache">Cache Management</option>
+                      <option value="activity">Activity Logs</option>
+                      <option value="gemini">Gemini AI</option>
+                      <option value="cv">CV Templates</option>
+                      <option value="watermark">Watermark Remover</option>
+                      <option value="contact">Contact</option>
+                      <option value="tag">Tags</option>
+                      <option value="category">Categories</option>
+                    </select>
+                  </div>
+
+                  {/* Parameters Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Has Parameters</label>
+                    <select
+                      value={filters.hasParameters}
+                      onChange={(e) => setFilters({...filters, hasParameters: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="">All Endpoints</option>
+                      <option value="yes">With Parameters</option>
+                      <option value="no">Without Parameters</option>
+                    </select>
+                  </div>
+
+                  {/* Request Body Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Has Request Body</label>
+                    <select
+                      value={filters.hasRequestBody}
+                      onChange={(e) => setFilters({...filters, hasRequestBody: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="">All Endpoints</option>
+                      <option value="yes">With Request Body</option>
+                      <option value="no">Without Request Body</option>
+                    </select>
+                  </div>
+
+                  {/* Response Example Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Has Response Example</label>
+                    <select
+                      value={filters.hasResponseExample}
+                      onChange={(e) => setFilters({...filters, hasResponseExample: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="">All Endpoints</option>
+                      <option value="yes">With Response Example</option>
+                      <option value="no">Without Response Example</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Filter Actions */}
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <div className="text-sm text-gray-600">
+                    {Object.values(filters).filter(f => f !== '').length > 0 && (
+                      <span>
+                        {Object.values(filters).filter(f => f !== '').length} filter{Object.values(filters).filter(f => f !== '').length !== 1 ? 's' : ''} active
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-x-2">
+                    <button
+                      onClick={() => setFilters({
+                        method: '',
+                        auth: '',
+                        category: '',
+                        hasParameters: '',
+                        hasRequestBody: '',
+                        hasResponseExample: ''
+                      })}
+                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
+                    >
+                      Clear All
+                    </button>
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
+                    >
+                      Apply Filters
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {(searchTerm || Object.values(filters).some(f => f !== '')) && (
               <div className="mt-2 space-y-2">
                 <div className="text-sm text-gray-600">
-                  Found {filteredEndpoints.length} endpoint{filteredEndpoints.length !== 1 ? 's' : ''} matching "{searchTerm}"
+                  Found {filteredEndpoints.length} endpoint{filteredEndpoints.length !== 1 ? 's' : ''} 
+                  {searchTerm && ` matching "${searchTerm}"`}
+                  {Object.values(filters).filter(f => f !== '').length > 0 && ` with ${Object.values(filters).filter(f => f !== '').length} filter${Object.values(filters).filter(f => f !== '').length !== 1 ? 's' : ''}`}
                 </div>
                 
                 {/* Search Suggestions */}
@@ -2536,9 +2739,49 @@ export default function ApiDocs() {
             )}
           </div>
 
-          {searchTerm && filteredEndpoints.length > 0 && (
+          {(searchTerm || Object.values(filters).some(f => f !== '')) && filteredEndpoints.length > 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-blue-900 mb-2">Search Results Summary</h3>
+              <h3 className="text-sm font-semibold text-blue-900 mb-2">Filtered Results Summary</h3>
+              
+              {/* Active Filters */}
+              {Object.values(filters).some(f => f !== '') && (
+                <div className="mb-3">
+                  <span className="text-xs font-medium text-blue-800">Active Filters:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {filters.method && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                        Method: {filters.method}
+                      </span>
+                    )}
+                    {filters.auth && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                        Auth: {filters.auth}
+                      </span>
+                    )}
+                    {filters.category && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                        Category: {filters.category}
+                      </span>
+                    )}
+                    {filters.hasParameters && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                        Parameters: {filters.hasParameters}
+                      </span>
+                    )}
+                    {filters.hasRequestBody && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                        Request Body: {filters.hasRequestBody}
+                      </span>
+                    )}
+                    {filters.hasResponseExample && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                        Response: {filters.hasResponseExample}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                 <div className="bg-white rounded px-2 py-1">
                   <span className="font-medium text-blue-600">Methods:</span>
@@ -2593,7 +2836,7 @@ export default function ApiDocs() {
             </div>
           )}
 
-          {filteredEndpoints.length === 0 && searchTerm ? (
+          {filteredEndpoints.length === 0 && (searchTerm || Object.values(filters).some(f => f !== '')) ? (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
               <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
