@@ -162,4 +162,22 @@ protected function apiKey(): Attribute {
 }
 ```
 
+## Mistake 7: OAuth redirecting to localhost in production
+**Cause:** Hardcoded localhost URLs in OAuth callback
+**Solution:**
+```php
+// ❌ WRONG
+return redirect('http://localhost:3000/auth/success?token=' . $token);
+
+// ✅ CORRECT
+$frontendUrl = config('app.frontend_url', config('app.url'));
+return redirect($frontendUrl . '/auth/success?token=' . $token);
+
+// In config/app.php add:
+'frontend_url' => env('FRONTEND_URL', env('APP_URL')),
+
+// In .env set:
+FRONTEND_URL=https://naqashthaheem.com
+```
+
 -Always make changes and keep it prepare for production
