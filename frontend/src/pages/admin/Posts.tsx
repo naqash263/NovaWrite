@@ -95,6 +95,19 @@ export default function Posts() {
       setTags(response.data);
     } catch (error) {
       console.error('Error fetching tags:', error);
+      // Fallback to default tags if API fails
+      setTags([
+        { id: 1, name: 'AI', color: '#3B82F6', slug: 'ai', description: 'Artificial Intelligence' },
+        { id: 2, name: 'Automation', color: '#10B981', slug: 'automation', description: 'Process Automation' },
+        { id: 3, name: 'Technology', color: '#8B5CF6', slug: 'technology', description: 'General Technology' },
+        { id: 4, name: 'Programming', color: '#F59E0B', slug: 'programming', description: 'Programming and Development' },
+        { id: 5, name: 'Machine Learning', color: '#EF4444', slug: 'machine-learning', description: 'Machine Learning' },
+        { id: 6, name: 'Data Science', color: '#06B6D4', slug: 'data-science', description: 'Data Science and Analytics' },
+        { id: 7, name: 'Web Development', color: '#84CC16', slug: 'web-development', description: 'Web Development' },
+        { id: 8, name: 'Mobile', color: '#F97316', slug: 'mobile', description: 'Mobile Development' },
+        { id: 9, name: 'Cloud', color: '#6366F1', slug: 'cloud', description: 'Cloud Computing' },
+        { id: 10, name: 'Security', color: '#DC2626', slug: 'security', description: 'Cybersecurity' },
+      ]);
     }
   };
 
