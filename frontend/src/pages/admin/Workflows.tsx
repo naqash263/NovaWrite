@@ -71,7 +71,7 @@ export default function Workflows() {
     queryKey: ['admin-workflow-categories'],
     queryFn: async () => {
       const response = await apiClient.get('/admin/workflow-categories');
-      return response.data;
+      return response.data.data || response.data || [];
     },
   });
 
@@ -299,7 +299,7 @@ export default function Workflows() {
                 required
               >
                 <option value="">Select Category</option>
-                {categories.map((cat: WorkflowCategory) => (
+                {Array.isArray(categories) && categories.map((cat: WorkflowCategory) => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
