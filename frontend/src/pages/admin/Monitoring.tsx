@@ -65,7 +65,7 @@ const Monitoring: React.FC = () => {
   useEffect(() => {
     fetchMonitoringData();
     
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (autoRefresh) {
       interval = setInterval(fetchMonitoringData, 30000); // Refresh every 30 seconds
     }

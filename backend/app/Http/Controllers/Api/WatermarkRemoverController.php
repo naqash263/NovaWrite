@@ -53,11 +53,11 @@ class WatermarkRemoverController extends Controller
         ]);
         
         $validator = Validator::make($request->all(), [
-            'video' => 'required|file|max:2048', // 2MB max (2048 KB) - current PHP limit
+            'video' => 'required|file|max:51200', // 50MB max (51200 KB)
         ], [
             'video.required' => 'Please select a video file to upload.',
             'video.file' => 'The uploaded file is invalid.',
-            'video.max' => 'Video file size must not exceed 2MB due to current PHP configuration.',
+            'video.max' => 'Video file size must not exceed 50MB.',
         ]);
 
         // Custom validation for file extension

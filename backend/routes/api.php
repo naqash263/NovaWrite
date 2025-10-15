@@ -453,6 +453,14 @@ Route::middleware('api.auth')->group(function () {
 });
 
 Route::get('files/{id}/download', [FileController::class, 'download']);
+
+// Public SEO file routes
+Route::get('files/search', [FileController::class, 'search']);
+Route::get('files/categories', [FileController::class, 'getCategories']);
+Route::get('files/purposes', [FileController::class, 'getPurposes']);
+Route::get('files/audiences', [FileController::class, 'getAudiences']);
+Route::get('files/seo/stats', [FileController::class, 'getSeoStats']);
+
 Route::middleware('api.auth')->group(function () {
     Route::get('files', [FileController::class, 'index']);
     Route::get('files/type/{type}', [FileController::class, 'getByType']);
@@ -460,6 +468,7 @@ Route::middleware('api.auth')->group(function () {
     Route::get('files/{id}', [FileController::class, 'show']);
     Route::put('files/{id}', [FileController::class, 'update']);
     Route::delete('files/{id}', [FileController::class, 'destroy']);
+    Route::post('files/{id}/regenerate-seo', [FileController::class, 'regenerateSeo']);
 });
 
 Route::get('workflow-categories', [WorkflowController::class, 'categories']);

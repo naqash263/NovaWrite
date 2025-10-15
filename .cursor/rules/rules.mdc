@@ -209,4 +209,6 @@ if (!$lesson->canBeAccessedByUser($user->id)) {
 }
 ```
 
+Try to open the browser's developer tools by opening the page when ever request to test on browser
+
 -Always make changes and keep it prepare for production

@@ -1,0 +1,34 @@
+name: Clear Production Cache
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "CLEAR" to confirm cache clearing'
+        required: true
+        default: ''
+
+jobs:
+  clear-cache:
+    if: github.event.inputs.confirm == 'CLEAR'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Clear Production Cache
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          cd ~/naqashthaheem.com/backend
+          echo "🧹 Clearing Laravel caches..."
+          php artisan config:clear
+          php artisan route:clear
+          php artisan cache:clear
+          php artisan view:clear
+          echo "🔄 Rebuilding configuration cache..."
+          php artisan config:cache
+          echo "📋 Verifying health routes are available:"
+          php artisan route:list --path=api/health
+          echo "✅ Cache clearing completed!"

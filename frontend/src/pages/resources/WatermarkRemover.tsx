@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useSEO } from '../../utils/seo';
 import { ToastContainer, useToast } from '../../hooks/use-toast';
 import apiClient from '../../api/axios';
@@ -81,6 +81,7 @@ const LegalDisclaimer: React.FC<LegalDisclaimerProps> = ({ isOpen, onAccept, onD
   );
 };
 
+/*
 const FileUploadArea: React.FC<{
   onFileSelect: (file: File) => void;
   isProcessing: boolean;
@@ -161,7 +162,7 @@ const FileUploadArea: React.FC<{
               Supported formats: MP4, MOV, AVI, WebM
             </p>
             <p className="text-xs font-medium text-blue-600">
-              📁 Maximum file size: 2MB (current PHP limit)
+              📁 Maximum file size: 50MB
             </p>
           </div>
         </div>
@@ -169,6 +170,7 @@ const FileUploadArea: React.FC<{
     </div>
   );
 };
+*/
 
 const ProgressBar: React.FC<{ progress: number; message: string }> = ({ progress, message }) => (
   <div className="w-full">
@@ -198,22 +200,22 @@ export default function WatermarkRemover() {
   const { addToast } = useToast();
 
   useSEO({
-    title: 'Watermark Remover - Remove Sora Video Watermarks | Naqash Thaheem',
-    description: 'Remove watermarks from Sora and other AI-generated videos. Professional watermark removal tool with legal compliance.',
+    title: 'Sora Watermark Remover - Professional AI Video Processing | Naqash Thaheem',
+    description: 'Remove Sora watermarks from AI-generated videos. Advanced FFmpeg-based watermark removal tool optimized for Sora video processing.',
     url: '/resources/watermark-remover',
-    keywords: ['watermark remover', 'sora watermark', 'video watermark removal', 'AI video processing']
+    keywords: ['sora watermark remover', 'sora video processing', 'AI watermark removal', 'FFmpeg video editing', 'Sora video cleanup']
   });
 
   const validateFile = (file: File): string | null => {
     const validTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];
-    const maxSize = 2 * 1024 * 1024; // 2MB (current PHP limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB
 
     if (!validTypes.includes(file.type)) {
       return 'Please upload a valid video file (MP4, MOV, AVI, or WebM)';
     }
 
     if (file.size > maxSize) {
-      return 'File size must be less than 2MB due to current PHP configuration. Please compress your video or use a smaller file.';
+      return 'File size must be less than 50MB. Please compress your video or use a smaller file.';
     }
 
     return null;
@@ -248,22 +250,15 @@ export default function WatermarkRemover() {
       const formData = new FormData();
       formData.append('video', selectedFile);
 
-      const API_BASE = import.meta.env.VITE_API_URL 
-        ? import.meta.env.VITE_API_URL.replace('/api', '') 
-        : (import.meta.env.VITE_APP_URL || 'http://localhost:8001');
-      const uploadResponse = await fetch(`${API_BASE}/chunked-upload.php`, {
-        method: 'POST',
-        body: formData,
+      console.log('Uploading to:', apiClient.defaults.baseURL + '/watermark-remover/upload');
+      
+      const uploadResponse = await apiClient.post('/watermark-remover/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      if (!uploadResponse.ok) {
-        if (uploadResponse.status === 413) {
-          throw new Error('File too large. Please upload a video smaller than 50MB.');
-        }
-        throw new Error(`Upload failed with status: ${uploadResponse.status}`);
-      }
-
-      const uploadResult = await uploadResponse.json();
+      const uploadResult = uploadResponse.data;
 
       if (!uploadResult.success) {
         throw new Error(uploadResult.message || 'Upload failed');
@@ -394,8 +389,8 @@ export default function WatermarkRemover() {
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Watermark Remover</h1>
-              <p className="text-sm text-gray-600">Remove watermarks from Sora and other AI-generated videos</p>
+              <h1 className="text-2xl font-bold text-gray-900">Sora Watermark Remover</h1>
+              <p className="text-sm text-gray-600">Remove Sora watermarks from AI-generated videos using advanced FFmpeg processing</p>
             </div>
             <div className="flex items-center space-x-4">
               <button
@@ -426,10 +421,62 @@ export default function WatermarkRemover() {
             {/* Upload Section */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Upload Video</h2>
-              <FileUploadArea
-                onFileSelect={handleFileSelect}
-                isProcessing={processingStatus.status === 'processing' || processingStatus.status === 'uploading'}
-              />
+              <div 
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.add('border-blue-400', 'bg-blue-50');
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                  const file = e.dataTransfer.files[0];
+                  if (file) {
+                    handleFileSelect(file);
+                  }
+                }}
+              >
+                <input
+                  type="file"
+                  accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleFileSelect(file);
+                    }
+                  }}
+                  disabled={processingStatus.status === 'processing' || processingStatus.status === 'uploading'}
+                  className="hidden"
+                  id="video-upload"
+                />
+                <label
+                  htmlFor="video-upload"
+                  className="cursor-pointer flex flex-col items-center space-y-4"
+                >
+                  <div className="text-6xl text-gray-400">🎬</div>
+                  <div className="text-lg font-medium text-gray-900">
+                    {processingStatus.status === 'processing' || processingStatus.status === 'uploading' 
+                      ? 'Processing...' 
+                      : 'Click to upload video'
+                    }
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    Drag and drop your video here, or click to browse
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs text-gray-400">
+                      Supported formats: MP4, MOV, AVI, WebM
+                    </p>
+                    <p className="text-xs font-medium text-blue-600">
+                      📁 Maximum file size: 50MB
+                    </p>
+                  </div>
+                </label>
+              </div>
               
               {selectedFile && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg">
