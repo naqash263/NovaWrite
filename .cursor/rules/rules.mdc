@@ -79,11 +79,16 @@ alwaysApply: true
 - ✅ ALWAYS verify secrets are set in GitHub repository
 
 ## 9. Testing Before Production
+- ❌ NEVER push directly to production without local testing
+- ✅ ALWAYS test locally first (localhost:8001 backend, localhost:3000 frontend)
 - ✅ ALWAYS test all CRUD operations (Create, Read, Update, Delete)
 - ✅ ALWAYS test file uploads
 - ✅ ALWAYS test with API tokens (not just JWT)
 - ✅ ALWAYS verify storage URLs in API responses
 - ✅ ALWAYS check database schema matches code expectations
+- ✅ ALWAYS run migrations locally before deploying
+- ✅ ALWAYS check for console errors in browser
+- ✅ ALWAYS verify API responses with Postman/curl
 
 ## 10. Production Deployment Checklist
 - [ ] All migrations have safety checks
