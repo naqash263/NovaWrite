@@ -321,6 +321,14 @@ jobs:
             sed -i 's|^GOOGLE_REDIRECT_URI=.*|GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback|' .env
           fi
           
+          # Configure FRONTEND_URL for Google OAuth redirects
+          echo -e "${BLUE}🌐 Configuring FRONTEND_URL...${NC}"
+          if ! grep -q "^FRONTEND_URL=" .env; then
+            echo 'FRONTEND_URL=https://naqashthaheem.com' >> .env
+          else
+            sed -i 's|^FRONTEND_URL=.*|FRONTEND_URL=https://naqashthaheem.com|' .env
+          fi
+          
               # Only generate APP_KEY if it doesn't exist
               if ! grep -q "APP_KEY=base64:" .env; then
                 echo -e "${BLUE}🔑 Generating APP_KEY...${NC}"

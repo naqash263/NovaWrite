@@ -94,7 +94,8 @@ class GoogleAuthController extends Controller
             // Check if this is a redirect request (from web route)
             if ($request->header('Accept') && str_contains($request->header('Accept'), 'text/html')) {
                 // Redirect to frontend success page
-                return redirect('http://localhost:3000/auth/google/success?token=' . $token . '&user=' . urlencode(json_encode($user)));
+                $frontendUrl = config('app.frontend_url', config('app.url'));
+                return redirect($frontendUrl . '/auth/google/success?token=' . $token . '&user=' . urlencode(json_encode($user)));
             }
             
             return response()->json([
@@ -203,12 +204,14 @@ class GoogleAuthController extends Controller
             $state = $request->input('state');
             $error = $request->input('error');
 
+            $frontendUrl = config('app.frontend_url', config('app.url'));
+            
             if ($error) {
-                return redirect('http://localhost:3000/login?error=' . urlencode($error));
+                return redirect($frontendUrl . '/login?error=' . urlencode($error));
             }
 
             if (!$code) {
-                return redirect('http://localhost:3000/login?error=no_code');
+                return redirect($frontendUrl . '/login?error=no_code');
             }
 
             // Exchange code for access token
@@ -262,11 +265,11 @@ class GoogleAuthController extends Controller
                 ]);
                 
                 // Fallback: redirect to login with error
-                return redirect('http://localhost:3000/login?error=' . urlencode('Authentication failed: ' . $e->getMessage()));
+                return redirect($frontendUrl . '/login?error=' . urlencode('Authentication failed: ' . $e->getMessage()));
             }
 
             // Redirect to frontend with token
-            return redirect('http://localhost:3000/auth/google/success?token=' . $token . '&user=' . urlencode(json_encode($user)));
+            return redirect($frontendUrl . '/auth/google/success?token=' . $token . '&user=' . urlencode(json_encode($user)));
 
         } catch (\Exception $e) {
             \Log::error('Google OAuth web callback error', [
@@ -274,7 +277,8 @@ class GoogleAuthController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             
-            return redirect('http://localhost:3000/login?error=' . urlencode($e->getMessage()));
+            $frontendUrl = config('app.frontend_url', config('app.url'));
+            return redirect($frontendUrl . '/login?error=' . urlencode($e->getMessage()));
         }
     }
 }
