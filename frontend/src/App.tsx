@@ -88,6 +88,7 @@ function App() {
               <Route path="/admin/posts" element={<ProtectedRoute><Posts /></ProtectedRoute>} />
               <Route path="/admin/files" element={<ProtectedRoute><Files /></ProtectedRoute>} />
               <Route path="/admin/workflow-categories" element={<ProtectedRoute><WorkflowCategories /></ProtectedRoute>} />
+              <Route path="/admin/workflows/categories" element={<ProtectedRoute><WorkflowCategories /></ProtectedRoute>} />
               <Route path="/admin/workflows" element={<ProtectedRoute><AdminWorkflows /></ProtectedRoute>} />
               <Route path="/admin/test-workflows" element={<ProtectedRoute><TestWorkflows /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
