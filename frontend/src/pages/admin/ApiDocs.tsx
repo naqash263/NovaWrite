@@ -3757,6 +3757,114 @@ export default function ApiDocs() {
       {/* Examples Tab */}
       {activeTab === 'examples' && (
         <div className="space-y-6">
+          {/* Authentication Examples */}
+          <div className="bg-white border rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">Authentication Examples</h3>
+            
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-medium mb-2 text-blue-600">Admin API Token Authentication</h4>
+                <p className="text-sm text-gray-600 mb-3">All admin endpoints require an API token. Get your token from the admin dashboard.</p>
+                
+                <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`# Using API Token in Authorization Header
+curl -X GET "https://naqashthaheem.com/api/admin/posts" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -H "Accept: application/json" \\
+  -H "Content-Type: application/json"`}
+                  </pre>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2 text-blue-600">Alternative: API Token as Query Parameter</h4>
+                <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`# Using API Token as Query Parameter
+curl -X GET "https://naqashthaheem.com/api/admin/posts?api_token=YOUR_API_TOKEN" \\
+  -H "Accept: application/json"`}
+                  </pre>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2 text-blue-600">JavaScript/Fetch Examples</h4>
+                <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`// Using Authorization Header
+const response = await fetch('https://naqashthaheem.com/api/admin/posts', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_TOKEN',
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  }
+});
+
+// Using Query Parameter
+const response = await fetch('https://naqashthaheem.com/api/admin/posts?api_token=YOUR_API_TOKEN', {
+  method: 'GET',
+  headers: {
+    'Accept': 'application/json'
+  }
+});`}
+                  </pre>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2 text-blue-600">Axios Examples</h4>
+                <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`// Using Authorization Header
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'https://naqashthaheem.com/api',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_TOKEN',
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  }
+});
+
+// Make admin API calls
+const posts = await api.get('/admin/posts');
+const newPost = await api.post('/admin/posts', {
+  title: 'New Post',
+  content: 'Post content...',
+  category_id: 1
+});
+
+// Using Query Parameter
+const api = axios.create({
+  baseURL: 'https://naqashthaheem.com/api',
+  params: {
+    api_token: 'YOUR_API_TOKEN'
+  },
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  }
+});`}
+                  </pre>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
+                <h4 className="font-medium mb-2 text-yellow-800">⚠️ Important Security Notes</h4>
+                <ul className="text-sm text-yellow-700 space-y-1">
+                  <li>• Keep your API token secure and never expose it in client-side code</li>
+                  <li>• Use environment variables to store API tokens</li>
+                  <li>• Regenerate tokens regularly for security</li>
+                  <li>• Admin API tokens have full access to all admin endpoints</li>
+                  <li>• Always use HTTPS in production</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white border rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-4">cURL Examples</h3>
             
@@ -3776,15 +3884,15 @@ export default function ApiDocs() {
                 <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
                   <pre className="text-sm">
 {`curl -X POST "https://naqashthaheem.com/api/admin/workflows" \\
-  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
   -d '{
     "workflow_category_id": 1,
     "title": "New Workflow",
-    "summary": "Workflow summary",
-    "tools": ["Tool 1", "Tool 2"],
-    "benefits": ["Benefit 1", "Benefit 2"],
-    "status": "draft"
+    "description": "Workflow description",
+    "instructions": "Step-by-step instructions...",
+    "is_featured": false
   }'`}
                   </pre>
                 </div>
@@ -3805,11 +3913,11 @@ export default function ApiDocs() {
               </div>
 
               <div>
-                <h4 className="font-medium mb-2">Upload a file</h4>
+                <h4 className="font-medium mb-2">Upload a file (Admin)</h4>
                 <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
                   <pre className="text-sm">
 {`curl -X POST "https://naqashthaheem.com/api/files" \\
-  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -F "file=@/path/to/image.png" \\
   -F "is_public=true"`}
                   </pre>
@@ -3822,12 +3930,12 @@ export default function ApiDocs() {
                   <pre className="text-sm">
 {`# Step 1: Upload file and get file_id
 FILE_ID=$(curl -s -X POST "https://naqashthaheem.com/api/files" \\
-  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -F "file=@diagram.png" | jq -r '.file.id')
 
 # Step 2: Create workflow and get workflow_id
 WF_ID=$(curl -s -X POST "https://naqashthaheem.com/api/admin/workflows" \\
-  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -H "Content-Type: application/json" \\
   -d '{
     "title": "Customer Onboarding",
@@ -3840,7 +3948,7 @@ WF_ID=$(curl -s -X POST "https://naqashthaheem.com/api/admin/workflows" \\
 
 # Step 3: Attach file to workflow
 curl -X POST "https://naqashthaheem.com/api/admin/workflows/$WF_ID/files" \\
-  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -H "Content-Type: application/json" \\
   -d "{
     \\"file_id\\": $FILE_ID,
@@ -3851,7 +3959,7 @@ curl -X POST "https://naqashthaheem.com/api/admin/workflows/$WF_ID/files" \\
 
 # Step 4: Publish workflow
 curl -X PUT "https://naqashthaheem.com/api/admin/workflows/$WF_ID" \\
-  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -H "Content-Type: application/json" \\
   -d '{"status": "published", "is_published": true}'`}
                   </pre>
@@ -3880,13 +3988,14 @@ curl -X PUT "https://naqashthaheem.com/api/admin/workflows/$WF_ID" \\
                 <h4 className="font-medium mb-2">Create workflow with authentication</h4>
                 <div className="bg-gray-900 text-blue-400 rounded p-4 overflow-x-auto">
                   <pre className="text-sm">
-{`const token = 'YOUR_TOKEN';
+{`const apiToken = 'YOUR_API_TOKEN';
 
 fetch('https://naqashthaheem.com/api/admin/workflows', {
   method: 'POST',
   headers: {
-    'Authorization': \`Bearer \${token}\`,
-    'Content-Type': 'application/json'
+    'Authorization': \`Bearer \${apiToken}\`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
   body: JSON.stringify({
     workflow_category_id: 1,
@@ -4120,6 +4229,180 @@ async function getCvTemplates() {
                   </pre>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin API Examples Section */}
+      {activeTab === 'examples' && (
+        <div className="bg-white border rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">Admin API Request Examples</h3>
+          
+          <div className="space-y-6">
+            <div>
+              <h4 className="font-medium mb-2 text-green-600">Create Post (Admin)</h4>
+              <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                <pre className="text-sm">
+{`curl -X POST "https://naqashthaheem.com/api/admin/posts" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -d '{
+    "title": "New Blog Post",
+    "slug": "new-blog-post",
+    "content": "This is the content of the blog post...",
+    "excerpt": "Short excerpt of the post",
+    "featured_image": "https://example.com/image.jpg",
+    "category_id": 1,
+    "is_published": true,
+    "meta_description": "SEO meta description",
+    "meta_keywords": "keyword1, keyword2, keyword3",
+    "tags": [1, 2, 3]
+  }'`}
+                </pre>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium mb-2 text-green-600">Update Post (Admin)</h4>
+              <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                <pre className="text-sm">
+{`curl -X PUT "https://naqashthaheem.com/api/admin/posts/1" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -d '{
+    "title": "Updated Blog Post Title",
+    "content": "Updated content...",
+    "is_published": true,
+    "tags": [1, 2, 4]
+  }'`}
+                </pre>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium mb-2 text-green-600">Create Course (Admin)</h4>
+              <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                <pre className="text-sm">
+{`curl -X POST "https://naqashthaheem.com/api/admin/courses" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -d '{
+    "title": "React Fundamentals",
+    "slug": "react-fundamentals",
+    "description": "Learn React from scratch",
+    "image_url": "https://example.com/course-image.jpg",
+    "what_you_learn": "React basics, hooks, state management",
+    "duration_hours": 40,
+    "level": "beginner",
+    "order": 1,
+    "is_published": true
+  }'`}
+                </pre>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium mb-2 text-green-600">Create Lesson (Admin)</h4>
+              <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                <pre className="text-sm">
+{`curl -X POST "https://naqashthaheem.com/api/admin/courses/1/lessons" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -d '{
+    "title": "Introduction to React",
+    "content": "In this lesson, we will learn...",
+    "order": 1,
+    "is_published": true,
+    "duration_minutes": 30,
+    "video_url": "https://example.com/video.mp4"
+  }'`}
+                </pre>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium mb-2 text-green-600">Create Category (Admin)</h4>
+              <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                <pre className="text-sm">
+{`curl -X POST "https://naqashthaheem.com/api/admin/categories" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -d '{
+    "name": "Web Development",
+    "description": "Articles about web development technologies"
+  }'`}
+                </pre>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium mb-2 text-green-600">Create Tag (Admin)</h4>
+              <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                <pre className="text-sm">
+{`curl -X POST "https://naqashthaheem.com/api/admin/tags" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -d '{
+    "name": "JavaScript",
+    "description": "JavaScript related content",
+    "color": "#F7DF1E"
+  }'`}
+                </pre>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium mb-2 text-green-600">Create Workflow Category (Admin)</h4>
+              <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                <pre className="text-sm">
+{`curl -X POST "https://naqashthaheem.com/api/admin/workflow-categories" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -d '{
+    "name": "Data Analysis",
+    "description": "Workflows for collecting, processing, and analyzing data"
+  }'`}
+                </pre>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium mb-2 text-green-600">Bulk Operations (Admin)</h4>
+              <div className="bg-gray-900 text-green-400 rounded p-4 overflow-x-auto">
+                <pre className="text-sm">
+{`# Bulk delete posts
+curl -X POST "https://naqashthaheem.com/api/admin/bulk/posts/delete" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"ids": [1, 2, 3]}'
+
+# Bulk update post status
+curl -X POST "https://naqashthaheem.com/api/admin/bulk/posts/status" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"ids": [1, 2, 3], "status": "published"}'`}
+                </pre>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded p-4">
+              <h4 className="font-medium mb-2 text-blue-800">💡 Pro Tips for Admin API Usage</h4>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Always use your admin API token for admin endpoints</li>
+                <li>• Include proper Content-Type and Accept headers</li>
+                <li>• Use the filtering parameters to get specific data</li>
+                <li>• Test with pagination for large datasets</li>
+                <li>• Use bulk operations for multiple items</li>
+                <li>• Check response status codes for error handling</li>
+              </ul>
             </div>
           </div>
         </div>
