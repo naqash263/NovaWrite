@@ -11,14 +11,18 @@ class WorkflowCategoryController extends Controller
 {
     public function index()
     {
-        $categories = WorkflowCategory::withCount('workflows')->get();
-        return response()->json($categories);
+        $categories = WorkflowCategory::orderBy('name')->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $categories
+        ]);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:workflow_categories,name',
             'description' => 'nullable|string',
         ]);
 
@@ -28,13 +32,21 @@ class WorkflowCategoryController extends Controller
             'description' => $request->description,
         ]);
 
-        return response()->json($category, 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Workflow category created successfully',
+            'data' => $category
+        ], 201);
     }
 
     public function show($id)
     {
-        $category = WorkflowCategory::withCount('workflows')->findOrFail($id);
-        return response()->json($category);
+        $category = WorkflowCategory::findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $category
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -42,7 +54,7 @@ class WorkflowCategoryController extends Controller
         $category = WorkflowCategory::findOrFail($id);
 
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:workflow_categories,name,' . $id,
             'description' => 'nullable|string',
         ]);
 
@@ -52,13 +64,30 @@ class WorkflowCategoryController extends Controller
             'description' => $request->description,
         ]);
 
-        return response()->json($category);
+        return response()->json([
+            'success' => true,
+            'message' => 'Workflow category updated successfully',
+            'data' => $category
+        ]);
     }
 
     public function destroy($id)
     {
         $category = WorkflowCategory::findOrFail($id);
+        
+        // Check if category has workflows
+        if ($category->workflows()->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete category that has workflows. Please move or delete the workflows first.'
+            ], 422);
+        }
+
         $category->delete();
-        return response()->json(['message' => 'Workflow category deleted successfully']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Workflow category deleted successfully'
+        ]);
     }
 }

@@ -29,7 +29,7 @@ const AdminLessons = lazy(() => import('./pages/admin/Lessons'));
 const Categories = lazy(() => import('./pages/admin/Categories'));
 const Posts = lazy(() => import('./pages/admin/Posts'));
 const Files = lazy(() => import('./pages/admin/Files'));
-const WorkflowCategories = lazy(() => import('./pages/admin/WorkflowCategories'));
+const WorkflowCategories = lazy(() => import('./pages/admin/workflows/WorkflowCategories'));
 const AdminWorkflows = lazy(() => import('./pages/admin/Workflows'));
 const TestWorkflows = lazy(() => import('./pages/admin/TestWorkflows'));
 const Users = lazy(() => import('./pages/admin/Users'));
