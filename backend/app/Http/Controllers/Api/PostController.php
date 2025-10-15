@@ -18,7 +18,8 @@ class PostController extends Controller
         
         return Cache::remember($cacheKey, 900, function () use ($request) { // 15 minutes cache
             $query = Post::with(['category', 'user', 'tags'])
-                ->where('is_published', true);
+                ->where('is_published', true)
+                ->where('approval_status', 'approved'); // Only show approved posts
 
             // Search filter
             if ($request->has('search')) {
@@ -204,6 +205,7 @@ class PostController extends Controller
         $post = Cache::remember($cacheKey, 1800, function () use ($idOrSlug) { // 30 minutes cache
             return Post::with(['category', 'user', 'tags'])
                 ->where('is_published', true)
+                ->where('approval_status', 'approved') // Only show approved posts
                 ->where(function($query) use ($idOrSlug) {
                     if (is_numeric($idOrSlug)) {
                         $query->where('id', $idOrSlug);

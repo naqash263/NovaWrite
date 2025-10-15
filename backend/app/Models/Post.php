@@ -18,6 +18,10 @@ class Post extends Model
         'user_id',
         'published_at',
         'is_published',
+        'approval_status',
+        'rejection_reason',
+        'approved_by',
+        'approved_at',
         'access_level',
         'allowed_user_ids',
         'allowed_group_ids',
@@ -31,6 +35,7 @@ class Post extends Model
         return [
             'published_at' => 'datetime',
             'is_published' => 'boolean',
+            'approved_at' => 'datetime',
             'allowed_user_ids' => 'array',
             'allowed_group_ids' => 'array',
         ];
