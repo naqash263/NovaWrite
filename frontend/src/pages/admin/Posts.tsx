@@ -13,6 +13,7 @@ interface Post {
   featured_image?: string;
   is_published: boolean;
   category_id: number;
+  tags?: Tag[];
 }
 
 interface Category {
@@ -20,9 +21,18 @@ interface Category {
   name: string;
 }
 
+interface Tag {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  color: string;
+}
+
 export default function Posts() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,6 +51,7 @@ export default function Posts() {
     is_published: false,
     meta_description: '',
     meta_keywords: '',
+    tags: [] as number[],
   });
 
   useSEO({ title: 'Manage Posts | Admin' });
@@ -48,6 +59,7 @@ export default function Posts() {
   useEffect(() => {
     fetchPosts();
     fetchCategories();
+    fetchTags();
   }, []);
 
   const fetchPosts = async (page: number = 1) => {
@@ -77,6 +89,15 @@ export default function Posts() {
     }
   };
 
+  const fetchTags = async () => {
+    try {
+      const response = await apiClient.get('/tags');
+      setTags(response.data);
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -103,6 +124,7 @@ export default function Posts() {
       is_published: false,
       meta_description: '',
       meta_keywords: '',
+      tags: [],
     });
     setEditingId(null);
     setShowForm(false);
@@ -118,6 +140,7 @@ export default function Posts() {
       is_published: post.is_published,
       meta_description: post.meta_description || '',
       meta_keywords: post.meta_keywords || '',
+      tags: post.tags ? post.tags.map((tag: Tag) => tag.id) : [],
     });
     setEditingId(post.id);
     setShowForm(true);
@@ -178,6 +201,44 @@ export default function Posts() {
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {tags.map(tag => (
+                    <label key={tag.id} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.tags.includes(tag.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              tags: [...formData.tags, tag.id]
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              tags: formData.tags.filter(id => id !== tag.id)
+                            });
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span 
+                        className="px-2 py-1 text-xs rounded-full text-white"
+                        style={{ backgroundColor: tag.color }}
+                      >
+                        {tag.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {formData.tags.length === 0 && (
+                  <p className="text-sm text-gray-500">No tags selected</p>
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Excerpt</label>

@@ -443,8 +443,16 @@ Route::middleware('api.auth')->group(function () {
     Route::delete('categories/{id}', [CategoryController::class, 'destroy']);
 });
 
+Route::get('tags', [App\Http\Controllers\Api\TagController::class, 'index']);
+Route::middleware('api.auth')->group(function () {
+    Route::post('tags', [App\Http\Controllers\Api\TagController::class, 'store']);
+    Route::get('tags/{id}', [App\Http\Controllers\Api\TagController::class, 'show']);
+    Route::put('tags/{id}', [App\Http\Controllers\Api\TagController::class, 'update']);
+    Route::delete('tags/{id}', [App\Http\Controllers\Api\TagController::class, 'destroy']);
+});
+
 Route::get('posts', [PostController::class, 'index']);
-Route::get('posts/{id}', [PostController::class, 'show']);
+Route::get('posts/{idOrSlug}', [PostController::class, 'show']);
 Route::get('admin/posts', [PostController::class, 'allPosts'])->middleware('api.auth');
 Route::middleware('api.auth')->group(function () {
     Route::post('posts', [PostController::class, 'store']);

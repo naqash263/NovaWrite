@@ -23,6 +23,11 @@ interface Post {
   user: {
     name: string;
   };
+  tags?: {
+    id: number;
+    name: string;
+    color: string;
+  }[];
   files?: any[];
 }
 
@@ -109,6 +114,20 @@ export default function BlogPost() {
                 })}
               </span>
             </div>
+
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-6">
+                {post.tags.map(tag => (
+                  <span
+                    key={tag.id}
+                    className="inline-block text-xs px-3 py-1 rounded-full text-white font-medium"
+                    style={{ backgroundColor: tag.color }}
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            )}
 
             <h1 className="text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
             

@@ -16,7 +16,7 @@ class PostController extends Controller
         $cacheKey = 'posts.index.' . md5(serialize($request->all()));
         
         return Cache::remember($cacheKey, 900, function () use ($request) { // 15 minutes cache
-            $query = Post::with(['category', 'user'])
+            $query = Post::with(['category', 'user', 'tags'])
                 ->where('is_published', true);
 
             if ($request->has('search')) {
@@ -47,6 +47,8 @@ class PostController extends Controller
             'is_published' => 'boolean',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string|max:255',
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:tags,id',
         ]);
 
         $post = Post::create([
@@ -63,11 +65,16 @@ class PostController extends Controller
             'meta_keywords' => $request->meta_keywords,
         ]);
 
+        // Attach tags if provided
+        if ($request->has('tags')) {
+            $post->tags()->attach($request->tags);
+        }
+
         // Clear related caches
         Cache::forget('posts.popular');
         Cache::forget('posts.index.*'); // This would need a more sophisticated cache invalidation
 
-        return response()->json($post->load(['category', 'user']), 201);
+        return response()->json($post->load(['category', 'user', 'tags']), 201);
     }
 
     public function show($idOrSlug)
@@ -75,7 +82,7 @@ class PostController extends Controller
         $cacheKey = "post.{$idOrSlug}";
         
         $post = Cache::remember($cacheKey, 1800, function () use ($idOrSlug) { // 30 minutes cache
-            return Post::with(['category', 'user'])
+            return Post::with(['category', 'user', 'tags'])
                 ->where('is_published', true)
                 ->where(function($query) use ($idOrSlug) {
                     if (is_numeric($idOrSlug)) {
@@ -106,6 +113,8 @@ class PostController extends Controller
             'is_published' => 'boolean',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string|max:255',
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:tags,id',
         ]);
 
         $post->update([
@@ -121,7 +130,12 @@ class PostController extends Controller
             'meta_keywords' => $request->meta_keywords,
         ]);
 
-        return response()->json($post->load(['category', 'user']));
+        // Sync tags if provided
+        if ($request->has('tags')) {
+            $post->tags()->sync($request->tags);
+        }
+
+        return response()->json($post->load(['category', 'user', 'tags']));
     }
 
     public function destroy($id)
@@ -136,7 +150,7 @@ class PostController extends Controller
         $perPage = $request->get('per_page', 10);
         $perPage = min($perPage, 50); // Limit to maximum 50 per page
         
-        $posts = Post::with(['category', 'user'])
+        $posts = Post::with(['category', 'user', 'tags'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
