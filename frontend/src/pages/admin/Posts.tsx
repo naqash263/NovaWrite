@@ -3,6 +3,7 @@ import apiClient from '../../api/axios';
 import Pagination from '../../components/Pagination';
 import EnhancedImageUpload from '../../components/EnhancedImageUpload';
 import AdvancedFilters from '../../components/AdvancedFilters';
+import { useAuthContext } from '../../contexts/AuthContext';
 import { useSEO } from '../../utils/seo';
 
 interface Post {
@@ -17,6 +18,12 @@ interface Post {
   tags?: Tag[];
   created_at: string;
   updated_at: string;
+  approval_status: 'pending' | 'approved' | 'rejected' | 'draft';
+  rejection_reason?: string;
+  approved_by?: number;
+  approved_at?: string;
+  meta_description?: string;
+  meta_keywords?: string;
 }
 
 interface Category {
@@ -33,6 +40,7 @@ interface Tag {
 }
 
 export default function Posts() {
+  const { user } = useAuthContext();
   const [posts, setPosts] = useState<Post[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -45,6 +53,7 @@ export default function Posts() {
     search: '',
     category: '',
     status: '',
+    approval_status: '',
     tags: [] as string[],
     dateFrom: '',
     dateTo: ''
@@ -93,6 +102,17 @@ export default function Posts() {
       ]
     },
     {
+      name: 'approval_status',
+      label: 'Approval Status',
+      type: 'select' as const,
+      options: [
+        { value: 'pending', label: 'Pending' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'draft', label: 'Draft' }
+      ]
+    },
+    {
       name: 'tags',
       label: 'Tags',
       type: 'multiselect' as const,
@@ -134,6 +154,11 @@ export default function Posts() {
       filtered = filtered.filter(post => 
         filters.status === 'published' ? post.is_published : !post.is_published
       );
+    }
+
+    // Approval status filter
+    if (filters.approval_status) {
+      filtered = filtered.filter(post => post.approval_status === filters.approval_status);
     }
 
     // Tags filter
@@ -267,6 +292,68 @@ export default function Posts() {
         fetchPosts(pagination.currentPage);
       } catch (error) {
         console.error('Error deleting post:', error);
+      }
+    }
+  };
+
+  const handleApprove = async (id: number) => {
+    if (confirm('Are you sure you want to approve this post?')) {
+      try {
+        // Find the post in the current posts array
+        const post = posts.find(p => p.id === id);
+        if (!post) {
+          console.error('Post not found');
+          return;
+        }
+
+        // Update the post with approval status
+        await apiClient.put(`/posts/${id}`, {
+          title: post.title,
+          content: post.content,
+          excerpt: post.excerpt,
+          featured_image: post.featured_image,
+          category_id: post.category_id,
+          is_published: post.is_published,
+          approval_status: 'approved',
+          approved_by: user?.id || 1,
+          approved_at: new Date().toISOString(),
+          meta_description: post.meta_description || '',
+          meta_keywords: post.meta_keywords || ''
+        });
+        fetchPosts(pagination.currentPage);
+      } catch (error) {
+        console.error('Error approving post:', error);
+      }
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    const reason = prompt('Please provide a reason for rejection:');
+    if (reason !== null) {
+      try {
+        // Find the post in the current posts array
+        const post = posts.find(p => p.id === id);
+        if (!post) {
+          console.error('Post not found');
+          return;
+        }
+
+        // Update the post with rejection status
+        await apiClient.put(`/posts/${id}`, {
+          title: post.title,
+          content: post.content,
+          excerpt: post.excerpt,
+          featured_image: post.featured_image,
+          category_id: post.category_id,
+          is_published: post.is_published,
+          approval_status: 'rejected',
+          rejection_reason: reason,
+          meta_description: post.meta_description || '',
+          meta_keywords: post.meta_keywords || ''
+        });
+        fetchPosts(pagination.currentPage);
+      } catch (error) {
+        console.error('Error rejecting post:', error);
       }
     }
   };
@@ -439,6 +526,7 @@ export default function Posts() {
           search: '',
           category: '',
           status: '',
+          approval_status: '',
           tags: [],
           dateFrom: '',
           dateTo: ''
@@ -455,6 +543,7 @@ export default function Posts() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured Image</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -479,6 +568,36 @@ export default function Posts() {
                   <span className={`px-2 py-1 text-xs rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                     {post.is_published ? 'Published' : 'Draft'}
                   </span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      post.approval_status === 'approved' ? 'bg-green-100 text-green-800' :
+                      post.approval_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      post.approval_status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {post.approval_status}
+                    </span>
+                    {post.approval_status === 'pending' && (
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => handleApprove(post.id)}
+                          className="text-green-600 hover:text-green-800 text-xs"
+                          title="Approve"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={() => handleReject(post.id)}
+                          className="text-red-600 hover:text-red-800 text-xs"
+                          title="Reject"
+                        >
+                          ✗
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 text-right space-x-2">
                   <button

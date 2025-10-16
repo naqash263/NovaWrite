@@ -2,7 +2,8 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Layout from './components/Layout';
-import ProtectedRoute from './components/ProtectedRoute';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { AuthProvider } from './contexts/AuthContext';
 import { PerformanceOptimizer } from './components/PerformanceOptimizer';
 import { PageLoader } from './components/LoadingComponents';
 import { ToastContainer } from './hooks/use-toast';
@@ -49,6 +50,7 @@ const CvTemplates = lazy(() => import('./pages/admin/CvTemplates'));
 const CvTemplateCreate = lazy(() => import('./pages/admin/CvTemplateCreate'));
 const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
 const GoogleSuccess = lazy(() => import('./pages/auth/GoogleSuccess'));
+const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
@@ -62,10 +64,11 @@ function App() {
   return (
     <ErrorBoundary>
       <PerformanceOptimizer />
-      <BrowserRouter>
-        <Layout>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
+      <AuthProvider>
+        <BrowserRouter>
+          <Layout>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/workflows" element={<Workflows />} />
@@ -81,31 +84,32 @@ function App() {
               <Route path="/courses/:slug" element={<CourseDetail />} />
               <Route path="/my-courses" element={<MyCourses />} />
               <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/admin/courses" element={<ProtectedRoute><AdminCourses /></ProtectedRoute>} />
-              <Route path="/admin/courses/:courseId/lessons" element={<ProtectedRoute><AdminLessons /></ProtectedRoute>} />
-              <Route path="/admin/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
-              <Route path="/admin/posts" element={<ProtectedRoute><Posts /></ProtectedRoute>} />
-              <Route path="/admin/files" element={<ProtectedRoute><Files /></ProtectedRoute>} />
-              <Route path="/admin/workflow-categories" element={<ProtectedRoute><WorkflowCategories /></ProtectedRoute>} />
-              <Route path="/admin/workflows/categories" element={<ProtectedRoute><WorkflowCategories /></ProtectedRoute>} />
-              <Route path="/admin/workflows" element={<ProtectedRoute><AdminWorkflows /></ProtectedRoute>} />
-              <Route path="/admin/test-workflows" element={<ProtectedRoute><TestWorkflows /></ProtectedRoute>} />
-              <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-              <Route path="/admin/user-groups" element={<ProtectedRoute><UserGroups /></ProtectedRoute>} />
-              <Route path="/admin/api-tokens" element={<ProtectedRoute><ApiTokens /></ProtectedRoute>} />
-              <Route path="/admin/api-docs" element={<ProtectedRoute><ApiDocs /></ProtectedRoute>} />
-              <Route path="/admin/tags" element={<ProtectedRoute><Tags /></ProtectedRoute>} />
-              <Route path="/admin/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/admin/email-templates" element={<ProtectedRoute><EmailTemplates /></ProtectedRoute>} />
-              <Route path="/admin/smtp-configurations" element={<ProtectedRoute><SmtpConfigurations /></ProtectedRoute>} />
-              <Route path="/admin/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-              <Route path="/admin/user-activities" element={<ProtectedRoute><UserActivities /></ProtectedRoute>} />
-              <Route path="/admin/home-settings" element={<ProtectedRoute><HomeSettings /></ProtectedRoute>} />
-              <Route path="/admin/gemini-api" element={<ProtectedRoute><GeminiApiManagement /></ProtectedRoute>} />
-              <Route path="/admin/monitoring" element={<ProtectedRoute><Monitoring /></ProtectedRoute>} />
-              <Route path="/admin/cv-templates" element={<ProtectedRoute><CvTemplates /></ProtectedRoute>} />
-              <Route path="/admin/cv-templates/create" element={<ProtectedRoute><CvTemplateCreate /></ProtectedRoute>} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="/admin" element={<ProtectedRoute requireAdmin><Dashboard /></ProtectedRoute>} />
+              <Route path="/admin/courses" element={<ProtectedRoute requireAdmin><AdminCourses /></ProtectedRoute>} />
+              <Route path="/admin/courses/:courseId/lessons" element={<ProtectedRoute requireAdmin><AdminLessons /></ProtectedRoute>} />
+              <Route path="/admin/categories" element={<ProtectedRoute requireAdmin><Categories /></ProtectedRoute>} />
+              <Route path="/admin/posts" element={<ProtectedRoute requireAdmin><Posts /></ProtectedRoute>} />
+              <Route path="/admin/files" element={<ProtectedRoute requireAdmin><Files /></ProtectedRoute>} />
+              <Route path="/admin/workflow-categories" element={<ProtectedRoute requireAdmin><WorkflowCategories /></ProtectedRoute>} />
+              <Route path="/admin/workflows/categories" element={<ProtectedRoute requireAdmin><WorkflowCategories /></ProtectedRoute>} />
+              <Route path="/admin/workflows" element={<ProtectedRoute requireAdmin><AdminWorkflows /></ProtectedRoute>} />
+              <Route path="/admin/test-workflows" element={<ProtectedRoute requireAdmin><TestWorkflows /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute requireAdmin><Users /></ProtectedRoute>} />
+              <Route path="/admin/user-groups" element={<ProtectedRoute requireAdmin><UserGroups /></ProtectedRoute>} />
+              <Route path="/admin/api-tokens" element={<ProtectedRoute requireAdmin><ApiTokens /></ProtectedRoute>} />
+              <Route path="/admin/api-docs" element={<ProtectedRoute requireAdmin><ApiDocs /></ProtectedRoute>} />
+              <Route path="/admin/tags" element={<ProtectedRoute requireAdmin><Tags /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute requireAdmin><Settings /></ProtectedRoute>} />
+              <Route path="/admin/email-templates" element={<ProtectedRoute requireAdmin><EmailTemplates /></ProtectedRoute>} />
+              <Route path="/admin/smtp-configurations" element={<ProtectedRoute requireAdmin><SmtpConfigurations /></ProtectedRoute>} />
+              <Route path="/admin/user-management" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
+              <Route path="/admin/user-activities" element={<ProtectedRoute requireAdmin><UserActivities /></ProtectedRoute>} />
+              <Route path="/admin/home-settings" element={<ProtectedRoute requireAdmin><HomeSettings /></ProtectedRoute>} />
+              <Route path="/admin/gemini-api" element={<ProtectedRoute requireAdmin><GeminiApiManagement /></ProtectedRoute>} />
+              <Route path="/admin/monitoring" element={<ProtectedRoute requireAdmin><Monitoring /></ProtectedRoute>} />
+              <Route path="/admin/cv-templates" element={<ProtectedRoute requireAdmin><CvTemplates /></ProtectedRoute>} />
+              <Route path="/admin/cv-templates/create" element={<ProtectedRoute requireAdmin><CvTemplateCreate /></ProtectedRoute>} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />
@@ -113,13 +117,14 @@ function App() {
               <Route path="/resources/cv-builder" element={<CVBuilder />} />
               <Route path="/resources/watermark-remover" element={<WatermarkRemover />} />
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </Layout>
-        {/* Global Toast and Confirm Dialogs */}
-        <ToastContainer />
-        <ConfirmDialog />
-      </BrowserRouter>
+              </Routes>
+            </Suspense>
+          </Layout>
+          {/* Global Toast and Confirm Dialogs */}
+          <ToastContainer />
+          <ConfirmDialog />
+        </BrowserRouter>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

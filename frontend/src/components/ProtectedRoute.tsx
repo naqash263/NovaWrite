@@ -1,36 +1,36 @@
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuthContext } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireAdmin?: boolean;
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isAuthenticated, loading } = useAuth();
+export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
+  const { isAuthenticated, isAdmin, loading } = useAuthContext();
+  const location = useLocation();
 
+  // Show loading while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
+  // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
-  if (user?.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-4">You don't have permission to access this area.</p>
-          <Navigate to="/" replace />
-        </div>
-      </div>
-    );
+  // Redirect to unauthorized page if admin is required but user is not admin
+  if (requireAdmin && !isAdmin) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <>{children}</>;
 }
+
+export default ProtectedRoute;
