@@ -39,7 +39,7 @@ export default function BlogPost() {
 
   useSEO({
     title: post ? `${post.title} | Naqash Thaheem` : 'Loading...',
-    description: post ? (post.meta_description || post.excerpt || post.content.substring(0, 160).replace(/<[^>]+>/g, '')) : '',
+    description: post ? (post.meta_description || post.excerpt || (post.content ? post.content.substring(0, 160).replace(/<[^>]+>/g, '') : '')) : '',
     type: 'article',
     image: post?.featured_image,
     url: `/blog/${slug}`,
@@ -59,10 +59,14 @@ export default function BlogPost() {
 
   const fetchPost = async () => {
     try {
+      console.log('Fetching post with slug:', slug);
+      console.log('API Base URL:', apiClient.defaults.baseURL);
       const response = await apiClient.get(`/posts/${slug}`);
+      console.log('Post data received:', response.data);
       setPost(response.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching post:', err);
+      console.error('Error details:', err.response?.data);
       setError(true);
     } finally {
       setLoading(false);
