@@ -279,9 +279,8 @@ class PostController extends Controller
         $perPage = $request->get('per_page', 10);
         $perPage = min($perPage, 50); // Limit to maximum 50 per page
         
+        // Admin API should show all posts regardless of approval status
         $posts = Post::with(['category', 'user', 'tags'])
-            ->where('is_published', true)
-            ->where('approval_status', 'approved') // Only show approved posts
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
