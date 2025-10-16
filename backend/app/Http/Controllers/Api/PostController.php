@@ -169,6 +169,10 @@ class PostController extends Controller
             'is_published' => 'boolean',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string|max:255',
+            'approval_status' => 'nullable|in:pending,approved,rejected,draft',
+            'approved_by' => 'nullable|integer|exists:users,id',
+            'approved_at' => 'nullable|date',
+            'rejection_reason' => 'nullable|string',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
         ]);
@@ -185,6 +189,10 @@ class PostController extends Controller
             'published_at' => $request->is_published ? now() : null,
             'meta_description' => $request->meta_description,
             'meta_keywords' => $request->meta_keywords,
+            'approval_status' => $request->approval_status ?? 'pending',
+            'approved_by' => $request->approved_by,
+            'approved_at' => $request->approved_at,
+            'rejection_reason' => $request->rejection_reason,
         ]);
 
         // Attach tags if provided
