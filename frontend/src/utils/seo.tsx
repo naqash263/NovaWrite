@@ -34,6 +34,78 @@ export function useSEO({
   customStructuredData
 }: SEOProps) {
   useEffect(() => {
+    // SEO validation and warnings
+    const warnings: string[] = [];
+    
+    if (!title || title.trim() === '') {
+      warnings.push('⚠️ SEO Warning: Page title is missing or empty');
+    }
+    
+    if (!description || description.trim() === '') {
+      warnings.push('⚠️ SEO Warning: Meta description is missing');
+    } else if (description.length < 120) {
+      warnings.push('⚠️ SEO Warning: Meta description is too short (recommended: 120-160 characters)');
+    } else if (description.length > 160) {
+      warnings.push('⚠️ SEO Warning: Meta description is too long (recommended: 120-160 characters)');
+    }
+    
+    if (!image || image.trim() === '') {
+      warnings.push('⚠️ SEO Warning: Open Graph image is missing');
+    }
+    
+    if (!url || url.trim() === '') {
+      warnings.push('⚠️ SEO Warning: Canonical URL is missing');
+    }
+    
+    if (type === 'article') {
+      if (!publishedTime) {
+        warnings.push('⚠️ SEO Warning: Article published time is missing');
+      }
+      if (keywords.length === 0) {
+        warnings.push('⚠️ SEO Warning: Article tags/keywords are missing');
+      }
+    }
+    
+    // Calculate SEO score
+    let seoScore = 100;
+    const totalChecks = 8; // Total number of SEO checks
+    const scoreDeduction = 100 / totalChecks;
+    
+    if (!title || title.trim() === '') seoScore -= scoreDeduction;
+    if (!description || description.trim() === '') seoScore -= scoreDeduction;
+    if (description && (description.length < 120 || description.length > 160)) seoScore -= scoreDeduction / 2;
+    if (!image || image.trim() === '') seoScore -= scoreDeduction;
+    if (!url || url.trim() === '') seoScore -= scoreDeduction;
+    if (type === 'article' && !publishedTime) seoScore -= scoreDeduction;
+    if (type === 'article' && (!keywords || keywords.length === 0)) seoScore -= scoreDeduction;
+    if (type === 'article' && !modifiedTime) seoScore -= scoreDeduction / 2;
+    
+    const finalScore = Math.max(0, Math.round(seoScore));
+    
+    // Log SEO analysis in development
+    if (import.meta.env.DEV) {
+      console.group(`🔍 SEO Analysis - Score: ${finalScore}/100`);
+      
+      if (warnings.length > 0) {
+        warnings.forEach(warning => console.warn(warning));
+      } else {
+        console.log('✅ All SEO elements are properly configured!');
+      }
+      
+      // Show score breakdown
+      if (finalScore >= 90) {
+        console.log('🟢 Excellent SEO score!');
+      } else if (finalScore >= 70) {
+        console.log('🟡 Good SEO score, minor improvements needed');
+      } else if (finalScore >= 50) {
+        console.log('🟠 Fair SEO score, several improvements needed');
+      } else {
+        console.log('🔴 Poor SEO score, major improvements needed');
+      }
+      
+      console.groupEnd();
+    }
+    
     // Set page title
     document.title = title;
     
@@ -54,7 +126,7 @@ export function useSEO({
       setMetaTag('description', description);
     }
     
-    if (keywords.length > 0) {
+    if (keywords && keywords.length > 0) {
       setMetaTag('keywords', keywords.join(', '));
     }
     
@@ -66,7 +138,15 @@ export function useSEO({
       setMetaTag('og:description', description, true);
     }
     setMetaTag('og:type', type, true);
-    setMetaTag('og:image', image.startsWith('http') ? image : `${window.location.origin}${image}`, true);
+    
+    // Safe image handling with fallback
+    const safeImage = image || '/images/og-default.jpg';
+    if (safeImage.startsWith('http')) {
+      setMetaTag('og:image', safeImage, true);
+    } else {
+      setMetaTag('og:image', `${window.location.origin}${safeImage}`, true);
+    }
+    
     setMetaTag('og:site_name', 'Naqash Thaheem - Systems Analyst & Automation Specialist', true);
     
     if (url) {
@@ -84,7 +164,7 @@ export function useSEO({
       if (modifiedTime) {
         setMetaTag('article:modified_time', modifiedTime, true);
       }
-      if (keywords.length > 0) {
+      if (keywords && keywords.length > 0) {
         keywords.forEach(keyword => {
           const meta = document.createElement('meta');
           meta.setAttribute('property', 'article:tag');
@@ -102,7 +182,13 @@ export function useSEO({
     if (description) {
       setMetaTag('twitter:description', description);
     }
-    setMetaTag('twitter:image', image.startsWith('http') ? image : `${window.location.origin}${image}`);
+    
+    // Safe Twitter image handling
+    if (safeImage.startsWith('http')) {
+      setMetaTag('twitter:image', safeImage);
+    } else {
+      setMetaTag('twitter:image', `${window.location.origin}${safeImage}`);
+    }
     
     // Canonical URL
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;

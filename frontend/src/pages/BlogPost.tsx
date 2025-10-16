@@ -59,14 +59,10 @@ export default function BlogPost() {
 
   const fetchPost = async () => {
     try {
-      console.log('Fetching post with slug:', slug);
-      console.log('API Base URL:', apiClient.defaults.baseURL);
       const response = await apiClient.get(`/posts/${slug}`);
-      console.log('Post data received:', response.data);
       setPost(response.data);
     } catch (err: any) {
       console.error('Error fetching post:', err);
-      console.error('Error details:', err.response?.data);
       setError(true);
     } finally {
       setLoading(false);
