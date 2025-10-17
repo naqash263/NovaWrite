@@ -730,6 +730,7 @@ Route::prefix('cv-ai')->group(function () {
     Route::post('add-user-key', [\App\Http\Controllers\Api\CvAiController::class, 'addUserApiKey']);
     Route::get('debug-keys', [\App\Http\Controllers\Api\CvAiController::class, 'debugApiKeys']); // Temporary debug endpoint
     Route::get('fix-keys', [\App\Http\Controllers\Api\CvAiController::class, 'fixApiKeys']); // Temporary fix endpoint
+    Route::post('create-temp-key', [\App\Http\Controllers\Api\CvAiController::class, 'createTempApiKey']); // Emergency fix endpoint
 });
 
 // Public CV Template API
