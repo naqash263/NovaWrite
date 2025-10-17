@@ -90,7 +90,25 @@ alwaysApply: true
 - ✅ ALWAYS check for console errors in browser
 - ✅ ALWAYS verify API responses with Postman/curl
 
-## 10. Production Deployment Checklist
+## 10. Production Deployment Wait Time
+- ⚠️ CRITICAL: Production deployments take at least 2 minutes and 30 seconds to complete
+- ❌ NEVER test endpoints immediately after pushing changes to production
+- ✅ ALWAYS wait for deployment to finish before testing
+- ✅ ALWAYS wait 2.5 minutes after git push before testing production endpoints
+- ✅ ALWAYS check deployment status before testing
+
+## 11. Encryption Key Management
+- ❌ NEVER share encryption keys between environments (local, staging, production)
+- ❌ NEVER migrate encrypted data between environments
+- ❌ NEVER run `php artisan key:generate` on production without backup
+- ✅ ALWAYS generate unique APP_KEY for each environment
+- ✅ ALWAYS test encryption/decryption after deployment
+- ✅ ALWAYS use environment-specific configuration files
+- ✅ ALWAYS have fallback mechanisms for encrypted data
+- ✅ ALWAYS monitor encryption health with `/api/cv-ai/check-encryption`
+- ⚠️ CRITICAL: API keys encrypted with wrong key cause "The MAC is invalid" error
+
+## 12. Production Deployment Checklist
 - [ ] All migrations have safety checks
 - [ ] No localhost URLs in code
 - [ ] Frontend .env has production URLs
@@ -99,6 +117,9 @@ alwaysApply: true
 - [ ] Permissions set (775 for storage)
 - [ ] Caches cleared and rebuilt
 - [ ] Browser cache cleared after deployment
+- [ ] Encryption keys are environment-specific
+- [ ] API keys can be decrypted successfully
+- [ ] Wait 2.5 minutes after deployment before testing
 
 # Common Mistakes & Solutions
 
@@ -207,6 +228,31 @@ if (!$lesson->canBeAccessedByUser($user->id)) {
         'error' => 'Prerequisites not met'
     ], 403);
 }
+```
+
+## Mistake 9: "The MAC is invalid" error on CV upload
+**Cause:** API keys encrypted with different encryption key than production
+**Solution:**
+```bash
+# Check encryption health
+curl https://naqashthaheem.com/api/cv-ai/check-encryption
+
+# Create emergency working key
+curl -X POST https://naqashthaheem.com/api/cv-ai/create-temp-key
+
+# Add real API key through admin panel
+# Or manually update database with correct encrypted key
+```
+
+## Mistake 10: Testing too early after deployment
+**Cause:** Not waiting for deployment to complete
+**Solution:**
+```bash
+# ALWAYS wait 2.5 minutes after git push
+sleep 150
+
+# Then test endpoints
+curl https://naqashthaheem.com/api/health
 ```
 
 Try to open the browser's developer tools by opening the page when ever request to test on browser
