@@ -192,8 +192,14 @@ class CvAiService
                     }
                 } catch (\Exception $e) {
                     Log::error('Failed to decrypt Gemini API key: ' . $e->getMessage());
-                    // If decryption fails completely, throw an exception
-                    throw new \Exception('Failed to decrypt API key. Please contact support.');
+                    // If decryption fails, use fallback API key
+                    $fallbackKey = env('FALLBACK_GEMINI_API_KEY');
+                    if ($fallbackKey && strpos($fallbackKey, 'AIza') === 0) {
+                        Log::warning('Using fallback API key due to decryption failure');
+                        $apiKeyValue = $fallbackKey;
+                    } else {
+                        throw new \Exception('Failed to decrypt API key and no fallback available. Please contact support.');
+                    }
                 }
             } else {
                 // For PDO objects or other types
