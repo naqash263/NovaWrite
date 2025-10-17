@@ -142,12 +142,12 @@ export const CvPreview = ({ data, style, template }: CvPreviewProps) => {
   templateHTML = templateHTML.replace(/\{\{fontSize\}\}/g, style.fontSize.toString());
 
   // Replace CV data placeholders
-  templateHTML = templateHTML.replace(/\{\{fullName\}\}/g, data.fullName || '');
-  templateHTML = templateHTML.replace(/\{\{jobTitle\}\}/g, data.jobTitle || '');
-  templateHTML = templateHTML.replace(/\{\{email\}\}/g, data.email || '');
-  templateHTML = templateHTML.replace(/\{\{phoneNumber\}\}/g, data.phoneNumber || '');
-  templateHTML = templateHTML.replace(/\{\{address\}\}/g, data.address || '');
-  templateHTML = templateHTML.replace(/\{\{professionalSummary\}\}/g, data.professionalSummary || '');
+  templateHTML = templateHTML.replace(/\{\{fullName\}\}/g, (data.fullName || ''));
+  templateHTML = templateHTML.replace(/\{\{jobTitle\}\}/g, (data.jobTitle || ''));
+  templateHTML = templateHTML.replace(/\{\{email\}\}/g, (data.email || ''));
+  templateHTML = templateHTML.replace(/\{\{phoneNumber\}\}/g, (data.phoneNumber || ''));
+  templateHTML = templateHTML.replace(/\{\{address\}\}/g, (data.address || ''));
+  templateHTML = templateHTML.replace(/\{\{professionalSummary\}\}/g, (data.professionalSummary || ''));
   
   // Handle all array data types
   if (data.workExperience && data.workExperience.length > 0) {
@@ -188,7 +188,7 @@ export const CvPreview = ({ data, style, template }: CvPreviewProps) => {
 
   // Skills remain as text
   if (data.skills) {
-    templateHTML = templateHTML.replace(/\{\{skills\}\}/g, data.skills);
+    templateHTML = templateHTML.replace(/\{\{skills\}\}/g, (data.skills || ''));
   } else {
     templateHTML = templateHTML.replace(/\{\{skills\}\}/g, '<!-- no-skills -->');
   }
