@@ -1,0 +1,710 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use App\Models\CvTemplate;
+use App\Models\User;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        // Get the first admin user
+        $admin = User::where('role', 'admin')->first();
+        if (!$admin) {
+            $admin = User::create([
+                'name' => 'Admin User',
+                'email' => 'admin@novawrite.com',
+                'password' => bcrypt('password'),
+                'role' => 'admin',
+                'email_verified_at' => now(),
+            ]);
+        }
+
+        // Delete existing templates to replace them with updated ones
+        CvTemplate::truncate();
+
+        $templates = [
+            [
+                'name' => 'Jobscan Executive',
+                'description' => 'Professional executive template optimized for ATS systems. Clean, single-column layout with strong visual hierarchy.',
+                'category' => 'executive',
+                'ats_score' => 9,
+                'is_default' => true,
+                'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
+                'field_mappings' => [
+                    '{{fullName}}' => 'fullName',
+                    '{{jobTitle}}' => 'jobTitle',
+                    '{{email}}' => 'email',
+                    '{{phoneNumber}}' => 'phoneNumber',
+                    '{{address}}' => 'address',
+                    '{{professionalSummary}}' => 'professionalSummary',
+                    '{{workExperience}}' => 'workExperience',
+                    '{{education}}' => 'education',
+                    '{{skills}}' => 'skills',
+                    '{{projects}}' => 'projects',
+                    '{{certificates}}' => 'certificates',
+                    '{{languages}}' => 'languages',
+                    '{{achievements}}' => 'achievements',
+                    '{{interests}}' => 'interests',
+                    '{{references}}' => 'references',
+                    '{{primaryColor}}' => 'primaryColor',
+                    '{{secondaryColor}}' => 'secondaryColor',
+                    '{{fontFamily}}' => 'fontFamily',
+                    '{{fontSize}}' => 'fontSize'
+                ],
+                'html_content' => $this->getJobscanExecutiveTemplate(),
+                'json_config' => [
+                    'layout' => 'single-column',
+                    'sections' => ['header', 'summary', 'experience', 'education', 'skills'],
+                    'features' => ['ATS-optimized', 'Executive style', 'Clean layout']
+                ]
+            ],
+            [
+                'name' => 'Microsoft Professional',
+                'description' => 'Classic professional template with balanced layout. Perfect for mid-level professionals.',
+                'category' => 'professional',
+                'ats_score' => 8,
+                'is_default' => false,
+                'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
+                'field_mappings' => [
+                    '{{fullName}}' => 'fullName',
+                    '{{jobTitle}}' => 'jobTitle',
+                    '{{email}}' => 'email',
+                    '{{phoneNumber}}' => 'phoneNumber',
+                    '{{address}}' => 'address',
+                    '{{professionalSummary}}' => 'professionalSummary',
+                    '{{workExperience}}' => 'workExperience',
+                    '{{education}}' => 'education',
+                    '{{skills}}' => 'skills',
+                    '{{projects}}' => 'projects',
+                    '{{certificates}}' => 'certificates',
+                    '{{languages}}' => 'languages',
+                    '{{achievements}}' => 'achievements',
+                    '{{interests}}' => 'interests',
+                    '{{references}}' => 'references',
+                    '{{primaryColor}}' => 'primaryColor',
+                    '{{secondaryColor}}' => 'secondaryColor',
+                    '{{fontFamily}}' => 'fontFamily',
+                    '{{fontSize}}' => 'fontSize'
+                ],
+                'html_content' => $this->getMicrosoftProfessionalTemplate(),
+                'json_config' => [
+                    'layout' => 'two-column',
+                    'sections' => ['header', 'summary', 'experience', 'education', 'skills', 'certifications'],
+                    'features' => ['Professional', 'Balanced layout', 'ATS-friendly']
+                ]
+            ],
+            [
+                'name' => 'Novoresume Modern',
+                'description' => 'Modern, clean template with card-based design. Great for creative professionals.',
+                'category' => 'modern',
+                'ats_score' => 8,
+                'is_default' => false,
+                'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
+                'field_mappings' => [
+                    '{{fullName}}' => 'fullName',
+                    '{{jobTitle}}' => 'jobTitle',
+                    '{{email}}' => 'email',
+                    '{{phoneNumber}}' => 'phoneNumber',
+                    '{{address}}' => 'address',
+                    '{{professionalSummary}}' => 'professionalSummary',
+                    '{{workExperience}}' => 'workExperience',
+                    '{{education}}' => 'education',
+                    '{{skills}}' => 'skills',
+                    '{{projects}}' => 'projects',
+                    '{{certificates}}' => 'certificates',
+                    '{{languages}}' => 'languages',
+                    '{{achievements}}' => 'achievements',
+                    '{{interests}}' => 'interests',
+                    '{{references}}' => 'references',
+                    '{{primaryColor}}' => 'primaryColor',
+                    '{{secondaryColor}}' => 'secondaryColor',
+                    '{{fontFamily}}' => 'fontFamily',
+                    '{{fontSize}}' => 'fontSize'
+                ],
+                'html_content' => $this->getNovoresumeModernTemplate(),
+                'json_config' => [
+                    'layout' => 'modern-cards',
+                    'sections' => ['header', 'summary', 'experience', 'education', 'skills', 'projects'],
+                    'features' => ['Modern design', 'Card layout', 'Visual appeal']
+                ]
+            ]
+        ];
+
+        foreach ($templates as $templateData) {
+            CvTemplate::create([
+                ...$templateData,
+                'created_by' => $admin->id,
+                'is_active' => true,
+            ]);
+        }
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        // This migration is not reversible as it replaces all templates
+    }
+
+    private function getJobscanExecutiveTemplate(): string
+    {
+        return '
+        <div class="cv-template jobscan-executive" style="font-family: {{fontFamily}}; font-size: {{fontSize}}px; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px;">
+            <style>
+                .cv-template { background: white; }
+                .header { text-align: center; border-bottom: 3px solid {{primaryColor}}; padding-bottom: 20px; margin-bottom: 30px; }
+                .name { font-size: 28px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 5px; }
+                .title { font-size: 18px; color: {{secondaryColor}}; margin-bottom: 10px; }
+                .contact { font-size: 14px; color: #666; }
+                .section { margin-bottom: 25px; }
+                .section-title { font-size: 16px; font-weight: bold; color: {{primaryColor}}; border-bottom: 2px solid {{primaryColor}}; padding-bottom: 5px; margin-bottom: 15px; }
+                
+                /* Enhanced array formatting */
+                .experience-card, .project-card, .certificate-item, .education-item, .achievement-item { 
+                    margin-bottom: 20px; 
+                    padding: 15px; 
+                    border-left: 4px solid {{primaryColor}}; 
+                    background: #fafafa; 
+                    border-radius: 0 8px 8px 0;
+                    transition: all 0.3s ease;
+                }
+                .experience-card:hover, .project-card:hover, .certificate-item:hover, .education-item:hover, .achievement-item:hover {
+                    transform: translateX(5px);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                }
+                
+                .experience-header, .project-header, .certificate-header, .education-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 8px;
+                }
+                
+                .item-title { 
+                    font-weight: bold; 
+                    font-size: 16px; 
+                    color: #2c3e50;
+                    margin-bottom: 4px;
+                }
+                .item-subtitle { 
+                    color: {{secondaryColor}}; 
+                    font-size: 14px; 
+                    font-weight: 500;
+                    margin-bottom: 4px;
+                }
+                .item-date { 
+                    color: #666; 
+                    font-size: 12px; 
+                    font-weight: 500;
+                    background: #e8f4f8;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    white-space: nowrap;
+                }
+                .item-description { 
+                    margin-top: 8px; 
+                    font-size: 13px; 
+                    line-height: 1.5; 
+                    color: #555;
+                }
+                
+                /* Tech tags and links */
+                .tech-tags { margin: 8px 0; }
+                .tech-tag { 
+                    background: {{primaryColor}}; 
+                    color: white; 
+                    padding: 3px 10px; 
+                    border-radius: 15px; 
+                    font-size: 11px; 
+                    margin-right: 6px; 
+                    display: inline-block;
+                    margin-bottom: 4px;
+                }
+                .project-link, .certificate-link { 
+                    color: {{primaryColor}}; 
+                    text-decoration: none; 
+                    font-size: 12px; 
+                    font-weight: 500;
+                    border-bottom: 1px solid transparent;
+                    transition: border-bottom 0.3s ease;
+                }
+                .project-link:hover, .certificate-link:hover {
+                    border-bottom-color: {{primaryColor}};
+                }
+                
+                /* Language and achievement formatting */
+                .language-item { 
+                    display: flex; 
+                    justify-content: space-between; 
+                    align-items: center;
+                    margin-bottom: 8px; 
+                    padding: 8px 12px;
+                    background: #f8f9fa;
+                    border-radius: 6px;
+                }
+                .language-name { font-weight: 500; }
+                .proficiency-level { 
+                    font-style: italic; 
+                    color: #666; 
+                    font-size: 12px;
+                    background: #e9ecef;
+                    padding: 2px 8px;
+                    border-radius: 10px;
+                }
+                
+                /* Skills formatting */
+                .skills-container {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 10px;
+                }
+                .skill-category {
+                    background: #f8f9fa;
+                    padding: 12px;
+                    border-radius: 6px;
+                    border-left: 3px solid {{primaryColor}};
+                }
+                
+                /* Interests and References formatting */
+                .interest-item, .reference-item {
+                    margin-bottom: 12px;
+                    padding: 10px;
+                    background: #f8f9fa;
+                    border-radius: 6px;
+                    border-left: 3px solid {{primaryColor}};
+                }
+                .interest-name {
+                    font-weight: 500;
+                    color: #2c3e50;
+                }
+                .contact-info {
+                    margin-top: 5px;
+                    font-size: 12px;
+                    color: #666;
+                }
+                .contact-item {
+                    display: block;
+                    margin-bottom: 2px;
+                }
+                
+                /* Print styles */
+                @media print {
+                    .cv-template { box-shadow: none; border-radius: 0; }
+                    .experience-card:hover, .project-card:hover, .certificate-item:hover, .education-item:hover, .achievement-item:hover {
+                        transform: none; box-shadow: none;
+                    }
+                }
+            </style>
+            
+            <div class="header">
+                <div class="name">{{fullName}}</div>
+                <div class="title">{{jobTitle}}</div>
+                <div class="contact">{{email}} | {{phoneNumber}} | {{address}}</div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Professional Summary</div>
+                <div class="item-description">{{professionalSummary}}</div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Work Experience</div>
+                {{workExperience}}
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Education</div>
+                {{education}}
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Skills</div>
+                <div class="skills-container">{{skills}}</div>
+            </div>
+        </div>';
+    }
+
+    private function getMicrosoftProfessionalTemplate(): string
+    {
+        return '
+        <div class="cv-template microsoft-professional" style="font-family: {{fontFamily}}; font-size: {{fontSize}}px; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 6px;">
+            <style>
+                .cv-template { background: white; }
+                .header { border-left: 4px solid {{primaryColor}}; padding-left: 20px; margin-bottom: 30px; }
+                .name { font-size: 24px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 5px; }
+                .title { font-size: 16px; color: {{secondaryColor}}; margin-bottom: 10px; }
+                .contact { font-size: 13px; color: #666; }
+                .section { margin-bottom: 25px; }
+                .section-title { font-size: 15px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 12px; }
+                
+                /* Enhanced array formatting with two-column layout */
+                .experience-card, .project-card, .certificate-item, .education-item, .achievement-item { 
+                    margin-bottom: 18px; 
+                    padding: 16px; 
+                    border: 1px solid #e1e5e9;
+                    border-left: 4px solid {{primaryColor}}; 
+                    background: #ffffff; 
+                    border-radius: 4px;
+                    transition: all 0.2s ease;
+                }
+                .experience-card:hover, .project-card:hover, .certificate-item:hover, .education-item:hover, .achievement-item:hover {
+                    border-left-color: {{secondaryColor}};
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                }
+                
+                .experience-header, .project-header, .certificate-header, .education-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 6px;
+                }
+                
+                .item-title { 
+                    font-weight: bold; 
+                    font-size: 15px; 
+                    color: #2c3e50;
+                    margin-bottom: 3px;
+                }
+                .item-subtitle { 
+                    color: {{secondaryColor}}; 
+                    font-size: 13px; 
+                    font-weight: 500;
+                    margin-bottom: 3px;
+                }
+                .item-date { 
+                    color: #666; 
+                    font-size: 11px; 
+                    font-weight: 500;
+                    background: #f1f3f4;
+                    padding: 2px 6px;
+                    border-radius: 10px;
+                    white-space: nowrap;
+                }
+                .item-description { 
+                    margin-top: 6px; 
+                    font-size: 12px; 
+                    line-height: 1.4; 
+                    color: #555;
+                }
+                
+                /* Tech tags and links */
+                .tech-tags { margin: 6px 0; }
+                .tech-tag { 
+                    background: {{primaryColor}}; 
+                    color: white; 
+                    padding: 2px 8px; 
+                    border-radius: 12px; 
+                    font-size: 10px; 
+                    margin-right: 4px; 
+                    display: inline-block;
+                    margin-bottom: 3px;
+                }
+                .project-link, .certificate-link { 
+                    color: {{primaryColor}}; 
+                    text-decoration: none; 
+                    font-size: 11px; 
+                    font-weight: 500;
+                }
+                .project-link:hover, .certificate-link:hover {
+                    text-decoration: underline;
+                }
+                
+                /* Language and achievement formatting */
+                .language-item { 
+                    display: flex; 
+                    justify-content: space-between; 
+                    align-items: center;
+                    margin-bottom: 6px; 
+                    padding: 6px 10px;
+                    background: #f8f9fa;
+                    border-radius: 4px;
+                }
+                .language-name { font-weight: 500; font-size: 13px; }
+                .proficiency-level { 
+                    font-style: italic; 
+                    color: #666; 
+                    font-size: 11px;
+                    background: #e9ecef;
+                    padding: 1px 6px;
+                    border-radius: 8px;
+                }
+                
+                /* Skills formatting */
+                .skills-container {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                    gap: 8px;
+                }
+                .skill-category {
+                    background: #f8f9fa;
+                    padding: 10px;
+                    border-radius: 4px;
+                    border-left: 3px solid {{primaryColor}};
+                    font-size: 12px;
+                }
+                
+                /* Interests and References formatting */
+                .interest-item, .reference-item {
+                    margin-bottom: 10px;
+                    padding: 8px;
+                    background: #f8f9fa;
+                    border-radius: 4px;
+                    border-left: 3px solid {{primaryColor}};
+                }
+                .interest-name {
+                    font-weight: 500;
+                    color: #2c3e50;
+                    font-size: 13px;
+                }
+                .contact-info {
+                    margin-top: 4px;
+                    font-size: 11px;
+                    color: #666;
+                }
+                .contact-item {
+                    display: block;
+                    margin-bottom: 2px;
+                }
+                
+                /* Print styles */
+                @media print {
+                    .cv-template { box-shadow: none; border-radius: 0; }
+                    .experience-card:hover, .project-card:hover, .certificate-item:hover, .education-item:hover, .achievement-item:hover {
+                        border-left-color: {{primaryColor}}; box-shadow: none;
+                    }
+                }
+            </style>
+            
+            <div class="header">
+                <div class="name">{{fullName}}</div>
+                <div class="title">{{jobTitle}}</div>
+                <div class="contact">{{email}} | {{phoneNumber}} | {{address}}</div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Professional Summary</div>
+                <div class="item-description">{{professionalSummary}}</div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Work Experience</div>
+                {{workExperience}}
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Education</div>
+                {{education}}
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Skills</div>
+                <div class="skills-container">{{skills}}</div>
+            </div>
+        </div>';
+    }
+
+    private function getNovoresumeModernTemplate(): string
+    {
+        return '
+        <div class="cv-template novoresume-modern" style="font-family: {{fontFamily}}; font-size: {{fontSize}}px; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); border-radius: 12px;">
+            <style>
+                .cv-template { background: white; }
+                .header { background: linear-gradient(135deg, {{primaryColor}}, {{secondaryColor}}); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center; }
+                .name { font-size: 26px; font-weight: bold; margin-bottom: 5px; }
+                .title { font-size: 16px; opacity: 0.9; margin-bottom: 10px; }
+                .contact { font-size: 13px; opacity: 0.8; }
+                .section { margin-bottom: 25px; background: #f8f9fa; padding: 20px; border-radius: 8px; }
+                .section-title { font-size: 16px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 15px; }
+                
+                /* Enhanced array formatting with modern card design */
+                .experience-card, .project-card, .certificate-item, .education-item, .achievement-item { 
+                    margin-bottom: 20px; 
+                    padding: 20px; 
+                    background: white; 
+                    border-radius: 12px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                    border: 1px solid #e9ecef;
+                    transition: all 0.3s ease;
+                    position: relative;
+                    overflow: hidden;
+                }
+                .experience-card::before, .project-card::before, .certificate-item::before, .education-item::before, .achievement-item::before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 4px;
+                    height: 100%;
+                    background: linear-gradient(135deg, {{primaryColor}}, {{secondaryColor}});
+                }
+                .experience-card:hover, .project-card:hover, .certificate-item:hover, .education-item:hover, .achievement-item:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                }
+                
+                .experience-header, .project-header, .certificate-header, .education-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 10px;
+                }
+                
+                .item-title { 
+                    font-weight: bold; 
+                    font-size: 16px; 
+                    color: #2c3e50;
+                    margin-bottom: 5px;
+                }
+                .item-subtitle { 
+                    color: {{secondaryColor}}; 
+                    font-size: 14px; 
+                    font-weight: 500;
+                    margin-bottom: 5px;
+                }
+                .item-date { 
+                    color: #666; 
+                    font-size: 12px; 
+                    font-weight: 500;
+                    background: linear-gradient(135deg, {{primaryColor}}, {{secondaryColor}});
+                    color: white;
+                    padding: 4px 12px;
+                    border-radius: 15px;
+                    white-space: nowrap;
+                }
+                .item-description { 
+                    margin-top: 10px; 
+                    font-size: 13px; 
+                    line-height: 1.5; 
+                    color: #555;
+                }
+                
+                /* Tech tags and links */
+                .tech-tags { margin: 10px 0; }
+                .tech-tag { 
+                    background: linear-gradient(135deg, {{primaryColor}}, {{secondaryColor}}); 
+                    color: white; 
+                    padding: 4px 12px; 
+                    border-radius: 20px; 
+                    font-size: 11px; 
+                    margin-right: 8px; 
+                    display: inline-block;
+                    margin-bottom: 6px;
+                    font-weight: 500;
+                }
+                .project-link, .certificate-link { 
+                    color: {{primaryColor}}; 
+                    text-decoration: none; 
+                    font-size: 12px; 
+                    font-weight: 500;
+                    border-bottom: 2px solid transparent;
+                    transition: border-bottom 0.3s ease;
+                }
+                .project-link:hover, .certificate-link:hover {
+                    border-bottom-color: {{primaryColor}};
+                }
+                
+                /* Language and achievement formatting */
+                .language-item { 
+                    display: flex; 
+                    justify-content: space-between; 
+                    align-items: center;
+                    margin-bottom: 10px; 
+                    padding: 12px 16px;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                }
+                .language-name { font-weight: 500; font-size: 14px; }
+                .proficiency-level { 
+                    font-style: italic; 
+                    color: #666; 
+                    font-size: 12px;
+                    background: #f8f9fa;
+                    padding: 3px 10px;
+                    border-radius: 12px;
+                }
+                
+                /* Skills formatting */
+                .skills-container {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 12px;
+                }
+                .skill-category {
+                    background: white;
+                    padding: 15px;
+                    border-radius: 8px;
+                    border-left: 4px solid {{primaryColor}};
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                    font-size: 13px;
+                }
+                
+                /* Interests and References formatting */
+                .interest-item, .reference-item {
+                    margin-bottom: 15px;
+                    padding: 12px;
+                    background: white;
+                    border-radius: 8px;
+                    border-left: 4px solid {{primaryColor}};
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                }
+                .interest-name {
+                    font-weight: 500;
+                    color: #2c3e50;
+                    font-size: 14px;
+                }
+                .contact-info {
+                    margin-top: 6px;
+                    font-size: 12px;
+                    color: #666;
+                }
+                .contact-item {
+                    display: block;
+                    margin-bottom: 3px;
+                }
+                
+                /* Print styles */
+                @media print {
+                    .cv-template { box-shadow: none; border-radius: 0; }
+                    .experience-card:hover, .project-card:hover, .certificate-item:hover, .education-item:hover, .achievement-item:hover {
+                        transform: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                    }
+                }
+            </style>
+            
+            <div class="header">
+                <div class="name">{{fullName}}</div>
+                <div class="title">{{jobTitle}}</div>
+                <div class="contact">{{email}} | {{phoneNumber}} | {{address}}</div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Professional Summary</div>
+                <div class="item-description">{{professionalSummary}}</div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Work Experience</div>
+                {{workExperience}}
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Education</div>
+                {{education}}
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Skills</div>
+                <div class="skills-container">{{skills}}</div>
+            </div>
+        </div>';
+    }
+};
