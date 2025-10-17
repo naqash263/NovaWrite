@@ -481,11 +481,25 @@ class CvAiController extends Controller
                 ->withRemainingRequests()
                 ->first();
 
-            return $adminApiKey;
+            if ($adminApiKey) {
+                return $adminApiKey;
+            }
+
+            // If no API keys found, return null instead of trying PDO
+            Log::warning('No available API keys found in database');
+            return null;
         } catch (\Exception $e) {
-            // If Laravel connection fails, use direct PDO
-            Log::warning('Laravel database connection failed in controller, using direct PDO: ' . $e->getMessage());
-            return $this->getAvailableApiKeyWithPDO();
+            // Only use PDO fallback for actual database connection errors
+            if (strpos($e->getMessage(), 'Connection') !== false || 
+                strpos($e->getMessage(), 'database') !== false ||
+                strpos($e->getMessage(), 'SQL') !== false) {
+                Log::warning('Laravel database connection failed in controller, using direct PDO: ' . $e->getMessage());
+                return $this->getAvailableApiKeyWithPDO();
+            } else {
+                // For other errors (like MAC validation), log and return null
+                Log::error('API key retrieval failed: ' . $e->getMessage());
+                return null;
+            }
         }
     }
 
@@ -495,8 +509,16 @@ class CvAiController extends Controller
     private function getAvailableApiKeyWithPDO()
     {
         try {
-            $pdo = new \PDO('pgsql:dbname=novawrite_local');
-            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            // Use the correct production database connection
+            $pdo = new \PDO(
+                'pgsql:host=' . env('DB_HOST', 'localhost') . 
+                ';port=' . env('DB_PORT', '5432') . 
+                ';dbname=' . env('DB_DATABASE', 'novawrite') . 
+                ';user=' . env('DB_USERNAME', 'postgres') . 
+                ';password=' . env('DB_PASSWORD', ''),
+                null,
+                [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
+            );
 
             // Try to get a user API key first (if authenticated)
             $user = Auth::user();
@@ -508,7 +530,12 @@ class CvAiController extends Controller
                 if ($userApiKey) {
                     // Create a simple object that mimics the UserApiKey model
                     $key = new \stdClass();
-                    $key->api_key = decrypt($userApiKey['api_key']);
+                    try {
+                        $key->api_key = decrypt($userApiKey['api_key']);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to decrypt user API key: ' . $e->getMessage());
+                        return null;
+                    }
                     $key->id = $userApiKey['id'];
                     $key->user_id = $userApiKey['user_id'];
                     $key->name = $userApiKey['name'];
@@ -539,7 +566,20 @@ class CvAiController extends Controller
             if ($adminApiKey) {
                 // Create a simple object that mimics the GeminiApiKey model
                 $key = new \stdClass();
-                $key->api_key = decrypt(decrypt($adminApiKey['api_key'])); // Double decrypt for admin keys
+                try {
+                    // Try single decrypt first
+                    $decryptedKey = decrypt($adminApiKey['api_key']);
+                    // Check if it looks like a valid API key
+                    if (strpos($decryptedKey, 'AIza') === 0) {
+                        $key->api_key = $decryptedKey;
+                    } else {
+                        // If not, try double decrypt
+                        $key->api_key = decrypt($decryptedKey);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to decrypt admin API key: ' . $e->getMessage());
+                    return null;
+                }
                 $key->id = $adminApiKey['id'];
                 $key->name = $adminApiKey['name'];
                 $key->is_active = $adminApiKey['is_active'];
@@ -564,6 +604,56 @@ class CvAiController extends Controller
         } catch (\Exception $e) {
             Log::error('Direct PDO connection also failed in controller: ' . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Debug API key decryption (temporary endpoint for troubleshooting)
+     */
+    public function debugApiKeys(): JsonResponse
+    {
+        try {
+            $debug = [
+                'app_key' => config('app.key'),
+                'encryption_driver' => config('app.cipher'),
+                'api_keys' => []
+            ];
+
+            // Check admin API keys
+            $adminKeys = GeminiApiKey::all();
+            foreach ($adminKeys as $key) {
+                $keyDebug = [
+                    'id' => $key->id,
+                    'name' => $key->name,
+                    'is_active' => $key->is_active,
+                    'encrypted_length' => strlen($key->getRawOriginal('api_key')),
+                    'decryption_status' => 'unknown'
+                ];
+
+                try {
+                    $decrypted = decrypt($key->getRawOriginal('api_key'));
+                    if (strpos($decrypted, 'AIza') === 0) {
+                        $keyDebug['decryption_status'] = 'success_single';
+                        $keyDebug['api_key_preview'] = substr($decrypted, 0, 10) . '...';
+                    } else {
+                        $doubleDecrypted = decrypt($decrypted);
+                        $keyDebug['decryption_status'] = 'success_double';
+                        $keyDebug['api_key_preview'] = substr($doubleDecrypted, 0, 10) . '...';
+                    }
+                } catch (\Exception $e) {
+                    $keyDebug['decryption_status'] = 'failed';
+                    $keyDebug['error'] = $e->getMessage();
+                }
+
+                $debug['api_keys'][] = $keyDebug;
+            }
+
+            return response()->json($debug);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
     }
 

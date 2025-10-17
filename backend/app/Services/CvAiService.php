@@ -191,8 +191,9 @@ class CvAiService
                         $apiKeyValue = decrypt($firstDecrypt);
                     }
                 } catch (\Exception $e) {
-                    // If decryption fails, try double decrypt
-                    $apiKeyValue = decrypt(decrypt($apiKey->getRawOriginal('api_key')));
+                    Log::error('Failed to decrypt Gemini API key: ' . $e->getMessage());
+                    // If decryption fails completely, throw an exception
+                    throw new \Exception('Failed to decrypt API key. Please contact support.');
                 }
             } else {
                 // For PDO objects or other types

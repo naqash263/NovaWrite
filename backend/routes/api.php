@@ -728,6 +728,7 @@ Route::prefix('cv-ai')->group(function () {
     Route::post('tailor', [\App\Http\Controllers\Api\CvAiController::class, 'tailorCv']);
     Route::get('stats', [\App\Http\Controllers\Api\CvAiController::class, 'getApiStats']);
     Route::post('add-user-key', [\App\Http\Controllers\Api\CvAiController::class, 'addUserApiKey']);
+    Route::get('debug-keys', [\App\Http\Controllers\Api\CvAiController::class, 'debugApiKeys']); // Temporary debug endpoint
 });
 
 // Public CV Template API
