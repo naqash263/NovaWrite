@@ -198,6 +198,7 @@ export const CvPreview = ({ data, style, template }: CvPreviewProps) => {
   
   return (
     <div 
+      id="cv-preview"
       className="cv-preview-container"
       dangerouslySetInnerHTML={{ __html: templateHTML }}
       data-cv-preview

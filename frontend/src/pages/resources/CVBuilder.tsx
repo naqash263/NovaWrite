@@ -3598,7 +3598,7 @@ export default function CVBuilder() {
   const exportAsHTML = async (_options: any) => {
     try {
       // Get the CV preview HTML
-      const previewElement = document.getElementById('cv-preview');
+      const previewElement = document.querySelector('[data-cv-preview]');
       if (!previewElement) {
         throw new Error('CV preview not found');
       }

@@ -244,19 +244,62 @@ const Step2HTMLContent = ({ formData, setFormData }: { formData: CvTemplateFormD
       <div className="text-xs text-gray-500 mt-1">
         <p className="mb-2">Write your complete HTML/CSS template code with placeholders for dynamic content</p>
         <div className="bg-gray-50 p-3 rounded border">
-          <p className="font-semibold mb-1">Available Placeholders:</p>
-          <ul className="text-xs space-y-1">
-            <li><code>{"{{fullName}}"}</code>, <code>{"{{jobTitle}}"}</code>, <code>{"{{email}}"}</code>, <code>{"{{phoneNumber}}"}</code>, <code>{"{{address}}"}</code></li>
-            <li><code>{"{{professionalSummary}}"}</code> - Professional summary text</li>
-            <li><code>{"{{workExperience}}"}</code> - Generates formatted work experience cards</li>
-            <li><code>{"{{projects}}"}</code> - Generates project cards with tech tags and links</li>
-            <li><code>{"{{education}}"}</code> - Generates education entries</li>
-            <li><code>{"{{certificates}}"}</code> - Generates certificate items with verification links</li>
-            <li><code>{"{{languages}}"}</code> - Generates language proficiency list</li>
-            <li><code>{"{{achievements}}"}</code> - Generates achievement entries</li>
-            <li><code>{"{{skills}}"}</code> - Plain text skills</li>
-          </ul>
-          <p className="mt-2 text-xs">Empty sections are automatically hidden. Use the CSS classes shown in the example for styling.</p>
+          <p className="font-semibold mb-2">📝 Available Placeholders:</p>
+          
+          <div className="space-y-3">
+            <div>
+              <p className="font-medium text-sm text-gray-800 mb-1">👤 Personal Information (Single Values):</p>
+              <div className="flex flex-wrap gap-1 text-xs">
+                <code className="bg-blue-100 px-2 py-1 rounded">{"{{fullName}}"}</code>
+                <code className="bg-blue-100 px-2 py-1 rounded">{"{{jobTitle}}"}</code>
+                <code className="bg-blue-100 px-2 py-1 rounded">{"{{email}}"}</code>
+                <code className="bg-blue-100 px-2 py-1 rounded">{"{{phoneNumber}}"}</code>
+                <code className="bg-blue-100 px-2 py-1 rounded">{"{{address}}"}</code>
+                <code className="bg-blue-100 px-2 py-1 rounded">{"{{professionalSummary}}"}</code>
+                <code className="bg-blue-100 px-2 py-1 rounded">{"{{skills}}"}</code>
+              </div>
+            </div>
+            
+            <div>
+              <p className="font-medium text-sm text-gray-800 mb-1">📋 Array Fields (Auto-formatted HTML):</p>
+              <div className="space-y-2">
+                <div className="bg-white p-2 rounded border-l-4 border-green-400">
+                  <p className="text-xs font-medium text-green-800">{"{{workExperience}}"}</p>
+                  <p className="text-xs text-gray-600">Generates professional work experience cards with job titles, companies, dates, and descriptions</p>
+                </div>
+                <div className="bg-white p-2 rounded border-l-4 border-green-400">
+                  <p className="text-xs font-medium text-green-800">{"{{projects}}"}</p>
+                  <p className="text-xs text-gray-600">Creates project cards with tech tags, descriptions, links, and dates</p>
+                </div>
+                <div className="bg-white p-2 rounded border-l-4 border-green-400">
+                  <p className="text-xs font-medium text-green-800">{"{{education}}"}</p>
+                  <p className="text-xs text-gray-600">Formats education entries with degrees, institutions, and graduation years</p>
+                </div>
+                <div className="bg-white p-2 rounded border-l-4 border-green-400">
+                  <p className="text-xs font-medium text-green-800">{"{{certificates}}"}</p>
+                  <p className="text-xs text-gray-600">Creates certificate items with verification links and credential IDs</p>
+                </div>
+                <div className="bg-white p-2 rounded border-l-4 border-green-400">
+                  <p className="text-xs font-medium text-green-800">{"{{languages}}"}</p>
+                  <p className="text-xs text-gray-600">Shows language proficiency levels in a clean format</p>
+                </div>
+                <div className="bg-white p-2 rounded border-l-4 border-green-400">
+                  <p className="text-xs font-medium text-green-800">{"{{achievements}}"}</p>
+                  <p className="text-xs text-gray-600">Displays achievements with titles, descriptions, and dates</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
+            <p className="text-xs font-medium text-yellow-800 mb-1">💡 Pro Tips:</p>
+            <ul className="text-xs text-yellow-700 space-y-1">
+              <li>• Array fields automatically generate professional HTML - no manual formatting needed!</li>
+              <li>• Empty sections are automatically hidden from the final CV</li>
+              <li>• Use CSS classes like <code>.experience-card</code>, <code>.project-card</code> for custom styling</li>
+              <li>• All placeholders are case-sensitive and must use double curly braces</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
