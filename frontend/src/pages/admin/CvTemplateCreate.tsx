@@ -246,15 +246,15 @@ const Step2HTMLContent = ({ formData, setFormData }: { formData: CvTemplateFormD
         <div className="bg-gray-50 p-3 rounded border">
           <p className="font-semibold mb-1">Available Placeholders:</p>
           <ul className="text-xs space-y-1">
-            <li><code>{{fullName}}</code>, <code>{{jobTitle}}</code>, <code>{{email}}</code>, <code>{{phoneNumber}}</code>, <code>{{address}}</code></li>
-            <li><code>{{professionalSummary}}</code> - Professional summary text</li>
-            <li><code>{{workExperience}}</code> - Generates formatted work experience cards</li>
-            <li><code>{{projects}}</code> - Generates project cards with tech tags and links</li>
-            <li><code>{{education}}</code> - Generates education entries</li>
-            <li><code>{{certificates}}</code> - Generates certificate items with verification links</li>
-            <li><code>{{languages}}</code> - Generates language proficiency list</li>
-            <li><code>{{achievements}}</code> - Generates achievement entries</li>
-            <li><code>{{skills}}</code> - Plain text skills</li>
+            <li><code>{"{{fullName}}"}</code>, <code>{"{{jobTitle}}"}</code>, <code>{"{{email}}"}</code>, <code>{"{{phoneNumber}}"}</code>, <code>{"{{address}}"}</code></li>
+            <li><code>{"{{professionalSummary}}"}</code> - Professional summary text</li>
+            <li><code>{"{{workExperience}}"}</code> - Generates formatted work experience cards</li>
+            <li><code>{"{{projects}}"}</code> - Generates project cards with tech tags and links</li>
+            <li><code>{"{{education}}"}</code> - Generates education entries</li>
+            <li><code>{"{{certificates}}"}</code> - Generates certificate items with verification links</li>
+            <li><code>{"{{languages}}"}</code> - Generates language proficiency list</li>
+            <li><code>{"{{achievements}}"}</code> - Generates achievement entries</li>
+            <li><code>{"{{skills}}"}</code> - Plain text skills</li>
           </ul>
           <p className="mt-2 text-xs">Empty sections are automatically hidden. Use the CSS classes shown in the example for styling.</p>
         </div>
