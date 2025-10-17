@@ -12,6 +12,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 
 class CvAiController extends Controller
 {
@@ -553,12 +555,18 @@ class CvAiController extends Controller
                 if ($userApiKey) {
                     // Create a simple object that mimics the UserApiKey model
                     $key = new \stdClass();
-                    try {
-                        $key->api_key = decrypt($userApiKey['api_key']);
-                    } catch (\Exception $e) {
-                        Log::error('Failed to decrypt user API key: ' . $e->getMessage());
+                try {
+                    $key->api_key = decrypt($userApiKey['api_key']);
+                } catch (\Exception $e) {
+                    Log::error('Failed to decrypt user API key: ' . $e->getMessage());
+                    // Try to recover using backup keys
+                    $recoveredKey = $this->tryRecoverApiKey($userApiKey['api_key']);
+                    if ($recoveredKey) {
+                        $key->api_key = $recoveredKey;
+                    } else {
                         return null;
                     }
+                }
                     $key->id = $userApiKey['id'];
                     $key->user_id = $userApiKey['user_id'];
                     $key->name = $userApiKey['name'];
@@ -601,7 +609,13 @@ class CvAiController extends Controller
                     }
                 } catch (\Exception $e) {
                     Log::error('Failed to decrypt admin API key: ' . $e->getMessage());
-                    return null;
+                    // Try to recover using backup keys
+                    $recoveredKey = $this->tryRecoverApiKey($adminApiKey['api_key']);
+                    if ($recoveredKey) {
+                        $key->api_key = $recoveredKey;
+                    } else {
+                        return null;
+                    }
                 }
                 $key->id = $adminApiKey['id'];
                 $key->name = $adminApiKey['name'];
@@ -854,6 +868,53 @@ class CvAiController extends Controller
         } catch (\Exception $e) {
             Log::error('CV AI API key validation failed: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Try to recover API key using backup encryption keys
+     */
+    private function tryRecoverApiKey($encryptedKey)
+    {
+        try {
+            // Get backup keys from database
+            $backupKeys = DB::table('encryption_key_backups')
+                ->where('environment', config('app.env'))
+                ->orderBy('backed_up_at', 'desc')
+                ->get();
+
+            foreach ($backupKeys as $backup) {
+                try {
+                    // Temporarily set the backup key
+                    $originalKey = config('app.key');
+                    config(['app.key' => $backup->key]);
+                    
+                    // Try to decrypt with backup key
+                    $decrypted = decrypt($encryptedKey);
+                    
+                    if ($decrypted && strpos($decrypted, 'AIza') === 0) {
+                        // Re-encrypt with current key
+                        config(['app.key' => $originalKey]);
+                        $reEncrypted = encrypt($decrypted);
+                        
+                        // Update the database with re-encrypted key
+                        DB::table('cv_ai_api_keys')
+                            ->where('api_key', $encryptedKey)
+                            ->update(['api_key' => $reEncrypted]);
+                        
+                        Log::info("Successfully recovered and re-encrypted API key using backup key from {$backup->backed_up_at}");
+                        return $decrypted;
+                    }
+                } catch (\Exception $e) {
+                    Log::debug("Backup key failed: " . $e->getMessage());
+                    continue;
+                }
+            }
+            
+            return null;
+        } catch (\Exception $e) {
+            Log::error("Key recovery failed: " . $e->getMessage());
+            return null;
         }
     }
 }
