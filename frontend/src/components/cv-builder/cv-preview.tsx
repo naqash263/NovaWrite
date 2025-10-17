@@ -20,10 +20,10 @@ const formatWorkExperience = (experiences: any[]) => {
   return experiences.map(exp => `
     <div class="experience-card">
       <div class="experience-header">
-        <h4 class="item-title">${exp.jobTitle}</h4>
-        <span class="item-date">${exp.startDate} - ${exp.endDate || 'Present'}</span>
+        <h4 class="item-title">${exp.jobTitle || 'Position Title'}</h4>
+        <span class="item-date">${exp.startDate || 'Start Date'} - ${exp.endDate || 'Present'}</span>
       </div>
-      <div class="item-subtitle">${exp.company}</div>
+      <div class="item-subtitle">${exp.company || 'Company Name'}</div>
       <p class="item-description">${exp.description || ''}</p>
     </div>
   `).join('');
@@ -33,13 +33,15 @@ const formatWorkExperience = (experiences: any[]) => {
 const formatProjects = (projects: any[]) => {
   return projects.map(project => `
     <div class="project-card">
-      <h4 class="item-title">${project.name}</h4>
+      <div class="project-header">
+        <h4 class="item-title">${project.name || 'Project Name'}</h4>
+        ${project.startDate ? `<span class="item-date">${project.startDate}${project.endDate ? ` - ${project.endDate}` : ''}</span>` : ''}
+      </div>
       ${project.technologies ? `<div class="tech-tags">${project.technologies.split(',').map((tech: string) => 
         `<span class="tech-tag">${tech.trim()}</span>`
       ).join('')}</div>` : ''}
       <p class="item-description">${project.description || ''}</p>
       ${project.url ? `<a href="${project.url}" class="project-link" target="_blank">View Project →</a>` : ''}
-      ${project.startDate ? `<span class="item-date">${project.startDate}${project.endDate ? ` - ${project.endDate}` : ''}</span>` : ''}
     </div>
   `).join('');
 };
@@ -48,9 +50,11 @@ const formatProjects = (projects: any[]) => {
 const formatEducation = (education: any[]) => {
   return education.map(edu => `
     <div class="education-item">
-      <h4 class="item-title">${edu.degree}</h4>
-      <div class="item-subtitle">${edu.institution}</div>
-      <span class="item-date">${edu.graduationYear}</span>
+      <div class="education-header">
+        <h4 class="item-title">${edu.degree || 'Degree'}</h4>
+        <span class="item-date">${edu.graduationYear || 'Year'}</span>
+      </div>
+      <div class="item-subtitle">${edu.institution || 'Institution'}</div>
     </div>
   `).join('');
 };
@@ -59,10 +63,12 @@ const formatEducation = (education: any[]) => {
 const formatCertificates = (certificates: any[]) => {
   return certificates.map(cert => `
     <div class="certificate-item">
-      <h4 class="item-title">${cert.name}</h4>
-      <div class="item-subtitle">${cert.issuer}</div>
-      <span class="item-date">${cert.date}</span>
-      ${cert.credentialId ? `<div class="credential-id">ID: ${cert.credentialId}</div>` : ''}
+      <div class="certificate-header">
+        <h4 class="item-title">${cert.name || 'Certificate Name'}</h4>
+        <span class="item-date">${cert.date || 'Date'}</span>
+      </div>
+      <div class="item-subtitle">${cert.issuer || 'Issuing Organization'}</div>
+      ${cert.credentialId ? `<div class="credential-id" style="font-size: 11px; color: #666; margin-top: 4px;">ID: ${cert.credentialId}</div>` : ''}
       ${cert.url ? `<a href="${cert.url}" class="certificate-link" target="_blank">Verify →</a>` : ''}
     </div>
   `).join('');
@@ -82,17 +88,41 @@ const formatLanguages = (languages: any[]) => {
 const formatAchievements = (achievements: any[]) => {
   return achievements.map(achievement => `
     <div class="achievement-item">
-      <h4 class="item-title">${achievement.title}</h4>
+      <div class="achievement-header">
+        <h4 class="item-title">${achievement.title || 'Achievement Title'}</h4>
+        ${achievement.date ? `<span class="item-date">${achievement.date}</span>` : ''}
+      </div>
       <p class="item-description">${achievement.description || ''}</p>
-      ${achievement.date ? `<span class="item-date">${achievement.date}</span>` : ''}
+    </div>
+  `).join('');
+};
+
+// Format interests
+const formatInterests = (interests: any[]) => {
+  return interests.map(interest => `
+    <div class="interest-item">
+      <span class="interest-name">${interest.name || interest}</span>
+    </div>
+  `).join('');
+};
+
+// Format references
+const formatReferences = (references: any[]) => {
+  return references.map(ref => `
+    <div class="reference-item">
+      <h4 class="item-title">${ref.name || 'Reference Name'}</h4>
+      <div class="item-subtitle">${ref.position || ref.title || ''}</div>
+      <div class="item-subtitle">${ref.company || ref.organization || ''}</div>
+      <div class="contact-info">
+        ${ref.email ? `<span class="contact-item">Email: ${ref.email}</span>` : ''}
+        ${ref.phone ? `<span class="contact-item">Phone: ${ref.phone}</span>` : ''}
+      </div>
     </div>
   `).join('');
 };
 
 // Hide entire section if placeholder is empty
 const hideEmptySections = (html: string) => {
-  // Find and remove sections containing only empty placeholders
-  // Pattern: Find <section> or <div class="section"> tags that contain only whitespace after placeholder replacement
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   
@@ -100,9 +130,27 @@ const hideEmptySections = (html: string) => {
   const sections = doc.querySelectorAll('section, .section, [class*="section"]');
   
   sections.forEach(section => {
-    const content = section.textContent?.trim() || '';
-    // If section is empty or contains only the section title without content
-    if (!content || content.length < 10) {
+    // Get the section title element
+    const sectionTitle = section.querySelector('.section-title, h2, h3, [class*="title"]');
+    const sectionTitleText = sectionTitle?.textContent?.trim() || '';
+    
+    // Get all content except the title
+    const sectionContent = section.cloneNode(true) as Element;
+    if (sectionTitle) {
+      sectionContent.removeChild(sectionTitle);
+    }
+    const contentText = sectionContent.textContent?.trim() || '';
+    
+    // Check if section has meaningful content (more than just whitespace or empty placeholders)
+    const hasContent = contentText && 
+      contentText.length > 5 && 
+      !contentText.match(/^\s*$/) &&
+      !contentText.includes('<!-- no-') &&
+      !contentText.includes('{{') &&
+      contentText !== sectionTitleText;
+    
+    // If no meaningful content, remove the entire section
+    if (!hasContent) {
       section.remove();
     }
   });
@@ -184,6 +232,18 @@ export const CvPreview = ({ data, style, template }: CvPreviewProps) => {
     templateHTML = templateHTML.replace(/\{\{achievements\}\}/g, formatAchievements(data.achievements));
   } else {
     templateHTML = templateHTML.replace(/\{\{achievements\}\}/g, '<!-- no-achievements -->');
+  }
+
+  if (data.interests && data.interests.length > 0) {
+    templateHTML = templateHTML.replace(/\{\{interests\}\}/g, formatInterests(data.interests));
+  } else {
+    templateHTML = templateHTML.replace(/\{\{interests\}\}/g, '<!-- no-interests -->');
+  }
+
+  if (data.references && data.references.length > 0) {
+    templateHTML = templateHTML.replace(/\{\{references\}\}/g, formatReferences(data.references));
+  } else {
+    templateHTML = templateHTML.replace(/\{\{references\}\}/g, '<!-- no-references -->');
   }
 
   // Skills remain as text

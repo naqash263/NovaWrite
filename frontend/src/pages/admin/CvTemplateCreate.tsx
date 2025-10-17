@@ -174,17 +174,84 @@ const Step2HTMLContent = ({ formData, setFormData }: { formData: CvTemplateFormD
     .name { font-size: 24px; font-weight: bold; }
     .job-title { font-size: 16px; margin-top: 5px; }
     
-    /* Available CSS classes for styling dynamic content */
-    .experience-card, .project-card, .certificate-item { margin-bottom: 15px; padding: 10px; border-left: 3px solid {{primaryColor}}; }
-    .item-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-    .item-subtitle { color: {{secondaryColor}}; font-size: 14px; margin-bottom: 3px; }
-    .item-date { color: #666; font-size: 12px; }
-    .item-description { margin-top: 5px; font-size: 14px; line-height: 1.4; }
-    .tech-tags { margin: 5px 0; }
-    .tech-tag { background: #f0f0f0; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-right: 5px; }
-    .project-link, .certificate-link { color: {{primaryColor}}; text-decoration: none; font-size: 12px; }
-    .language-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
-    .proficiency-level { font-style: italic; color: #666; }
+    /* Enhanced CSS classes for professional array formatting */
+    .experience-card, .project-card, .certificate-item, .education-item, .achievement-item { 
+      margin-bottom: 20px; 
+      padding: 15px; 
+      border-left: 4px solid {{primaryColor}}; 
+      background: #fafafa; 
+      border-radius: 0 8px 8px 0;
+      transition: all 0.3s ease;
+    }
+    .experience-header, .project-header, .certificate-header, .education-header, .achievement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .item-title { font-weight: bold; font-size: 16px; color: #2c3e50; margin-bottom: 4px; }
+    .item-subtitle { color: {{secondaryColor}}; font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .item-date { 
+      color: #666; 
+      font-size: 12px; 
+      font-weight: 500;
+      background: #e8f4f8;
+      padding: 2px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+    .item-description { margin-top: 8px; font-size: 13px; line-height: 1.5; color: #555; }
+    .tech-tags { margin: 8px 0; }
+    .tech-tag { 
+      background: {{primaryColor}}; 
+      color: white; 
+      padding: 3px 10px; 
+      border-radius: 15px; 
+      font-size: 11px; 
+      margin-right: 6px; 
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+    .project-link, .certificate-link { 
+      color: {{primaryColor}}; 
+      text-decoration: none; 
+      font-size: 12px; 
+      font-weight: 500;
+      border-bottom: 1px solid transparent;
+      transition: border-bottom 0.3s ease;
+    }
+    .project-link:hover, .certificate-link:hover {
+      border-bottom-color: {{primaryColor}};
+    }
+    .language-item { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      margin-bottom: 8px; 
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+    .language-name { font-weight: 500; }
+    .proficiency-level { 
+      font-style: italic; 
+      color: #666; 
+      font-size: 12px;
+      background: #e9ecef;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .skills-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .skill-category {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 3px solid {{primaryColor}};
+    }
   </style>
   
   <div class="header">
