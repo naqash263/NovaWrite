@@ -2968,9 +2968,41 @@ export default function CVBuilder() {
   const [templates, setTemplates] = useState<any[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const { addToast } = useToast();
 
   const totalSteps = 10;
+
+  // Handle reset function
+  const handleReset = () => {
+    // Clear all saved data
+    localStorage.removeItem('cv-builder-data');
+    localStorage.removeItem('cv-builder-style');
+    localStorage.removeItem('cv-builder-step');
+    localStorage.removeItem('cv-builder-completed-steps');
+    localStorage.setItem('cv-builder-load-saved', 'false');
+    
+    // Reset state
+    setCvData(defaultCVData);
+    setCvStyle({
+      templateName: 'jobscan-executive',
+      primaryColor: '#000000',
+      secondaryColor: '#FFFFFF',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: 11,
+    });
+    setCurrentStep(0);
+    setCompletedSteps(new Set());
+    setCreationMode(null);
+    setSelectedTemplate(null);
+    setShowResetConfirm(false);
+    
+    addToast({
+      type: 'success',
+      description: 'CV Builder reset! You can now start fresh.',
+      duration: 3000,
+    });
+  };
 
   // Load templates from API
   useEffect(() => {
@@ -3031,7 +3063,10 @@ export default function CVBuilder() {
     const savedStep = localStorage.getItem('cv-builder-step');
     const savedCompletedSteps = localStorage.getItem('cv-builder-completed-steps');
     
-    if (savedData) {
+    // Only load saved data if user hasn't explicitly chosen to start fresh
+    const shouldLoadSaved = localStorage.getItem('cv-builder-load-saved') !== 'false';
+    
+    if (savedData && shouldLoadSaved) {
       try {
         setCvData(JSON.parse(savedData));
       } catch (error) {
@@ -3039,7 +3074,7 @@ export default function CVBuilder() {
       }
     }
     
-    if (savedStyle) {
+    if (savedStyle && shouldLoadSaved) {
       try {
         setCvStyle(JSON.parse(savedStyle));
       } catch (error) {
@@ -3777,6 +3812,22 @@ export default function CVBuilder() {
               <p className="text-sm text-gray-600">Create professional CVs with our step-by-step guide</p>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => {
+                  const hasExistingData = localStorage.getItem('cv-builder-data') || 
+                                        localStorage.getItem('cv-builder-style') || 
+                                        localStorage.getItem('cv-builder-step');
+                  
+                  if (hasExistingData) {
+                    setShowResetConfirm(true);
+                  } else {
+                    handleReset();
+                  }
+                }}
+                className="text-blue-600 hover:text-blue-900 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors duration-200 border border-blue-200"
+              >
+                🔄 Start Fresh
+              </button>
               
               <button
                 onClick={() => window.history.back()}
@@ -3814,6 +3865,39 @@ export default function CVBuilder() {
           onFinish={handleFinish}
           isNextDisabled={isNextDisabled()}
         />
+      )}
+
+      {/* Reset Confirmation Dialog */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                <span className="text-2xl">⚠️</span>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Reset CV Builder?
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                This will clear all your current CV data and start fresh. This action cannot be undone.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
+                >
+                  Reset & Start Fresh
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
