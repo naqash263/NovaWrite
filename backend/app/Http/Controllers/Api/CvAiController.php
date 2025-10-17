@@ -631,6 +631,59 @@ class CvAiController extends Controller
     }
 
     /**
+     * Check encryption key consistency (prevention endpoint)
+     */
+    public function checkEncryptionConsistency(): JsonResponse
+    {
+        try {
+            $checks = [
+                'app_key' => config('app.key'),
+                'environment' => app()->environment(),
+                'encryption_driver' => config('app.cipher'),
+                'warnings' => [],
+                'recommendations' => []
+            ];
+
+            // Check if we're in production
+            if (app()->environment('production')) {
+                $checks['warnings'][] = 'Running in production environment';
+                
+                // Check for common issues
+                $testData = 'test_encryption_data_' . time();
+                $encrypted = encrypt($testData);
+                $decrypted = decrypt($encrypted);
+                
+                if ($decrypted !== $testData) {
+                    $checks['warnings'][] = 'Encryption/decryption test failed - key may be corrupted';
+                }
+                
+                // Check API key decryption
+                $adminKeys = GeminiApiKey::all();
+                $corruptedKeys = 0;
+                foreach ($adminKeys as $key) {
+                    try {
+                        decrypt($key->getRawOriginal('api_key'));
+                    } catch (\Exception $e) {
+                        $corruptedKeys++;
+                    }
+                }
+                
+                if ($corruptedKeys > 0) {
+                    $checks['warnings'][] = "{$corruptedKeys} API key(s) cannot be decrypted";
+                    $checks['recommendations'][] = 'Re-encrypt API keys with current production key';
+                }
+            }
+
+            return response()->json($checks);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+
+    /**
      * Debug API key decryption (temporary endpoint for troubleshooting)
      */
     public function debugApiKeys(): JsonResponse
