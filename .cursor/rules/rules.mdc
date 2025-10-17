@@ -77,6 +77,19 @@ alwaysApply: true
 - ✅ ALWAYS use echo statements for multi-line content
 - ✅ ALWAYS export environment variables before building
 - ✅ ALWAYS verify secrets are set in GitHub repository
+- ✅ **SSH Action Configuration**:
+  - Host: `${{ secrets.HOST }}`
+  - Username: `${{ secrets.USERNAME }}`
+  - Port: `21098`
+  - Key: `${{ secrets.SSH_KEY }}`
+  - Passphrase: `${{ secrets.SSH_PASSPHRASE }}`
+  - Timeout: `300s`
+  - Command Timeout: `300s`
+- ✅ **SSH Troubleshooting**:
+  - Check GitHub Secrets are properly set
+  - Verify SSH key format (should be private key with headers)
+  - Test SSH connection manually before deployment
+  - Monitor GitHub Actions logs for SSH errors
 
 ## 9. Testing Before Production
 - ❌ NEVER push directly to production without local testing
@@ -136,6 +149,99 @@ alwaysApply: true
   - Run migrations only
   - Check migration status
 - ✅ **Post-Deployment Verification**: Automatic testing of encryption system and API health
+
+## 14. SSH Access & Production Server Management
+- ✅ **SSH Credentials**: Available in GitHub Secrets for automated deployments
+- ✅ **Server Details**:
+  - Host: `${{ secrets.HOST }}`
+  - Username: `${{ secrets.USERNAME }}`
+  - Port: `21098`
+  - Key: `${{ secrets.SSH_KEY }}`
+  - Passphrase: `${{ secrets.SSH_PASSPHRASE }}`
+- ✅ **Production Directory Structure**:
+  ```
+  /home/timesovh/naqashthaheem.com/
+  ├── public_html/          # Main website (accessible via domain)
+  │   ├── index.html        # React frontend
+  │   ├── assets/           # Frontend assets
+  │   ├── storage/          # Symlink to backend/storage/app/public
+  │   └── api/              # Laravel backend
+  │       └── public/       # Laravel public files
+  │           └── storage/  # Symlink to backend/storage/app/public
+  ├── backend/              # Source code
+  │   └── storage/app/public/  # Actual file storage
+  ├── frontend/             # Source code
+  └── other files...
+  ```
+- ✅ **Manual SSH Commands** (when needed):
+  ```bash
+  # Connect to production server
+  ssh -p 21098 ${{ secrets.USERNAME }}@${{ secrets.HOST }}
+  
+  # Navigate to project directory
+  cd ~/naqashthaheem.com/backend
+  
+  # Check Laravel status
+  php artisan --version
+  php artisan migrate:status
+  
+  # Check database connection
+  php artisan tinker
+  DB::connection()->getPdo();
+  
+  # Check encryption health
+  curl https://naqashthaheem.com/api/cv-ai/check-encryption
+  
+  # View logs
+  tail -f storage/logs/laravel.log
+  
+  # Clear caches
+  php artisan config:clear
+  php artisan cache:clear
+  php artisan route:clear
+  php artisan view:clear
+  ```
+- ✅ **Database Direct Access** (via SSH):
+  ```bash
+  # Connect to PostgreSQL
+  PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem
+  
+  # Check tables
+  \dt
+  
+  # Check permissions
+  SELECT * FROM information_schema.table_privileges WHERE grantee = 'timesovh_naqash_thaheem';
+  
+  # Check encryption key backups
+  SELECT * FROM encryption_key_backups;
+  ```
+- ✅ **File Permissions Management**:
+  ```bash
+  # Set correct permissions
+  chmod -R 775 storage/
+  chmod -R 775 bootstrap/cache/
+  
+  # Check symlinks
+  ls -la public_html/storage
+  ls -la public_html/api/public/storage
+  ```
+- ✅ **Emergency Recovery Commands**:
+  ```bash
+  # Restore from git if needed
+  cd ~/naqashthaheem.com
+  git fetch --all
+  git reset --hard origin/main
+  
+  # Rebuild frontend
+  cd frontend
+  npm install
+  npm run build
+  
+  # Rebuild backend
+  cd ../backend
+  composer install --no-dev --optimize-autoloader
+  php artisan config:cache
+  ```
 
 # Common Mistakes & Solutions
 
@@ -269,6 +375,54 @@ sleep 150
 
 # Then test endpoints
 curl https://naqashthaheem.com/api/health
+```
+
+## Mistake 11: SSH connection issues
+**Cause:** Wrong credentials, network issues, or server problems
+**Solution:**
+```bash
+# Test SSH connection
+ssh -p 21098 -v ${{ secrets.USERNAME }}@${{ secrets.HOST }}
+
+# Check if server is reachable
+ping ${{ secrets.HOST }}
+
+# Verify SSH key permissions (local)
+chmod 600 ~/.ssh/id_rsa
+chmod 644 ~/.ssh/id_rsa.pub
+
+# Test with specific key
+ssh -p 21098 -i ~/.ssh/id_rsa ${{ secrets.USERNAME }}@${{ secrets.HOST }}
+```
+
+## Mistake 12: Database connection fails via SSH
+**Cause:** PostgreSQL not running, wrong credentials, or network issues
+**Solution:**
+```bash
+# Check if PostgreSQL is running
+sudo systemctl status postgresql
+
+# Test database connection
+PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "SELECT version();"
+
+# Check database user permissions
+PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "\du"
+```
+
+## Mistake 13: File permission issues on production
+**Cause:** Wrong ownership or permissions on storage/cache directories
+**Solution:**
+```bash
+# Fix ownership (run as appropriate user)
+sudo chown -R ${{ secrets.USERNAME }}:${{ secrets.USERNAME }} ~/naqashthaheem.com/
+
+# Fix permissions
+chmod -R 775 ~/naqashthaheem.com/backend/storage/
+chmod -R 775 ~/naqashthaheem.com/backend/bootstrap/cache/
+
+# Check symlinks
+ls -la ~/naqashthaheem.com/public_html/storage
+ls -la ~/naqashthaheem.com/public_html/api/public/storage
 ```
 
 Try to open the browser's developer tools by opening the page when ever request to test on browser
