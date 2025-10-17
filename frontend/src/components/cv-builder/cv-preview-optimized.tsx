@@ -110,8 +110,8 @@ const ReferencesTwoColumn = ({ references }: { references: Array<{name: string, 
 
 const ClassicTemplate = ({ data, style }: CvPreviewProps) => {
     const {
-        fullName, email, phoneNumber, address, professionalSummary,
-        workExperience, education, skills, jobTitle, projects, certificates, languages, achievements, references, interests,
+        fullName = '', email = '', phoneNumber = '', address = '', professionalSummary = '',
+        workExperience = [], education = [], skills = '', jobTitle = '', projects = [], certificates = [], languages = [], achievements = [], references = [], interests = [],
     } = data;
     
       // const headerStyle = { backgroundColor: style.primaryColor, color: style.secondaryColor };
@@ -196,8 +196,8 @@ const ClassicTemplate = ({ data, style }: CvPreviewProps) => {
 
 const ModernTemplate = ({ data, style }: CvPreviewProps) => {
     const {
-        fullName, email, phoneNumber, address, professionalSummary,
-        workExperience, education, skills, jobTitle, profilePictureUrl, projects, certificates, languages, achievements, references, interests
+        fullName = '', email = '', phoneNumber = '', address = '', professionalSummary = '',
+        workExperience = [], education = [], skills = '', jobTitle = '', profilePictureUrl = '', projects = [], certificates = [], languages = [], achievements = [], references = [], interests = []
     } = data;
     
     const headerStyle = { backgroundColor: style.primaryColor, color: style.secondaryColor };
@@ -298,8 +298,8 @@ const ModernTemplate = ({ data, style }: CvPreviewProps) => {
 
 const MinimalTemplate = ({ data, style }: CvPreviewProps) => {
     const {
-        fullName, email, phoneNumber, address, professionalSummary,
-        workExperience, education, skills, jobTitle
+        fullName = '', email = '', phoneNumber = '', address = '', professionalSummary = '',
+        workExperience = [], education = [], skills = '', jobTitle = ''
     } = data;
     
     const sectionTitleStyle = { color: style.primaryColor, borderColor: style.primaryColor, fontSize: style.fontSize * 1.1 + 'px' };
@@ -347,8 +347,8 @@ const MinimalTemplate = ({ data, style }: CvPreviewProps) => {
 // ATS-Optimized Template - Maximum compatibility with Applicant Tracking Systems
 const ATSOptimizedTemplate = ({ data }: CvPreviewProps) => {
     const {
-        fullName, email, phoneNumber, address, professionalSummary,
-        workExperience, education, skills, jobTitle
+        fullName = '', email = '', phoneNumber = '', address = '', professionalSummary = '',
+        workExperience = [], education = [], skills = '', jobTitle = ''
     } = data;
 
     return (
