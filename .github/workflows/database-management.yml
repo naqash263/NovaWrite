@@ -1,0 +1,139 @@
+name: Database Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Database action to perform'
+        required: true
+        default: 'check-permissions'
+        type: choice
+        options:
+        - check-permissions
+        - grant-permissions
+        - backup-encryption-key
+        - check-encryption-health
+        - fix-encryption-keys
+        - run-migrations-only
+        - check-migration-status
+
+jobs:
+  database-management:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Database Management
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        timeout: 300s
+        command_timeout: 300s
+        script: |
+          # Colors for output
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          YELLOW='\033[1;33m'
+          BLUE='\033[0;34m'
+          NC='\033[0m' # No Color
+          
+          echo -e "${BLUE}🗄️ Database Management Action: ${{ github.event.inputs.action }}${NC}"
+          echo "=============================================="
+          
+          # Navigate to project directory
+          cd ~/naqashthaheem.com/backend
+          
+          # Load environment variables
+          if [ -f ".env" ]; then
+            export $(grep -v '^#' .env | xargs)
+          fi
+          
+          case "${{ github.event.inputs.action }}" in
+            "check-permissions")
+              echo -e "${BLUE}🔍 Checking database permissions...${NC}"
+              PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "
+                SELECT 
+                  schemaname,
+                  tablename,
+                  has_table_privilege('timesovh_naqash_thaheem', schemaname||'.'||tablename, 'SELECT') as can_select,
+                  has_table_privilege('timesovh_naqash_thaheem', schemaname||'.'||tablename, 'INSERT') as can_insert,
+                  has_table_privilege('timesovh_naqash_thaheem', schemaname||'.'||tablename, 'UPDATE') as can_update,
+                  has_table_privilege('timesovh_naqash_thaheem', schemaname||'.'||tablename, 'DELETE') as can_delete
+                FROM pg_tables 
+                WHERE schemaname = 'public'
+                ORDER BY tablename;
+              "
+              ;;
+              
+            "grant-permissions")
+              echo -e "${BLUE}🔐 Granting database permissions...${NC}"
+              PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "
+                -- Grant all privileges on existing tables
+                GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO timesovh_naqash_thaheem;
+                GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO timesovh_naqash_thaheem;
+                GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO timesovh_naqash_thaheem;
+                
+                -- Grant privileges on schema
+                GRANT USAGE ON SCHEMA public TO timesovh_naqash_thaheem;
+                GRANT CREATE ON SCHEMA public TO timesovh_naqash_thaheem;
+                
+                -- Set default privileges for future objects
+                ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO timesovh_naqash_thaheem;
+                ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO timesovh_naqash_thaheem;
+                ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO timesovh_naqash_thaheem;
+              "
+              echo -e "${GREEN}✅ Database permissions granted${NC}"
+              ;;
+              
+            "backup-encryption-key")
+              echo -e "${BLUE}🔑 Backing up current encryption key...${NC}"
+              CURRENT_KEY=$(grep '^APP_KEY=' .env | cut -d'=' -f2)
+              if [ ! -z "$CURRENT_KEY" ] && [ "$CURRENT_KEY" != "" ]; then
+                PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "
+                  INSERT INTO encryption_key_backups (environment, key, backed_up_at, created_at, updated_at) 
+                  VALUES ('production', '$CURRENT_KEY', NOW(), NOW(), NOW())
+                  ON CONFLICT (environment) DO UPDATE SET 
+                    key = '$CURRENT_KEY', 
+                    backed_up_at = NOW(), 
+                    updated_at = NOW();
+                "
+                echo -e "${GREEN}✅ Encryption key backed up successfully${NC}"
+              else
+                echo -e "${RED}❌ No APP_KEY found in .env file${NC}"
+              fi
+              ;;
+              
+            "check-encryption-health")
+              echo -e "${BLUE}🔍 Checking encryption health...${NC}"
+              curl -s "https://naqashthaheem.com/api/cv-ai/check-encryption" | jq '.' || echo -e "${YELLOW}⚠️ Could not parse JSON response${NC}"
+              ;;
+              
+            "fix-encryption-keys")
+              echo -e "${BLUE}🔧 Fixing encryption keys...${NC}"
+              curl -s "https://naqashthaheem.com/api/cv-ai/fix-keys" | jq '.' || echo -e "${YELLOW}⚠️ Could not parse JSON response${NC}"
+              ;;
+              
+            "run-migrations-only")
+              echo -e "${BLUE}🗄️ Running database migrations only...${NC}"
+              php artisan migrate --force
+              echo -e "${GREEN}✅ Migrations completed${NC}"
+              ;;
+              
+            "check-migration-status")
+              echo -e "${BLUE}🔍 Checking migration status...${NC}"
+              php artisan migrate:status
+              ;;
+              
+            *)
+              echo -e "${RED}❌ Unknown action: ${{ github.event.inputs.action }}${NC}"
+              exit 1
+              ;;
+          esac
+          
+          echo -e "${GREEN}✅ Database management action completed${NC}"

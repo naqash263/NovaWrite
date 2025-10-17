@@ -120,6 +120,22 @@ alwaysApply: true
 - [ ] Encryption keys are environment-specific
 - [ ] API keys can be decrypted successfully
 - [ ] Wait 2.5 minutes after deployment before testing
+- [ ] Database permissions granted automatically
+- [ ] Encryption key backed up before migration
+- [ ] Post-deployment verification completed
+
+## 13. Database Management Workflow
+- ✅ **Automatic Permission Granting**: GitHub Actions automatically grants database permissions during deployment
+- ✅ **Encryption Key Backup**: Current APP_KEY is backed up before running migrations
+- ✅ **Manual Database Management**: Use GitHub Actions "Database Management" workflow for:
+  - Check database permissions
+  - Grant database permissions
+  - Backup encryption key
+  - Check encryption health
+  - Fix encryption keys
+  - Run migrations only
+  - Check migration status
+- ✅ **Post-Deployment Verification**: Automatic testing of encryption system and API health
 
 # Common Mistakes & Solutions
 
