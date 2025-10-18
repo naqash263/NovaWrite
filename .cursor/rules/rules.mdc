@@ -120,6 +120,11 @@ alwaysApply: true
 - ✅ ALWAYS have fallback mechanisms for encrypted data
 - ✅ ALWAYS monitor encryption health with `/api/cv-ai/check-encryption`
 - ⚠️ CRITICAL: API keys encrypted with wrong key cause "The MAC is invalid" error
+- ✅ **GITHUB SECRET SOLUTION**: Store stable APP_KEY as `STABLE_APP_KEY` GitHub Secret
+- ✅ **DEPLOYMENT WORKFLOW**: Uses `STABLE_APP_KEY` secret to prevent key changes
+- ✅ **FALLBACK**: If secret missing, generates new key and logs warning
+- ✅ **BACKUP SYSTEM**: Current key backed up to database before migrations
+- ⚠️ **CRITICAL**: Never change `STABLE_APP_KEY` secret without updating all encrypted data
 
 ## 12. Production Deployment Checklist
 - [ ] All migrations have safety checks
@@ -130,14 +135,27 @@ alwaysApply: true
 - [ ] Permissions set (775 for storage)
 - [ ] Caches cleared and rebuilt
 - [ ] Browser cache cleared after deployment
+- [ ] **STABLE_APP_KEY GitHub Secret is set and correct**
 - [ ] Encryption keys are environment-specific
 - [ ] API keys can be decrypted successfully
 - [ ] Wait 2.5 minutes after deployment before testing
 - [ ] Database permissions granted automatically
 - [ ] Encryption key backed up before migration
 - [ ] Post-deployment verification completed
+- [ ] **Test encryption key stability after deployment**
 
-## 13. Database Management Workflow
+## 13. GitHub Secret Management
+- ✅ **STABLE_APP_KEY Secret**: Stores the production encryption key securely
+- ✅ **Automatic Restoration**: Deployment workflow restores key from secret
+- ✅ **Fallback Handling**: Generates new key if secret missing (with warning)
+- ✅ **Secret Location**: GitHub Repository → Settings → Secrets and variables → Actions
+- ✅ **Secret Name**: `STABLE_APP_KEY`
+- ✅ **Secret Value**: `base64:...` (current production APP_KEY)
+- ⚠️ **CRITICAL**: Never change this secret without updating all encrypted data
+- ✅ **Verification**: Check `/api/cv-ai/check-encryption` after deployment
+- ✅ **Backup**: Key is automatically backed up to database before migrations
+
+## 14. Database Management Workflow
 - ✅ **Automatic Permission Granting**: GitHub Actions automatically grants database permissions during deployment
 - ✅ **Encryption Key Backup**: Current APP_KEY is backed up before running migrations
 - ✅ **Manual Database Management**: Use GitHub Actions "Database Management" workflow for:
@@ -150,7 +168,7 @@ alwaysApply: true
   - Check migration status
 - ✅ **Post-Deployment Verification**: Automatic testing of encryption system and API health
 
-## 14. SSH Access & Production Server Management
+## 15. SSH Access & Production Server Management
 - ✅ **SSH Credentials**: Available in GitHub Secrets for automated deployments
 - ✅ **Server Details**:
   - Host: `${{ secrets.HOST }}`
@@ -423,6 +441,27 @@ chmod -R 775 ~/naqashthaheem.com/backend/bootstrap/cache/
 # Check symlinks
 ls -la ~/naqashthaheem.com/public_html/storage
 ls -la ~/naqashthaheem.com/public_html/api/public/storage
+```
+
+## Mistake 14: Encryption key changes on every deployment
+**Cause:** Deployment workflow generates new APP_KEY each time, breaking encrypted data
+**Solution:**
+```bash
+# 1. Add STABLE_APP_KEY as GitHub Secret
+# Go to: GitHub Repository → Settings → Secrets and variables → Actions
+# Name: STABLE_APP_KEY
+# Value: base64:... (current production APP_KEY)
+
+# 2. Verify secret is working
+curl https://naqashthaheem.com/api/cv-ai/check-encryption
+
+# 3. If still changing, check deployment workflow logs
+# Look for "STABLE_APP_KEY secret not found" warnings
+
+# 4. Emergency fix if secret missing
+ssh -p 21098 timesovh@162.254.39.126
+cd ~/naqashthaheem.com/backend
+php fix_production_encryption_script.php
 ```
 
 Try to open the browser's developer tools by opening the page when ever request to test on browser
