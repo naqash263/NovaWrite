@@ -3317,7 +3317,8 @@ export default function CVBuilder() {
         position: absolute;
         top: -9999px;
         left: 0;
-        width: 1200px;
+        width: 100%;
+        max-width: none;
         height: auto;
         background: white;
         overflow: visible;
@@ -3354,7 +3355,7 @@ export default function CVBuilder() {
         `;
       }
 
-      // Override any template width constraints
+      // Override only the main template container width constraints
       const templateElements = previewElement.querySelectorAll('.cv-template, [id*="cv-template"]');
       const originalTemplateStyles: string[] = [];
       
@@ -3362,59 +3363,42 @@ export default function CVBuilder() {
         const htmlElement = element as HTMLElement;
         originalTemplateStyles[index] = htmlElement.style.cssText;
         
-        // Remove all existing styles and set new ones
-        htmlElement.removeAttribute('style');
-        htmlElement.style.cssText = `
-          width: 100% !important;
-          max-width: none !important;
-          margin: 0 !important;
-          padding: 10px !important;
-          box-shadow: none !important;
-          border-radius: 0 !important;
-          position: static !important;
-          transform: none !important;
-        `;
+        // Only override max-width and margin, preserve other styling
+        const currentStyle = htmlElement.style.cssText;
+        htmlElement.style.cssText = currentStyle.replace(/max-width:\s*[^;]+;?/g, 'max-width: none !important;')
+                                               .replace(/margin:\s*[^;]+;?/g, 'margin: 0 !important;')
+                                               .replace(/box-shadow:\s*[^;]+;?/g, 'box-shadow: none !important;')
+                                               .replace(/border-radius:\s*[^;]+;?/g, 'border-radius: 0 !important;');
         
-        // Also override any child elements that might have width constraints
+        // Only override max-width on child elements, not width
         const childElements = htmlElement.querySelectorAll('*');
         childElements.forEach(child => {
           const childEl = child as HTMLElement;
           if (childEl.style.maxWidth && childEl.style.maxWidth.includes('px')) {
             childEl.style.maxWidth = 'none';
-          }
-          if (childEl.style.width && childEl.style.width.includes('px') && !childEl.style.width.includes('100%')) {
-            childEl.style.width = '100%';
           }
         });
       });
 
-      // Apply the same width overrides to the cloned element
+      // Apply balanced width overrides to the cloned element
       const clonedTemplateElements = clonedElement.querySelectorAll('.cv-template, [id*="cv-template"]');
       clonedTemplateElements.forEach((element) => {
         const htmlElement = element as HTMLElement;
-        htmlElement.removeAttribute('style');
-        htmlElement.style.cssText = `
-          width: 100% !important;
-          max-width: none !important;
-          margin: 0 !important;
-          padding: 10px !important;
-          box-shadow: none !important;
-          border-radius: 0 !important;
-          position: static !important;
-          transform: none !important;
-        `;
         
-        // Also override any child elements that might have width constraints
-        const childElements = htmlElement.querySelectorAll('*');
-        childElements.forEach(child => {
-          const childEl = child as HTMLElement;
-          if (childEl.style.maxWidth && childEl.style.maxWidth.includes('px')) {
-            childEl.style.maxWidth = 'none';
-          }
-          if (childEl.style.width && childEl.style.width.includes('px') && !childEl.style.width.includes('100%')) {
-            childEl.style.width = '100%';
-          }
-        });
+        // Preserve original styles but override width constraints
+        const currentStyle = htmlElement.getAttribute('style') || '';
+        const newStyle = currentStyle
+          .replace(/max-width:\s*[^;]+;?/g, 'max-width: none !important;')
+          .replace(/margin:\s*[^;]+;?/g, 'margin: 0 auto !important;')
+          .replace(/box-shadow:\s*[^;]+;?/g, 'box-shadow: none !important;')
+          .replace(/border-radius:\s*[^;]+;?/g, 'border-radius: 0 !important;');
+        
+        htmlElement.setAttribute('style', newStyle);
+        
+        // Set a reasonable max-width for the template to prevent stretching
+        htmlElement.style.maxWidth = '210mm'; // A4 width
+        htmlElement.style.width = '100%';
+        htmlElement.style.margin = '0 auto';
       });
 
       // Convert HTML to canvas using the temporary container
@@ -3423,9 +3407,9 @@ export default function CVBuilder() {
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: 1200, // Force a specific width
-        height: tempContainer.scrollHeight * 2, // Scale height proportionally
-        windowWidth: 1200, // Ensure adequate width for capture
+        width: tempContainer.scrollWidth,
+        height: tempContainer.scrollHeight,
+        windowWidth: 1200,
         windowHeight: 1600,
         scrollX: 0,
         scrollY: 0,
@@ -3464,19 +3448,19 @@ export default function CVBuilder() {
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
       
-      // Calculate scaling to use full page width
+      // Calculate scaling to fit the page properly
       const scaleX = pdfWidth / imgWidth;
       const scaleY = pdfHeight / imgHeight;
       
-      // Use the width scale to ensure full page width, but don't exceed page height
+      // Use the smaller scale to fit the page without stretching
       const scale = Math.min(scaleX, scaleY);
       
       const finalWidth = imgWidth * scale;
       const finalHeight = imgHeight * scale;
       
-      // Position at top-left with no margins
-      const x = 0;
-      const y = 0;
+      // Center the image on the page
+      const x = (pdfWidth - finalWidth) / 2;
+      const y = (pdfHeight - finalHeight) / 2;
 
       // Add the image to PDF
       pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
@@ -3532,11 +3516,11 @@ export default function CVBuilder() {
             overflow-x: auto;
         }
         
-        /* Ensure the CV template uses full width */
+        /* Ensure the CV template uses appropriate width */
         .cv-template, [id*="cv-template"] {
             width: 100% !important;
-            max-width: none !important;
-            margin: 0 !important;
+            max-width: 210mm !important;
+            margin: 0 auto !important;
             padding: 10px !important;
             box-shadow: none !important;
             border-radius: 0 !important;
@@ -3544,24 +3528,15 @@ export default function CVBuilder() {
         
         /* Override any inline styles that might constrain width */
         .cv-template[style*="max-width"] {
-            max-width: none !important;
-        }
-        
-        .cv-template[style*="width"] {
-            width: 100% !important;
-        }
-        
-        /* Force all elements to use full width */
-        .cv-template *, [id*="cv-template"] * {
-            max-width: none !important;
+            max-width: 210mm !important;
         }
         
         /* Override specific template classes that might have width constraints */
         .jobscan-executive, .microsoft-professional, .novoresume-modern, 
         .tech-professional, .minimal-clean, .modern-advanced {
             width: 100% !important;
-            max-width: none !important;
-            margin: 0 !important;
+            max-width: 210mm !important;
+            margin: 0 auto !important;
         }
         
         /* For two-column layouts, ensure they use full width */
