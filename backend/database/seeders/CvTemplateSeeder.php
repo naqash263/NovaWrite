@@ -33,7 +33,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'executive',
                 'ats_score' => 9,
                 'is_default' => true,
-                'thumbnail_url' => '/images/templates/jobscan-executive-thumbnail.png',
+                'thumbnail' => '/images/templates/jobscan-executive-thumbnail.png',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -69,6 +69,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'professional',
                 'ats_score' => 8,
                 'is_default' => false,
+                'thumbnail' => '/images/templates/microsoft-professional-thumbnail.png',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -104,6 +105,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'modern',
                 'ats_score' => 8,
                 'is_default' => false,
+                'thumbnail' => '/images/templates/novoresume-modern-thumbnail.png',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -234,6 +236,81 @@ class CvTemplateSeeder extends Seeder
                     'layout' => 'modern-advanced',
                     'sections' => ['header', 'summary', 'experience', 'education', 'skills', 'projects', 'certifications', 'languages', 'interests'],
                     'features' => ['Advanced CSS', 'Animations', 'Hover effects', 'Responsive design', 'Modern styling']
+                ]
+            ],
+            [
+                'name' => 'Left-Right Professional',
+                'description' => 'Two-column layout with left sidebar for contact info and right main content. Perfect for detailed professionals.',
+                'category' => 'professional',
+                'ats_score' => 8,
+                'is_default' => false,
+                'thumbnail' => '/images/templates/left-right-professional-thumbnail.png',
+                'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
+                'field_mappings' => [
+                    '{{fullName}}' => 'fullName',
+                    '{{jobTitle}}' => 'jobTitle',
+                    '{{email}}' => 'email',
+                    '{{phoneNumber}}' => 'phoneNumber',
+                    '{{address}}' => 'address',
+                    '{{professionalSummary}}' => 'professionalSummary',
+                    '{{workExperience}}' => 'workExperience',
+                    '{{education}}' => 'education',
+                    '{{skills}}' => 'skills',
+                    '{{projects}}' => 'projects',
+                    '{{certificates}}' => 'certificates',
+                    '{{languages}}' => 'languages',
+                    '{{achievements}}' => 'achievements',
+                    '{{interests}}' => 'interests',
+                    '{{references}}' => 'references',
+                    '{{profileImage}}' => 'profileImage',
+                    '{{primaryColor}}' => 'primaryColor',
+                    '{{secondaryColor}}' => 'secondaryColor',
+                    '{{fontFamily}}' => 'fontFamily',
+                    '{{fontSize}}' => 'fontSize'
+                ],
+                'html_content' => $this->getLeftRightProfessionalTemplate(),
+                'json_config' => [
+                    'layout' => 'left-right',
+                    'sections' => ['header', 'sidebar', 'main-content', 'summary', 'experience', 'education', 'skills', 'projects'],
+                    'features' => ['Two-column layout', 'Sidebar design', 'Professional', 'Image support']
+                ]
+            ],
+            [
+                'name' => 'Creative Portfolio',
+                'description' => 'Creative template with image support and modern design. Great for designers and creative professionals.',
+                'category' => 'creative',
+                'ats_score' => 7,
+                'is_default' => false,
+                'thumbnail' => '/images/templates/creative-portfolio-thumbnail.png',
+                'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
+                'field_mappings' => [
+                    '{{fullName}}' => 'fullName',
+                    '{{jobTitle}}' => 'jobTitle',
+                    '{{email}}' => 'email',
+                    '{{phoneNumber}}' => 'phoneNumber',
+                    '{{address}}' => 'address',
+                    '{{professionalSummary}}' => 'professionalSummary',
+                    '{{workExperience}}' => 'workExperience',
+                    '{{education}}' => 'education',
+                    '{{skills}}' => 'skills',
+                    '{{projects}}' => 'projects',
+                    '{{certificates}}' => 'certificates',
+                    '{{languages}}' => 'languages',
+                    '{{achievements}}' => 'achievements',
+                    '{{interests}}' => 'interests',
+                    '{{references}}' => 'references',
+                    '{{profileImage}}' => 'profileImage',
+                    '{{portfolioImages}}' => 'portfolioImages',
+                    '{{primaryColor}}' => 'primaryColor',
+                    '{{secondaryColor}}' => 'secondaryColor',
+                    '{{fontFamily}}' => 'fontFamily',
+                    '{{fontSize}}' => 'fontSize'
+                ],
+                'html_content' => $this->getCreativePortfolioTemplate(),
+                'json_config' => [
+                    'layout' => 'creative',
+                    'sections' => ['header', 'hero', 'summary', 'experience', 'education', 'skills', 'projects', 'portfolio'],
+                    'features' => ['Creative design', 'Image gallery', 'Portfolio showcase', 'Modern styling']
                 ]
             ]
         ];
@@ -1211,6 +1288,528 @@ class CvTemplateSeeder extends Seeder
             <div class="section">
                 <div class="section-title">Interests</div>
                 {{interests}}
+            </div>
+        </div>';
+    }
+
+    private function getLeftRightProfessionalTemplate()
+    {
+        return '<div class="cv-template left-right-layout">
+            <style>
+                .cv-template {
+                    font-family: {{fontFamily}}, Arial, sans-serif;
+                    font-size: {{fontSize}}px;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 210mm;
+                    margin: 0 auto;
+                    background: white;
+                    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                }
+                
+                .left-right-layout {
+                    display: flex;
+                    min-height: 297mm;
+                }
+                
+                .left-sidebar {
+                    width: 35%;
+                    background: {{primaryColor}};
+                    color: white;
+                    padding: 30px 20px;
+                }
+                
+                .right-content {
+                    width: 65%;
+                    padding: 30px;
+                }
+                
+                .profile-image {
+                    width: 120px;
+                    height: 120px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    margin: 0 auto 20px;
+                    display: block;
+                    border: 4px solid white;
+                }
+                
+                .name {
+                    font-size: 24px;
+                    font-weight: bold;
+                    text-align: center;
+                    margin-bottom: 10px;
+                }
+                
+                .job-title {
+                    font-size: 16px;
+                    text-align: center;
+                    opacity: 0.9;
+                    margin-bottom: 30px;
+                }
+                
+                .contact-info {
+                    margin-bottom: 30px;
+                }
+                
+                .contact-item {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 10px;
+                    font-size: 14px;
+                }
+                
+                .contact-item i {
+                    width: 20px;
+                    margin-right: 10px;
+                }
+                
+                .sidebar-section {
+                    margin-bottom: 30px;
+                }
+                
+                .sidebar-section h3 {
+                    font-size: 16px;
+                    font-weight: bold;
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid white;
+                    padding-bottom: 5px;
+                }
+                
+                .skills-list {
+                    list-style: none;
+                    padding: 0;
+                }
+                
+                .skills-list li {
+                    background: rgba(255,255,255,0.2);
+                    padding: 5px 10px;
+                    margin-bottom: 5px;
+                    border-radius: 15px;
+                    font-size: 13px;
+                }
+                
+                .section {
+                    margin-bottom: 30px;
+                }
+                
+                .section-title {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: {{primaryColor}};
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid {{primaryColor}};
+                    padding-bottom: 5px;
+                }
+                
+                .experience-item, .education-item, .project-item {
+                    margin-bottom: 20px;
+                    padding-bottom: 15px;
+                    border-bottom: 1px solid #eee;
+                }
+                
+                .item-title {
+                    font-weight: bold;
+                    font-size: 16px;
+                    color: #333;
+                }
+                
+                .item-subtitle {
+                    color: {{secondaryColor}};
+                    font-size: 14px;
+                    margin: 5px 0;
+                }
+                
+                .item-date {
+                    color: #666;
+                    font-size: 12px;
+                    font-style: italic;
+                }
+                
+                .item-description {
+                    margin-top: 8px;
+                    font-size: 14px;
+                    line-height: 1.5;
+                }
+            </style>
+            
+            <div class="left-sidebar">
+                {{#if profileImage}}
+                <img src="{{profileImage}}" alt="Profile" class="profile-image">
+                {{/if}}
+                
+                <div class="name">{{fullName}}</div>
+                <div class="job-title">{{jobTitle}}</div>
+                
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <i>📧</i>
+                        <span>{{email}}</span>
+                    </div>
+                    <div class="contact-item">
+                        <i>📱</i>
+                        <span>{{phoneNumber}}</span>
+                    </div>
+                    <div class="contact-item">
+                        <i>📍</i>
+                        <span>{{address}}</span>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Skills</h3>
+                    <ul class="skills-list">{{skills}}</ul>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Languages</h3>
+                    {{languages}}
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Interests</h3>
+                    {{interests}}
+                </div>
+            </div>
+            
+            <div class="right-content">
+                <div class="section">
+                    <div class="section-title">Professional Summary</div>
+                    <div class="item-description">{{professionalSummary}}</div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Work Experience</div>
+                    {{workExperience}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Education</div>
+                    {{education}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Projects</div>
+                    {{projects}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Certifications</div>
+                    {{certificates}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Achievements</div>
+                    {{achievements}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">References</div>
+                    {{references}}
+                </div>
+            </div>
+        </div>';
+    }
+
+    private function getCreativePortfolioTemplate()
+    {
+        return '<div class="cv-template creative-layout">
+            <style>
+                .cv-template {
+                    font-family: {{fontFamily}}, Arial, sans-serif;
+                    font-size: {{fontSize}}px;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 210mm;
+                    margin: 0 auto;
+                    background: white;
+                    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                }
+                
+                .hero-section {
+                    background: linear-gradient(135deg, {{primaryColor}}, {{secondaryColor}});
+                    color: white;
+                    padding: 40px;
+                    text-align: center;
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .hero-section::before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+                    opacity: 0.3;
+                }
+                
+                .hero-content {
+                    position: relative;
+                    z-index: 1;
+                }
+                
+                .profile-image {
+                    width: 150px;
+                    height: 150px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    margin: 0 auto 20px;
+                    display: block;
+                    border: 6px solid white;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                }
+                
+                .name {
+                    font-size: 32px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                }
+                
+                .job-title {
+                    font-size: 20px;
+                    opacity: 0.9;
+                    margin-bottom: 20px;
+                }
+                
+                .contact-info {
+                    display: flex;
+                    justify-content: center;
+                    gap: 30px;
+                    flex-wrap: wrap;
+                }
+                
+                .contact-item {
+                    display: flex;
+                    align-items: center;
+                    font-size: 16px;
+                }
+                
+                .contact-item i {
+                    margin-right: 8px;
+                }
+                
+                .content-section {
+                    padding: 40px;
+                }
+                
+                .section {
+                    margin-bottom: 40px;
+                }
+                
+                .section-title {
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: {{primaryColor}};
+                    margin-bottom: 20px;
+                    position: relative;
+                    padding-left: 20px;
+                }
+                
+                .section-title::before {
+                    content: "";
+                    position: absolute;
+                    left: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 4px;
+                    height: 30px;
+                    background: {{primaryColor}};
+                }
+                
+                .portfolio-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 20px;
+                    margin-top: 20px;
+                }
+                
+                .portfolio-item {
+                    background: #f8f9fa;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                    transition: transform 0.3s ease;
+                }
+                
+                .portfolio-item:hover {
+                    transform: translateY(-5px);
+                }
+                
+                .portfolio-image {
+                    width: 100%;
+                    height: 200px;
+                    object-fit: cover;
+                }
+                
+                .portfolio-content {
+                    padding: 20px;
+                }
+                
+                .portfolio-title {
+                    font-weight: bold;
+                    font-size: 16px;
+                    margin-bottom: 10px;
+                    color: #333;
+                }
+                
+                .portfolio-description {
+                    font-size: 14px;
+                    color: #666;
+                    line-height: 1.5;
+                }
+                
+                .experience-item, .education-item, .project-item {
+                    background: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin-bottom: 20px;
+                    border-left: 4px solid {{primaryColor}};
+                }
+                
+                .item-title {
+                    font-weight: bold;
+                    font-size: 18px;
+                    color: #333;
+                    margin-bottom: 5px;
+                }
+                
+                .item-subtitle {
+                    color: {{secondaryColor}};
+                    font-size: 16px;
+                    margin-bottom: 10px;
+                }
+                
+                .item-date {
+                    color: #666;
+                    font-size: 14px;
+                    font-style: italic;
+                    margin-bottom: 10px;
+                }
+                
+                .item-description {
+                    font-size: 14px;
+                    line-height: 1.6;
+                }
+                
+                .skills-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 15px;
+                    margin-top: 20px;
+                }
+                
+                .skill-category {
+                    background: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 8px;
+                    border-left: 4px solid {{primaryColor}};
+                }
+                
+                .skill-category h4 {
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    color: #333;
+                }
+                
+                .skill-tags {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 5px;
+                }
+                
+                .skill-tag {
+                    background: {{primaryColor}};
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                    font-size: 12px;
+                }
+            </style>
+            
+            <div class="hero-section">
+                <div class="hero-content">
+                    {{#if profileImage}}
+                    <img src="{{profileImage}}" alt="Profile" class="profile-image">
+                    {{/if}}
+                    
+                    <div class="name">{{fullName}}</div>
+                    <div class="job-title">{{jobTitle}}</div>
+                    
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <i>📧</i>
+                            <span>{{email}}</span>
+                        </div>
+                        <div class="contact-item">
+                            <i>📱</i>
+                            <span>{{phoneNumber}}</span>
+                        </div>
+                        <div class="contact-item">
+                            <i>📍</i>
+                            <span>{{address}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="content-section">
+                <div class="section">
+                    <div class="section-title">About Me</div>
+                    <div class="item-description">{{professionalSummary}}</div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Work Experience</div>
+                    {{workExperience}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Education</div>
+                    {{education}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Skills</div>
+                    <div class="skills-grid">{{skills}}</div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Projects</div>
+                    {{projects}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Portfolio</div>
+                    <div class="portfolio-grid">{{portfolioImages}}</div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Certifications</div>
+                    {{certificates}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Languages</div>
+                    {{languages}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Achievements</div>
+                    {{achievements}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Interests</div>
+                    {{interests}}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">References</div>
+                    {{references}}
+                </div>
             </div>
         </div>';
     }
