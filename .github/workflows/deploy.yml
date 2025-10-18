@@ -329,12 +329,18 @@ jobs:
             sed -i 's|^FRONTEND_URL=.*|FRONTEND_URL=https://naqashthaheem.com|' .env
           fi
           
-              # Only generate APP_KEY if it doesn't exist
-              if ! grep -q "APP_KEY=base64:" .env; then
-                echo -e "${BLUE}🔑 Generating APP_KEY...${NC}"
-                php artisan key:generate --force
+              # Preserve existing APP_KEY or generate new one
+              if [ -f ".env" ] && grep -q "APP_KEY=base64:" .env; then
+                echo -e "${GREEN}✅ APP_KEY already exists, preserving it${NC}"
+                # Extract existing APP_KEY
+                EXISTING_KEY=$(grep '^APP_KEY=' .env | cut -d'=' -f2)
+                echo -e "${BLUE}🔑 Preserving existing APP_KEY: ${EXISTING_KEY:0:20}...${NC}"
               else
-                echo -e "${GREEN}✅ APP_KEY already exists, keeping it${NC}"
+                echo -e "${BLUE}🔑 Generating new APP_KEY...${NC}"
+                php artisan key:generate --force
+                # Backup the new key
+                NEW_KEY=$(grep '^APP_KEY=' .env | cut -d'=' -f2)
+                echo -e "${BLUE}🔑 New APP_KEY generated: ${NEW_KEY:0:20}...${NC}"
               fi
               
               # Generate JWT secret
@@ -376,6 +382,18 @@ jobs:
             ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO timesovh_naqash_thaheem;
             ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO timesovh_naqash_thaheem;
           " || echo -e "${YELLOW}⚠️ Permission grant completed (some warnings are normal)${NC}"
+          
+          # Try to restore APP_KEY from backup if current one is different
+          echo -e "${BLUE}🔑 Checking for encryption key backup...${NC}"
+          BACKUP_KEY=$(PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -t -c "SELECT key FROM encryption_key_backups WHERE environment = 'production' ORDER BY backed_up_at DESC LIMIT 1;" 2>/dev/null | xargs)
+          
+          if [ ! -z "$BACKUP_KEY" ] && [ "$BACKUP_KEY" != "" ]; then
+            echo -e "${BLUE}🔑 Found backup key, restoring it...${NC}"
+            sed -i "s|^APP_KEY=.*|APP_KEY=$BACKUP_KEY|" .env
+            echo -e "${GREEN}✅ APP_KEY restored from backup${NC}"
+          else
+            echo -e "${YELLOW}⚠️ No backup key found, keeping current key${NC}"
+          fi
           
           # Backup current encryption key before running migrations
           echo -e "${BLUE}🔑 Backing up current encryption key...${NC}"
