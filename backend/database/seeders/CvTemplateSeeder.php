@@ -33,7 +33,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'executive',
                 'ats_score' => 9,
                 'is_default' => true,
-                'thumbnail' => '/images/templates/jobscan-executive-thumbnail.png',
+                'thumbnail' => 'https://picsum.photos/300/400?random=3',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -69,7 +69,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'professional',
                 'ats_score' => 8,
                 'is_default' => false,
-                'thumbnail' => '/images/templates/microsoft-professional-thumbnail.png',
+                'thumbnail' => 'https://picsum.photos/300/400?random=7',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -105,7 +105,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'modern',
                 'ats_score' => 8,
                 'is_default' => false,
-                'thumbnail' => '/images/templates/novoresume-modern-thumbnail.png',
+                'thumbnail' => 'https://picsum.photos/300/400?random=6',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -141,6 +141,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'tech',
                 'ats_score' => 9,
                 'is_default' => false,
+                'thumbnail' => 'https://picsum.photos/300/400?random=2',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -176,6 +177,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'minimal',
                 'ats_score' => 10,
                 'is_default' => false,
+                'thumbnail' => 'https://picsum.photos/300/400?random=1',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -211,6 +213,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'modern',
                 'ats_score' => 7,
                 'is_default' => false,
+                'thumbnail' => 'https://picsum.photos/300/400?random=4',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -244,7 +247,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'professional',
                 'ats_score' => 8,
                 'is_default' => false,
-                'thumbnail' => '/images/templates/left-right-professional-thumbnail.png',
+                'thumbnail' => 'https://picsum.photos/300/400?random=8',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -281,7 +284,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'creative',
                 'ats_score' => 7,
                 'is_default' => false,
-                'thumbnail' => '/images/templates/creative-portfolio-thumbnail.png',
+                'thumbnail' => 'https://picsum.photos/300/400?random=5',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
@@ -316,11 +319,14 @@ class CvTemplateSeeder extends Seeder
         ];
 
         foreach ($templates as $templateData) {
-            CvTemplate::create([
+            CvTemplate::updateOrCreate(
+                ['name' => $templateData['name']], // Find by name
+                [
                 ...$templateData,
                 'created_by' => $admin->id,
                 'is_active' => true,
-            ]);
+                ]
+            );
         }
     }
 
@@ -1294,37 +1300,35 @@ class CvTemplateSeeder extends Seeder
 
     private function getLeftRightProfessionalTemplate()
     {
-        return '<div class="cv-template left-right-layout">
+        return '<div class="cv-template left-right-layout" id="cv-template-left-right">
             <style>
-                .cv-template {
+                #cv-template-left-right {
                     font-family: {{fontFamily}}, Arial, sans-serif;
                     font-size: {{fontSize}}px;
                     line-height: 1.6;
                     color: #333;
-                    max-width: 210mm;
-                    margin: 0 auto;
+                    width: 100%;
+                    max-width: 100%;
+                    margin: 0;
                     background: white;
                     box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                    display: flex !important;
+                        min-height: 842px;
                 }
                 
-                .left-right-layout {
-                    display: flex;
-                    min-height: 297mm;
-                }
+                    #cv-template-left-right .left-sidebar {
+                        width: 30% !important;
+                        background: {{primaryColor}};
+                        color: white;
+                        padding: 30px 20px;
+                    }
+                    
+                    #cv-template-left-right .right-content {
+                        width: 70% !important;
+                        padding: 30px;
+                    }
                 
-                .left-sidebar {
-                    width: 35%;
-                    background: {{primaryColor}};
-                    color: white;
-                    padding: 30px 20px;
-                }
-                
-                .right-content {
-                    width: 65%;
-                    padding: 30px;
-                }
-                
-                .profile-image {
+                #cv-template-left-right .profile-image {
                     width: 120px;
                     height: 120px;
                     border-radius: 50%;
@@ -1334,7 +1338,7 @@ class CvTemplateSeeder extends Seeder
                     border: 4px solid white;
                 }
                 
-                .name {
+                #cv-template-left-right .name {
                     font-size: 24px;
                     font-weight: bold;
                     text-align: center;
