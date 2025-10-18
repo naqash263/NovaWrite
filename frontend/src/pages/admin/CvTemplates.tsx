@@ -709,8 +709,12 @@ export default function CvTemplates() {
         console.log(key, value);
       }
       
-      if (formData.thumbnail) {
+      // Only append thumbnail if it's actually a file
+      if (formData.thumbnail && formData.thumbnail instanceof File) {
+        console.log('Adding thumbnail file:', formData.thumbnail.name, formData.thumbnail.size);
         formDataToSend.append('thumbnail', formData.thumbnail);
+      } else {
+        console.log('No thumbnail file to upload');
       }
 
       let response;
@@ -747,6 +751,10 @@ export default function CvTemplates() {
       console.error('Error saving template:', error);
       if (error.response?.data?.errors) {
         console.error('Validation errors:', error.response.data.errors);
+        // Log each error field separately for debugging
+        Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+          console.error(`Field ${field}:`, messages);
+        });
         const errorMessages = Object.values(error.response.data.errors).flat();
         setError(`Validation failed: ${errorMessages.join(', ')}`);
       } else {

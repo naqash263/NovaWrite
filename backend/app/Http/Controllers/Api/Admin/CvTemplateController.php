@@ -130,7 +130,8 @@ class CvTemplateController extends Controller
             $data['field_mappings'] = json_decode($data['field_mappings'], true);
         }
 
-        $validator = Validator::make($data, [
+        // Only validate thumbnail if it's present in the request
+        $rules = [
             'name' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
             'category' => 'sometimes|required|string|max:100',
@@ -139,8 +140,14 @@ class CvTemplateController extends Controller
             'json_config' => 'sometimes|required|array',
             'customizable_options' => 'nullable|array',
             'field_mappings' => 'nullable|array',
-            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        ];
+        
+        // Only add thumbnail validation if thumbnail is present
+        if ($request->hasFile('thumbnail')) {
+            $rules['thumbnail'] = 'image|mimes:jpeg,png,jpg,gif|max:2048';
+        }
+        
+        $validator = Validator::make($data, $rules);
 
         if ($validator->fails()) {
             return response()->json([
