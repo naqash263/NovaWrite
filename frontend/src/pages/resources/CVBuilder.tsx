@@ -6,6 +6,8 @@ import { TemplateCustomizer, type CVStyle } from '../../components/cv-builder/te
 import { ToastContainer, useToast } from '../../hooks/use-toast';
 import { uploadFileForProcessing, validateFile } from '../../utils/fileProcessor';
 import CVExportOptions from '../../components/cv-builder/CVExportOptions';
+import { API_CONFIG } from '../../config/api';
+import apiClient from '../../api/axios';
 
 // Custom File Input Component
 const FileInput = ({ onFileSelect, isProcessing, buttonText, accept = ".pdf,.doc,.docx,.txt" }: {
@@ -364,6 +366,7 @@ const AIUploadStep = ({ onDataChange, onNext }: { onDataChange: (data: CVData) =
       setIsUploading(false);
     }
   };
+
 
 
   return (
@@ -1547,7 +1550,7 @@ const StepNavigation = ({
 };
 
 // Individual Step Components
-const PersonalInfoStep = ({ data, onDataChange }: { data: CVData, onDataChange: (data: CVData) => void }) => {
+const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data: CVData, onDataChange: (data: CVData) => void, onProfilePictureUpload: (event: React.ChangeEvent<HTMLInputElement>) => void }) => {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="text-center mb-8">
@@ -1612,15 +1615,66 @@ const PersonalInfoStep = ({ data, onDataChange }: { data: CVData, onDataChange: 
             />
           </div>
 
-          <div className="md:col-span-2 space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">Profile Picture URL</label>
-            <input
-              type="url"
-              value={data.profilePictureUrl}
-              onChange={(e) => onDataChange({ ...data, profilePictureUrl: e.target.value })}
-              placeholder="https://example.com/your-photo.jpg"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
+          <div className="md:col-span-2 space-y-4">
+            <label className="block text-sm font-semibold text-gray-700">Profile Picture</label>
+            
+            {/* URL Input */}
+            <div className="space-y-2">
+              <label className="block text-sm text-gray-600">Or enter image URL:</label>
+              <input
+                type="url"
+                value={data.profilePictureUrl}
+                onChange={(e) => onDataChange({ ...data, profilePictureUrl: e.target.value })}
+                placeholder="https://example.com/your-photo.jpg"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              />
+            </div>
+
+            {/* File Upload */}
+            <div className="space-y-2">
+              <label className="block text-sm text-gray-600">Or upload image file:</label>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onProfilePictureUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  id="profile-picture-upload"
+                />
+                <label
+                  htmlFor="profile-picture-upload"
+                  className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all duration-200"
+                >
+                  <div className="text-center">
+                    <svg className="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <p className="mt-2 text-sm text-gray-600">
+                      <span className="font-medium text-blue-600 hover:text-blue-500">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Preview */}
+            {data.profilePictureUrl && (
+              <div className="mt-4">
+                <label className="block text-sm text-gray-600 mb-2">Preview:</label>
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-300">
+                  <img
+                    src={data.profilePictureUrl}
+                    alt="Profile preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             <p className="text-sm text-gray-500">Optional: Add a professional headshot</p>
           </div>
         </div>
@@ -2795,20 +2849,46 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
                   }`}
                   onClick={() => handleTemplateSelect(template.id.toString())}
                 >
+                  {/* Template Preview */}
+                  <div className="aspect-[3/4] bg-gray-50 overflow-hidden relative">
+                    {template.thumbnail ? (
+                      <img
+                        src={template.thumbnail.startsWith('http') ? template.thumbnail : API_CONFIG.getStorageUrl(template.thumbnail)}
+                        alt={template.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+                        <div className="text-center">
+                          <div className="w-16 h-16 bg-blue-200 rounded-lg mx-auto mb-2 flex items-center justify-center">
+                            <span className="text-2xl">📄</span>
+                          </div>
+                          <p className="text-sm text-gray-600">Preview</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* ATS Score Badge */}
+                    <div className="absolute top-3 right-3">
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        template.ats_score >= 8 ? 'bg-green-100 text-green-800' :
+                        template.ats_score >= 6 ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        ATS {template.ats_score}/10
+                      </span>
+                    </div>
+                  </div>
+                  
                   <div className="p-4 bg-white">
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="mb-3">
                       <h4 className="font-semibold text-gray-900">{template.name}</h4>
-                      <div className="flex items-center space-x-1">
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                          ATS {template.ats_score}/10
+                      {template.is_default && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          Default
                         </span>
-                        {template.is_default && (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                            Default
-                          </span>
-                        )}
-        </div>
-      </div>
+                      )}
+                    </div>
                     
                     <p className="text-sm text-gray-600 mb-3">{template.description || 'Professional CV template'}</p>
                     
@@ -2973,6 +3053,75 @@ export default function CVBuilder() {
 
   const totalSteps = 10;
 
+  // Handle profile picture upload
+  const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      addToast({
+        type: 'error',
+        title: 'Invalid File Type',
+        description: 'Please select an image file (PNG, JPG, GIF, etc.)'
+      });
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      addToast({
+        type: 'error',
+        title: 'File Too Large',
+        description: 'Image file must be smaller than 10MB'
+      });
+      return;
+    }
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('is_public', 'true');
+      formData.append('context', 'profile-picture');
+
+      // Upload file to backend
+      const response = await fetch('/api/files', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.file) {
+        // Get the file URL from the response
+        const fileUrl = result.file.path;
+        const fullUrl = fileUrl.startsWith('http') ? fileUrl : `${window.location.origin}/storage/${fileUrl}`;
+        
+        // Update the profile picture URL
+        setCvData(prev => ({ ...prev, profilePictureUrl: fullUrl }));
+        
+        addToast({
+          type: 'success',
+          title: 'Profile Picture Uploaded',
+          description: 'Your profile picture has been uploaded successfully!'
+        });
+      } else {
+        throw new Error(result.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Profile picture upload error:', error);
+      addToast({
+        type: 'error',
+        title: 'Upload Failed',
+        description: 'Failed to upload profile picture. Please try again.'
+      });
+    }
+  };
+
   // Handle reset function
   const handleReset = () => {
     // Clear all saved data
@@ -3008,8 +3157,8 @@ export default function CVBuilder() {
   useEffect(() => {
     const loadTemplates = async () => {
       try {
-        const response = await fetch('/api/cv-templates');
-        const data = await response.json();
+        const response = await apiClient.get('/cv-templates');
+        const data = response.data;
         
         if (data.success) {
           console.log('Loaded templates:', data.data);
@@ -3150,438 +3299,71 @@ export default function CVBuilder() {
     }
   };
 
-  const exportAsPDF = async (options: any) => {
+  const exportAsPDF = async (_options: any) => {
     try {
-      // Import jsPDF dynamically
+      // Import required libraries dynamically
       const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
       
-      // Create a new PDF document
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: options.pageSize || 'a4'
+      // Get the CV preview element
+      const previewElement = document.getElementById('cv-preview');
+      if (!previewElement) {
+        throw new Error('CV preview not found');
+      }
+
+      // Convert HTML to canvas using the original template styling
+      const canvas = await html2canvas(previewElement, {
+        scale: 2, // Higher quality
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: previewElement.scrollWidth,
+        height: previewElement.scrollHeight
       });
 
-      // Set up fonts and styling
-      doc.setFont('helvetica');
-      doc.setFontSize(12);
+      // Create PDF with canvas image
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
 
-      // Page dimensions (A4 in mm)
-      const pageWidth = 210;
-      const pageHeight = 297;
-      const margin = 20;
-      let yPosition = margin;
-
-      // Helper function to add text with word wrapping
-      const addText = (text: string, fontSize: number = 12, isBold: boolean = false, color: string = '#000000') => {
-        doc.setFontSize(fontSize);
-        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-        doc.setTextColor(color);
-        
-        const maxWidth = pageWidth - (margin * 2);
-        const lines = doc.splitTextToSize(text, maxWidth);
-        
-        // Check if we need a new page
-        if (yPosition + (lines.length * fontSize * 0.4) > pageHeight - margin) {
-          doc.addPage();
-          yPosition = margin;
-        }
-        
-        doc.text(lines, margin, yPosition);
-        yPosition += lines.length * fontSize * 0.4 + 2;
-      };
-
-      // Helper function to add a section header
-      const addSectionHeader = (title: string) => {
-        yPosition += 5; // Add some space before section
-        addText(title, 14, true, '#2563eb');
-        yPosition += 3;
-      };
-
-      // Helper function to add a horizontal line
-      const addLine = () => {
-        doc.setDrawColor(200, 200, 200);
-        doc.line(margin, yPosition, pageWidth - margin, yPosition);
-        yPosition += 3;
-      };
-
-      // Start building the CV content
+      // Get PDF page dimensions
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
       
-      // Header Section
-      if (cvData.fullName) {
-        addText(cvData.fullName, 20, true, '#1f2937');
-        yPosition += 2;
-      }
+      // Calculate scaling to fit the image to the page
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
       
-      if (cvData.jobTitle) {
-        addText(cvData.jobTitle, 14, false, '#6b7280');
-        yPosition += 2;
-      }
+      // Calculate scaling to fit the page
+      const scaleX = pdfWidth / imgWidth;
+      const scaleY = pdfHeight / imgHeight;
+      const scale = Math.min(scaleX, scaleY); // Use the smaller scale to fit the page
       
-      // Contact Information
-      const contactInfo = [];
-      if (cvData.email) contactInfo.push(cvData.email);
-      if (cvData.phoneNumber) contactInfo.push(cvData.phoneNumber);
-      if (cvData.address) contactInfo.push(cvData.address);
+      const finalWidth = imgWidth * scale;
+      const finalHeight = imgHeight * scale;
       
-      if (contactInfo.length > 0) {
-        addText(contactInfo.join(' • '), 10, false, '#6b7280');
-        yPosition += 5;
-      }
+      // Center the image on the page
+      const x = (pdfWidth - finalWidth) / 2;
+      const y = (pdfHeight - finalHeight) / 2;
 
-      addLine();
-
-      // Professional Summary
-      if (cvData.professionalSummary) {
-        addSectionHeader('PROFESSIONAL SUMMARY');
-        addText(cvData.professionalSummary, 11);
-        yPosition += 3;
-      }
-
-      // Work Experience
-      if (cvData.workExperience && cvData.workExperience.length > 0) {
-        addSectionHeader('WORK EXPERIENCE');
-        
-        cvData.workExperience.forEach((exp) => {
-          if (exp.jobTitle && exp.company) {
-            // Job title and company
-            addText(`${exp.jobTitle}`, 12, true);
-            addText(`${exp.company}`, 11, false, '#6b7280');
-            
-            // Dates
-            const startDate = exp.startDate || '';
-            const endDate = exp.endDate || 'Present';
-            addText(`${startDate} - ${endDate}`, 10, false, '#6b7280');
-            
-            // Description
-            if (exp.description) {
-              addText(exp.description, 10);
-            }
-            
-            yPosition += 3;
-          }
-        });
-      }
-
-      // Education
-      if (cvData.education && cvData.education.length > 0) {
-        addSectionHeader('EDUCATION');
-        
-        cvData.education.forEach((edu) => {
-          if (edu.degree && edu.institution) {
-            addText(`${edu.degree}`, 12, true);
-            addText(`${edu.institution}`, 11, false, '#6b7280');
-            
-            if (edu.graduationYear) {
-              addText(`Graduated: ${edu.graduationYear}`, 10, false, '#6b7280');
-            }
-            
-            yPosition += 3;
-          }
-        });
-      }
-
-      // Skills - Multi-column layout
-      if (cvData.skills) {
-        addSectionHeader('SKILLS');
-        const skills = cvData.skills.split(',').map(s => s.trim()).filter(Boolean);
-        const skillsPerColumn = Math.ceil(skills.length / 3); // 3 columns
-        
-        // Split skills into columns
-        const col1 = skills.slice(0, skillsPerColumn);
-        const col2 = skills.slice(skillsPerColumn, skillsPerColumn * 2);
-        const col3 = skills.slice(skillsPerColumn * 2);
-        
-        const columnWidth = (pageWidth - (margin * 2)) / 3;
-        const startX = margin;
-        
-        // Column 1
-        let colY = yPosition;
-        col1.forEach(skill => {
-          doc.setFontSize(10);
-          doc.text(`• ${skill}`, startX, colY);
-          colY += 4;
-        });
-        
-        // Column 2
-        colY = yPosition;
-        col2.forEach(skill => {
-          doc.setFontSize(10);
-          doc.text(`• ${skill}`, startX + columnWidth, colY);
-          colY += 4;
-        });
-        
-        // Column 3
-        colY = yPosition;
-        col3.forEach(skill => {
-          doc.setFontSize(10);
-          doc.text(`• ${skill}`, startX + (columnWidth * 2), colY);
-          colY += 4;
-        });
-        
-        yPosition = Math.max(
-          yPosition + (col1.length * 4),
-          yPosition + (col2.length * 4),
-          yPosition + (col3.length * 4)
-        ) + 5;
-      }
-
-      // Projects
-      if (cvData.projects && cvData.projects.length > 0) {
-        addSectionHeader('PROJECTS');
-        
-        cvData.projects.forEach((project) => {
-          if (project.name) {
-            addText(`${project.name}`, 12, true);
-            if (project.description) {
-              addText(project.description, 10);
-            }
-            if (project.technologies) {
-              addText(`Technologies: ${project.technologies}`, 10, false, '#6b7280');
-            }
-            yPosition += 3;
-          }
-        });
-      }
-
-      // Certificates
-      if (cvData.certificates && cvData.certificates.length > 0) {
-        addSectionHeader('CERTIFICATIONS');
-        
-        cvData.certificates.forEach((cert) => {
-          if (cert.name) {
-            addText(`${cert.name}`, 12, true);
-            if (cert.issuer) {
-              addText(`${cert.issuer}`, 11, false, '#6b7280');
-            }
-            if (cert.date) {
-              addText(`Issued: ${cert.date}`, 10, false, '#6b7280');
-            }
-            yPosition += 3;
-          }
-        });
-      }
-
-      // Languages - Multi-column layout
-      if (cvData.languages && cvData.languages.length > 0) {
-        addSectionHeader('LANGUAGES');
-        const languagesPerColumn = Math.ceil(cvData.languages.length / 4); // 4 columns
-        
-        // Split languages into columns
-        const col1 = cvData.languages.slice(0, languagesPerColumn);
-        const col2 = cvData.languages.slice(languagesPerColumn, languagesPerColumn * 2);
-        const col3 = cvData.languages.slice(languagesPerColumn * 2, languagesPerColumn * 3);
-        const col4 = cvData.languages.slice(languagesPerColumn * 3);
-        
-        const columnWidth = (pageWidth - (margin * 2)) / 4;
-        const startX = margin;
-        
-        // Column 1
-        let colY = yPosition;
-        col1.forEach(lang => {
-          if (lang.language) {
-            const proficiency = lang.proficiency ? ` (${lang.proficiency})` : '';
-            doc.setFontSize(10);
-            doc.text(`${lang.language}${proficiency}`, startX, colY);
-            colY += 4;
-          }
-        });
-        
-        // Column 2
-        colY = yPosition;
-        col2.forEach(lang => {
-          if (lang.language) {
-            const proficiency = lang.proficiency ? ` (${lang.proficiency})` : '';
-            doc.setFontSize(10);
-            doc.text(`${lang.language}${proficiency}`, startX + columnWidth, colY);
-            colY += 4;
-          }
-        });
-        
-        // Column 3
-        colY = yPosition;
-        col3.forEach(lang => {
-          if (lang.language) {
-            const proficiency = lang.proficiency ? ` (${lang.proficiency})` : '';
-            doc.setFontSize(10);
-            doc.text(`${lang.language}${proficiency}`, startX + (columnWidth * 2), colY);
-            colY += 4;
-          }
-        });
-        
-        // Column 4
-        colY = yPosition;
-        col4.forEach(lang => {
-          if (lang.language) {
-            const proficiency = lang.proficiency ? ` (${lang.proficiency})` : '';
-            doc.setFontSize(10);
-            doc.text(`${lang.language}${proficiency}`, startX + (columnWidth * 3), colY);
-            colY += 4;
-          }
-        });
-        
-        yPosition = Math.max(
-          yPosition + (col1.length * 4),
-          yPosition + (col2.length * 4),
-          yPosition + (col3.length * 4),
-          yPosition + (col4.length * 4)
-        ) + 5;
-      }
-
-      // Interests - Multi-column layout
-      if (cvData.interests && cvData.interests.length > 0) {
-        addSectionHeader('INTERESTS');
-        const interestsPerColumn = Math.ceil(cvData.interests.length / 3); // 3 columns
-        
-        // Split interests into columns
-        const col1 = cvData.interests.slice(0, interestsPerColumn);
-        const col2 = cvData.interests.slice(interestsPerColumn, interestsPerColumn * 2);
-        const col3 = cvData.interests.slice(interestsPerColumn * 2);
-        
-        const columnWidth = (pageWidth - (margin * 2)) / 3;
-        const startX = margin;
-        
-        // Column 1
-        let colY = yPosition;
-        col1.forEach(interest => {
-          if (interest.category && interest.items) {
-            doc.setFontSize(10);
-            doc.text(`${interest.category}: ${interest.items}`, startX, colY);
-            colY += 4;
-          }
-        });
-        
-        // Column 2
-        colY = yPosition;
-        col2.forEach(interest => {
-          if (interest.category && interest.items) {
-            doc.setFontSize(10);
-            doc.text(`${interest.category}: ${interest.items}`, startX + columnWidth, colY);
-            colY += 4;
-          }
-        });
-        
-        // Column 3
-        colY = yPosition;
-        col3.forEach(interest => {
-          if (interest.category && interest.items) {
-            doc.setFontSize(10);
-            doc.text(`${interest.category}: ${interest.items}`, startX + (columnWidth * 2), colY);
-            colY += 4;
-          }
-        });
-        
-        yPosition = Math.max(
-          yPosition + (col1.length * 4),
-          yPosition + (col2.length * 4),
-          yPosition + (col3.length * 4)
-        ) + 5;
-      }
-
-      // References - Two-column layout
-      if (cvData.references && cvData.references.length > 0) {
-        addSectionHeader('REFERENCES');
-        const referencesPerColumn = Math.ceil(cvData.references.length / 2); // 2 columns
-        
-        // Split references into columns
-        const col1 = cvData.references.slice(0, referencesPerColumn);
-        const col2 = cvData.references.slice(referencesPerColumn);
-        
-        const columnWidth = (pageWidth - (margin * 2)) / 2;
-        const startX = margin;
-        
-        // Column 1
-        let colY = yPosition;
-        col1.forEach(ref => {
-          if (ref.name) {
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.text(ref.name, startX, colY);
-            colY += 4;
-            
-            if (ref.position) {
-              doc.setFontSize(10);
-              doc.setFont('helvetica', 'normal');
-              doc.setTextColor(107, 114, 128);
-              doc.text(ref.position, startX, colY);
-              colY += 3;
-            }
-            
-            if (ref.company) {
-              doc.setFontSize(10);
-              doc.text(ref.company, startX, colY);
-              colY += 3;
-            }
-            
-            if (ref.email) {
-              doc.setFontSize(9);
-              doc.text(ref.email, startX, colY);
-              colY += 3;
-            }
-            
-            if (ref.phone) {
-              doc.setFontSize(9);
-              doc.text(ref.phone, startX, colY);
-              colY += 3;
-            }
-            
-            colY += 2; // Space between references
-          }
-        });
-        
-        // Column 2
-        colY = yPosition;
-        col2.forEach(ref => {
-          if (ref.name) {
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.text(ref.name, startX + columnWidth, colY);
-            colY += 4;
-            
-            if (ref.position) {
-              doc.setFontSize(10);
-              doc.setFont('helvetica', 'normal');
-              doc.setTextColor(107, 114, 128);
-              doc.text(ref.position, startX + columnWidth, colY);
-              colY += 3;
-            }
-            
-            if (ref.company) {
-              doc.setFontSize(10);
-              doc.text(ref.company, startX + columnWidth, colY);
-              colY += 3;
-            }
-            
-            if (ref.email) {
-              doc.setFontSize(9);
-              doc.text(ref.email, startX + columnWidth, colY);
-              colY += 3;
-            }
-            
-            if (ref.phone) {
-              doc.setFontSize(9);
-              doc.text(ref.phone, startX + columnWidth, colY);
-              colY += 3;
-            }
-            
-            colY += 2; // Space between references
-          }
-        });
-        
-        yPosition = Math.max(
-          yPosition + (col1.length * 12), // Approximate height per reference
-          yPosition + (col2.length * 12)
-        ) + 5;
-      }
+      // Add the image to PDF
+      pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
 
       // Save the PDF
       const filename = `${cvData.fullName || 'CV'}_Resume.pdf`;
-      doc.save(filename);
+      pdf.save(filename);
 
     } catch (error) {
       console.error('Error generating PDF:', error);
-      // Fallback to print if PDF generation fails
-    window.print();
+      addToast({
+        type: 'error',
+        title: 'PDF Export Failed',
+        description: 'Failed to export as PDF. Please try again.',
+        duration: 5000
+      });
     }
   };
 
@@ -3603,7 +3385,7 @@ export default function CVBuilder() {
         throw new Error('CV preview not found');
       }
 
-      // Create HTML content
+      // Create HTML content using the original template styling
       const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -3612,15 +3394,27 @@ export default function CVBuilder() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${cvData.fullName || 'CV'} - Resume</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .cv-container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        ${previewElement.innerHTML}
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: white; 
+        }
+        @media print {
+            body { 
+                padding: 0; 
+                background: white; 
+                margin: 0;
+            }
+            @page {
+                margin: 0;
+                size: A4 portrait;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="cv-container">
-        ${previewElement.innerHTML}
-    </div>
+    ${previewElement.innerHTML}
 </body>
 </html>`;
 
@@ -3775,7 +3569,7 @@ export default function CVBuilder() {
     // Manual Steps
     switch (currentStep) {
       case 1:
-        return <PersonalInfoStep data={cvData} onDataChange={setCvData} />;
+        return <PersonalInfoStep data={cvData} onDataChange={setCvData} onProfilePictureUpload={handleProfilePictureUpload} />;
       case 2:
         return <SummaryStep data={cvData} onDataChange={setCvData} />;
       case 3:
@@ -3795,7 +3589,7 @@ export default function CVBuilder() {
       case 10:
         return <PreviewStep data={cvData} style={cvStyle} onDownload={handleFinish} selectedTemplate={selectedTemplate} />;
       default:
-        return <PersonalInfoStep data={cvData} onDataChange={setCvData} />;
+        return <PersonalInfoStep data={cvData} onDataChange={setCvData} onProfilePictureUpload={handleProfilePictureUpload} />;
     }
   };
 
