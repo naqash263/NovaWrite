@@ -728,6 +728,8 @@ export default function CvTemplates() {
           },
         });
         console.log('Update response:', response.data);
+        console.log('Updated template data:', response.data.data);
+        console.log('Thumbnail URL:', response.data.data?.thumbnail);
       } else {
         console.log('Creating new template');
         response = await apiClient.post('/admin/cv-templates', formDataToSend, {
@@ -1094,7 +1096,7 @@ export default function CvTemplates() {
                         {template.thumbnail && (
                           <img
                             className="h-10 w-10 rounded-lg object-cover mr-3"
-                            src={template.thumbnail}
+                            src={template.thumbnail.startsWith('http') ? template.thumbnail : API_CONFIG.getStorageUrl(template.thumbnail)}
                             alt={template.name}
                           />
                         )}

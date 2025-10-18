@@ -159,6 +159,12 @@ class CvTemplateController extends Controller
 
         // Handle thumbnail upload
         if ($request->hasFile('thumbnail')) {
+            \Log::info('Thumbnail upload detected', [
+                'filename' => $request->file('thumbnail')->getClientOriginalName(),
+                'size' => $request->file('thumbnail')->getSize(),
+                'mime' => $request->file('thumbnail')->getMimeType()
+            ]);
+            
             // Delete old thumbnail
             if ($cvTemplate->thumbnail) {
                 $oldPath = str_replace('/storage/', '', $cvTemplate->thumbnail);
@@ -169,6 +175,14 @@ class CvTemplateController extends Controller
             $filename = Str::slug($request->name ?? $cvTemplate->name) . '_' . time() . '.' . $thumbnail->getClientOriginalExtension();
             $path = $thumbnail->storeAs('cv-templates/thumbnails', $filename, 'public');
             $data['thumbnail'] = Storage::url($path);
+            
+            \Log::info('Thumbnail saved', [
+                'filename' => $filename,
+                'path' => $path,
+                'url' => $data['thumbnail']
+            ]);
+        } else {
+            \Log::info('No thumbnail file in request');
         }
 
         $cvTemplate->update($data);
