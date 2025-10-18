@@ -33,6 +33,7 @@ class CvTemplateSeeder extends Seeder
                 'category' => 'executive',
                 'ats_score' => 9,
                 'is_default' => true,
+                'thumbnail_url' => '/images/templates/jobscan-executive-thumbnail.png',
                 'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
                 'field_mappings' => [
                     '{{fullName}}' => 'fullName',
