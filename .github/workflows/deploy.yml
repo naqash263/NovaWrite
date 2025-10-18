@@ -329,18 +329,18 @@ jobs:
             sed -i 's|^FRONTEND_URL=.*|FRONTEND_URL=https://naqashthaheem.com|' .env
           fi
           
-              # Preserve existing APP_KEY or generate new one
-              if [ -f ".env" ] && grep -q "APP_KEY=base64:" .env; then
-                echo -e "${GREEN}✅ APP_KEY already exists, preserving it${NC}"
-                # Extract existing APP_KEY
-                EXISTING_KEY=$(grep '^APP_KEY=' .env | cut -d'=' -f2)
-                echo -e "${BLUE}🔑 Preserving existing APP_KEY: ${EXISTING_KEY:0:20}...${NC}"
+              # Use stable APP_KEY from GitHub Secret
+              echo -e "${BLUE}🔑 Setting stable APP_KEY from GitHub Secret...${NC}"
+              if [ ! -z "${{ secrets.STABLE_APP_KEY }}" ]; then
+                echo "APP_KEY=${{ secrets.STABLE_APP_KEY }}" >> .env
+                echo -e "${GREEN}✅ APP_KEY restored from GitHub Secret: ${STABLE_APP_KEY:0:20}...${NC}"
               else
-                echo -e "${BLUE}🔑 Generating new APP_KEY...${NC}"
+                echo -e "${YELLOW}⚠️ STABLE_APP_KEY secret not found, generating new key${NC}"
                 php artisan key:generate --force
-                # Backup the new key
+                # Backup the new key for future use
                 NEW_KEY=$(grep '^APP_KEY=' .env | cut -d'=' -f2)
                 echo -e "${BLUE}🔑 New APP_KEY generated: ${NEW_KEY:0:20}...${NC}"
+                echo -e "${YELLOW}⚠️ Please add this key as STABLE_APP_KEY secret: $NEW_KEY${NC}"
               fi
               
               # Generate JWT secret
@@ -383,21 +383,12 @@ jobs:
             ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO timesovh_naqash_thaheem;
           " || echo -e "${YELLOW}⚠️ Permission grant completed (some warnings are normal)${NC}"
           
-          # Try to restore APP_KEY from backup if current one is different
-          echo -e "${BLUE}🔑 Checking for encryption key backup...${NC}"
-          BACKUP_KEY=$(PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -t -c "SELECT key FROM encryption_key_backups WHERE environment = 'production' ORDER BY backed_up_at DESC LIMIT 1;" 2>/dev/null | xargs)
+          # APP_KEY is now managed via GitHub Secrets (set above)
+          echo -e "${GREEN}✅ APP_KEY managed via GitHub Secrets${NC}"
           
-          if [ ! -z "$BACKUP_KEY" ] && [ "$BACKUP_KEY" != "" ]; then
-            echo -e "${BLUE}🔑 Found backup key, restoring it...${NC}"
-            sed -i "s|^APP_KEY=.*|APP_KEY=$BACKUP_KEY|" .env
-            echo -e "${GREEN}✅ APP_KEY restored from backup${NC}"
-          else
-            echo -e "${YELLOW}⚠️ No backup key found, keeping current key${NC}"
-          fi
-          
-          # Backup current encryption key before running migrations
+          # Backup current encryption key (from GitHub Secret) before running migrations
           echo -e "${BLUE}🔑 Backing up current encryption key...${NC}"
-          CURRENT_KEY=$(grep '^APP_KEY=' .env | cut -d'=' -f2)
+          CURRENT_KEY="${{ secrets.STABLE_APP_KEY }}"
           if [ ! -z "$CURRENT_KEY" ] && [ "$CURRENT_KEY" != "" ]; then
             PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "
               INSERT INTO encryption_key_backups (environment, key, backed_up_at, created_at, updated_at) 
@@ -409,7 +400,7 @@ jobs:
             " || echo -e "${YELLOW}⚠️ Encryption key backup table may not exist yet${NC}"
             echo -e "${GREEN}✅ Current encryption key backed up${NC}"
           else
-            echo -e "${YELLOW}⚠️ No APP_KEY found to backup${NC}"
+            echo -e "${YELLOW}⚠️ No STABLE_APP_KEY secret found to backup${NC}"
           fi
           
           # Run migrations with enhanced error handling
