@@ -3311,6 +3311,48 @@ export default function CVBuilder() {
         throw new Error('CV preview not found');
       }
 
+      // Temporarily adjust the preview element for full-width capture
+      const originalStyle = previewElement.style.cssText;
+      const originalParentStyle = previewElement.parentElement?.style.cssText || '';
+      
+      // Set full width for capture
+      previewElement.style.cssText = `
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: static !important;
+        transform: none !important;
+      `;
+      
+      // Also adjust parent container if it exists
+      if (previewElement.parentElement) {
+        previewElement.parentElement.style.cssText = `
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+        `;
+      }
+
+      // Override any template width constraints
+      const templateElements = previewElement.querySelectorAll('.cv-template, [id*="cv-template"]');
+      const originalTemplateStyles: string[] = [];
+      
+      templateElements.forEach((element, index) => {
+        const htmlElement = element as HTMLElement;
+        originalTemplateStyles[index] = htmlElement.style.cssText;
+        htmlElement.style.cssText = `
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 20px !important;
+          box-shadow: none !important;
+          border-radius: 0 !important;
+        `;
+      });
+
       // Convert HTML to canvas using the original template styling
       const canvas = await html2canvas(previewElement, {
         scale: 2, // Higher quality
@@ -3318,7 +3360,21 @@ export default function CVBuilder() {
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: previewElement.scrollWidth,
-        height: previewElement.scrollHeight
+        height: previewElement.scrollHeight,
+        windowWidth: 1200, // Ensure adequate width for capture
+        windowHeight: 1600
+      });
+
+      // Restore original styles
+      previewElement.style.cssText = originalStyle;
+      if (previewElement.parentElement) {
+        previewElement.parentElement.style.cssText = originalParentStyle;
+      }
+      
+      // Restore template element styles
+      templateElements.forEach((element, index) => {
+        const htmlElement = element as HTMLElement;
+        htmlElement.style.cssText = originalTemplateStyles[index];
       });
 
       // Create PDF with canvas image
@@ -3397,18 +3453,65 @@ export default function CVBuilder() {
         body { 
             font-family: Arial, sans-serif; 
             margin: 0; 
-            padding: 20px; 
+            padding: 0; 
             background: white; 
+            width: 100%;
+            overflow-x: auto;
         }
+        
+        /* Ensure the CV template uses full width */
+        .cv-template, [id*="cv-template"] {
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 20px !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+        
+        /* Override any inline styles that might constrain width */
+        .cv-template[style*="max-width"] {
+            max-width: none !important;
+        }
+        
+        .cv-template[style*="width"] {
+            width: 100% !important;
+        }
+        
+        /* For two-column layouts, ensure they use full width */
+        .left-right-layout, .cv-template.left-right-layout {
+            display: flex !important;
+            width: 100% !important;
+            min-height: 100vh !important;
+        }
+        
+        .left-sidebar {
+            width: 30% !important;
+            flex-shrink: 0 !important;
+        }
+        
+        .right-content {
+            width: 70% !important;
+            flex-shrink: 0 !important;
+        }
+        
         @media print {
             body { 
                 padding: 0; 
                 background: white; 
                 margin: 0;
+                width: 100%;
             }
             @page {
                 margin: 0;
                 size: A4 portrait;
+            }
+            
+            .cv-template, [id*="cv-template"] {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
         }
     </style>
