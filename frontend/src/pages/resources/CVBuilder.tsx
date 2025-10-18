@@ -3152,61 +3152,25 @@ export default function CVBuilder() {
 
   const exportAsPDF = async (options: any) => {
     try {
-      // Import jsPDF and html2canvas dynamically
+      // Import jsPDF dynamically
       const { jsPDF } = await import('jspdf');
-      const html2canvas = (await import('html2canvas')).default;
       
-      // Get the CV preview element
-      const previewElement = document.querySelector('[data-cv-preview]');
-      if (!previewElement) {
-        throw new Error('CV preview not found');
-      }
-
-      // Create a temporary container with the CV content
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.width = '800px';
-      tempContainer.style.backgroundColor = 'white';
-      tempContainer.style.padding = '40px';
-      tempContainer.innerHTML = previewElement.innerHTML;
-      document.body.appendChild(tempContainer);
-
-      // Convert HTML to canvas
-      const canvas = await html2canvas(tempContainer, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff'
-      });
-
-      // Remove temporary container
-      document.body.removeChild(tempContainer);
-
-      // Create PDF from canvas
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
+      // Create a new PDF document
+      const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: options.pageSize || 'a4'
       });
 
-      // Calculate dimensions to fit the page
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      
-      const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
-      const finalWidth = imgWidth * ratio;
-      const finalHeight = imgHeight * ratio;
-      
-      const x = (pageWidth - finalWidth) / 2;
-      const y = (pageHeight - finalHeight) / 2;
+      // Set up fonts and styling
+      doc.setFont('helvetica');
+      doc.setFontSize(12);
 
-      // Add image to PDF
-      pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+      // Page dimensions (A4 in mm)
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 20;
+      let yPosition = margin;
 
       // Helper function to add text with word wrapping
       const addText = (text: string, fontSize: number = 12, isBold: boolean = false, color: string = '#000000') => {
