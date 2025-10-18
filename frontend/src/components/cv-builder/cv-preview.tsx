@@ -136,7 +136,7 @@ const hideEmptySections = (html: string) => {
     
     // Get all content except the title
     const sectionContent = section.cloneNode(true) as Element;
-    if (sectionTitle) {
+    if (sectionTitle && sectionContent.contains(sectionTitle)) {
       sectionContent.removeChild(sectionTitle);
     }
     const contentText = sectionContent.textContent?.trim() || '';
