@@ -4,6 +4,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useAuth } from '../../hooks/useAuth';
 import apiClient from '../../api/axios';
+import { API_CONFIG } from '../../config/api';
 
 interface CvTemplate {
   id: number;
@@ -671,19 +672,42 @@ export default function CvTemplates() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted!', { editingTemplate, formData });
     setError('');
     setSuccess('');
 
     try {
+      console.log('Form data being sent:', formData);
+      
+      // Validate required fields before sending
+      if (!formData.name.trim()) {
+        setError('Template name is required');
+        return;
+      }
+      if (!formData.category.trim()) {
+        setError('Category is required');
+        return;
+      }
+      if (!formData.html_content.trim()) {
+        setError('HTML content is required');
+        return;
+      }
+      
       const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('category', formData.category);
+      formDataToSend.append('name', formData.name.trim());
+      formDataToSend.append('description', formData.description || '');
+      formDataToSend.append('category', formData.category.trim());
       formDataToSend.append('ats_score', formData.ats_score.toString());
-      formDataToSend.append('html_content', formData.html_content);
-      formDataToSend.append('json_config', JSON.stringify(formData.json_config));
-      formDataToSend.append('customizable_options', JSON.stringify(formData.customizable_options));
-      formDataToSend.append('field_mappings', JSON.stringify(formData.field_mappings));
+      formDataToSend.append('html_content', formData.html_content.trim());
+      formDataToSend.append('json_config', JSON.stringify(formData.json_config || {}));
+      formDataToSend.append('customizable_options', JSON.stringify(formData.customizable_options || []));
+      formDataToSend.append('field_mappings', JSON.stringify(formData.field_mappings || {}));
+      
+      // Debug: Log what's being sent
+      console.log('FormData contents:');
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log(key, value);
+      }
       
       if (formData.thumbnail) {
         formDataToSend.append('thumbnail', formData.thumbnail);
@@ -691,17 +715,23 @@ export default function CvTemplates() {
 
       let response;
       if (editingTemplate) {
-        response = await apiClient.put(`/admin/cv-templates/${editingTemplate.id}`, formDataToSend, {
+        console.log('Updating template:', editingTemplate.id);
+        // Laravel doesn't handle multipart/form-data with PUT well, so use POST with _method
+        formDataToSend.append('_method', 'PUT');
+        response = await apiClient.post(`/admin/cv-templates/${editingTemplate.id}`, formDataToSend, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
+        console.log('Update response:', response.data);
       } else {
+        console.log('Creating new template');
         response = await apiClient.post('/admin/cv-templates', formDataToSend, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
+        console.log('Create response:', response.data);
       }
 
       if (response.data.success || response.data.template) {
@@ -715,7 +745,13 @@ export default function CvTemplates() {
       }
     } catch (error) {
       console.error('Error saving template:', error);
-      setError('Failed to save template');
+      if (error.response?.data?.errors) {
+        console.error('Validation errors:', error.response.data.errors);
+        const errorMessages = Object.values(error.response.data.errors).flat();
+        setError(`Validation failed: ${errorMessages.join(', ')}`);
+      } else {
+        setError('Failed to save template');
+      }
     }
   };
 
@@ -781,16 +817,10 @@ export default function CvTemplates() {
       setEditingTemplate(template);
       
       // Load full template details including HTML content
-      const response = await fetch(`/api/admin/cv-templates/${template.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Accept': 'application/json',
-        },
-      });
+      const response = await apiClient.get(`/admin/cv-templates/${template.id}`);
       
-      if (response.ok) {
-        const result = await response.json();
-        const fullTemplate = result.data;
+      if (response.data.success) {
+        const fullTemplate = response.data.data;
         
         setFormData({
           name: fullTemplate.name,
@@ -800,7 +830,7 @@ export default function CvTemplates() {
           html_content: fullTemplate.html_content || '',
           json_config: fullTemplate.json_config || {},
           customizable_options: fullTemplate.customizable_options || ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
-          thumbnail: null,
+          thumbnail: null, // File input - will be null until user selects new file
           field_mappings: fullTemplate.field_mappings || {
             '{{fullName}}': 'fullName',
             '{{jobTitle}}': 'jobTitle',
@@ -1240,11 +1270,24 @@ export default function CvTemplates() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Thumbnail
                       </label>
+                      {editingTemplate && editingTemplate.thumbnail && (
+                        <div className="mb-2">
+                          <p className="text-sm text-gray-600 mb-2">Current thumbnail:</p>
+                          <img 
+                            src={editingTemplate.thumbnail.startsWith('http') ? editingTemplate.thumbnail : API_CONFIG.getStorageUrl(editingTemplate.thumbnail)}
+                            alt="Current thumbnail"
+                            className="w-20 h-20 object-cover rounded border"
+                          />
+                        </div>
+                      )}
                       <Input
                         type="file"
                         accept="image/*"
                         onChange={(e) => setFormData({...formData, thumbnail: e.target.files?.[0] || null})}
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {editingTemplate ? 'Select a new image to replace current thumbnail' : 'Select an image for the template thumbnail'}
+                      </p>
                     </div>
                   </div>
 

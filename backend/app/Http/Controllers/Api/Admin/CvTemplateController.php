@@ -135,7 +135,7 @@ class CvTemplateController extends Controller
             'description' => 'nullable|string',
             'category' => 'sometimes|required|string|max:100',
             'ats_score' => 'sometimes|required|integer|min:1|max:10',
-            'html_content' => 'sometimes|required|string',
+            'html_content' => 'sometimes|required|string|min:1',
             'json_config' => 'sometimes|required|array',
             'customizable_options' => 'nullable|array',
             'field_mappings' => 'nullable|array',
