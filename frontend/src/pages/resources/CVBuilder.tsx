@@ -3301,176 +3301,131 @@ export default function CVBuilder() {
 
   const exportAsPDF = async (_options: any) => {
     try {
-      // Import required libraries dynamically
-      const { jsPDF } = await import('jspdf');
-      const html2canvas = (await import('html2canvas')).default;
-      
-      // Get the CV preview element
+      console.log('Starting PDF generation using html2canvas + jspdf...');
+      console.log('CV Data:', cvData);
+
+      // Get the preview element that contains the rendered template
       const previewElement = document.getElementById('cv-preview');
       if (!previewElement) {
-        throw new Error('CV preview not found');
+        throw new Error('CV preview element not found');
       }
 
-      // Create a temporary container for full-width capture
+      // Import required libraries
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).jsPDF;
+
+      // Create a temporary container with proper dimensions for PDF
       const tempContainer = document.createElement('div');
-      tempContainer.style.cssText = `
-        position: absolute;
-        top: -9999px;
-        left: 0;
-        width: 100%;
-        max-width: none;
-        height: auto;
-        background: white;
-        overflow: visible;
-        z-index: -1;
-      `;
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '210mm'; // A4 width
+      tempContainer.style.minHeight = '297mm'; // A4 height
+      tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.style.padding = '0';
+      tempContainer.style.margin = '0';
+      tempContainer.style.overflow = 'visible';
       
       // Clone the preview element
-      const clonedElement = previewElement.cloneNode(true) as HTMLElement;
-      tempContainer.appendChild(clonedElement);
-      document.body.appendChild(tempContainer);
+      const clonedPreview = previewElement.cloneNode(true) as HTMLElement;
+      clonedPreview.style.width = '100%';
+      clonedPreview.style.maxWidth = 'none';
+      clonedPreview.style.margin = '0';
+      clonedPreview.style.padding = '20px';
       
-      // Temporarily adjust the preview element for full-width capture
-      const originalStyle = previewElement.style.cssText;
-      const originalParentStyle = previewElement.parentElement?.style.cssText || '';
-      
-      // Set full width for capture
-      previewElement.style.cssText = `
-        width: 100% !important;
-        max-width: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: static !important;
-        transform: none !important;
-      `;
-      
-      // Also adjust parent container if it exists
-      if (previewElement.parentElement) {
-        previewElement.parentElement.style.cssText = `
-          width: 100% !important;
-          max-width: none !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          overflow: visible !important;
-        `;
+      // Apply template-specific styles to ensure full width
+      const templateElement = clonedPreview.querySelector('.cv-template');
+      if (templateElement) {
+        (templateElement as HTMLElement).style.width = '100%';
+        (templateElement as HTMLElement).style.maxWidth = 'none';
+        (templateElement as HTMLElement).style.margin = '0';
       }
-
-      // Override only the main template container width constraints
-      const templateElements = previewElement.querySelectorAll('.cv-template, [id*="cv-template"]');
-      const originalTemplateStyles: string[] = [];
       
-      templateElements.forEach((element, index) => {
-        const htmlElement = element as HTMLElement;
-        originalTemplateStyles[index] = htmlElement.style.cssText;
-        
-        // Only override max-width and margin, preserve other styling
-        const currentStyle = htmlElement.style.cssText;
-        htmlElement.style.cssText = currentStyle.replace(/max-width:\s*[^;]+;?/g, 'max-width: none !important;')
-                                               .replace(/margin:\s*[^;]+;?/g, 'margin: 0 !important;')
-                                               .replace(/box-shadow:\s*[^;]+;?/g, 'box-shadow: none !important;')
-                                               .replace(/border-radius:\s*[^;]+;?/g, 'border-radius: 0 !important;');
-        
-        // Only override max-width on child elements, not width
-        const childElements = htmlElement.querySelectorAll('*');
-        childElements.forEach(child => {
-          const childEl = child as HTMLElement;
-          if (childEl.style.maxWidth && childEl.style.maxWidth.includes('px')) {
-            childEl.style.maxWidth = 'none';
-          }
-        });
-      });
+      tempContainer.appendChild(clonedPreview);
+      document.body.appendChild(tempContainer);
 
-      // Apply balanced width overrides to the cloned element
-      const clonedTemplateElements = clonedElement.querySelectorAll('.cv-template, [id*="cv-template"]');
-      clonedTemplateElements.forEach((element) => {
-        const htmlElement = element as HTMLElement;
-        
-        // Preserve original styles but override width constraints
-        const currentStyle = htmlElement.getAttribute('style') || '';
-        const newStyle = currentStyle
-          .replace(/max-width:\s*[^;]+;?/g, 'max-width: none !important;')
-          .replace(/margin:\s*[^;]+;?/g, 'margin: 0 auto !important;')
-          .replace(/box-shadow:\s*[^;]+;?/g, 'box-shadow: none !important;')
-          .replace(/border-radius:\s*[^;]+;?/g, 'border-radius: 0 !important;');
-        
-        htmlElement.setAttribute('style', newStyle);
-        
-        // Set a reasonable max-width for the template to prevent stretching
-        htmlElement.style.maxWidth = '210mm'; // A4 width
-        htmlElement.style.width = '100%';
-        htmlElement.style.margin = '0 auto';
-      });
-
-      // Convert HTML to canvas using the temporary container
+      // Capture the temporary container as an image
       const canvas = await html2canvas(tempContainer, {
-        scale: 2, // Higher quality
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: tempContainer.scrollWidth,
         height: tempContainer.scrollHeight,
         windowWidth: 1200,
-        windowHeight: 1600,
-        scrollX: 0,
-        scrollY: 0,
-        x: 0,
-        y: 0
+        windowHeight: 1600
       });
 
       // Clean up temporary container
       document.body.removeChild(tempContainer);
 
-      // Restore original styles
-      previewElement.style.cssText = originalStyle;
-      if (previewElement.parentElement) {
-        previewElement.parentElement.style.cssText = originalParentStyle;
-      }
-      
-      // Restore template element styles
-      templateElements.forEach((element, index) => {
-        const htmlElement = element as HTMLElement;
-        htmlElement.style.cssText = originalTemplateStyles[index];
-      });
-
-      // Create PDF with canvas image
       const imgData = canvas.toDataURL('image/png');
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+
+      // Create PDF
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
 
-      // Get PDF page dimensions
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      // Calculate scaling to fit the image to the page
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      
-      // Calculate scaling to fit the page properly
-      const scaleX = pdfWidth / imgWidth;
-      const scaleY = pdfHeight / imgHeight;
-      
-      // Use the smaller scale to fit the page without stretching
-      const scale = Math.min(scaleX, scaleY);
-      
-      const finalWidth = imgWidth * scale;
-      const finalHeight = imgHeight * scale;
-      
-      // Center the image on the page
-      const x = (pdfWidth - finalWidth) / 2;
-      const y = (pdfHeight - finalHeight) / 2;
 
-      // Add the image to PDF
+      // Calculate scaling to use full page width and height
+      const targetWidth = pdfWidth; // Use full page width
+      const scale = targetWidth / (imgWidth / 2); // Divide by 2 because scale is 2
+      const finalWidth = imgWidth * scale / 2;
+      const finalHeight = imgHeight * scale / 2;
+
+      // Position to use full page with no margins
+      const x = 0; // No left margin
+      const y = 0; // No top margin
+
       pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
 
+      // If content is taller than one page, add additional pages
+      if (finalHeight > pdfHeight) {
+        // Calculate how many pages we need
+        const pagesNeeded = Math.ceil(finalHeight / pdfHeight);
+        
+        for (let i = 1; i < pagesNeeded; i++) {
+          pdf.addPage();
+          // Position the content so it continues from where it left off
+          const pageY = 10 - (i * pdfHeight); // 10mm top margin for additional pages
+          pdf.addImage(imgData, 'PNG', x, pageY, finalWidth, finalHeight);
+        }
+      }
+
       // Save the PDF
-      const filename = `${cvData.fullName || 'CV'}_Resume.pdf`;
-      pdf.save(filename);
+      const blob = pdf.output('blob');
+      console.log('PDF blob created, size:', blob.size);
+      
+      if (blob.size === 0) {
+        throw new Error('Generated PDF is empty');
+      }
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${cvData.fullName || 'CV'}_Resume.pdf`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      URL.revokeObjectURL(url);
+      
+      console.log('PDF generated and downloaded successfully');
 
     } catch (error) {
       console.error('Error generating PDF:', error);
+      console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       addToast({
         type: 'error',
         title: 'PDF Export Failed',
@@ -3498,7 +3453,7 @@ export default function CVBuilder() {
         throw new Error('CV preview not found');
       }
 
-      // Create HTML content using the original template styling
+      // Create HTML content using the live preview directly
       const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -3510,50 +3465,8 @@ export default function CVBuilder() {
         body { 
             font-family: Arial, sans-serif; 
             margin: 0; 
-            padding: 0; 
+            padding: 20px; 
             background: white; 
-            width: 100%;
-            overflow-x: auto;
-        }
-        
-        /* Ensure the CV template uses appropriate width */
-        .cv-template, [id*="cv-template"] {
-            width: 100% !important;
-            max-width: 210mm !important;
-            margin: 0 auto !important;
-            padding: 10px !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
-        }
-        
-        /* Override any inline styles that might constrain width */
-        .cv-template[style*="max-width"] {
-            max-width: 210mm !important;
-        }
-        
-        /* Override specific template classes that might have width constraints */
-        .jobscan-executive, .microsoft-professional, .novoresume-modern, 
-        .tech-professional, .minimal-clean, .modern-advanced {
-            width: 100% !important;
-            max-width: 210mm !important;
-            margin: 0 auto !important;
-        }
-        
-        /* For two-column layouts, ensure they use full width */
-        .left-right-layout, .cv-template.left-right-layout {
-            display: flex !important;
-            width: 100% !important;
-            min-height: 100vh !important;
-        }
-        
-        .left-sidebar {
-            width: 30% !important;
-            flex-shrink: 0 !important;
-        }
-        
-        .right-content {
-            width: 70% !important;
-            flex-shrink: 0 !important;
         }
         
         @media print {
@@ -3561,18 +3474,10 @@ export default function CVBuilder() {
                 padding: 0; 
                 background: white; 
                 margin: 0;
-                width: 100%;
             }
             @page {
                 margin: 0;
                 size: A4 portrait;
-            }
-            
-            .cv-template, [id*="cv-template"] {
-                width: 100% !important;
-                max-width: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
             }
         }
     </style>

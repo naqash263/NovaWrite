@@ -340,12 +340,12 @@ class CvTemplateSeeder extends Seeder
                 .name { font-size: 28px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 5px; }
                 .title { font-size: 18px; color: {{secondaryColor}}; margin-bottom: 10px; }
                 .contact { font-size: 14px; color: #666; }
-                .section { margin-bottom: 25px; }
-                .section-title { font-size: 16px; font-weight: bold; color: {{primaryColor}}; border-bottom: 2px solid {{primaryColor}}; padding-bottom: 5px; margin-bottom: 15px; }
+                .section { margin-bottom: 15px; }
+                .section-title { font-size: 16px; font-weight: bold; color: {{primaryColor}}; border-bottom: 2px solid {{primaryColor}}; padding-bottom: 5px; margin-bottom: 10px; }
                 
                 /* Enhanced array formatting */
                 .experience-card, .project-card, .certificate-item, .education-item, .achievement-item { 
-                    margin-bottom: 20px; 
+                    margin-bottom: 12px; 
                     padding: 15px; 
                     border-left: 4px solid {{primaryColor}}; 
                     background: #fafafa; 
@@ -518,8 +518,8 @@ class CvTemplateSeeder extends Seeder
                 .name { font-size: 24px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 5px; }
                 .title { font-size: 16px; color: {{secondaryColor}}; margin-bottom: 10px; }
                 .contact { font-size: 13px; color: #666; }
-                .section { margin-bottom: 25px; }
-                .section-title { font-size: 15px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 12px; }
+                .section { margin-bottom: 15px; }
+                .section-title { font-size: 15px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 8px; }
                 
                 /* Enhanced array formatting with two-column layout */
                 .experience-card, .project-card, .certificate-item, .education-item, .achievement-item { 
@@ -697,12 +697,12 @@ class CvTemplateSeeder extends Seeder
                 .name { font-size: 26px; font-weight: bold; margin-bottom: 5px; }
                 .title { font-size: 16px; opacity: 0.9; margin-bottom: 10px; }
                 .contact { font-size: 13px; opacity: 0.8; }
-                .section { margin-bottom: 25px; background: #f8f9fa; padding: 20px; border-radius: 8px; }
-                .section-title { font-size: 16px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 15px; }
+                .section { margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 8px; }
+                .section-title { font-size: 16px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 10px; }
                 
                 /* Enhanced array formatting with modern card design */
                 .experience-card, .project-card, .certificate-item, .education-item, .achievement-item { 
-                    margin-bottom: 20px; 
+                    margin-bottom: 12px; 
                     padding: 20px; 
                     background: white; 
                     border-radius: 12px;
@@ -894,9 +894,9 @@ class CvTemplateSeeder extends Seeder
                 .name { font-size: 26px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 5px; }
                 .title { font-size: 16px; color: {{secondaryColor}}; margin-bottom: 10px; }
                 .contact { font-size: 13px; color: #666; }
-                .section { margin-bottom: 25px; }
-                .section-title { font-size: 16px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 15px; }
-                .item { margin-bottom: 15px; }
+                .section { margin-bottom: 15px; }
+                .section-title { font-size: 16px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 10px; }
+                .item { margin-bottom: 10px; }
                 .item-title { font-weight: bold; font-size: 14px; }
                 .item-subtitle { color: {{secondaryColor}}; font-size: 13px; }
                 .item-date { color: #666; font-size: 12px; }
@@ -943,9 +943,9 @@ class CvTemplateSeeder extends Seeder
                 .name { font-size: 24px; font-weight: bold; color: {{primaryColor}}; margin-bottom: 5px; }
                 .title { font-size: 16px; color: {{secondaryColor}}; margin-bottom: 10px; }
                 .contact { font-size: 13px; color: #666; }
-                .section { margin-bottom: 20px; }
-                .section-title { font-size: 14px; font-weight: bold; color: {{primaryColor}}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-                .item { margin-bottom: 12px; }
+                .section { margin-bottom: 12px; }
+                .section-title { font-size: 14px; font-weight: bold; color: {{primaryColor}}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+                .item { margin-bottom: 8px; }
                 .item-title { font-weight: bold; font-size: 13px; }
                 .item-subtitle { color: {{secondaryColor}}; font-size: 12px; }
                 .item-date { color: #666; font-size: 11px; }
@@ -1073,7 +1073,7 @@ class CvTemplateSeeder extends Seeder
                     font-size: 18px; 
                     font-weight: bold; 
                     color: {{primaryColor}}; 
-                    margin-bottom: 20px;
+                    margin-bottom: 12px;
                     display: flex;
                     align-items: center;
                     gap: 10px;
@@ -1407,7 +1407,7 @@ class CvTemplateSeeder extends Seeder
                 }
                 
                 .experience-item, .education-item, .project-item {
-                    margin-bottom: 20px;
+                    margin-bottom: 12px;
                     padding-bottom: 15px;
                     border-bottom: 1px solid #eee;
                 }
@@ -1575,7 +1575,7 @@ class CvTemplateSeeder extends Seeder
                 .job-title {
                     font-size: 20px;
                     opacity: 0.9;
-                    margin-bottom: 20px;
+                    margin-bottom: 12px;
                 }
                 
                 .contact-info {
@@ -1607,7 +1607,7 @@ class CvTemplateSeeder extends Seeder
                     font-size: 24px;
                     font-weight: bold;
                     color: {{primaryColor}};
-                    margin-bottom: 20px;
+                    margin-bottom: 12px;
                     position: relative;
                     padding-left: 20px;
                 }
@@ -1669,7 +1669,7 @@ class CvTemplateSeeder extends Seeder
                     background: #f8f9fa;
                     padding: 20px;
                     border-radius: 10px;
-                    margin-bottom: 20px;
+                    margin-bottom: 12px;
                     border-left: 4px solid {{primaryColor}};
                 }
                 

@@ -121,6 +121,25 @@ const formatReferences = (references: any[]) => {
   `).join('');
 };
 
+// Process Handlebars conditionals
+const processHandlebarsConditionals = (html: string, data: CVData) => {
+  // Handle {{#if profileImage}}...{{/if}}
+  html = html.replace(/\{\{#if profileImage\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, content) => {
+    if (data.profilePictureUrl && data.profilePictureUrl.trim()) {
+      return content.replace(/\{\{profileImage\}\}/g, data.profilePictureUrl);
+    }
+    return '';
+  });
+
+  // Handle {{#if portfolioImages}}...{{/if}}
+  html = html.replace(/\{\{#if portfolioImages\}\}([\s\S]*?)\{\{\/if\}\}/g, () => {
+    // For now, we don't have portfolioImages in CVData, so return empty
+    return '';
+  });
+
+  return html;
+};
+
 // Hide entire section if placeholder is empty
 const hideEmptySections = (html: string) => {
   const parser = new DOMParser();
@@ -253,6 +272,9 @@ export const CvPreview = ({ data, style, template }: CvPreviewProps) => {
     templateHTML = templateHTML.replace(/\{\{skills\}\}/g, '<!-- no-skills -->');
   }
 
+  // Process Handlebars conditionals
+  templateHTML = processHandlebarsConditionals(templateHTML, data);
+
   // Hide empty sections
   templateHTML = hideEmptySections(templateHTML);
   
@@ -260,6 +282,14 @@ export const CvPreview = ({ data, style, template }: CvPreviewProps) => {
     <div 
       id="cv-preview"
       className="cv-preview-container"
+      style={{
+        width: '100%',
+        maxWidth: '100%',
+        margin: '0',
+        overflow: 'hidden',
+        // Don't set display - let the template control its own layout
+        position: 'relative'
+      }}
       dangerouslySetInnerHTML={{ __html: templateHTML }}
       data-cv-preview
     />

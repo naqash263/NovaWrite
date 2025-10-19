@@ -180,7 +180,7 @@ export const EnhancedTemplateSelector: React.FC<EnhancedTemplateSelectorProps> =
             <div className="aspect-[3/4] bg-gray-50 rounded-t-xl overflow-hidden relative">
               {template.thumbnail ? (
                 <img
-                  src={API_CONFIG.getStorageUrl(template.thumbnail)}
+                  src={template.thumbnail.startsWith('http') ? template.thumbnail : API_CONFIG.getStorageUrl(template.thumbnail)}
                   alt={template.name}
                   className="w-full h-full object-cover"
                 />
