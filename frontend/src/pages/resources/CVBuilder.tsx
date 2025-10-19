@@ -3346,20 +3346,22 @@ export default function CVBuilder() {
 
       // Capture the temporary container as an image
       const canvas = await html2canvas(tempContainer, {
-        scale: 2,
+        scale: 1.5, // Reduced from 2 to 1.5 for smaller file size
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: tempContainer.scrollWidth,
         height: tempContainer.scrollHeight,
-        windowWidth: 1200,
-        windowHeight: 1600
+        windowWidth: 1000, // Reduced from 1200
+        windowHeight: 1400, // Reduced from 1600
+        logging: false, // Disable logging for better performance
+        removeContainer: true // Clean up after capture
       });
 
       // Clean up temporary container
       document.body.removeChild(tempContainer);
 
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/jpeg', 0.85); // Use JPEG with 85% quality for smaller file size
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
 
@@ -3375,15 +3377,15 @@ export default function CVBuilder() {
 
       // Calculate scaling to use full page width and height
       const targetWidth = pdfWidth; // Use full page width
-      const scale = targetWidth / (imgWidth / 2); // Divide by 2 because scale is 2
-      const finalWidth = imgWidth * scale / 2;
-      const finalHeight = imgHeight * scale / 2;
+      const scale = targetWidth / (imgWidth / 1.5); // Divide by 1.5 because scale is 1.5
+      const finalWidth = imgWidth * scale / 1.5;
+      const finalHeight = imgHeight * scale / 1.5;
 
       // Position to use full page with no margins
       const x = 0; // No left margin
       const y = 0; // No top margin
 
-      pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+      pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
 
       // If content is taller than one page, add additional pages
       if (finalHeight > pdfHeight) {
@@ -3393,8 +3395,8 @@ export default function CVBuilder() {
         for (let i = 1; i < pagesNeeded; i++) {
           pdf.addPage();
           // Position the content so it continues from where it left off
-          const pageY = 10 - (i * pdfHeight); // 10mm top margin for additional pages
-          pdf.addImage(imgData, 'PNG', x, pageY, finalWidth, finalHeight);
+          const pageY = 20 - (i * pdfHeight); // 20mm top margin for additional pages
+          pdf.addImage(imgData, 'JPEG', x, pageY, finalWidth, finalHeight);
         }
       }
 
