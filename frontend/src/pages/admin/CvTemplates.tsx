@@ -749,7 +749,7 @@ export default function CvTemplates() {
       } else {
         setError(response.data.message || 'Failed to save template');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving template:', error);
       if (error.response?.data?.errors) {
         console.error('Validation errors:', error.response.data.errors);
