@@ -3387,7 +3387,7 @@ export default function CVBuilder() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       // Get the preview element that contains the rendered template
-      const previewElement = document.getElementById('cv-preview');
+      const previewElement = document.querySelector('[data-cv-preview]');
       if (!previewElement) {
         throw new Error('CV preview element not found');
       }
