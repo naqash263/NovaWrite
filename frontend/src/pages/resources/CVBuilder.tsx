@@ -1297,156 +1297,121 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
             </div>
           </div>
           
-          {/* Enhanced Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3 mb-2">
-            <div 
-              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 sm:h-3 rounded-full transition-all duration-500 ease-out relative"
-              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-            >
-              <div className="absolute right-0 top-0 w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full shadow-sm transform translate-x-1 -translate-y-0.5"></div>
-            </div>
-          </div>
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>0%</span>
-            <span className="font-medium text-blue-600">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
-            <span>100%</span>
-          </div>
+        {/* Compact Progress Bar */}
+        <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2 mb-1">
+          <div 
+            className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 sm:h-2 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+          />
+        </div>
+        <div className="text-center text-xs text-gray-500">
+          <span className="font-medium text-blue-600">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
+        </div>
         </div>
 
-        {/* Desktop Step Indicator - Improved Layout - Only visible on large screens */}
+        {/* Desktop Step Indicator - Compact Layout - Only visible on large screens */}
         <div className="hidden lg:block">
           {/* Current Step Focus - DESKTOP ONLY */}
-          <div className="mb-4">
-            <div className="flex items-center justify-center space-x-4">
-              {/* These navigation buttons are DESKTOP ONLY */}
-              <button
-                onClick={() => onStepClick(Math.max(1, currentStep - 1))}
-                disabled={currentStep === 1}
-                className="hidden lg:flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
-              >
-                <span>←</span>
-                <span>Previous</span>
-              </button>
-              
-              <div className="flex items-center space-x-3 bg-blue-50 px-6 py-3 rounded-xl border-2 border-blue-200">
-                <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-bold">
+          <div className="mb-3">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-base font-bold">
                   {currentStep}
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-blue-900">{currentStepData?.name}</div>
-                  <div className="text-sm text-blue-700">{currentStepData?.description}</div>
+                  <div className="font-semibold text-blue-900 text-sm">{currentStepData?.name}</div>
                 </div>
               </div>
-              
-              {/* These navigation buttons are DESKTOP ONLY */}
-              <button
-                onClick={() => onStepClick(Math.min(totalSteps, currentStep + 1))}
-                disabled={currentStep === totalSteps}
-                className="hidden lg:flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-              >
-                <span>Next</span>
-                <span>→</span>
-              </button>
             </div>
           </div>
 
-          {/* Step Dots Indicator */}
-          <div className="flex items-center justify-center space-x-2">
+          {/* Step Dots Indicator - Compact */}
+          <div className="flex items-center justify-center space-x-1">
             {steps.map((step, index) => {
               const isActive = currentStep === step.id;
               const isCompleted = completedSteps.has(step.id);
               
               return (
-            <div key={step.id} className="flex items-center">
-              <button
-                onClick={() => onStepClick(step.id)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-200 ${
+                <div key={step.id} className="flex items-center">
+                  <button
+                    onClick={() => onStepClick(step.id)}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
                       isActive 
-                        ? 'bg-blue-600 text-white shadow-lg transform scale-110' 
+                        ? 'bg-blue-600 text-white shadow-md transform scale-110' 
                         : isCompleted 
-                        ? 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md' 
+                        ? 'bg-green-500 text-white hover:bg-green-600' 
                         : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
                     }`}
                     title={`${step.name}: ${step.description}`}
                   >
                     {isCompleted ? '✓' : step.id}
-              </button>
+                  </button>
                   
-              {index < steps.length - 1 && (
-                    <div className={`w-8 h-1 mx-2 rounded-full ${
+                  {index < steps.length - 1 && (
+                    <div className={`w-5 h-0.5 mx-1 rounded-full ${
                       isCompleted ? 'bg-green-400' : 'bg-gray-300'
-                }`} />
-              )}
-            </div>
+                    }`} />
+                  )}
+                </div>
               );
             })}
-        </div>
+          </div>
 
         </div>
 
-        {/* Mobile Step Navigation - Completely Redesigned */}
+        {/* Mobile Step Navigation - Ultra Compact */}
         <div className="lg:hidden">
-          {/* Current Step Display - Simplified for Mobile */}
-          <div className="text-center mb-3">
-            <div className="inline-flex flex-col items-center bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
-              <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold mb-1">
+          {/* Minimal Step Display - Just step name */}
+          <div className="text-center mb-2">
+            <div className="inline-flex items-center bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
+              <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold mr-1.5">
                 {currentStep}
               </div>
-              <div className="font-semibold text-blue-900 text-sm">{currentStepData?.name}</div>
+              <div className="font-medium text-blue-900 text-xs">{currentStepData?.name}</div>
             </div>
           </div>
 
-          {/* Step Indicator - Swipeable Strip */}
-          <div className="overflow-x-auto pb-2 mb-3 no-scrollbar">
-            <div className="flex items-center min-w-max px-2">
-              {steps.map((step, index) => {
-                const isActive = currentStep === step.id;
-                const isCompleted = completedSteps.has(step.id);
-                
-                return (
-                  <div key={step.id} className="flex items-center">
-                    <button
-                      onClick={() => onStepClick(step.id)}
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
-                        isActive 
-                          ? 'bg-blue-600 text-white shadow-md transform scale-110' 
-                          : isCompleted 
-                          ? 'bg-green-500 text-white' 
-                          : 'bg-gray-300 text-gray-600'
-                      }`}
-                      aria-label={`Go to step ${step.id}: ${step.name}`}
-                    >
-                      {isCompleted ? '✓' : step.id}
-                    </button>
-                    
-                    {index < steps.length - 1 && (
-                      <div className={`w-3 h-0.5 mx-0.5 rounded-full ${
-                        isCompleted ? 'bg-green-400' : 'bg-gray-300'
-                      }`} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+          {/* Minimal Step Indicator - Dots Only */}
+          <div className="flex justify-center items-center mb-2">
+            {steps.map((step) => {
+              const isActive = currentStep === step.id;
+              const isCompleted = completedSteps.has(step.id);
+              
+              return (
+                <div 
+                  key={step.id} 
+                  className={`w-2 h-2 mx-0.5 rounded-full transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-blue-600 transform scale-125' 
+                      : isCompleted 
+                      ? 'bg-green-500' 
+                      : 'bg-gray-300'
+                  }`}
+                  role="button"
+                  onClick={() => onStepClick(step.id)}
+                  aria-label={`Go to step ${step.id}: ${step.name}`}
+                />
+              );
+            })}
           </div>
 
-          {/* Navigation Buttons - Icon Only for Mobile */}
+          {/* Minimal Navigation Buttons */}
           <div className="flex items-center justify-between">
             <button
               onClick={() => onStepClick(Math.max(1, currentStep - 1))}
               disabled={currentStep === 1}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
                 currentStep === 1
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400'
               }`}
               aria-label="Previous step"
             >
-              <span className="text-lg">←</span>
+              <span className="text-sm">←</span>
             </button>
             
-            <div className="text-center px-2">
-              <div className="text-xs font-medium bg-gray-100 text-gray-700 px-2 py-1 rounded-md">
+            <div className="text-center">
+              <div className="text-xs text-gray-500">
                 {currentStep}/{totalSteps}
               </div>
             </div>
@@ -1454,14 +1419,14 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
             <button
               onClick={() => onStepClick(Math.min(totalSteps, currentStep + 1))}
               disabled={currentStep === totalSteps}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
                 currentStep === totalSteps
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
               }`}
               aria-label="Next step"
             >
-              <span className="text-lg">→</span>
+              <span className="text-sm">→</span>
             </button>
           </div>
         </div>
@@ -1495,23 +1460,21 @@ const StepNavigation = ({
       <div className="max-w-6xl mx-auto">
         {/* Progress Summary - Removed for mobile */}
         
-        {/* Progress Summary - DESKTOP ONLY */}
-        <div className="mb-4 hidden sm:block">
-          <div className="flex flex-row items-center justify-between mb-2">
-            <div className="text-sm text-gray-600 flex items-center">
-              <div className="whitespace-nowrap">
-                <span className="font-medium text-gray-900">Step {currentStep}</span> of {totalSteps}
-              </div>
-              <span className="mx-2">•</span>
-              <span className="text-blue-600 font-medium whitespace-nowrap">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
+        {/* Minimal Progress Summary - DESKTOP ONLY */}
+        <div className="mb-2 hidden sm:block">
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-xs text-gray-600">
+              <span className="font-medium">Step {currentStep}/{totalSteps}</span>
+              <span className="mx-1 text-blue-600">•</span>
+              <span className="text-blue-600 font-medium">{Math.round((currentStep / totalSteps) * 100)}%</span>
             </div>
-            <div className="text-xs text-gray-500 whitespace-nowrap">
-              {isLastStep ? 'Ready to download!' : `${totalSteps - currentStep} steps remaining`}
+            <div className="text-xs text-gray-500">
+              {isLastStep ? 'Ready!' : `${totalSteps - currentStep} remaining`}
             </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-1">
             <div 
-              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-1 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             />
           </div>
