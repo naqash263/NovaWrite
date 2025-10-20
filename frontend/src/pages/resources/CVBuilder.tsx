@@ -3344,24 +3344,39 @@ export default function CVBuilder() {
             font-family: Arial, sans-serif !important;
           }
           
-          /* Ensure text is readable */
+          /* Ensure text is readable and compact */
           p, li, span, div {
-            font-size: 12px !important;
-            line-height: 1.4 !important;
+            font-size: 10px !important;
+            line-height: 1.3 !important;
+            margin-bottom: 2px !important;
           }
           
           h1, h2, h3, h4 {
             margin-top: 0 !important;
-            line-height: 1.2 !important;
+            margin-bottom: 3px !important;
+            line-height: 1.1 !important;
           }
           
+          h1 { font-size: 16px !important; }
+          h2 { font-size: 14px !important; }
+          h3 { font-size: 12px !important; }
+          h4 { font-size: 11px !important; }
+          
           .section {
-            margin-bottom: 10px !important;
+            margin-bottom: 8px !important;
+            padding-bottom: 5px !important;
           }
           
           .section-title {
-            margin-bottom: 5px !important;
+            margin-bottom: 3px !important;
             font-weight: bold !important;
+            font-size: 11px !important;
+          }
+          
+          /* Reduce spacing between items */
+          .experience-card, .project-card, .education-item, .certificate-item {
+            margin-bottom: 5px !important;
+            padding: 3px !important;
           }
         </style>
         ${htmlContent}
@@ -3395,16 +3410,17 @@ export default function CVBuilder() {
         x: 0, // No left margin
         y: 0, // No top margin
         width: pdf.internal.pageSize.getWidth(), // Use full page width
-        autoPaging: 'text',
+        autoPaging: false, // Disable automatic paging to prevent empty pages
         html2canvas: {
-          scale: 3, // Higher scale for better quality
+          scale: 2, // Lower scale to fit on one page
           useCORS: true,
           allowTaint: true,
           letterRendering: true,
           backgroundColor: '#ffffff',
-          logging: true,
-          windowWidth: 1200 // Wider window for better rendering
-        }
+          logging: false, // Disable logging for production
+          windowWidth: 800 // Narrower window to fit on one page
+        },
+        // Use standard fonts available in the PDF
       });
 
     } catch (error) {
