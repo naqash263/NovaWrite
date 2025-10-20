@@ -28,6 +28,306 @@ class CvTemplateSeeder extends Seeder
 
         $templates = [
             [
+                'name' => 'Left-Right Professional',
+                'description' => 'Modern two-column template with left sidebar for contact info and skills, and right section for experience and education.',
+                'category' => 'professional',
+                'ats_score' => 8,
+                'is_default' => false,
+                'thumbnail' => 'https://picsum.photos/300/400?random=1',
+                'customizable_options' => ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
+                'field_mappings' => [
+                    '{{fullName}}' => 'fullName',
+                    '{{jobTitle}}' => 'jobTitle',
+                    '{{email}}' => 'email',
+                    '{{phoneNumber}}' => 'phoneNumber',
+                    '{{address}}' => 'address',
+                    '{{profilePictureUrl}}' => 'profilePictureUrl',
+                    '{{professionalSummary}}' => 'professionalSummary',
+                    '{{workExperience}}' => 'workExperience',
+                    '{{education}}' => 'education',
+                    '{{skills}}' => 'skills',
+                    '{{projects}}' => 'projects',
+                    '{{certificates}}' => 'certificates',
+                    '{{languages}}' => 'languages',
+                    '{{achievements}}' => 'achievements',
+                    '{{interests}}' => 'interests',
+                    '{{references}}' => 'references',
+                ],
+                'html_content' => '<div class="cv-template" style="font-family: {{fontFamily}}; font-size: {{fontSize}}px; color: #333; width: 100%; max-width: 100%; margin: 0; padding: 0; box-sizing: border-box;">
+    <style>
+        /* Reset styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Main layout */
+        .cv-container {
+            display: flex;
+            width: 100%;
+            max-width: 100%;
+            min-height: 842px; /* A4 height */
+            margin: 0;
+            background-color: #fff;
+        }
+        
+        /* Left sidebar */
+        .left-sidebar {
+            width: 30%;
+            background-color: {{primaryColor}};
+            color: white;
+            padding: 20px;
+        }
+        
+        /* Right content */
+        .right-content {
+            width: 70%;
+            padding: 20px;
+        }
+        
+        /* Profile section */
+        .profile {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 15px;
+            border: 3px solid white;
+        }
+        
+        .profile-name {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .profile-title {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        /* Contact section */
+        .contact {
+            margin-bottom: 25px;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .contact-icon {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Skills section */
+        .skills {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 5px;
+        }
+        
+        .skill-item {
+            margin-bottom: 8px;
+        }
+        
+        .skill-name {
+            margin-bottom: 3px;
+        }
+        
+        .skill-bar {
+            height: 6px;
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+        
+        .skill-level {
+            height: 100%;
+            background-color: white;
+            border-radius: 3px;
+        }
+        
+        /* Right side sections */
+        .right-section {
+            margin-bottom: 20px;
+        }
+        
+        .right-section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: {{primaryColor}};
+            margin-bottom: 15px;
+            border-bottom: 2px solid {{primaryColor}};
+            padding-bottom: 5px;
+        }
+        
+        /* Experience items */
+        .experience-item, .education-item, .project-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .item-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .item-subtitle {
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .item-date {
+            color: #777;
+            font-size: 14px;
+        }
+        
+        .item-description {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        /* Languages section */
+        .language-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        /* Reduce spacing between sections */
+        .section {
+            margin-bottom: 12px;
+        }
+        
+        .section-title {
+            margin-bottom: 8px;
+        }
+        
+        .item {
+            margin-bottom: 8px;
+        }
+    </style>
+    
+    <div class="cv-container">
+        <!-- Left Sidebar -->
+        <div class="left-sidebar">
+            <!-- Profile Section -->
+            <div class="profile">
+                {{#if profilePictureUrl}}
+                <img src="{{profilePictureUrl}}" alt="Profile" class="profile-image">
+                {{/if}}
+                <div class="profile-name">{{fullName}}</div>
+                <div class="profile-title">{{jobTitle}}</div>
+            </div>
+            
+            <!-- Contact Section -->
+            <div class="contact">
+                <div class="section-title">Contact</div>
+                <div class="contact-item">
+                    <div class="contact-icon">📧</div>
+                    <div>{{email}}</div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon">📱</div>
+                    <div>{{phoneNumber}}</div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon">📍</div>
+                    <div>{{address}}</div>
+                </div>
+            </div>
+            
+            <!-- Skills Section -->
+            <div class="skills">
+                <div class="section-title">Skills</div>
+                {{skills}}
+            </div>
+            
+            <!-- Languages Section -->
+            <div class="languages">
+                <div class="section-title">Languages</div>
+                {{languages}}
+            </div>
+            
+            <!-- Interests Section -->
+            <div class="interests">
+                <div class="section-title">Interests</div>
+                {{interests}}
+            </div>
+        </div>
+        
+        <!-- Right Content -->
+        <div class="right-content">
+            <!-- Professional Summary -->
+            <div class="right-section">
+                <div class="right-section-title">Professional Summary</div>
+                <div class="item-description">{{professionalSummary}}</div>
+            </div>
+            
+            <!-- Work Experience -->
+            <div class="right-section">
+                <div class="right-section-title">Work Experience</div>
+                {{workExperience}}
+            </div>
+            
+            <!-- Education -->
+            <div class="right-section">
+                <div class="right-section-title">Education</div>
+                {{education}}
+            </div>
+            
+            <!-- Projects -->
+            <div class="right-section">
+                <div class="right-section-title">Projects</div>
+                {{projects}}
+            </div>
+            
+            <!-- Certificates -->
+            <div class="right-section">
+                <div class="right-section-title">Certificates</div>
+                {{certificates}}
+            </div>
+            
+            <!-- Achievements -->
+            <div class="right-section">
+                <div class="right-section-title">Achievements</div>
+                {{achievements}}
+            </div>
+            
+            <!-- References -->
+            <div class="right-section">
+                <div class="right-section-title">References</div>
+                {{references}}
+            </div>
+        </div>
+    </div>
+</div>'
+            ],
+            [
                 'name' => 'Jobscan Executive',
                 'description' => 'Professional executive template optimized for ATS systems. Clean, single-column layout with strong visual hierarchy.',
                 'category' => 'executive',
