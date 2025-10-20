@@ -1273,7 +1273,7 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
                 </div>
               </div>
             </div>
-            <div className="text-left sm:text-right w-full sm:w-auto mt-2 sm:mt-0">
+            <div className="text-left sm:text-right w-full sm:w-auto mt-2 sm:mt-0 hidden sm:block">
               <div className="text-sm font-medium text-gray-900">
                 Step {currentStep} of {totalSteps}
               </div>
@@ -1475,12 +1475,14 @@ const StepNavigation = ({
         {/* Progress Summary */}
         <div className="mb-3 sm:mb-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-1">
-            <div className="text-sm text-gray-600">
-              <span className="font-medium text-gray-900">Step {currentStep}</span> of {totalSteps}
+            <div className="text-sm text-gray-600 flex flex-wrap items-center">
+              <div className="mr-2 whitespace-nowrap">
+                <span className="font-medium text-gray-900">Step {currentStep}</span> of {totalSteps}
+              </div>
               <span className="mx-2 hidden sm:inline">•</span>
-              <span className="text-blue-600 font-medium block sm:inline mt-1 sm:mt-0">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
+              <span className="text-blue-600 font-medium mt-1 sm:mt-0 whitespace-nowrap">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
             </div>
-            <div className="text-xs text-gray-500 mt-1 sm:mt-0">
+            <div className="text-xs text-gray-500 mt-1 sm:mt-0 whitespace-nowrap">
               {isLastStep ? 'Ready to download!' : `${totalSteps - currentStep} steps remaining`}
             </div>
           </div>
