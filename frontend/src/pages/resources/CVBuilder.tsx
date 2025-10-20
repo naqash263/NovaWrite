@@ -3527,6 +3527,55 @@ export default function CVBuilder() {
       }
       
       // Create a full HTML document for the iframe with both ATS content and visual content
+      
+      // First, let's make sure we're removing empty sections
+      const parser = new DOMParser();
+      const previewDoc = parser.parseFromString(previewElement.innerHTML, 'text/html');
+      
+      // Find and remove empty sections more aggressively
+      const sections = previewDoc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"]');
+      
+      sections.forEach(section => {
+        // Get the section title
+        const sectionTitle = section.querySelector('.section-title, h2, h3, h4, [class*="title"], [class*="heading"]');
+        const sectionTitleText = sectionTitle?.textContent?.trim() || '';
+        
+        // Get content without title
+        const sectionContent = section.cloneNode(true) as Element;
+        if (sectionTitle && sectionContent.contains(sectionTitle)) {
+          sectionContent.removeChild(sectionTitle);
+        }
+        const contentText = sectionContent.textContent?.trim() || '';
+        
+        // Check if this is an empty section
+        const hasContent = contentText && contentText.length > 5 && !contentText.match(/^\s*$/);
+        
+        // Check for specific section types
+        const sectionId = section.id?.toLowerCase() || '';
+        const sectionClass = section.className?.toLowerCase() || '';
+        const sectionHTML = section.innerHTML?.toLowerCase() || '';
+        
+        // Check if this is a projects section
+        const isProjectsSection = 
+          sectionId.includes('project') || 
+          sectionClass.includes('project') || 
+          sectionTitleText.toLowerCase().includes('project');
+          
+        // Check if this section should be removed
+        const shouldRemove = 
+          !hasContent || 
+          sectionHTML.includes('<!-- no-') || 
+          (isProjectsSection && (!cvData.projects || cvData.projects.length === 0));
+          
+        if (shouldRemove) {
+          console.log('PDF Export: Removing empty section:', sectionTitleText || sectionId || sectionClass);
+          section.remove();
+        }
+      });
+      
+      // Get the cleaned HTML
+      const cleanedHTML = previewDoc.body.innerHTML;
+      
       const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -3579,6 +3628,17 @@ export default function CVBuilder() {
             .item {
               page-break-inside: avoid;
             }
+            /* Hide any remaining empty sections */
+            .section:empty, 
+            [class*="section"]:empty, 
+            div[id*="projects"]:empty,
+            div[id*="certificates"]:empty,
+            div[id*="languages"]:empty,
+            div[id*="achievements"]:empty,
+            div[id*="interests"]:empty,
+            div[id*="references"]:empty {
+              display: none !important;
+            }
           </style>
         </head>
         <body>
@@ -3589,7 +3649,7 @@ export default function CVBuilder() {
           
           <!-- Visible styled content -->
           <div class="cv-container">
-            ${previewElement.innerHTML}
+            ${cleanedHTML}
           </div>
         </body>
         </html>
@@ -3746,7 +3806,55 @@ export default function CVBuilder() {
         });
       }
 
-      // Create HTML content using the live preview directly with added ATS content
+      // First, let's make sure we're removing empty sections
+      const parser = new DOMParser();
+      const previewDoc = parser.parseFromString(previewElement.innerHTML, 'text/html');
+      
+      // Find and remove empty sections more aggressively
+      const sections = previewDoc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"]');
+      
+      sections.forEach(section => {
+        // Get the section title
+        const sectionTitle = section.querySelector('.section-title, h2, h3, h4, [class*="title"], [class*="heading"]');
+        const sectionTitleText = sectionTitle?.textContent?.trim() || '';
+        
+        // Get content without title
+        const sectionContent = section.cloneNode(true) as Element;
+        if (sectionTitle && sectionContent.contains(sectionTitle)) {
+          sectionContent.removeChild(sectionTitle);
+        }
+        const contentText = sectionContent.textContent?.trim() || '';
+        
+        // Check if this is an empty section
+        const hasContent = contentText && contentText.length > 5 && !contentText.match(/^\s*$/);
+        
+        // Check for specific section types
+        const sectionId = section.id?.toLowerCase() || '';
+        const sectionClass = section.className?.toLowerCase() || '';
+        const sectionHTML = section.innerHTML?.toLowerCase() || '';
+        
+        // Check if this is a projects section
+        const isProjectsSection = 
+          sectionId.includes('project') || 
+          sectionClass.includes('project') || 
+          sectionTitleText.toLowerCase().includes('project');
+          
+        // Check if this section should be removed
+        const shouldRemove = 
+          !hasContent || 
+          sectionHTML.includes('<!-- no-') || 
+          (isProjectsSection && (!cvData.projects || cvData.projects.length === 0));
+          
+        if (shouldRemove) {
+          console.log('HTML Export: Removing empty section:', sectionTitleText || sectionId || sectionClass);
+          section.remove();
+        }
+      });
+      
+      // Get the cleaned HTML
+      const cleanedHTML = previewDoc.body.innerHTML;
+
+      // Create HTML content using the cleaned preview HTML with added ATS content
       const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -3782,6 +3890,18 @@ export default function CVBuilder() {
             page-break-inside: avoid;
         }
         
+        /* Hide any remaining empty sections */
+        .section:empty, 
+        [class*="section"]:empty, 
+        div[id*="projects"]:empty,
+        div[id*="certificates"]:empty,
+        div[id*="languages"]:empty,
+        div[id*="achievements"]:empty,
+        div[id*="interests"]:empty,
+        div[id*="references"]:empty {
+          display: none !important;
+        }
+        
         @media print {
             body { 
                 padding: 0; 
@@ -3802,7 +3922,7 @@ export default function CVBuilder() {
     </div>
     
     <!-- Visible styled content -->
-    ${previewElement.innerHTML}
+    ${cleanedHTML}
     
     <!-- Machine-readable metadata for ATS -->
     <script type="application/ld+json">

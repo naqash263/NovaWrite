@@ -146,11 +146,11 @@ const hideEmptySections = (html: string) => {
   const doc = parser.parseFromString(html, 'text/html');
   
   // Find all section-like elements
-  const sections = doc.querySelectorAll('section, .section, [class*="section"]');
+  const sections = doc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"]');
   
   sections.forEach(section => {
     // Get the section title element
-    const sectionTitle = section.querySelector('.section-title, h2, h3, [class*="title"]');
+    const sectionTitle = section.querySelector('.section-title, h2, h3, h4, [class*="title"], [class*="heading"]');
     const sectionTitleText = sectionTitle?.textContent?.trim() || '';
     
     // Get all content except the title
@@ -168,8 +168,26 @@ const hideEmptySections = (html: string) => {
       !contentText.includes('{{') &&
       contentText !== sectionTitleText;
     
-    // If no meaningful content, remove the entire section
-    if (!hasContent) {
+    // Check for specific empty sections
+    const sectionId = section.id?.toLowerCase() || '';
+    const sectionClass = section.className?.toLowerCase() || '';
+    const sectionHTML = section.innerHTML?.toLowerCase() || '';
+    
+    // More aggressive check for empty projects section
+    const isProjectsSection = 
+      sectionId.includes('project') || 
+      sectionClass.includes('project') || 
+      sectionTitleText.toLowerCase().includes('project') ||
+      sectionHTML.includes('<!-- no-projects -->');
+      
+    // More aggressive check for other common empty sections
+    const isEmptySection = 
+      sectionHTML.includes('<!-- no-') || 
+      (isProjectsSection && (!hasContent || contentText.length < 10));
+    
+    // If no meaningful content or explicitly marked as empty, remove the entire section
+    if (!hasContent || isEmptySection) {
+      console.log('Removing empty section:', sectionTitleText || sectionId || sectionClass);
       section.remove();
     }
   });
