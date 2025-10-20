@@ -3070,11 +3070,11 @@ export default function CVBuilder() {
     }
 
     // Validate file size (1MB limit for data URLs to prevent encoding issues)
-    if (file.size > 1 * 1024 * 1024) {
+    if (file.size > 2 * 1024 * 1024) {
       addToast({
         type: 'error',
         title: 'File Too Large',
-        description: 'Image file must be smaller than 1MB for data URL encoding'
+        description: 'Image file must be smaller than 2MB for data URL encoding'
       });
       return;
     }

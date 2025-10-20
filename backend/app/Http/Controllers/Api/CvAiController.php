@@ -25,6 +25,51 @@ class CvAiController extends Controller
         $this->cvAiService = $cvAiService;
         $this->fileProcessingService = $fileProcessingService;
     }
+    
+    /**
+     * Sanitize content to fix UTF-8 encoding issues
+     * 
+     * @param string $content The content to sanitize
+     * @return string Sanitized content
+     */
+    protected function sanitizeContent(string $content): string
+    {
+        // Remove invalid UTF-8 sequences
+        $content = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $content);
+        
+        // Replace common problematic characters
+        $content = str_replace([
+            "\u{FFFD}", // Unicode replacement character
+            "\u{FEFF}", // Zero width no-break space
+            "\u{200B}", // Zero width space
+            "\u{200C}", // Zero width non-joiner
+            "\u{200D}", // Zero width joiner
+            "\u{2028}", // Line separator
+            "\u{2029}"  // Paragraph separator
+        ], '', $content);
+        
+        // Ensure the content is valid UTF-8
+        if (!mb_check_encoding($content, 'UTF-8')) {
+            // Try to convert from other common encodings
+            foreach (['ISO-8859-1', 'Windows-1252'] as $encoding) {
+                $converted = @mb_convert_encoding($content, 'UTF-8', $encoding);
+                if (mb_check_encoding($converted, 'UTF-8')) {
+                    $content = $converted;
+                    break;
+                }
+            }
+            
+            // If still not valid UTF-8, force encode as UTF-8
+            if (!mb_check_encoding($content, 'UTF-8')) {
+                $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
+            }
+        }
+        
+        // Final cleanup - replace any remaining invalid characters
+        $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
+        
+        return $content;
+    }
 
     /**
      * Extract CV data from uploaded file
@@ -75,19 +120,22 @@ class CvAiController extends Controller
             // Extract text content
             $fileContent = $this->fileProcessingService->extractTextContent($file, $fileType);
             
-                if (empty(trim($fileContent))) {
-                    $errorMessage = 'No readable text found in the uploaded file. ';
-                    if ($fileType === 'pdf') {
-                        $errorMessage .= 'This appears to be an image-based PDF (scanned document). Please try uploading a text-based PDF or convert your CV to a text-based format.';
-                    } else {
-                        $errorMessage .= 'Please ensure the file contains text content.';
-                    }
-                    
-                    return response()->json([
-                        'success' => false,
-                        'message' => $errorMessage
-                    ], 400);
+            // Sanitize content to fix UTF-8 encoding issues
+            $fileContent = $this->sanitizeContent($fileContent);
+            
+            if (empty(trim($fileContent))) {
+                $errorMessage = 'No readable text found in the uploaded file. ';
+                if ($fileType === 'pdf') {
+                    $errorMessage .= 'This appears to be an image-based PDF (scanned document). Please try uploading a text-based PDF or convert your CV to a text-based format.';
+                } else {
+                    $errorMessage .= 'Please ensure the file contains text content.';
                 }
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 400);
+            }
 
             // Get available API key
             $apiKey = $this->getAvailableApiKey();
@@ -165,8 +213,11 @@ class CvAiController extends Controller
                 ], 400);
             }
 
+            // Sanitize content to fix UTF-8 encoding issues
+            $fileContent = $this->sanitizeContent($request->file_content);
+            
             $cvData = $this->cvAiService->extractCvData(
-                $request->file_content,
+                $fileContent,
                 $request->file_type,
                 $apiKey
             );
