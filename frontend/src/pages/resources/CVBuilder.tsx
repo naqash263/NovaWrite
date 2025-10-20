@@ -3301,7 +3301,7 @@ export default function CVBuilder() {
 
   const exportAsPDF = async (_options: any) => {
     try {
-      console.log('Starting PDF generation using html2pdf...');
+      console.log('Starting PDF generation using jsPDF and html2canvas...');
       console.log('CV Data:', cvData);
 
       // Get the preview element that contains the rendered template
@@ -3311,83 +3311,111 @@ export default function CVBuilder() {
       }
 
       // Import required libraries
-      const html2pdf = (await import('html2pdf.js')).default;
+      const jsPDF = (await import('jspdf')).jsPDF;
+      const html2canvas = (await import('html2canvas')).default;
       
-      // Create a clone of the preview element to modify for PDF
+      // Create a visible clone for better rendering
       const tempContainer = document.createElement('div');
-      tempContainer.innerHTML = previewElement.innerHTML;
+      tempContainer.style.width = '210mm'; // A4 width
+      tempContainer.style.padding = '0';
+      tempContainer.style.margin = '0 auto';
+      tempContainer.style.background = 'white';
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.top = '0';
+      tempContainer.style.left = '0';
+      tempContainer.style.right = '0';
+      tempContainer.style.zIndex = '-9999';
+      tempContainer.style.visibility = 'hidden';
       
-      // Apply PDF-specific styling
-      const style = document.createElement('style');
-      style.textContent = `
-        @page {
-          size: A4 portrait;
-          margin: 0;
-        }
-        body {
-          margin: 0;
-          padding: 0;
-        }
+      // Clone the content
+      const templateClone = previewElement.cloneNode(true) as HTMLElement;
+      
+      // Ensure all styles are properly applied
+      const allStyles = Array.from(document.styleSheets)
+        .map(styleSheet => {
+          try {
+            return Array.from(styleSheet.cssRules)
+              .map(rule => rule.cssText)
+              .join('');
+          } catch (e) {
+            return '';
+          }
+        })
+        .join('');
+      
+      const styleElement = document.createElement('style');
+      styleElement.textContent = allStyles + `
         .cv-template {
-          padding: 10mm !important;
-          max-width: none !important;
           width: 100% !important;
+          max-width: none !important;
           margin: 0 !important;
+          padding: 10mm !important;
           box-sizing: border-box !important;
-        }
-        /* Ensure text is readable */
-        p, li, span {
-          font-size: 10pt !important;
-          line-height: 1.3 !important;
-        }
-        h1 { font-size: 16pt !important; }
-        h2 { font-size: 14pt !important; }
-        h3 { font-size: 12pt !important; }
-        h4 { font-size: 11pt !important; }
-        
-        /* Reduce spacing between sections */
-        .section {
-          margin-bottom: 10pt !important;
-        }
-        
-        /* Ensure content fits properly */
-        .experience-card, .project-card, .education-item, .certificate-item {
-          margin-bottom: 8pt !important;
-          padding: 5pt !important;
+          background-color: white !important;
+          color: black !important;
         }
       `;
       
-      tempContainer.prepend(style);
-      
-      // Temporarily add to document (off-screen)
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
+      tempContainer.appendChild(styleElement);
+      tempContainer.appendChild(templateClone);
       document.body.appendChild(tempContainer);
       
-      // Configure html2pdf options
-      const options = {
-        margin: 0,
-        filename: `${cvData.fullName || 'CV'}_Resume.pdf`,
-        image: { type: 'jpeg' as const, quality: 1.0 },
-        html2canvas: { 
-          scale: 2,
-          useCORS: true,
-          letterRendering: true,
-          logging: false,
-          windowWidth: 800
-        },
-        jsPDF: { 
-          unit: 'mm', 
-          format: 'a4', 
-          orientation: 'portrait' as const,
-          compress: true
-        },
-        pagebreak: { mode: 'avoid-all' }
-      };
+      // Wait for styles to apply
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Generate and download PDF
-      await html2pdf().from(tempContainer).set(options).save();
+      // Use html2canvas to render the element
+      const canvas = await html2canvas(templateClone, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: true,
+        windowWidth: 800
+      });
+      
+      // Get image data
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      
+      // Calculate dimensions
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      // Add image to PDF
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      // Handle multi-page if needed
+      if (imgHeight <= pdfHeight) {
+        // Single page - center the content
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight);
+      } else {
+        // Multi-page - split the content
+        let heightLeft = imgHeight;
+        let position = 0;
+        let page = 1;
+        
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+        
+        // Add new pages if content exceeds page height
+        while (heightLeft > 0) {
+          position = -pdfHeight * page;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+          heightLeft -= pdfHeight;
+          page++;
+        }
+      }
+      
+      // Save the PDF
+      pdf.save(`${cvData.fullName || 'CV'}_Resume.pdf`);
       
       // Clean up
       if (document.body.contains(tempContainer)) {
