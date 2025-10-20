@@ -3301,357 +3301,127 @@ export default function CVBuilder() {
 
   const exportAsPDF = async (_options: any) => {
     try {
-      console.log('Starting PDF generation using DOCX to PDF conversion...');
+      console.log('Starting PDF generation using html2canvas + jspdf...');
       console.log('CV Data:', cvData);
-      console.log('Export options:', _options);
 
-      // First, generate a DOCX file
+      // Get the preview element that contains the rendered template
+      const previewElement = document.getElementById('cv-preview');
+      if (!previewElement) {
+        throw new Error('CV preview element not found');
+      }
+
       // Import required libraries
-      const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = await import('docx');
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).jsPDF;
+
+      // Create a temporary container with proper dimensions for PDF
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '210mm'; // A4 width
+      tempContainer.style.minHeight = '297mm'; // A4 height
+      tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.style.padding = '0';
+      tempContainer.style.margin = '0';
+      tempContainer.style.overflow = 'visible';
+      tempContainer.style.fontFamily = 'Arial, sans-serif'; // Ensure consistent font
       
-      // Create a new document
-      const doc = new Document({
-        sections: [
-          {
-            properties: {},
-            children: [
-              // Header with name and contact info
-              new Paragraph({
-                text: cvData.fullName || 'Your Name',
-                heading: HeadingLevel.HEADING_1,
-                alignment: AlignmentType.CENTER,
-              }),
-              
-              // Contact info row
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [
-                  new TextRun({ text: cvData.email || '', break: 1 }),
-                  new TextRun({ text: cvData.phoneNumber ? ` | ${cvData.phoneNumber}` : '' }),
-                  new TextRun({ text: cvData.address ? ` | ${cvData.address}` : '' }),
-                ],
-              }),
-              
-              // Divider
-              new Paragraph({
-                text: '',
-                border: {
-                  bottom: {
-                    color: "999999",
-                    space: 1,
-                    style: BorderStyle.SINGLE,
-                    size: 6,
-                  },
-                },
-              }),
-              
-              // Professional Summary
-              ...(cvData.professionalSummary ? [
-                new Paragraph({
-                  text: 'Professional Summary',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                new Paragraph({ text: cvData.professionalSummary })
-              ] : []),
-              
-              // Work Experience
-              ...(cvData.workExperience && cvData.workExperience.length > 0 ? [
-                new Paragraph({
-                  text: 'Work Experience',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.workExperience.flatMap(job => [
-                  new Paragraph({
-                    text: job.jobTitle,
-                    heading: HeadingLevel.HEADING_3,
-                    style: "Heading3",
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: job.company, bold: true }),
-                      new TextRun({ text: ` | ${job.startDate} - ${job.endDate || 'Present'}` }),
-                    ],
-                  }),
-                  new Paragraph({ text: job.description }),
-                ])
-              ] : []),
-              
-              // Education
-              ...(cvData.education && cvData.education.length > 0 ? [
-                new Paragraph({
-                  text: 'Education',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.education.flatMap(edu => [
-                  new Paragraph({
-                    text: edu.degree,
-                    heading: HeadingLevel.HEADING_3,
-                    style: "Heading3",
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: edu.institution, bold: true }),
-                      new TextRun({ text: ` | ${edu.graduationYear}` }),
-                    ],
-                  }),
-                  // Only add description if it exists in the data
-                  ...((edu as any).description ? [new Paragraph({ text: (edu as any).description })] : []),
-                ])
-              ] : []),
-              
-              // Skills
-              ...(cvData.skills ? [
-                new Paragraph({
-                  text: 'Skills',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                new Paragraph({ text: cvData.skills })
-              ] : []),
-              
-              // Projects
-              ...(cvData.projects && cvData.projects.length > 0 ? [
-                new Paragraph({
-                  text: 'Projects',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.projects.flatMap(project => [
-                  new Paragraph({
-                    text: project.name,
-                    heading: HeadingLevel.HEADING_3,
-                    style: "Heading3",
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: project.startDate || '' }),
-                      new TextRun({ text: project.endDate ? ` - ${project.endDate}` : '' }),
-                    ],
-                  }),
-                  new Paragraph({ text: project.description }),
-                ])
-              ] : []),
-              
-              // Certificates
-              ...(cvData.certificates && cvData.certificates.length > 0 ? [
-                new Paragraph({
-                  text: 'Certificates',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.certificates.flatMap(cert => [
-                  new Paragraph({
-                    text: cert.name,
-                    heading: HeadingLevel.HEADING_3,
-                    style: "Heading3",
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: cert.issuer, bold: true }),
-                      new TextRun({ text: cert.date ? ` | ${cert.date}` : '' }),
-                    ],
-                  }),
-                  // Only add description if it exists in the data
-                  ...((cert as any).description ? [new Paragraph({ text: (cert as any).description })] : []),
-                ])
-              ] : []),
-              
-              // Languages
-              ...(cvData.languages && cvData.languages.length > 0 ? [
-                new Paragraph({
-                  text: 'Languages',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.languages.flatMap(lang => [
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: lang.language, bold: true }),
-                      new TextRun({ text: ` - ${lang.proficiency}` }),
-                    ],
-                  }),
-                ])
-              ] : []),
-              
-              // References
-              ...(cvData.references && cvData.references.length > 0 ? [
-                new Paragraph({
-                  text: 'References',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.references.flatMap(ref => [
-                  new Paragraph({
-                    text: ref.name,
-                    heading: HeadingLevel.HEADING_3,
-                    style: "Heading3",
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: ref.position, bold: true }),
-                      new TextRun({ text: ` at ${ref.company}` }),
-                    ],
-                  }),
-                  new Paragraph({ text: `Email: ${ref.email}` }),
-                  ...(ref.phone ? [new Paragraph({ text: `Phone: ${ref.phone}` })] : []),
-                ])
-              ] : []),
-            ],
-          },
-        ],
+      // Clone the preview element
+      const clonedPreview = previewElement.cloneNode(true) as HTMLElement;
+      clonedPreview.style.width = '100%';
+      clonedPreview.style.maxWidth = 'none';
+      clonedPreview.style.margin = '0';
+      clonedPreview.style.padding = '20px';
+      
+      // Apply template-specific styles to ensure full width
+      const templateElement = clonedPreview.querySelector('.cv-template');
+      if (templateElement) {
+        (templateElement as HTMLElement).style.width = '100%';
+        (templateElement as HTMLElement).style.maxWidth = 'none';
+        (templateElement as HTMLElement).style.margin = '0';
+      }
+      
+      tempContainer.appendChild(clonedPreview);
+      document.body.appendChild(tempContainer);
+
+      // Capture the temporary container as an image with higher quality for better scaling
+      const canvas = await html2canvas(tempContainer, {
+        scale: 4, // Higher scale for better quality when scaled down
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: tempContainer.scrollWidth,
+        height: tempContainer.scrollHeight,
+        windowWidth: 1500,
+        windowHeight: 2000
       });
 
-      // Generate the document as a blob
-      const { Packer } = await import('docx');
-      // Use toBlob for browser environments
-      const docxBlob = await Packer.toBlob(doc);
-      
-      // Create a FormData object to send the DOCX file to the server
-      const formData = new FormData();
-      formData.append('docx', docxBlob, `${cvData.fullName || 'CV'}_Resume.docx`);
-      
-      // Send the DOCX file to the server for conversion to PDF
-      const response = await fetch(`${API_CONFIG.BASE_URL}/cv-export/docx-to-pdf`, {
-        method: 'POST',
-        body: formData,
+      // Clean up temporary container
+      document.body.removeChild(tempContainer);
+
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+
+      // Create PDF in portrait mode with A4 dimensions
+      const pdf = new jsPDF({
+        orientation: 'portrait', // Always use portrait
+        unit: 'mm',
+        format: 'a4',
+        compress: true // Enable compression for smaller file size
       });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      // Calculate scaling to use full page width and height
+      const targetWidth = pdfWidth; // Use full page width
+      const scale = targetWidth / (imgWidth / 2); // Divide by 2 because scale is 2
+      const finalWidth = imgWidth * scale / 2;
+      const finalHeight = imgHeight * scale / 2;
+
+      // Calculate scaling to fit all content on a single page
+      const availableHeight = pdfHeight - 2; // Leave 10mm margin at top and bottom
+      const heightRatio = availableHeight / finalHeight;
       
-      // Parse the response as JSON, handling potential parsing errors
-      let result;
-      try {
-        result = await response.json();
-      } catch (parseError) {
-        console.error('Error parsing server response:', parseError);
-        throw new Error('Server returned an invalid response. Please try downloading as DOCX instead.');
+      // If content is taller than available hxeight, scale it down to fit
+      let scaledWidth = finalWidth;
+      let scaledHeight = finalHeight;
+      
+      if (finalHeight > availableHeight) {
+        scaledWidth = finalWidth * heightRatio;
+        scaledHeight = finalHeight * heightRatio;
       }
       
-      // Check for specific error case: conversion tools not available
-      if (!response.ok || !result.success) {
-        // If server indicates we should fallback to DOCX
-        if (result.fallback_to_docx) {
-          console.log('PDF conversion not available on server, using client-side HTML to PDF conversion');
-          
-          // Use client-side HTML to PDF conversion as fallback
-          try {
-            // Get the preview element that contains the rendered template
-            const previewElement = document.getElementById('cv-preview');
-            if (!previewElement) {
-              throw new Error('CV preview element not found');
-            }
-            
-            // Import required libraries
-            const html2canvas = (await import('html2canvas')).default;
-            const jsPDF = (await import('jspdf')).jsPDF;
-            
-            // Show loading toast
-            addToast({
-              type: 'info',
-              title: 'Generating PDF',
-              description: 'Server-side conversion is not available. Using browser-based PDF generation instead.',
-              duration: 3000
-            });
-            
-            // Create a temporary container with proper dimensions for PDF
-            const tempContainer = document.createElement('div');
-            tempContainer.style.position = 'absolute';
-            tempContainer.style.left = '-9999px';
-            tempContainer.style.top = '0';
-            tempContainer.style.width = '210mm'; // A4 width
-            tempContainer.style.minHeight = '297mm'; // A4 height
-            tempContainer.style.backgroundColor = '#ffffff';
-            tempContainer.style.padding = '0';
-            tempContainer.style.margin = '0';
-            tempContainer.style.overflow = 'visible';
-            
-            // Clone the preview element with the selected template
-            const clonedPreview = previewElement.cloneNode(true) as HTMLElement;
-            clonedPreview.style.width = '100%';
-            clonedPreview.style.maxWidth = 'none';
-            clonedPreview.style.margin = '0';
-            clonedPreview.style.padding = '20px';
-            
-            // Apply template-specific styles to ensure full width
-            const templateElement = clonedPreview.querySelector('.cv-template');
-            if (templateElement) {
-              (templateElement as HTMLElement).style.width = '100%';
-              (templateElement as HTMLElement).style.maxWidth = 'none';
-              (templateElement as HTMLElement).style.margin = '0';
-            }
-            
-            tempContainer.appendChild(clonedPreview);
-            document.body.appendChild(tempContainer);
-            
-            // Capture the temporary container as an image
-            const canvas = await html2canvas(tempContainer, {
-              scale: 2,
-              useCORS: true,
-              allowTaint: true,
-              backgroundColor: '#ffffff',
-              windowWidth: 1200,
-              windowHeight: 1600
-            });
-            
-            // Clean up temporary container
-            document.body.removeChild(tempContainer);
-            
-            const imgData = canvas.toDataURL('image/png');
-            const imgWidth = canvas.width;
-            const imgHeight = canvas.height;
-            
-            // Create PDF
-            const pdf = new jsPDF({
-              orientation: 'portrait',
-              unit: 'mm',
-              format: 'a4'
-            });
-            
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            
-            // Calculate scaling to fit on page
-            const targetWidth = pdfWidth * 0.9; // 90% of page width
-            const scale = targetWidth / (imgWidth / 2); // Divide by 2 because scale is 2
-            const finalWidth = imgWidth * scale / 2;
-            const finalHeight = imgHeight * scale / 2;
-            
-            // Center the image on the page
-            const x = (pdfWidth - finalWidth) / 2;
-            const y = 10; // 10mm margin at top
-            
-            // Add image to PDF
-            pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-            
-            // Save the PDF
-            pdf.save(`${cvData.fullName || 'CV'}_Resume.pdf`);
-            
-            console.log('PDF generated and downloaded successfully using client-side conversion');
-            return; // Exit early after generating PDF
-          } catch (htmlToPdfError) {
-            console.error('Error with client-side PDF generation:', htmlToPdfError);
-            
-            // If client-side PDF generation fails, fall back to DOCX
-            addToast({
-              type: 'warning',
-              title: 'PDF Generation Failed',
-              description: 'PDF generation failed. Downloading as DOCX instead.',
-              duration: 5000
-            });
-            
-            // We already have the DOCX blob, so just download it directly
-            const { saveAs } = await import('file-saver');
-            saveAs(docxBlob, `${cvData.fullName || 'CV'}_Resume.docx`);
-            return; // Exit early after downloading DOCX
-          }
-        }
-        
-        // For other errors
-        throw new Error(`Conversion failed: ${result.message || response.statusText}`);
+      // Position with margins
+      const x = (pdfWidth - scaledWidth) / 2; // Center horizontally
+      const y = 10; // 10mm top margin
+      
+      // Add the image to the PDF, scaled to fit on one page
+      pdf.addImage(imgData, 'PNG', x, y, scaledWidth, scaledHeight);
+
+      // Save the PDF
+      const blob = pdf.output('blob');
+      console.log('PDF blob created, size:', blob.size);
+      
+      if (blob.size === 0) {
+        throw new Error('Generated PDF is empty');
       }
       
-      // Download the converted PDF
-      window.location.href = result.download_url;
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${cvData.fullName || 'CV'}_Resume.pdf`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      URL.revokeObjectURL(url);
       
       console.log('PDF generated and downloaded successfully');
 
@@ -3659,333 +3429,23 @@ export default function CVBuilder() {
       console.error('Error generating PDF:', error);
       console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-      
-      // Fallback to DOCX export if PDF conversion fails
       addToast({
-        type: 'warning',
+        type: 'error',
         title: 'PDF Export Failed',
-        description: 'Failed to export as PDF. Falling back to DOCX format.',
+        description: 'Failed to export as PDF. Please try again.',
         duration: 5000
       });
-      
-      // Call the DOCX export function as a fallback
-      await exportAsDOCX(_options);
     }
   };
 
   const exportAsDOCX = async (_options: any) => {
-    try {
-      console.log('Starting Word document generation...');
-      console.log('CV Data:', cvData);
-      console.log('Export options:', _options);
-      console.log('Selected template:', selectedTemplate);
-
-      // Import required libraries
-      const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = await import('docx');
-      const { saveAs } = await import('file-saver');
-      
-      // Get primary and secondary colors from the selected template or use defaults
-      let primaryColor = "#2563eb"; // Default blue
-      let secondaryColor = "#4b5563"; // Default gray
-      
-      // Try to extract colors from the template if available
-      if (selectedTemplate && selectedTemplate.html_content) {
-        const primaryColorMatch = selectedTemplate.html_content.match(/primaryColor}}|color:\s*([#\w]+)/i);
-        const secondaryColorMatch = selectedTemplate.html_content.match(/secondaryColor}}|accent-color:\s*([#\w]+)/i);
-        
-        if (primaryColorMatch && primaryColorMatch[1]) {
-          primaryColor = primaryColorMatch[1];
-        }
-        
-        if (secondaryColorMatch && secondaryColorMatch[1]) {
-          secondaryColor = secondaryColorMatch[1];
-        }
-      }
-      
-      // Get template category for potential future styling
-      if (selectedTemplate && selectedTemplate.category) {
-        console.log('Template category:', selectedTemplate.category.toLowerCase());
-      }
-      
-      // Create a new document with styling based on the selected template
-      const doc = new Document({
-        styles: {
-          paragraphStyles: [
-            {
-              id: "Heading1",
-              name: "Heading 1",
-              run: {
-                size: 36, // 18pt
-                bold: true,
-                color: primaryColor,
-              },
-              paragraph: {
-                spacing: {
-                  after: 240, // 12pt spacing
-                },
-              },
-            },
-            {
-              id: "Heading2",
-              name: "Heading 2",
-              run: {
-                size: 32, // 16pt
-                bold: true,
-                color: primaryColor,
-              },
-              paragraph: {
-                spacing: {
-                  before: 240, // 12pt spacing
-                  after: 120, // 6pt spacing
-                },
-              },
-            },
-            {
-              id: "Heading3",
-              name: "Heading 3",
-              run: {
-                size: 28, // 14pt
-                bold: true,
-                color: secondaryColor,
-              },
-              paragraph: {
-                spacing: {
-                  before: 160, // 8pt spacing
-                  after: 80, // 4pt spacing
-                },
-              },
-            },
-          ],
-        },
-        sections: [
-          {
-            properties: {
-              page: {
-                margin: {
-                  top: 720, // 0.5 inch
-                  right: 720, // 0.5 inch
-                  bottom: 720, // 0.5 inch
-                  left: 720, // 0.5 inch
-                },
-              },
-            },
-            children: [
-              // Header with name and contact info
-              new Paragraph({
-                text: cvData.fullName || 'Your Name',
-                heading: HeadingLevel.HEADING_1,
-                alignment: AlignmentType.CENTER,
-                style: "Heading1",
-              }),
-              
-              // Contact info row
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [
-                  new TextRun({ text: cvData.email || '', break: 1 }),
-                  new TextRun({ text: cvData.phoneNumber ? ` | ${cvData.phoneNumber}` : '' }),
-                  new TextRun({ text: cvData.address ? ` | ${cvData.address}` : '' }),
-                ],
-              }),
-              
-              // Divider
-              new Paragraph({
-                text: '',
-                border: {
-                  bottom: {
-                    color: primaryColor,
-                    space: 1,
-                    style: BorderStyle.SINGLE,
-                    size: 6,
-                  },
-                },
-              }),
-              
-              // Professional Summary
-              ...(cvData.professionalSummary ? [
-                new Paragraph({
-                  text: 'Professional Summary',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                new Paragraph({ text: cvData.professionalSummary })
-              ] : []),
-              
-              // Work Experience
-              ...(cvData.workExperience && cvData.workExperience.length > 0 ? [
-                new Paragraph({
-                  text: 'Work Experience',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.workExperience.flatMap(job => [
-                  new Paragraph({
-                    text: job.jobTitle,
-                    heading: HeadingLevel.HEADING_3,
-                    style: "Heading3",
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: job.company, bold: true }),
-                      new TextRun({ text: ` | ${job.startDate} - ${job.endDate || 'Present'}` }),
-                    ],
-                  }),
-                  new Paragraph({ text: job.description }),
-                ])
-              ] : []),
-              
-              // Education
-              ...(cvData.education && cvData.education.length > 0 ? [
-                new Paragraph({
-                  text: 'Education',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.education.flatMap(edu => [
-                  new Paragraph({
-                    text: edu.degree,
-                    heading: HeadingLevel.HEADING_3,
-                    style: "Heading3",
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: edu.institution, bold: true }),
-                      new TextRun({ text: ` | ${edu.graduationYear}` }),
-                    ],
-                  }),
-                  // Only add description if it exists in the data
-                  ...((edu as any).description ? [new Paragraph({ text: (edu as any).description })] : []),
-                ])
-              ] : []),
-              
-              // Skills
-              ...(cvData.skills ? [
-                new Paragraph({
-                  text: 'Skills',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                new Paragraph({ text: cvData.skills })
-              ] : []),
-              
-              // Projects
-              ...(cvData.projects && cvData.projects.length > 0 ? [
-                new Paragraph({
-                  text: 'Projects',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.projects.flatMap(project => [
-                  new Paragraph({
-                    text: project.name,
-                    heading: HeadingLevel.HEADING_3,
-                    style: "Heading3",
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: project.startDate || '' }),
-                      new TextRun({ text: project.endDate ? ` - ${project.endDate}` : '' }),
-                    ],
-                  }),
-                  new Paragraph({ text: project.description }),
-                ])
-              ] : []),
-              
-              // Certificates
-              ...(cvData.certificates && cvData.certificates.length > 0 ? [
-                new Paragraph({
-                  text: 'Certificates',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.certificates.flatMap(cert => [
-                  new Paragraph({
-                    text: cert.name,
-                    heading: HeadingLevel.HEADING_3,
-                    style: "Heading3",
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: cert.issuer, bold: true }),
-                      new TextRun({ text: cert.date ? ` | ${cert.date}` : '' }),
-                    ],
-                  }),
-                  // Only add description if it exists in the data
-                  ...((cert as any).description ? [new Paragraph({ text: (cert as any).description })] : []),
-                ])
-              ] : []),
-              
-              // Languages
-              ...(cvData.languages && cvData.languages.length > 0 ? [
-                new Paragraph({
-                  text: 'Languages',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.languages.flatMap(lang => [
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: lang.language, bold: true }),
-                      new TextRun({ text: ` - ${lang.proficiency}` }),
-                    ],
-                  }),
-                ])
-              ] : []),
-              
-              // References
-              ...(cvData.references && cvData.references.length > 0 ? [
-                new Paragraph({
-                  text: 'References',
-                  heading: HeadingLevel.HEADING_2,
-                  style: "Heading2",
-                }),
-                ...cvData.references.flatMap(ref => [
-                  new Paragraph({
-                    text: ref.name,
-                    heading: HeadingLevel.HEADING_3,
-                    style: "Heading3",
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: ref.position, bold: true }),
-                      new TextRun({ text: ` at ${ref.company}` }),
-                    ],
-                  }),
-                  new Paragraph({ text: `Email: ${ref.email}` }),
-                  ...(ref.phone ? [new Paragraph({ text: `Phone: ${ref.phone}` })] : []),
-                ])
-              ] : []),
-            ],
-          },
-        ],
-      });
-
-      // Generate the document as a blob
-      const { Packer } = await import('docx');
-      // Use toBlob for browser environments
-      const blob = await Packer.toBlob(doc);
-      
-      // Save the document
-      saveAs(blob, `${cvData.fullName || 'CV'}_Resume.docx`);
-      
-      console.log('Word document generated and downloaded successfully');
-      
-      // Show success message
-      addToast({
-        type: 'success',
-        title: 'Success',
-        description: 'Your CV has been exported as a Word document.',
-        duration: 3000
-      });
-    } catch (error) {
-      console.error('Error generating Word document:', error);
-      addToast({
-        type: 'error',
-        title: 'Export Failed',
-        description: 'Failed to export as Word. Please try again.',
-        duration: 5000
-      });
-    }
+    // For now, show a message that DOCX export is coming soon
+    addToast({
+      type: 'info',
+      title: 'Coming Soon',
+      description: 'DOCX export is coming soon! For now, please use PDF export.',
+      duration: 5000
+    });
   };
 
   const exportAsHTML = async (_options: any) => {
