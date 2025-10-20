@@ -3500,9 +3500,11 @@ export default function CVBuilder() {
       });
 
       // Generate the document as a blob
-      // @ts-ignore - The save method exists but TypeScript doesn't recognize it
-      const buffer = await doc.save();
-      const docxBlob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const { Packer } = await import('docx');
+      const buffer = await Packer.toBuffer(doc);
+      // Convert the buffer to Uint8Array which is compatible with Blob
+      const uint8Array = new Uint8Array(buffer);
+      const docxBlob = new Blob([uint8Array], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
       
       // Create a FormData object to send the DOCX file to the server
       const formData = new FormData();
@@ -3749,9 +3751,11 @@ export default function CVBuilder() {
       });
 
       // Generate the document as a blob
-      // @ts-ignore - The save method exists but TypeScript doesn't recognize it
-      const buffer = await doc.save();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const { Packer } = await import('docx');
+      const buffer = await Packer.toBuffer(doc);
+      // Convert the buffer to Uint8Array which is compatible with Blob
+      const uint8Array = new Uint8Array(buffer);
+      const blob = new Blob([uint8Array], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
       
       // Save the document
       saveAs(blob, `${cvData.fullName || 'CV'}_Resume.docx`);
