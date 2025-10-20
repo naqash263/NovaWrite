@@ -22,6 +22,7 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
   const [exportOptions, setExportOptions] = useState({
     includePageNumbers: false,
     includeWatermark: false,
+    allowMultiPage: true, // Default to allowing multiple pages
     quality: 'high',
     pageSize: 'A4',
     margins: 'normal'
@@ -224,6 +225,22 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
                     Include "Created with Naqash Thaheem's CV Builder" watermark
                   </label>
                 </div>
+
+                {/* Multi-page option (PDF only) */}
+                {selectedFormat === 'pdf' && (
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="allowMultiPage"
+                      checked={exportOptions.allowMultiPage}
+                      onChange={(e) => setExportOptions({...exportOptions, allowMultiPage: e.target.checked})}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="allowMultiPage" className="ml-2 block text-sm text-gray-900">
+                      Allow multiple pages (if unchecked, content will be scaled to fit on one page)
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
           </div>

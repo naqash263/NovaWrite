@@ -3346,22 +3346,20 @@ export default function CVBuilder() {
 
       // Capture the temporary container as an image
       const canvas = await html2canvas(tempContainer, {
-        scale: 1.5, // Reduced from 2 to 1.5 for smaller file size
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: tempContainer.scrollWidth,
         height: tempContainer.scrollHeight,
-        windowWidth: 1000, // Reduced from 1200
-        windowHeight: 1400, // Reduced from 1600
-        logging: false, // Disable logging for better performance
-        removeContainer: true // Clean up after capture
+        windowWidth: 1200,
+        windowHeight: 1600
       });
 
       // Clean up temporary container
       document.body.removeChild(tempContainer);
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.85); // Use JPEG with 85% quality for smaller file size
+      const imgData = canvas.toDataURL('image/png');
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
 
@@ -3377,27 +3375,40 @@ export default function CVBuilder() {
 
       // Calculate scaling to use full page width and height
       const targetWidth = pdfWidth; // Use full page width
-      const scale = targetWidth / (imgWidth / 1.5); // Divide by 1.5 because scale is 1.5
-      const finalWidth = imgWidth * scale / 1.5;
-      const finalHeight = imgHeight * scale / 1.5;
+      const scale = targetWidth / (imgWidth / 2); // Divide by 2 because scale is 2
+      const finalWidth = imgWidth * scale / 2;
+      const finalHeight = imgHeight * scale / 2;
 
-      // Position to use full page with no margins
+      // Position to use full page width with top margin
       const x = 0; // No left margin
       const y = 0; // No top margin
 
-      pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
+      pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
 
-      // If content is taller than one page, add additional pages
-      if (finalHeight > pdfHeight) {
-        // Calculate how many pages we need
-        const pagesNeeded = Math.ceil(finalHeight / pdfHeight);
+      // Check if multi-page PDFs are allowed (default to true if not specified)
+      const allowMultiPage = _options?.allowMultiPage !== undefined ? _options.allowMultiPage : true;
+      console.log('Multi-page PDF:', allowMultiPage ? 'Enabled' : 'Disabled');
+      
+      if (allowMultiPage && finalHeight > (pdfHeight - 1)) {
+        // Multi-page mode: Create additional pages if content is too tall
+        const contentPerPage = pdfHeight - 1; // Available height per page after top margin
+        const pagesNeeded = Math.ceil(finalHeight / contentPerPage);
         
         for (let i = 1; i < pagesNeeded; i++) {
           pdf.addPage();
           // Position the content so it continues from where it left off
-          const pageY = 20 - (i * pdfHeight); // 20mm top margin for additional pages
-          pdf.addImage(imgData, 'JPEG', x, pageY, finalWidth, finalHeight);
+          const pageY = 1 - (i * contentPerPage); // 1mm top margin for all pages
+          pdf.addImage(imgData, 'PNG', x, pageY, finalWidth, finalHeight);
         }
+      } else if (!allowMultiPage && finalHeight > pdfHeight) {
+        // Single-page mode: Scale down content to fit on one page
+        const scaleFactor = pdfHeight / finalHeight;
+        const singlePageWidth = finalWidth * scaleFactor;
+        const singlePageHeight = finalHeight * scaleFactor;
+        
+        // Center the scaled-down content
+        const centerX = (pdfWidth - singlePageWidth) / 2;
+        pdf.addImage(imgData, 'PNG', centerX, 0, singlePageWidth, singlePageHeight);
       }
 
       // Save the PDF
