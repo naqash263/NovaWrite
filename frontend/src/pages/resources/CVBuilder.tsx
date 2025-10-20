@@ -3381,9 +3381,9 @@ export default function CVBuilder() {
 
       // Position to use full page width with top margin
       const x = 0; // No left margin
-      const y = 0; // No top margin
+      // No top margin needed since we're not using it directly
 
-      pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+      // First page image is not added here anymore
 
       // Check if multi-page PDFs are allowed (default to true if not specified)
       const allowMultiPage = _options?.allowMultiPage !== undefined ? _options.allowMultiPage : true;
@@ -3403,12 +3403,11 @@ export default function CVBuilder() {
       } else if (!allowMultiPage && finalHeight > pdfHeight) {
         // Single-page mode: Scale down content to fit on one page
         const scaleFactor = pdfHeight / finalHeight;
-        const singlePageWidth = finalWidth * scaleFactor;
+        const singlePageWidth = 210;
         const singlePageHeight = finalHeight * scaleFactor;
         
-        // Center the scaled-down content
-        const centerX = (pdfWidth - singlePageWidth) / 2;
-        pdf.addImage(imgData, 'PNG', centerX, 0, singlePageWidth, singlePageHeight);
+          // Position the scaled-down content with negative margins to use full page
+          pdf.addImage(imgData, 'PNG', -5, -4, singlePageWidth, singlePageHeight);
       }
 
       // Save the PDF
@@ -3449,13 +3448,231 @@ export default function CVBuilder() {
   };
 
   const exportAsDOCX = async (_options: any) => {
-    // For now, show a message that DOCX export is coming soon
-    addToast({
-      type: 'info',
-      title: 'Coming Soon',
-      description: 'DOCX export is coming soon! For now, please use PDF export.',
-      duration: 5000
-    });
+    try {
+      console.log('Starting Word document generation...');
+      console.log('CV Data:', cvData);
+      console.log('Export options:', _options);
+
+      // Import required libraries
+      const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = await import('docx');
+      const { saveAs } = await import('file-saver');
+      
+      // Create a new document
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              // Header with name and contact info
+              new Paragraph({
+                text: cvData.fullName || 'Your Name',
+                heading: HeadingLevel.HEADING_1,
+                alignment: AlignmentType.CENTER,
+              }),
+              
+              // Contact info row
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: cvData.email || '', break: 1 }),
+                  new TextRun({ text: cvData.phoneNumber ? ` | ${cvData.phoneNumber}` : '' }),
+                  new TextRun({ text: cvData.address ? ` | ${cvData.address}` : '' }),
+                ],
+              }),
+              
+              // Divider
+              new Paragraph({
+                text: '',
+                border: {
+                  bottom: {
+                    color: "999999",
+                    space: 1,
+                    style: BorderStyle.SINGLE,
+                    size: 6,
+                  },
+                },
+              }),
+              
+              // Professional Summary
+              ...(cvData.professionalSummary ? [
+                new Paragraph({
+                  text: 'Professional Summary',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                new Paragraph({ text: cvData.professionalSummary })
+              ] : []),
+              
+              // Work Experience
+              ...(cvData.workExperience && cvData.workExperience.length > 0 ? [
+                new Paragraph({
+                  text: 'Work Experience',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.workExperience.flatMap(job => [
+                  new Paragraph({
+                    text: job.jobTitle,
+                    heading: HeadingLevel.HEADING_3,
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: job.company, bold: true }),
+                      new TextRun({ text: ` | ${job.startDate} - ${job.endDate || 'Present'}` }),
+                    ],
+                  }),
+                  new Paragraph({ text: job.description }),
+                ])
+              ] : []),
+              
+              // Education
+              ...(cvData.education && cvData.education.length > 0 ? [
+                new Paragraph({
+                  text: 'Education',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.education.flatMap(edu => [
+                  new Paragraph({
+                    text: edu.degree,
+                    heading: HeadingLevel.HEADING_3,
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: edu.institution, bold: true }),
+                      new TextRun({ text: ` | ${edu.graduationYear}` }),
+                    ],
+                  }),
+                  // Only add description if it exists in the data
+                  ...((edu as any).description ? [new Paragraph({ text: (edu as any).description })] : []),
+                ])
+              ] : []),
+              
+              // Skills
+              ...(cvData.skills ? [
+                new Paragraph({
+                  text: 'Skills',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                new Paragraph({ text: cvData.skills })
+              ] : []),
+              
+              // Projects
+              ...(cvData.projects && cvData.projects.length > 0 ? [
+                new Paragraph({
+                  text: 'Projects',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.projects.flatMap(project => [
+                  new Paragraph({
+                    text: project.name,
+                    heading: HeadingLevel.HEADING_3,
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: project.startDate || '' }),
+                      new TextRun({ text: project.endDate ? ` - ${project.endDate}` : '' }),
+                    ],
+                  }),
+                  new Paragraph({ text: project.description }),
+                ])
+              ] : []),
+              
+              // Certificates
+              ...(cvData.certificates && cvData.certificates.length > 0 ? [
+                new Paragraph({
+                  text: 'Certificates',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.certificates.flatMap(cert => [
+                  new Paragraph({
+                    text: cert.name,
+                    heading: HeadingLevel.HEADING_3,
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: cert.issuer, bold: true }),
+                      new TextRun({ text: cert.date ? ` | ${cert.date}` : '' }),
+                    ],
+                  }),
+                  // Only add description if it exists in the data
+                  ...((cert as any).description ? [new Paragraph({ text: (cert as any).description })] : []),
+                ])
+              ] : []),
+              
+              // Languages
+              ...(cvData.languages && cvData.languages.length > 0 ? [
+                new Paragraph({
+                  text: 'Languages',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.languages.flatMap(lang => [
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: lang.language, bold: true }),
+                      new TextRun({ text: ` - ${lang.proficiency}` }),
+                    ],
+                  }),
+                ])
+              ] : []),
+              
+              // References
+              ...(cvData.references && cvData.references.length > 0 ? [
+                new Paragraph({
+                  text: 'References',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.references.flatMap(ref => [
+                  new Paragraph({
+                    text: ref.name,
+                    heading: HeadingLevel.HEADING_3,
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: ref.position, bold: true }),
+                      new TextRun({ text: ` at ${ref.company}` }),
+                    ],
+                  }),
+                  new Paragraph({ text: `Email: ${ref.email}` }),
+                  ...(ref.phone ? [new Paragraph({ text: `Phone: ${ref.phone}` })] : []),
+                ])
+              ] : []),
+            ],
+          },
+        ],
+      });
+
+      // Generate the document as a blob
+      // @ts-ignore - The save method exists but TypeScript doesn't recognize it
+      const buffer = await doc.save();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      
+      // Save the document
+      saveAs(blob, `${cvData.fullName || 'CV'}_Resume.docx`);
+      
+      console.log('Word document generated and downloaded successfully');
+      
+      // Show success message
+      addToast({
+        type: 'success',
+        title: 'Success',
+        description: 'Your CV has been exported as a Word document.',
+        duration: 3000
+      });
+    } catch (error) {
+      console.error('Error generating Word document:', error);
+      addToast({
+        type: 'error',
+        title: 'Export Failed',
+        description: 'Failed to export as Word. Please try again.',
+        duration: 5000
+      });
+    }
   };
 
   const exportAsHTML = async (_options: any) => {
