@@ -3514,15 +3514,35 @@ export default function CVBuilder() {
         body: formData,
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Server error: ${errorData.message || response.statusText}`);
+      // Parse the response as JSON, handling potential parsing errors
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        console.error('Error parsing server response:', parseError);
+        throw new Error('Server returned an invalid response. Please try downloading as DOCX instead.');
       }
       
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(`Conversion failed: ${result.message}`);
+      // Check for specific error case: conversion tools not available
+      if (!response.ok || !result.success) {
+        // If server indicates we should fallback to DOCX
+        if (result.fallback_to_docx) {
+          console.log('PDF conversion not available on server, falling back to DOCX export');
+          addToast({
+            type: 'info',
+            title: 'PDF Export Not Available',
+            description: 'PDF conversion is not available on the server. Downloading as DOCX instead.',
+            duration: 5000
+          });
+          
+          // We already have the DOCX blob, so just download it directly
+          const { saveAs } = await import('file-saver');
+          saveAs(docxBlob, `${cvData.fullName || 'CV'}_Resume.docx`);
+          return; // Exit early after downloading DOCX
+        }
+        
+        // For other errors
+        throw new Error(`Conversion failed: ${result.message || response.statusText}`);
       }
       
       // Download the converted PDF

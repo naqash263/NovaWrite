@@ -46,7 +46,13 @@ class DocxToPdfController extends Controller
             } 
             // No conversion tool available
             else {
-                throw new \Exception('No conversion tools available. Please install LibreOffice or Pandoc.');
+                // Return a more detailed error message
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No conversion tools available on the server',
+                    'error' => 'Please install LibreOffice or Pandoc on the server to enable PDF conversion.',
+                    'fallback_to_docx' => true
+                ], 422); // Use 422 instead of 500 to indicate it's a known issue
             }
 
             // Check if the PDF was created successfully
@@ -86,15 +92,13 @@ class DocxToPdfController extends Controller
             $fullPath = storage_path('app/' . $path);
             
             // Delete the file after sending it (cleanup)
-            register_shutdown_function(function () use ($path, $docxPath = null) {
+            register_shutdown_function(function () use ($path) {
                 Storage::disk('local')->delete($path);
                 
                 // Also delete the original DOCX file if it exists
-                if ($docxPath) {
-                    $docxFile = str_replace('.pdf', '.docx', $path);
-                    if (Storage::disk('local')->exists($docxFile)) {
-                        Storage::disk('local')->delete($docxFile);
-                    }
+                $docxFile = str_replace('.pdf', '.docx', $path);
+                if (Storage::disk('local')->exists($docxFile)) {
+                    Storage::disk('local')->delete($docxFile);
                 }
             });
             
