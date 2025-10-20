@@ -3058,22 +3058,23 @@ export default function CVBuilder() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // Validate file type - restrict to common web formats only
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
       addToast({
         type: 'error',
         title: 'Invalid File Type',
-        description: 'Please select an image file (PNG, JPG, GIF, etc.)'
+        description: 'Please select a JPG, PNG, GIF, or WebP image file'
       });
       return;
     }
 
-    // Validate file size (2MB limit for data URLs)
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size (1MB limit for data URLs to prevent encoding issues)
+    if (file.size > 1 * 1024 * 1024) {
       addToast({
         type: 'error',
         title: 'File Too Large',
-        description: 'Image file must be smaller than 2MB for data URL encoding'
+        description: 'Image file must be smaller than 1MB for data URL encoding'
       });
       return;
     }
@@ -3084,14 +3085,48 @@ export default function CVBuilder() {
       
       reader.onload = (e) => {
         if (e.target?.result) {
-          // Update the profile picture URL with data URL
-          setCvData(prev => ({ ...prev, profilePictureUrl: e.target!.result as string }));
-          
-          addToast({
-            type: 'success',
-            title: 'Profile Picture Added',
-            description: 'Your profile picture has been added successfully.'
-          });
+          try {
+            // Get data URL
+            const dataUrl = e.target.result as string;
+            
+            // Validate the data URL format
+            if (!dataUrl.startsWith('data:image/')) {
+              throw new Error('Invalid data URL format');
+            }
+            
+            // Test JSON encoding to ensure it can be stored properly
+            const testObject = { url: dataUrl };
+            JSON.stringify(testObject);
+            
+            // Update the profile picture URL with data URL
+            setCvData(prev => ({ ...prev, profilePictureUrl: dataUrl }));
+            
+            // Save to localStorage immediately to test JSON encoding
+            const currentData = localStorage.getItem('cv-builder-data');
+            if (currentData) {
+              try {
+                const parsedData = JSON.parse(currentData);
+                parsedData.profilePictureUrl = dataUrl;
+                localStorage.setItem('cv-builder-data', JSON.stringify(parsedData));
+              } catch (storageError) {
+                console.error('Error updating localStorage with profile picture:', storageError);
+                throw new Error('Failed to store profile picture data');
+              }
+            }
+            
+            addToast({
+              type: 'success',
+              title: 'Profile Picture Added',
+              description: 'Your profile picture has been added successfully.'
+            });
+          } catch (jsonError) {
+            console.error('Error with data URL encoding:', jsonError);
+            addToast({
+              type: 'error',
+              title: 'Encoding Error',
+              description: 'The image contains invalid characters. Please try a different image.'
+            });
+          }
         }
       };
       
@@ -3186,7 +3221,29 @@ export default function CVBuilder() {
   // Auto-save functionality
   useEffect(() => {
     const timer = setTimeout(() => {
-      localStorage.setItem('cv-builder-data', JSON.stringify(cvData));
+      try {
+        localStorage.setItem('cv-builder-data', JSON.stringify(cvData));
+      } catch (error) {
+        console.error('Error saving CV data to localStorage:', error);
+        
+        // Try to save a sanitized version
+        try {
+          const sanitizedData = sanitizeCvData(cvData);
+          localStorage.setItem('cv-builder-data', JSON.stringify(sanitizedData));
+          console.log('Saved sanitized CV data to localStorage');
+          
+          // Update state with sanitized data
+          setCvData(sanitizedData);
+        } catch (sanitizeError) {
+          console.error('Failed to save even sanitized data:', sanitizeError);
+          addToast({
+            type: 'error',
+            title: 'Save Error',
+            description: 'Failed to save your CV data. Please try removing the profile picture.',
+            duration: 5000
+          });
+        }
+      }
       localStorage.setItem('cv-builder-style', JSON.stringify(cvStyle));
       localStorage.setItem('cv-builder-completed-steps', JSON.stringify(Array.from(completedSteps)));
     }, 1000);
@@ -3258,8 +3315,42 @@ export default function CVBuilder() {
     setCurrentStep(step);
   };
 
+  // Sanitize CV data to prevent JSON encoding issues
+  const sanitizeCvData = (data: any): any => {
+    // Create a deep copy to avoid modifying the original
+    const sanitized = JSON.parse(JSON.stringify({ ...data }));
+    
+    // Check if profilePictureUrl is causing issues
+    if (sanitized.profilePictureUrl && typeof sanitized.profilePictureUrl === 'string') {
+      try {
+        // Test if it can be properly JSON encoded
+        const test = { url: sanitized.profilePictureUrl };
+        JSON.stringify(test);
+      } catch (error) {
+        // If there's an error, remove the problematic field
+        console.warn('Removed invalid profilePictureUrl due to JSON encoding issues');
+        sanitized.profilePictureUrl = '';
+      }
+    }
+    
+    return sanitized;
+  };
+
   const handleFinish = async (format: string = 'pdf', options: any = {}) => {
     try {
+      // Sanitize CV data before exporting to prevent JSON encoding issues
+      try {
+        // Test if the current data can be properly JSON encoded
+        JSON.stringify(cvData);
+      } catch (jsonError) {
+        console.warn('CV data has JSON encoding issues, sanitizing...', jsonError);
+        const sanitizedData = sanitizeCvData(cvData);
+        setCvData(sanitizedData);
+        
+        // Allow time for the component to re-render with sanitized data
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
       // Handle different export formats
       switch (format) {
         case 'pdf':
@@ -3329,7 +3420,7 @@ export default function CVBuilder() {
               width: 100% !important;
               max-width: none !important;
               margin: 0 !important;
-              padding: 10mm !important;
+              padding: 1mm !important;
               box-sizing: border-box !important;
               background-color: white !important;
               color: black !important;
