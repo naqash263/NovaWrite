@@ -3350,7 +3350,7 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Professional Summary',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 new Paragraph({ text: cvData.professionalSummary })
               ] : []),
@@ -3360,12 +3360,13 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Work Experience',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.workExperience.flatMap(job => [
                   new Paragraph({
                     text: job.jobTitle,
                     heading: HeadingLevel.HEADING_3,
+                    style: "Heading3",
                   }),
                   new Paragraph({
                     children: [
@@ -3382,12 +3383,13 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Education',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.education.flatMap(edu => [
                   new Paragraph({
                     text: edu.degree,
                     heading: HeadingLevel.HEADING_3,
+                    style: "Heading3",
                   }),
                   new Paragraph({
                     children: [
@@ -3405,7 +3407,7 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Skills',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 new Paragraph({ text: cvData.skills })
               ] : []),
@@ -3415,12 +3417,13 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Projects',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.projects.flatMap(project => [
                   new Paragraph({
                     text: project.name,
                     heading: HeadingLevel.HEADING_3,
+                    style: "Heading3",
                   }),
                   new Paragraph({
                     children: [
@@ -3437,12 +3440,13 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Certificates',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.certificates.flatMap(cert => [
                   new Paragraph({
                     text: cert.name,
                     heading: HeadingLevel.HEADING_3,
+                    style: "Heading3",
                   }),
                   new Paragraph({
                     children: [
@@ -3460,7 +3464,7 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Languages',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.languages.flatMap(lang => [
                   new Paragraph({
@@ -3477,12 +3481,13 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'References',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.references.flatMap(ref => [
                   new Paragraph({
                     text: ref.name,
                     heading: HeadingLevel.HEADING_3,
+                    style: "Heading3",
                   }),
                   new Paragraph({
                     children: [
@@ -3527,18 +3532,118 @@ export default function CVBuilder() {
       if (!response.ok || !result.success) {
         // If server indicates we should fallback to DOCX
         if (result.fallback_to_docx) {
-          console.log('PDF conversion not available on server, falling back to DOCX export');
-          addToast({
-            type: 'info',
-            title: 'PDF Export Not Available',
-            description: 'PDF conversion is not available on the server. Downloading as DOCX instead.',
-            duration: 5000
-          });
+          console.log('PDF conversion not available on server, using client-side HTML to PDF conversion');
           
-          // We already have the DOCX blob, so just download it directly
-          const { saveAs } = await import('file-saver');
-          saveAs(docxBlob, `${cvData.fullName || 'CV'}_Resume.docx`);
-          return; // Exit early after downloading DOCX
+          // Use client-side HTML to PDF conversion as fallback
+          try {
+            // Get the preview element that contains the rendered template
+            const previewElement = document.getElementById('cv-preview');
+            if (!previewElement) {
+              throw new Error('CV preview element not found');
+            }
+            
+            // Import required libraries
+            const html2canvas = (await import('html2canvas')).default;
+            const jsPDF = (await import('jspdf')).jsPDF;
+            
+            // Show loading toast
+            addToast({
+              type: 'info',
+              title: 'Generating PDF',
+              description: 'Server-side conversion is not available. Using browser-based PDF generation instead.',
+              duration: 3000
+            });
+            
+            // Create a temporary container with proper dimensions for PDF
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.left = '-9999px';
+            tempContainer.style.top = '0';
+            tempContainer.style.width = '210mm'; // A4 width
+            tempContainer.style.minHeight = '297mm'; // A4 height
+            tempContainer.style.backgroundColor = '#ffffff';
+            tempContainer.style.padding = '0';
+            tempContainer.style.margin = '0';
+            tempContainer.style.overflow = 'visible';
+            
+            // Clone the preview element with the selected template
+            const clonedPreview = previewElement.cloneNode(true) as HTMLElement;
+            clonedPreview.style.width = '100%';
+            clonedPreview.style.maxWidth = 'none';
+            clonedPreview.style.margin = '0';
+            clonedPreview.style.padding = '20px';
+            
+            // Apply template-specific styles to ensure full width
+            const templateElement = clonedPreview.querySelector('.cv-template');
+            if (templateElement) {
+              (templateElement as HTMLElement).style.width = '100%';
+              (templateElement as HTMLElement).style.maxWidth = 'none';
+              (templateElement as HTMLElement).style.margin = '0';
+            }
+            
+            tempContainer.appendChild(clonedPreview);
+            document.body.appendChild(tempContainer);
+            
+            // Capture the temporary container as an image
+            const canvas = await html2canvas(tempContainer, {
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: '#ffffff',
+              windowWidth: 1200,
+              windowHeight: 1600
+            });
+            
+            // Clean up temporary container
+            document.body.removeChild(tempContainer);
+            
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            
+            // Create PDF
+            const pdf = new jsPDF({
+              orientation: 'portrait',
+              unit: 'mm',
+              format: 'a4'
+            });
+            
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            
+            // Calculate scaling to fit on page
+            const targetWidth = pdfWidth * 0.9; // 90% of page width
+            const scale = targetWidth / (imgWidth / 2); // Divide by 2 because scale is 2
+            const finalWidth = imgWidth * scale / 2;
+            const finalHeight = imgHeight * scale / 2;
+            
+            // Center the image on the page
+            const x = (pdfWidth - finalWidth) / 2;
+            const y = 10; // 10mm margin at top
+            
+            // Add image to PDF
+            pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+            
+            // Save the PDF
+            pdf.save(`${cvData.fullName || 'CV'}_Resume.pdf`);
+            
+            console.log('PDF generated and downloaded successfully using client-side conversion');
+            return; // Exit early after generating PDF
+          } catch (htmlToPdfError) {
+            console.error('Error with client-side PDF generation:', htmlToPdfError);
+            
+            // If client-side PDF generation fails, fall back to DOCX
+            addToast({
+              type: 'warning',
+              title: 'PDF Generation Failed',
+              description: 'PDF generation failed. Downloading as DOCX instead.',
+              duration: 5000
+            });
+            
+            // We already have the DOCX blob, so just download it directly
+            const { saveAs } = await import('file-saver');
+            saveAs(docxBlob, `${cvData.fullName || 'CV'}_Resume.docx`);
+            return; // Exit early after downloading DOCX
+          }
         }
         
         // For other errors
@@ -3573,22 +3678,104 @@ export default function CVBuilder() {
       console.log('Starting Word document generation...');
       console.log('CV Data:', cvData);
       console.log('Export options:', _options);
+      console.log('Selected template:', selectedTemplate);
 
       // Import required libraries
       const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = await import('docx');
       const { saveAs } = await import('file-saver');
       
-      // Create a new document
+      // Get primary and secondary colors from the selected template or use defaults
+      let primaryColor = "#2563eb"; // Default blue
+      let secondaryColor = "#4b5563"; // Default gray
+      
+      // Try to extract colors from the template if available
+      if (selectedTemplate && selectedTemplate.html_content) {
+        const primaryColorMatch = selectedTemplate.html_content.match(/primaryColor}}|color:\s*([#\w]+)/i);
+        const secondaryColorMatch = selectedTemplate.html_content.match(/secondaryColor}}|accent-color:\s*([#\w]+)/i);
+        
+        if (primaryColorMatch && primaryColorMatch[1]) {
+          primaryColor = primaryColorMatch[1];
+        }
+        
+        if (secondaryColorMatch && secondaryColorMatch[1]) {
+          secondaryColor = secondaryColorMatch[1];
+        }
+      }
+      
+      // Get template category for potential future styling
+      if (selectedTemplate && selectedTemplate.category) {
+        console.log('Template category:', selectedTemplate.category.toLowerCase());
+      }
+      
+      // Create a new document with styling based on the selected template
       const doc = new Document({
+        styles: {
+          paragraphStyles: [
+            {
+              id: "Heading1",
+              name: "Heading 1",
+              run: {
+                size: 36, // 18pt
+                bold: true,
+                color: primaryColor,
+              },
+              paragraph: {
+                spacing: {
+                  after: 240, // 12pt spacing
+                },
+              },
+            },
+            {
+              id: "Heading2",
+              name: "Heading 2",
+              run: {
+                size: 32, // 16pt
+                bold: true,
+                color: primaryColor,
+              },
+              paragraph: {
+                spacing: {
+                  before: 240, // 12pt spacing
+                  after: 120, // 6pt spacing
+                },
+              },
+            },
+            {
+              id: "Heading3",
+              name: "Heading 3",
+              run: {
+                size: 28, // 14pt
+                bold: true,
+                color: secondaryColor,
+              },
+              paragraph: {
+                spacing: {
+                  before: 160, // 8pt spacing
+                  after: 80, // 4pt spacing
+                },
+              },
+            },
+          ],
+        },
         sections: [
           {
-            properties: {},
+            properties: {
+              page: {
+                margin: {
+                  top: 720, // 0.5 inch
+                  right: 720, // 0.5 inch
+                  bottom: 720, // 0.5 inch
+                  left: 720, // 0.5 inch
+                },
+              },
+            },
             children: [
               // Header with name and contact info
               new Paragraph({
                 text: cvData.fullName || 'Your Name',
                 heading: HeadingLevel.HEADING_1,
                 alignment: AlignmentType.CENTER,
+                style: "Heading1",
               }),
               
               // Contact info row
@@ -3606,7 +3793,7 @@ export default function CVBuilder() {
                 text: '',
                 border: {
                   bottom: {
-                    color: "999999",
+                    color: primaryColor,
                     space: 1,
                     style: BorderStyle.SINGLE,
                     size: 6,
@@ -3619,7 +3806,7 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Professional Summary',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 new Paragraph({ text: cvData.professionalSummary })
               ] : []),
@@ -3629,12 +3816,13 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Work Experience',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.workExperience.flatMap(job => [
                   new Paragraph({
                     text: job.jobTitle,
                     heading: HeadingLevel.HEADING_3,
+                    style: "Heading3",
                   }),
                   new Paragraph({
                     children: [
@@ -3651,12 +3839,13 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Education',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.education.flatMap(edu => [
                   new Paragraph({
                     text: edu.degree,
                     heading: HeadingLevel.HEADING_3,
+                    style: "Heading3",
                   }),
                   new Paragraph({
                     children: [
@@ -3674,7 +3863,7 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Skills',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 new Paragraph({ text: cvData.skills })
               ] : []),
@@ -3684,12 +3873,13 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Projects',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.projects.flatMap(project => [
                   new Paragraph({
                     text: project.name,
                     heading: HeadingLevel.HEADING_3,
+                    style: "Heading3",
                   }),
                   new Paragraph({
                     children: [
@@ -3706,12 +3896,13 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Certificates',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.certificates.flatMap(cert => [
                   new Paragraph({
                     text: cert.name,
                     heading: HeadingLevel.HEADING_3,
+                    style: "Heading3",
                   }),
                   new Paragraph({
                     children: [
@@ -3729,7 +3920,7 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'Languages',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.languages.flatMap(lang => [
                   new Paragraph({
@@ -3746,12 +3937,13 @@ export default function CVBuilder() {
                 new Paragraph({
                   text: 'References',
                   heading: HeadingLevel.HEADING_2,
-                  thematicBreak: true,
+                  style: "Heading2",
                 }),
                 ...cvData.references.flatMap(ref => [
                   new Paragraph({
                     text: ref.name,
                     heading: HeadingLevel.HEADING_3,
+                    style: "Heading3",
                   }),
                   new Paragraph({
                     children: [
