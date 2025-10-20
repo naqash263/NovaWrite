@@ -254,50 +254,221 @@ class FileProcessingService
     }
 
     /**
-     * Extract text from PDF using simple OCR fallback
+     * Extract text from PDF using Tesseract OCR for image-based PDFs
+     * This method attempts multiple approaches to extract text from PDFs
      */
     private function extractPdfWithOCR(string $pdfPath): string
     {
         try {
-            // Create a simple text file with basic OCR attempt
-            // This is a lightweight fallback for image-based PDFs
+            // Create a temporary directory for OCR processing
             $tempDir = dirname($pdfPath) . '/ocr_temp_' . uniqid();
             if (!mkdir($tempDir, 0755, true)) {
                 throw new \Exception('Failed to create OCR temp directory');
             }
             
             $outputFile = $tempDir . '/output.txt';
+            $combinedText = '';
             
-            // Use a simple approach: try to extract any readable text
-            // This is much more memory efficient than full OCR
+            // First try with pdftotext (faster, works for some PDFs)
             $command = sprintf(
-                'pdftotext -layout "%s" "%s" 2>/dev/null || echo "No text found" > "%s"',
+                'pdftotext -layout "%s" "%s" 2>/dev/null',
                 escapeshellarg($pdfPath),
-                escapeshellarg($outputFile),
                 escapeshellarg($outputFile)
             );
             
             exec($command, $output, $returnCode);
             
-            $text = '';
-            if (file_exists($outputFile)) {
+            if (file_exists($outputFile) && filesize($outputFile) > 0) {
                 $text = file_get_contents($outputFile);
+                if (!empty(trim($text))) {
+                    // Clean up
+                    unlink($outputFile);
+                    rmdir($tempDir);
+                    return trim($text);
+                }
                 unlink($outputFile);
+            }
+            
+            // If pdftotext failed, try pdftotext with different options
+            Log::info('Standard pdftotext failed, trying with different options...');
+            $command = sprintf(
+                'pdftotext -raw "%s" "%s" 2>/dev/null',
+                escapeshellarg($pdfPath),
+                escapeshellarg($outputFile)
+            );
+            
+            exec($command, $output, $returnCode);
+            
+            if (file_exists($outputFile) && filesize($outputFile) > 0) {
+                $text = file_get_contents($outputFile);
+                if (!empty(trim($text))) {
+                    // Clean up
+                    unlink($outputFile);
+                    rmdir($tempDir);
+                    return trim($text);
+                }
+                unlink($outputFile);
+            }
+            
+            // If still failed, use Tesseract OCR on PDF images
+            Log::info('All pdftotext attempts failed, trying Tesseract OCR...');
+            
+            // Check if tesseract is available
+            exec('which tesseract 2>/dev/null', $tesseractOutput, $tesseractCode);
+            if ($tesseractCode !== 0) {
+                Log::warning('Tesseract OCR not found on system');
+                // Try one more pdftotext attempt with -bbox option
+                $command = sprintf(
+                    'pdftotext -bbox "%s" "%s" 2>/dev/null',
+                    escapeshellarg($pdfPath),
+                    escapeshellarg($outputFile)
+                );
+                
+                exec($command, $output, $returnCode);
+                
+                if (file_exists($outputFile) && filesize($outputFile) > 0) {
+                    $text = file_get_contents($outputFile);
+                    if (!empty(trim($text))) {
+                        // Clean up
+                        unlink($outputFile);
+                        rmdir($tempDir);
+                        return trim($text);
+                    }
+                    unlink($outputFile);
+                }
+                
+                // If all attempts failed
+                rmdir($tempDir);
+                return "This appears to be an image-based PDF. The system attempted to extract text but was unsuccessful. Please try converting to a text-based PDF or DOCX format.";
+            }
+            
+            // Check if pdftoppm is available (for converting PDF pages to images)
+            exec('which pdftoppm 2>/dev/null', $pdftoppmOutput, $pdftoppmCode);
+            if ($pdftoppmCode !== 0) {
+                Log::warning('pdftoppm not found on system');
+                rmdir($tempDir);
+                return "This appears to be an image-based PDF. The system attempted to extract text but was unsuccessful. Please try converting to a text-based PDF or DOCX format.";
+            }
+            
+            // Extract images from PDF (first 10 pages max to avoid excessive processing)
+            $imagePrefix = $tempDir . '/page';
+            $extractCommand = sprintf(
+                'pdftoppm -png -r 300 -f 1 -l 10 "%s" "%s"',
+                escapeshellarg($pdfPath),
+                escapeshellarg($imagePrefix)
+            );
+            
+            exec($extractCommand, $extractOutput, $extractCode);
+            if ($extractCode !== 0) {
+                Log::error('Failed to extract images from PDF');
+                // Try one last method - pdfimages
+                exec('which pdfimages 2>/dev/null', $pdfimagesOutput, $pdfimagesCode);
+                if ($pdfimagesCode === 0) {
+                    $extractCommand = sprintf(
+                        'pdfimages -png "%s" "%s/img"',
+                        escapeshellarg($pdfPath),
+                        escapeshellarg($tempDir)
+                    );
+                    exec($extractCommand);
+                    $pageFiles = glob($tempDir . '/img*.png');
+                    if (!empty($pageFiles)) {
+                        goto process_images; // Jump to image processing
+                    }
+                }
+                
+                rmdir($tempDir);
+                return "The system attempted to extract text from this PDF but was unsuccessful. Please try a different file format.";
+            }
+            
+            // Process each image with Tesseract OCR
+            $pageFiles = glob($tempDir . '/page*.png');
+            if (empty($pageFiles)) {
+                Log::error('No images extracted from PDF');
+                rmdir($tempDir);
+                return "The system attempted to extract images from this PDF but was unsuccessful. Please try a different file format.";
+            }
+            
+            // Label for goto statement
+            process_images:
+            
+            // Process each page with Tesseract (limit to 10 pages)
+            foreach ($pageFiles as $index => $pageFile) {
+                if ($index >= 10) break; // Limit to 10 pages to avoid excessive processing
+                
+                $pageOutputBase = $tempDir . '/ocr_output_' . $index;
+                
+                // Try different Tesseract configurations for best results
+                $ocrConfigs = [
+                    // Default configuration - good general purpose
+                    [
+                        'params' => '-l eng --psm 1 --oem 3',
+                        'description' => 'default'
+                    ],
+                    // Optimized for dense text
+                    [
+                        'params' => '-l eng --psm 6 --oem 3',
+                        'description' => 'dense_text'
+                    ],
+                    // Optimized for single column text
+                    [
+                        'params' => '-l eng --psm 4 --oem 3',
+                        'description' => 'single_column'
+                    ]
+                ];
+                
+                $bestText = '';
+                $bestConfig = '';
+                
+                // Try each configuration and keep the best result
+                foreach ($ocrConfigs as $config) {
+                    $configOutputBase = $pageOutputBase . '_' . $config['description'];
+                    $ocrCommand = sprintf(
+                        'tesseract "%s" "%s" %s 2>/dev/null',
+                        escapeshellarg($pageFile),
+                        escapeshellarg($configOutputBase),
+                        $config['params']
+                    );
+                    
+                    exec($ocrCommand, $ocrOutput, $ocrCode);
+                    
+                    // Read OCR output
+                    $configOutputFile = $configOutputBase . '.txt';
+                    if (file_exists($configOutputFile)) {
+                        $configText = file_get_contents($configOutputFile);
+                        if (strlen(trim($configText)) > strlen(trim($bestText))) {
+                            $bestText = $configText;
+                            $bestConfig = $config['description'];
+                        }
+                        unlink($configOutputFile);
+                    }
+                }
+                
+                // Add the best text to the combined result
+                if (!empty($bestText)) {
+                    Log::info("Page {$index} best OCR config: {$bestConfig}");
+                    $combinedText .= $bestText . "\n\n";
+                }
+                
+                // Clean up image file
+                unlink($pageFile);
             }
             
             // Clean up temp directory
             rmdir($tempDir);
             
             // If still no text, provide a helpful message
-            if (empty(trim($text)) || $text === "No text found") {
-                return "This appears to be an image-based PDF (scanned document). For best results, please convert to a text-based PDF or DOCX format. You can use online tools like SmallPDF or ILovePDF to convert image-based PDFs to text-based ones.";
+            if (empty(trim($combinedText))) {
+                return "This appears to be an image-based PDF with no recognizable text. The system attempted OCR but could not extract any text. Please try converting to a text-based PDF or DOCX format.";
             }
             
-            return trim($text);
+            // Log success
+            Log::info('Successfully extracted text from image-based PDF using OCR');
+            
+            return trim($combinedText);
             
         } catch (\Exception $e) {
-            Log::error('Simple OCR extraction failed: ' . $e->getMessage());
-            return "Unable to extract text from this PDF. Please try converting to DOCX format for better results.";
+            Log::error('OCR extraction failed: ' . $e->getMessage());
+            return "Unable to extract text from this PDF. The system attempted OCR but encountered an error. Please try converting to a text-based format for better results.";
         }
     }
 }

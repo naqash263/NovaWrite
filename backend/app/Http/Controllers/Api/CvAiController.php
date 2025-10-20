@@ -117,24 +117,40 @@ class CvAiController extends Controller
             // Get file type
             $fileType = $this->fileProcessingService->getFileType($file->getClientOriginalName());
             
-            // Extract text content
+            // Extract text content (will attempt OCR for image-based PDFs)
             $fileContent = $this->fileProcessingService->extractTextContent($file, $fileType);
             
             // Sanitize content to fix UTF-8 encoding issues
             $fileContent = $this->sanitizeContent($fileContent);
             
-            if (empty(trim($fileContent))) {
-                $errorMessage = 'No readable text found in the uploaded file. ';
-                if ($fileType === 'pdf') {
-                    $errorMessage .= 'This appears to be an image-based PDF (scanned document). Please try uploading a text-based PDF or convert your CV to a text-based format.';
-                } else {
-                    $errorMessage .= 'Please ensure the file contains text content.';
+            // Check if the content is an error message about image-based PDFs
+            if (empty(trim($fileContent)) || 
+                strpos($fileContent, 'This appears to be an image-based PDF') !== false ||
+                strpos($fileContent, 'Unable to extract text') !== false) {
+                
+                // For completely empty content
+                if (empty(trim($fileContent))) {
+                    $errorMessage = 'No readable text found in the uploaded file. ';
+                    if ($fileType === 'pdf') {
+                        $errorMessage .= 'This appears to be an image-based PDF (scanned document). Please try uploading a text-based PDF or convert your CV to a text-based format.';
+                    } else {
+                        $errorMessage .= 'Please ensure the file contains text content.';
+                    }
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage
+                    ], 400);
                 }
                 
-                return response()->json([
-                    'success' => false,
-                    'message' => $errorMessage
-                ], 400);
+                // For error messages from OCR, return the error
+                if (strpos($fileContent, 'This appears to be an image-based PDF') !== false ||
+                    strpos($fileContent, 'Unable to extract text') !== false) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $fileContent
+                    ], 400);
+                }
             }
 
             // Get available API key
