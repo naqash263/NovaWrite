@@ -1472,23 +1472,38 @@ const StepNavigation = ({
   return (
     <div className="bg-white border-t border-gray-200 px-4 py-4 sm:py-6 sticky bottom-0 z-10 shadow-lg">
       <div className="max-w-6xl mx-auto">
-        {/* Progress Summary */}
-        <div className="mb-3 sm:mb-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-1">
-            <div className="text-sm text-gray-600 flex flex-wrap items-center">
-              <div className="mr-2 whitespace-nowrap">
+        {/* Progress Summary - MOBILE ONLY */}
+        <div className="mb-3 sm:mb-4 sm:hidden">
+          <div className="flex justify-center items-center mb-2">
+            <div className="text-sm text-gray-600 text-center">
+              <div className="font-medium text-blue-600">{Math.round((currentStep / totalSteps) * 100)}% Complete</div>
+            </div>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            />
+          </div>
+        </div>
+        
+        {/* Progress Summary - DESKTOP ONLY */}
+        <div className="mb-4 hidden sm:block">
+          <div className="flex flex-row items-center justify-between mb-2">
+            <div className="text-sm text-gray-600 flex items-center">
+              <div className="whitespace-nowrap">
                 <span className="font-medium text-gray-900">Step {currentStep}</span> of {totalSteps}
               </div>
-              <span className="mx-2 hidden sm:inline">•</span>
-              <span className="text-blue-600 font-medium mt-1 sm:mt-0 whitespace-nowrap">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
+              <span className="mx-2">•</span>
+              <span className="text-blue-600 font-medium whitespace-nowrap">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
             </div>
-            <div className="text-xs text-gray-500 mt-1 sm:mt-0 whitespace-nowrap">
+            <div className="text-xs text-gray-500 whitespace-nowrap">
               {isLastStep ? 'Ready to download!' : `${totalSteps - currentStep} steps remaining`}
             </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
+          <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
-              className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 sm:h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             />
           </div>
@@ -1496,18 +1511,36 @@ const StepNavigation = ({
 
         {/* Navigation Buttons */}
         <div className="flex justify-between items-center gap-2">
-          <button
-            onClick={onPrevious}
-            disabled={isFirstStep}
-            className={`flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base ${
-              isFirstStep
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md'
-            }`}
-          >
-            <span className="text-base sm:text-lg">←</span>
-            <span className="hidden xs:inline">Previous</span>
-          </button>
+          {/* Mobile View: Show only arrow icons */}
+          <div className="sm:hidden">
+            <button
+              onClick={onPrevious}
+              disabled={isFirstStep}
+              className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${
+                isFirstStep
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md'
+              }`}
+            >
+              <span className="text-xl">←</span>
+            </button>
+          </div>
+          
+          {/* Desktop View: Show text and arrow */}
+          <div className="hidden sm:block">
+            <button
+              onClick={onPrevious}
+              disabled={isFirstStep}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                isFirstStep
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md'
+              }`}
+            >
+              <span className="text-lg">←</span>
+              <span>Previous</span>
+            </button>
+          </div>
 
           <div className="flex items-center space-x-3 hidden sm:flex">
             {/* Step Dots Indicator - Hide on mobile */}
@@ -1525,28 +1558,55 @@ const StepNavigation = ({
             </div>
           </div>
           
-          {isLastStep ? (
-            <button
-              onClick={onFinish}
-              className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md sm:shadow-lg hover:shadow-xl text-sm sm:text-base"
-            >
-              <span className="text-base sm:text-lg">📄</span>
-              <span>Download CV</span>
-            </button>
-          ) : (
-            <button
-              onClick={onNext}
-              disabled={isNextDisabled}
-              className={`flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base ${
-                isNextDisabled
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-md sm:shadow-lg hover:shadow-xl'
-              }`}
-            >
-              <span>Next</span>
-              <span className="text-base sm:text-lg">→</span>
-            </button>
-          )}
+          {/* Mobile View: Show only icon for Download/Next */}
+          <div className="sm:hidden">
+            {isLastStep ? (
+              <button
+                onClick={onFinish}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md"
+              >
+                <span className="text-xl">📄</span>
+              </button>
+            ) : (
+              <button
+                onClick={onNext}
+                disabled={isNextDisabled}
+                className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${
+                  isNextDisabled
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-md'
+                }`}
+              >
+                <span className="text-xl">→</span>
+              </button>
+            )}
+          </div>
+          
+          {/* Desktop View: Show text and icon for Download/Next */}
+          <div className="hidden sm:block">
+            {isLastStep ? (
+              <button
+                onClick={onFinish}
+                className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                <span className="text-lg">📄</span>
+                <span>Download CV</span>
+              </button>
+            ) : (
+              <button
+                onClick={onNext}
+                disabled={isNextDisabled}
+                className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  isNextDisabled
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl'
+                }`}
+              >
+                <span>Next</span>
+                <span className="text-lg">→</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
