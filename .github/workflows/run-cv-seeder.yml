@@ -1,0 +1,59 @@
+name: Run CV Template Seeder
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-seeder:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run CV Template Seeder
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        timeout: 300s
+        command_timeout: 300s
+        script: |
+          # Colors for output
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          YELLOW='\033[1;33m'
+          BLUE='\033[0;34m'
+          NC='\033[0m' # No Color
+          
+          echo -e "${BLUE}🌱 Running CV Template Seeder${NC}"
+          echo "=============================================="
+          
+          # Navigate to project directory
+          cd ~/naqashthaheem.com/backend
+          
+          # Run the seeder with force flag
+          echo -e "${BLUE}🔧 Running CvTemplateSeeder...${NC}"
+          php artisan db:seed --class=CvTemplateSeeder --force
+          
+          # Check if seeder was successful
+          if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✅ CV Template Seeder completed successfully${NC}"
+          else
+            echo -e "${RED}❌ CV Template Seeder failed${NC}"
+            exit 1
+          fi
+          
+          # Check if templates were created
+          echo -e "${BLUE}🔍 Checking CV templates in database...${NC}"
+          PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "
+            SELECT id, name, category, created_at 
+            FROM cv_templates 
+            ORDER BY created_at DESC 
+            LIMIT 10;
+          "
+          
+          echo -e "${GREEN}✅ CV Template Seeder workflow completed${NC}"
