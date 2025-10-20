@@ -741,4 +741,8 @@ Route::get('cv-templates/default', [\App\Http\Controllers\Api\CvTemplateControll
 Route::get('cv-templates/{cvTemplate}', [\App\Http\Controllers\Api\CvTemplateController::class, 'show']);
 Route::post('cv-templates/customize', [\App\Http\Controllers\Api\CvTemplateController::class, 'customize']);
 
+// CV DOCX to PDF conversion routes
+Route::post('cv-export/docx-to-pdf', [\App\Http\Controllers\Api\DocxToPdfController::class, 'convert']);
+Route::get('cv-export/download-pdf/{filename}', [\App\Http\Controllers\Api\DocxToPdfController::class, 'downloadPdf']);
+
 

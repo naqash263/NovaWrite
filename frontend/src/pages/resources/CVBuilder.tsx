@@ -3301,136 +3301,232 @@ export default function CVBuilder() {
 
   const exportAsPDF = async (_options: any) => {
     try {
-      console.log('Starting PDF generation using html2canvas + jspdf...');
+      console.log('Starting PDF generation using DOCX to PDF conversion...');
       console.log('CV Data:', cvData);
+      console.log('Export options:', _options);
 
-      // Get the preview element that contains the rendered template
-      const previewElement = document.getElementById('cv-preview');
-      if (!previewElement) {
-        throw new Error('CV preview element not found');
-      }
-
+      // First, generate a DOCX file
       // Import required libraries
-      const html2canvas = (await import('html2canvas')).default;
-      const jsPDF = (await import('jspdf')).jsPDF;
-
-      // Create a temporary container with proper dimensions for PDF
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.width = '210mm'; // A4 width
-      tempContainer.style.minHeight = '297mm'; // A4 height
-      tempContainer.style.backgroundColor = '#ffffff';
-      tempContainer.style.padding = '0';
-      tempContainer.style.margin = '0';
-      tempContainer.style.overflow = 'visible';
+      const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = await import('docx');
       
-      // Clone the preview element
-      const clonedPreview = previewElement.cloneNode(true) as HTMLElement;
-      clonedPreview.style.width = '100%';
-      clonedPreview.style.maxWidth = 'none';
-      clonedPreview.style.margin = '0';
-      clonedPreview.style.padding = '20px';
-      
-      // Apply template-specific styles to ensure full width
-      const templateElement = clonedPreview.querySelector('.cv-template');
-      if (templateElement) {
-        (templateElement as HTMLElement).style.width = '100%';
-        (templateElement as HTMLElement).style.maxWidth = 'none';
-        (templateElement as HTMLElement).style.margin = '0';
-      }
-      
-      tempContainer.appendChild(clonedPreview);
-      document.body.appendChild(tempContainer);
-
-      // Capture the temporary container as an image
-      const canvas = await html2canvas(tempContainer, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: tempContainer.scrollWidth,
-        height: tempContainer.scrollHeight,
-        windowWidth: 1200,
-        windowHeight: 1600
+      // Create a new document
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              // Header with name and contact info
+              new Paragraph({
+                text: cvData.fullName || 'Your Name',
+                heading: HeadingLevel.HEADING_1,
+                alignment: AlignmentType.CENTER,
+              }),
+              
+              // Contact info row
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: cvData.email || '', break: 1 }),
+                  new TextRun({ text: cvData.phoneNumber ? ` | ${cvData.phoneNumber}` : '' }),
+                  new TextRun({ text: cvData.address ? ` | ${cvData.address}` : '' }),
+                ],
+              }),
+              
+              // Divider
+              new Paragraph({
+                text: '',
+                border: {
+                  bottom: {
+                    color: "999999",
+                    space: 1,
+                    style: BorderStyle.SINGLE,
+                    size: 6,
+                  },
+                },
+              }),
+              
+              // Professional Summary
+              ...(cvData.professionalSummary ? [
+                new Paragraph({
+                  text: 'Professional Summary',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                new Paragraph({ text: cvData.professionalSummary })
+              ] : []),
+              
+              // Work Experience
+              ...(cvData.workExperience && cvData.workExperience.length > 0 ? [
+                new Paragraph({
+                  text: 'Work Experience',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.workExperience.flatMap(job => [
+                  new Paragraph({
+                    text: job.jobTitle,
+                    heading: HeadingLevel.HEADING_3,
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: job.company, bold: true }),
+                      new TextRun({ text: ` | ${job.startDate} - ${job.endDate || 'Present'}` }),
+                    ],
+                  }),
+                  new Paragraph({ text: job.description }),
+                ])
+              ] : []),
+              
+              // Education
+              ...(cvData.education && cvData.education.length > 0 ? [
+                new Paragraph({
+                  text: 'Education',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.education.flatMap(edu => [
+                  new Paragraph({
+                    text: edu.degree,
+                    heading: HeadingLevel.HEADING_3,
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: edu.institution, bold: true }),
+                      new TextRun({ text: ` | ${edu.graduationYear}` }),
+                    ],
+                  }),
+                  // Only add description if it exists in the data
+                  ...((edu as any).description ? [new Paragraph({ text: (edu as any).description })] : []),
+                ])
+              ] : []),
+              
+              // Skills
+              ...(cvData.skills ? [
+                new Paragraph({
+                  text: 'Skills',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                new Paragraph({ text: cvData.skills })
+              ] : []),
+              
+              // Projects
+              ...(cvData.projects && cvData.projects.length > 0 ? [
+                new Paragraph({
+                  text: 'Projects',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.projects.flatMap(project => [
+                  new Paragraph({
+                    text: project.name,
+                    heading: HeadingLevel.HEADING_3,
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: project.startDate || '' }),
+                      new TextRun({ text: project.endDate ? ` - ${project.endDate}` : '' }),
+                    ],
+                  }),
+                  new Paragraph({ text: project.description }),
+                ])
+              ] : []),
+              
+              // Certificates
+              ...(cvData.certificates && cvData.certificates.length > 0 ? [
+                new Paragraph({
+                  text: 'Certificates',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.certificates.flatMap(cert => [
+                  new Paragraph({
+                    text: cert.name,
+                    heading: HeadingLevel.HEADING_3,
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: cert.issuer, bold: true }),
+                      new TextRun({ text: cert.date ? ` | ${cert.date}` : '' }),
+                    ],
+                  }),
+                  // Only add description if it exists in the data
+                  ...((cert as any).description ? [new Paragraph({ text: (cert as any).description })] : []),
+                ])
+              ] : []),
+              
+              // Languages
+              ...(cvData.languages && cvData.languages.length > 0 ? [
+                new Paragraph({
+                  text: 'Languages',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.languages.flatMap(lang => [
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: lang.language, bold: true }),
+                      new TextRun({ text: ` - ${lang.proficiency}` }),
+                    ],
+                  }),
+                ])
+              ] : []),
+              
+              // References
+              ...(cvData.references && cvData.references.length > 0 ? [
+                new Paragraph({
+                  text: 'References',
+                  heading: HeadingLevel.HEADING_2,
+                  thematicBreak: true,
+                }),
+                ...cvData.references.flatMap(ref => [
+                  new Paragraph({
+                    text: ref.name,
+                    heading: HeadingLevel.HEADING_3,
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: ref.position, bold: true }),
+                      new TextRun({ text: ` at ${ref.company}` }),
+                    ],
+                  }),
+                  new Paragraph({ text: `Email: ${ref.email}` }),
+                  ...(ref.phone ? [new Paragraph({ text: `Phone: ${ref.phone}` })] : []),
+                ])
+              ] : []),
+            ],
+          },
+        ],
       });
 
-      // Clean up temporary container
-      document.body.removeChild(tempContainer);
-
-      const imgData = canvas.toDataURL('image/png');
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-
-      // Create PDF
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
+      // Generate the document as a blob
+      // @ts-ignore - The save method exists but TypeScript doesn't recognize it
+      const buffer = await doc.save();
+      const docxBlob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      
+      // Create a FormData object to send the DOCX file to the server
+      const formData = new FormData();
+      formData.append('docx', docxBlob, `${cvData.fullName || 'CV'}_Resume.docx`);
+      
+      // Send the DOCX file to the server for conversion to PDF
+      const response = await fetch(`${API_CONFIG.BASE_URL}/cv-export/docx-to-pdf`, {
+        method: 'POST',
+        body: formData,
       });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      // Calculate scaling to use full page width and height
-      const targetWidth = pdfWidth; // Use full page width
-      const scale = targetWidth / (imgWidth / 2); // Divide by 2 because scale is 2
-      const finalWidth = imgWidth * scale / 2;
-      const finalHeight = imgHeight * scale / 2;
-
-      // Position to use full page width with top margin
-      const x = 0; // No left margin
-      // No top margin needed since we're not using it directly
-
-      // First page image is not added here anymore
-
-      // Check if multi-page PDFs are allowed (default to true if not specified)
-      const allowMultiPage = _options?.allowMultiPage !== undefined ? _options.allowMultiPage : true;
-      console.log('Multi-page PDF:', allowMultiPage ? 'Enabled' : 'Disabled');
       
-      if (allowMultiPage && finalHeight > (pdfHeight - 1)) {
-        // Multi-page mode: Create additional pages if content is too tall
-        const contentPerPage = pdfHeight - 1; // Available height per page after top margin
-        const pagesNeeded = Math.ceil(finalHeight / contentPerPage);
-        
-        for (let i = 1; i < pagesNeeded; i++) {
-          pdf.addPage();
-          // Position the content so it continues from where it left off
-          const pageY = 1 - (i * contentPerPage); // 1mm top margin for all pages
-          pdf.addImage(imgData, 'PNG', x, pageY, finalWidth, finalHeight);
-        }
-      } else if (!allowMultiPage && finalHeight > pdfHeight) {
-        // Single-page mode: Scale down content to fit on one page
-        const scaleFactor = pdfHeight / finalHeight;
-        const singlePageWidth = 210;
-        const singlePageHeight = finalHeight * scaleFactor;
-        
-          // Position the scaled-down content with negative margins to use full page
-          pdf.addImage(imgData, 'PNG', -5, -4, singlePageWidth, singlePageHeight);
-      }
-
-      // Save the PDF
-      const blob = pdf.output('blob');
-      console.log('PDF blob created, size:', blob.size);
-      
-      if (blob.size === 0) {
-        throw new Error('Generated PDF is empty');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Server error: ${errorData.message || response.statusText}`);
       }
       
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${cvData.fullName || 'CV'}_Resume.pdf`;
+      const result = await response.json();
       
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (!result.success) {
+        throw new Error(`Conversion failed: ${result.message}`);
+      }
       
-      // Clean up
-      URL.revokeObjectURL(url);
+      // Download the converted PDF
+      window.location.href = result.download_url;
       
       console.log('PDF generated and downloaded successfully');
 
@@ -3438,12 +3534,17 @@ export default function CVBuilder() {
       console.error('Error generating PDF:', error);
       console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      // Fallback to DOCX export if PDF conversion fails
       addToast({
-        type: 'error',
+        type: 'warning',
         title: 'PDF Export Failed',
-        description: 'Failed to export as PDF. Please try again.',
+        description: 'Failed to export as PDF. Falling back to DOCX format.',
         duration: 5000
       });
+      
+      // Call the DOCX export function as a fallback
+      await exportAsDOCX(_options);
     }
   };
 
