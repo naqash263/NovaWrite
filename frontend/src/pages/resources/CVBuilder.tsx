@@ -3301,92 +3301,13 @@ export default function CVBuilder() {
 
   const exportAsPDF = async (_options: any) => {
     try {
-      console.log('Starting PDF generation using direct HTML rendering...');
+      console.log('Starting PDF generation using direct jsPDF content creation...');
       console.log('CV Data:', cvData);
-
-      // Get the preview element that contains the rendered template
-      const previewElement = document.getElementById('cv-preview');
-      if (!previewElement) {
-        throw new Error('CV preview element not found');
-      }
 
       // Import required libraries
       const jsPDF = (await import('jspdf')).jsPDF;
       
-      // Get the HTML content from the preview element
-      const htmlContent = previewElement.innerHTML;
-      
-      // Create a temporary container with proper styles for PDF
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.width = '210mm'; // A4 width
-      tempContainer.style.backgroundColor = '#ffffff';
-      tempContainer.style.fontFamily = 'Arial, sans-serif';
-      
-      // Add the HTML content with proper styling
-      tempContainer.innerHTML = `
-        <style>
-          /* Reset styles for PDF */
-          * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-          }
-          
-          /* PDF-specific styles */
-          .cv-template {
-            width: 100% !important;
-            max-width: none !important;
-            margin: 0 !important;
-            padding: 10px !important;
-            font-family: Arial, sans-serif !important;
-          }
-          
-          /* Ensure text is readable and compact */
-          p, li, span, div {
-            font-size: 10px !important;
-            line-height: 1.3 !important;
-            margin-bottom: 2px !important;
-          }
-          
-          h1, h2, h3, h4 {
-            margin-top: 0 !important;
-            margin-bottom: 3px !important;
-            line-height: 1.1 !important;
-          }
-          
-          h1 { font-size: 16px !important; }
-          h2 { font-size: 14px !important; }
-          h3 { font-size: 12px !important; }
-          h4 { font-size: 11px !important; }
-          
-          .section {
-            margin-bottom: 8px !important;
-            padding-bottom: 5px !important;
-          }
-          
-          .section-title {
-            margin-bottom: 3px !important;
-            font-weight: bold !important;
-            font-size: 11px !important;
-          }
-          
-          /* Reduce spacing between items */
-          .experience-card, .project-card, .education-item, .certificate-item {
-            margin-bottom: 5px !important;
-            padding: 3px !important;
-          }
-        </style>
-        ${htmlContent}
-      `;
-      
-      document.body.appendChild(tempContainer);
-      
-      // PDF options are set directly in the html method
-      
-      // Use jsPDF's built-in HTML rendering capabilities
+      // Create PDF in portrait mode with A4 dimensions
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -3394,34 +3315,189 @@ export default function CVBuilder() {
         compress: true
       });
       
-      // Add HTML content to PDF
-      pdf.html(tempContainer, {
-        callback: function(pdf) {
-          // Save the PDF
-          pdf.save(`${cvData.fullName || 'CV'}_Resume.pdf`);
+      // Set font sizes
+      const fontSizes = {
+        name: 16,
+        title: 12,
+        sectionTitle: 11,
+        normal: 10,
+        small: 9
+      };
+      
+      // Set margins
+      const margin = {
+        top: 10,
+        left: 10,
+        right: 10,
+        bottom: 10
+      };
+      
+      // Calculate available width
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const contentWidth = pageWidth - margin.left - margin.right;
+      
+      // Initialize y position for content
+      let y = margin.top;
+      
+      // Helper function to add text with proper wrapping
+      const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number, fontStyle: string = 'normal') => {
+        pdf.setFontSize(fontSize);
+        pdf.setFont('helvetica', fontStyle);
+        
+        const lines = pdf.splitTextToSize(text, maxWidth);
+        pdf.text(lines, x, y);
+        
+        return y + (lines.length * (fontSize * 0.352778)); // Convert pt to mm
+      };
+      
+      // Helper function to check if we need a new page
+      const checkForNewPage = (requiredHeight: number) => {
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        if (y + requiredHeight > pageHeight - margin.bottom) {
+          pdf.addPage();
+          y = margin.top;
+          return true;
+        }
+        return false;
+      };
+      
+      // Add header (name and contact info)
+      y = addWrappedText(cvData.fullName || 'John Doe', margin.left, y, contentWidth, fontSizes.name, 'bold');
+      y += 2;
+      
+      if (cvData.jobTitle) {
+        y = addWrappedText(cvData.jobTitle, margin.left, y, contentWidth, fontSizes.title);
+        y += 2;
+      }
+      
+      // Contact information
+      const contactInfo = [
+        cvData.email,
+        cvData.phoneNumber,
+        cvData.address
+      ].filter(Boolean).join(' | ');
+      
+      if (contactInfo) {
+        y = addWrappedText(contactInfo, margin.left, y, contentWidth, fontSizes.normal);
+        y += 5;
+      }
+      
+      // Professional Summary
+      if (cvData.professionalSummary) {
+        checkForNewPage(20);
+        y = addWrappedText('Professional Summary', margin.left, y, contentWidth, fontSizes.sectionTitle, 'bold');
+        y += 2;
+        y = addWrappedText(cvData.professionalSummary, margin.left, y, contentWidth, fontSizes.normal);
+        y += 5;
+      }
+      
+      // Work Experience
+      if (cvData.workExperience && cvData.workExperience.length > 0) {
+        checkForNewPage(20);
+        y = addWrappedText('Work Experience', margin.left, y, contentWidth, fontSizes.sectionTitle, 'bold');
+        y += 2;
+        
+        cvData.workExperience.forEach((exp) => {
+          const dateRange = [exp.startDate, exp.endDate || 'Present'].filter(Boolean).join(' - ');
           
-          // Clean up temporary container
-          if (document.body.contains(tempContainer)) {
-            document.body.removeChild(tempContainer);
+          checkForNewPage(15);
+          y = addWrappedText(`${exp.jobTitle} - ${exp.company}`, margin.left, y, contentWidth, fontSizes.normal, 'bold');
+          y += 1;
+          y = addWrappedText(dateRange, margin.left, y, contentWidth, fontSizes.small);
+          y += 1;
+          
+          if (exp.description) {
+            y = addWrappedText(exp.description, margin.left, y, contentWidth, fontSizes.normal);
+            y += 3;
           }
+        });
+        
+        y += 2;
+      }
+      
+      // Education
+      if (cvData.education && cvData.education.length > 0) {
+        checkForNewPage(20);
+        y = addWrappedText('Education', margin.left, y, contentWidth, fontSizes.sectionTitle, 'bold');
+        y += 2;
+        
+        cvData.education.forEach((edu) => {
+          checkForNewPage(15);
+          y = addWrappedText(`${edu.degree} - ${edu.institution}`, margin.left, y, contentWidth, fontSizes.normal, 'bold');
+          y += 1;
           
-          console.log('PDF generated and downloaded successfully');
-        },
-        x: 0, // No left margin
-        y: 0, // No top margin
-        width: pdf.internal.pageSize.getWidth(), // Use full page width
-        autoPaging: false, // Disable automatic paging to prevent empty pages
-        html2canvas: {
-          scale: 2, // Lower scale to fit on one page
-          useCORS: true,
-          allowTaint: true,
-          letterRendering: true,
-          backgroundColor: '#ffffff',
-          logging: false, // Disable logging for production
-          windowWidth: 800 // Narrower window to fit on one page
-        },
-        // Use standard fonts available in the PDF
-      });
+          if (edu.graduationYear) {
+            y = addWrappedText(`Graduation: ${edu.graduationYear}`, margin.left, y, contentWidth, fontSizes.small);
+            y += 3;
+          }
+        });
+        
+        y += 2;
+      }
+      
+      // Skills
+      if (cvData.skills) {
+        checkForNewPage(15);
+        y = addWrappedText('Skills', margin.left, y, contentWidth, fontSizes.sectionTitle, 'bold');
+        y += 2;
+        y = addWrappedText(cvData.skills, margin.left, y, contentWidth, fontSizes.normal);
+        y += 5;
+      }
+      
+      // Projects
+      if (cvData.projects && cvData.projects.length > 0) {
+        checkForNewPage(20);
+        y = addWrappedText('Projects', margin.left, y, contentWidth, fontSizes.sectionTitle, 'bold');
+        y += 2;
+        
+        cvData.projects.forEach((project) => {
+          checkForNewPage(15);
+          y = addWrappedText(project.name, margin.left, y, contentWidth, fontSizes.normal, 'bold');
+          y += 1;
+          
+          if (project.description) {
+            y = addWrappedText(project.description, margin.left, y, contentWidth, fontSizes.normal);
+            y += 3;
+          }
+        });
+        
+        y += 2;
+      }
+      
+      // Certificates
+      if (cvData.certificates && cvData.certificates.length > 0) {
+        checkForNewPage(20);
+        y = addWrappedText('Certificates', margin.left, y, contentWidth, fontSizes.sectionTitle, 'bold');
+        y += 2;
+        
+        cvData.certificates.forEach((cert) => {
+          checkForNewPage(15);
+          y = addWrappedText(`${cert.name} - ${cert.issuer}`, margin.left, y, contentWidth, fontSizes.normal, 'bold');
+          y += 1;
+          
+          if (cert.date) {
+            y = addWrappedText(`Issued: ${cert.date}`, margin.left, y, contentWidth, fontSizes.small);
+            y += 3;
+          }
+        });
+        
+        y += 2;
+      }
+      
+      // Languages
+      if (cvData.languages && cvData.languages.length > 0) {
+        checkForNewPage(15);
+        y = addWrappedText('Languages', margin.left, y, contentWidth, fontSizes.sectionTitle, 'bold');
+        y += 2;
+        
+        const languageText = cvData.languages.map(lang => `${lang.language}: ${lang.proficiency}`).join(', ');
+        y = addWrappedText(languageText, margin.left, y, contentWidth, fontSizes.normal);
+        y += 5;
+      }
+      
+      // Save the PDF
+      pdf.save(`${cvData.fullName || 'CV'}_Resume.pdf`);
+      console.log('PDF generated and downloaded successfully');
 
     } catch (error) {
       console.error('Error generating PDF:', error);
