@@ -3381,109 +3381,112 @@ export default function CVBuilder() {
 
   const exportAsPDF = async (_options: any) => {
     try {
-      console.log('Starting PDF generation using direct iframe approach...');
-      console.log('CV Data:', cvData);
-
+      console.log('Starting ATS-friendly PDF generation...');
+      
+      // Dynamically import required libraries
+      const html2pdf = (await import('html2pdf.js')).default;
+      
       // Get the preview element that contains the rendered template
       const previewElement = document.getElementById('cv-preview');
       if (!previewElement) {
         throw new Error('CV preview element not found');
       }
       
-      // Create a full HTML document for the iframe
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>${cvData.fullName || 'CV'} - Resume</title>
-          <meta charset="utf-8">
-          <style>
-            @page {
-              size: A4 portrait;
-              margin: 0;
-            }
-            body {
-              margin: 0;
-              padding: 0;
-              background-color: white;
-              color: black;
-              font-family: Arial, sans-serif;
-            }
-            .cv-container {
-              width: 100%;
-              max-width: 100%;
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            .cv-template {
-              width: 100% !important;
-              max-width: none !important;
-              margin: 0 !important;
-              padding: 1mm !important;
-              box-sizing: border-box !important;
-              background-color: white !important;
-              color: black !important;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="cv-container">
-            ${previewElement.innerHTML}
-          </div>
-        </body>
-        </html>
-      `;
+      // Create a temporary container to hold a clean version of the CV
+      const tempContainer = document.createElement('div');
+      tempContainer.style.width = '210mm'; // A4 width
+      tempContainer.style.minHeight = '297mm'; // A4 height
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '-9999px';
+      tempContainer.style.fontSize = '12px';
+      tempContainer.style.lineHeight = '1.5';
+      tempContainer.style.fontFamily = 'Arial, sans-serif';
+      tempContainer.style.background = 'white';
+      tempContainer.style.color = 'black';
+      tempContainer.style.padding = '10mm';
       
-      // Create a blob from the HTML content
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const blobUrl = URL.createObjectURL(blob);
+      // Clone the preview content
+      const clonedContent = previewElement.cloneNode(true) as HTMLElement;
+      tempContainer.appendChild(clonedContent);
+      document.body.appendChild(tempContainer);
       
-      // Create an iframe to render the HTML
-      const iframe = document.createElement('iframe');
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = 'none';
-      iframe.style.position = 'absolute';
-      iframe.style.top = '-9999px';
-      iframe.style.left = '-9999px';
-      iframe.src = blobUrl;
-      
-      document.body.appendChild(iframe);
-      
-      // Wait for iframe to load
-      await new Promise<void>((resolve) => {
-        iframe.onload = () => {
-          resolve();
-        };
+      // Show loading toast
+      addToast({
+        type: 'info',
+        title: 'Creating PDF',
+        description: 'Generating ATS-friendly PDF. Please wait...',
+        duration: 3000
       });
       
-      // Open the print dialog which allows saving as PDF
-      setTimeout(() => {
-        try {
-          // Focus the iframe
-          iframe.contentWindow?.focus();
-          
-          // Print the iframe content
-          iframe.contentWindow?.print();
-          
-          // Clean up
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-            URL.revokeObjectURL(blobUrl);
-          }, 1000);
-          
-          console.log('Print dialog opened for PDF generation');
-        } catch (printError) {
-          console.error('Error during print operation:', printError);
-          document.body.removeChild(iframe);
-          URL.revokeObjectURL(blobUrl);
-          throw printError;
-        }
-      }, 1000);
+      // Options for html2pdf
+      const options = {
+        margin: 10,
+        filename: `${cvData.fullName || 'CV'}_Resume.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          logging: false
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'portrait' as const,
+          compress: true,
+          putOnlyUsedFonts: true,
+          floatPrecision: 16,
+          hotfixes: ["px_scaling"]
+        },
+        pagebreak: { mode: 'avoid-all', before: '.page-break' }
+      };
       
-      console.log('PDF generation process started');
-
+      // Generate PDF with text layer
+      const pdfPromise = html2pdf().set(options).from(tempContainer).toPdf().get('pdf');
+      
+      // Process the PDF to ensure it has proper text layer
+      pdfPromise.then((pdf: any) => {
+        // Extract text content for ATS compatibility
+        const textContent = extractTextFromCV(cvData);
+        
+        // Add invisible text layer for ATS systems (on the first page)
+        pdf.setTextColor(255, 255, 255); // White text (invisible)
+        pdf.setFontSize(1); // Very small font
+        
+        // Split text into chunks to avoid overflow
+        const textChunks = chunkText(textContent, 1000);
+        let yPos = 5;
+        
+        textChunks.forEach((chunk: string) => {
+          if (yPos < 280) { // Keep within A4 page bounds
+            pdf.text(chunk, 10, yPos, { 
+              maxWidth: 190,
+              baseline: 'top'
+            });
+            yPos += 5;
+          }
+        });
+        
+        // Save the PDF
+        pdf.save(`${cvData.fullName || 'CV'}_Resume.pdf`);
+        
+        // Clean up
+        document.body.removeChild(tempContainer);
+        
+        // Success message
+        addToast({
+          type: 'success',
+          title: 'PDF Created',
+          description: 'Your ATS-friendly PDF has been generated successfully.',
+          duration: 3000
+        });
+      }).catch((error: any) => {
+        console.error('PDF generation error:', error);
+        document.body.removeChild(tempContainer);
+        throw error;
+      });
+      
     } catch (error) {
       console.error('Error generating PDF:', error);
       console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
@@ -3495,6 +3498,109 @@ export default function CVBuilder() {
         duration: 5000
       });
     }
+  };
+  
+  // Helper function to extract clean text from CV data for ATS compatibility
+  const extractTextFromCV = (data: CVData): string => {
+    let text = '';
+    
+    // Personal Information
+    text += `${data.fullName || ''}\n`;
+    text += `${data.jobTitle || ''}\n`;
+    text += `${data.email || ''} | ${data.phoneNumber || ''}\n`;
+    text += `${data.address || ''}\n\n`;
+    
+    // Professional Summary
+    if (data.professionalSummary) {
+      text += `PROFESSIONAL SUMMARY\n`;
+      text += `${data.professionalSummary}\n\n`;
+    }
+    
+    // Work Experience
+    if (data.workExperience && data.workExperience.length > 0) {
+      text += `WORK EXPERIENCE\n`;
+      data.workExperience.forEach(exp => {
+        text += `${exp.jobTitle} at ${exp.company}\n`;
+        text += `${exp.startDate} - ${exp.endDate}\n`;
+        text += `${exp.description}\n\n`;
+      });
+    }
+    
+    // Education
+    if (data.education && data.education.length > 0) {
+      text += `EDUCATION\n`;
+      data.education.forEach(edu => {
+        text += `${edu.degree} - ${edu.institution}\n`;
+        text += `${edu.graduationYear}\n`;
+        text += '\n';
+      });
+    }
+    
+    // Skills
+    if (data.skills) {
+      text += `SKILLS\n${data.skills}\n\n`;
+    }
+    
+    // Projects
+    if (data.projects && data.projects.length > 0) {
+      text += `PROJECTS\n`;
+      data.projects.forEach(project => {
+        text += `${project.name}\n`;
+        if (project.startDate || project.endDate) {
+          text += `${project.startDate || ''} - ${project.endDate || ''}\n`;
+        }
+        text += `${project.description}\n`;
+        if (project.url) text += `URL: ${project.url}\n`;
+        text += '\n';
+      });
+    }
+    
+    // Certificates
+    if (data.certificates && data.certificates.length > 0) {
+      text += `CERTIFICATES\n`;
+      data.certificates.forEach(cert => {
+        text += `${cert.name} - ${cert.issuer}\n`;
+        text += `${cert.date}\n`;
+        if (cert.url) text += `URL: ${cert.url}\n`;
+        text += '\n';
+      });
+    }
+    
+    // Languages
+    if (data.languages && data.languages.length > 0) {
+      text += `LANGUAGES\n`;
+      data.languages.forEach(lang => {
+        text += `${lang.language} - ${lang.proficiency}\n`;
+      });
+      text += '\n';
+    }
+    
+    // Interests
+    if (data.interests) {
+      text += `INTERESTS\n${data.interests}\n\n`;
+    }
+    
+    // References
+    if (data.references && data.references.length > 0) {
+      text += `REFERENCES\n`;
+      data.references.forEach(ref => {
+        text += `${ref.name} - ${ref.position} at ${ref.company}\n`;
+        text += `Email: ${ref.email}\n`;
+        if (ref.phone) text += `Phone: ${ref.phone}\n`;
+        text += '\n';
+      });
+    }
+    
+    return text;
+  };
+  
+  // Helper function to chunk text into smaller pieces
+  const chunkText = (text: string, chunkSize: number): string[] => {
+    const chunks = [];
+    for (let i = 0; i < text.length; i += chunkSize) {
+      chunks.push(text.substring(i, i + chunkSize));
+    }
+    return chunks;
   };
 
   const exportAsDOCX = async (_options: any) => {
