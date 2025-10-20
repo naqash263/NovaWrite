@@ -177,26 +177,78 @@ const hideEmptySections = (html: string) => {
   return doc.body.innerHTML;
 };
 
+// Default template HTML when no template is provided
+const DEFAULT_TEMPLATE_HTML = `
+<div class="cv-template default-template" style="font-family: {{fontFamily}}; font-size: {{fontSize}}px; color: #333; max-width: 800px; margin: 0 auto; padding: 20px;">
+  <div class="header" style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid {{primaryColor}}; padding-bottom: 20px;">
+    <h1 class="name" style="font-size: 28px; margin-bottom: 5px;">{{fullName}}</h1>
+    <div class="title" style="font-size: 18px; margin-bottom: 10px; color: {{primaryColor}};">{{jobTitle}}</div>
+    <div class="contact" style="font-size: 14px;">
+      <div>{{email}} | {{phoneNumber}}</div>
+      <div>{{address}}</div>
+    </div>
+  </div>
+
+  <div class="section" style="margin-bottom: 20px;">
+    <h2 class="section-title" style="font-size: 18px; color: {{primaryColor}}; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Professional Summary</h2>
+    <div class="section-content" style="font-size: 14px; line-height: 1.5;">{{professionalSummary}}</div>
+  </div>
+
+  <div class="section" style="margin-bottom: 20px;">
+    <h2 class="section-title" style="font-size: 18px; color: {{primaryColor}}; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Work Experience</h2>
+    <div class="section-content">{{workExperience}}</div>
+  </div>
+
+  <div class="section" style="margin-bottom: 20px;">
+    <h2 class="section-title" style="font-size: 18px; color: {{primaryColor}}; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Education</h2>
+    <div class="section-content">{{education}}</div>
+  </div>
+
+  <div class="section" style="margin-bottom: 20px;">
+    <h2 class="section-title" style="font-size: 18px; color: {{primaryColor}}; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Skills</h2>
+    <div class="section-content" style="font-size: 14px; line-height: 1.5;">{{skills}}</div>
+  </div>
+
+  <div class="section" style="margin-bottom: 20px;">
+    <h2 class="section-title" style="font-size: 18px; color: {{primaryColor}}; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Projects</h2>
+    <div class="section-content">{{projects}}</div>
+  </div>
+
+  <div class="section" style="margin-bottom: 20px;">
+    <h2 class="section-title" style="font-size: 18px; color: {{primaryColor}}; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Certificates</h2>
+    <div class="section-content">{{certificates}}</div>
+  </div>
+
+  <div class="section" style="margin-bottom: 20px;">
+    <h2 class="section-title" style="font-size: 18px; color: {{primaryColor}}; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Languages</h2>
+    <div class="section-content">{{languages}}</div>
+  </div>
+
+  <div class="section" style="margin-bottom: 20px;">
+    <h2 class="section-title" style="font-size: 18px; color: {{primaryColor}}; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Achievements</h2>
+    <div class="section-content">{{achievements}}</div>
+  </div>
+
+  <div class="section" style="margin-bottom: 20px;">
+    <h2 class="section-title" style="font-size: 18px; color: {{primaryColor}}; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Interests</h2>
+    <div class="section-content">{{interests}}</div>
+  </div>
+
+  <div class="section" style="margin-bottom: 20px;">
+    <h2 class="section-title" style="font-size: 18px; color: {{primaryColor}}; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">References</h2>
+    <div class="section-content">{{references}}</div>
+  </div>
+</div>
+`;
+
 // Dynamic CV Preview Component
 export const CvPreview = ({ data, style, template }: CvPreviewProps) => {
   // Debug logging
   console.log('CvPreview received template:', template);
   console.log('Template html_content:', template?.html_content);
   
-  // If no template provided, render a basic template
-  if (!template) {
-    return (
-      <div className="cv-preview-container bg-white p-8 max-w-4xl mx-auto">
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">CV Preview</h2>
-          <p className="text-gray-600">Template not loaded. Please select a template.</p>
-        </div>
-      </div>
-    );
-  }
-
   // Apply customizations to the template HTML
-  let templateHTML = template.html_content || '';
+  let templateHTML = template?.html_content || DEFAULT_TEMPLATE_HTML;
   
   // Debug logging
   console.log('Template HTML length:', templateHTML.length);
