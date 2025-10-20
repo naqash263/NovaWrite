@@ -3301,7 +3301,7 @@ export default function CVBuilder() {
 
   const exportAsPDF = async (_options: any) => {
     try {
-      console.log('Starting PDF generation using jsPDF and html2canvas...');
+      console.log('Starting PDF generation using direct iframe approach...');
       console.log('CV Data:', cvData);
 
       // Get the preview element that contains the rendered template
@@ -3309,120 +3309,100 @@ export default function CVBuilder() {
       if (!previewElement) {
         throw new Error('CV preview element not found');
       }
-
-      // Import required libraries
-      const jsPDF = (await import('jspdf')).jsPDF;
-      const html2canvas = (await import('html2canvas')).default;
       
-      // Create a visible clone for better rendering
-      const tempContainer = document.createElement('div');
-      tempContainer.style.width = '210mm'; // A4 width
-      tempContainer.style.padding = '0';
-      tempContainer.style.margin = '0 auto';
-      tempContainer.style.background = 'white';
-      tempContainer.style.position = 'fixed';
-      tempContainer.style.top = '0';
-      tempContainer.style.left = '0';
-      tempContainer.style.right = '0';
-      tempContainer.style.zIndex = '-9999';
-      tempContainer.style.visibility = 'hidden';
-      
-      // Clone the content
-      const templateClone = previewElement.cloneNode(true) as HTMLElement;
-      
-      // Ensure all styles are properly applied
-      const allStyles = Array.from(document.styleSheets)
-        .map(styleSheet => {
-          try {
-            return Array.from(styleSheet.cssRules)
-              .map(rule => rule.cssText)
-              .join('');
-          } catch (e) {
-            return '';
-          }
-        })
-        .join('');
-      
-      const styleElement = document.createElement('style');
-      styleElement.textContent = allStyles + `
-        .cv-template {
-          width: 100% !important;
-          max-width: none !important;
-          margin: 0 !important;
-          padding: 10mm !important;
-          box-sizing: border-box !important;
-          background-color: white !important;
-          color: black !important;
-        }
+      // Create a full HTML document for the iframe
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>${cvData.fullName || 'CV'} - Resume</title>
+          <meta charset="utf-8">
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 0;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              background-color: white;
+              color: black;
+              font-family: Arial, sans-serif;
+            }
+            .cv-container {
+              width: 100%;
+              max-width: 100%;
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            .cv-template {
+              width: 100% !important;
+              max-width: none !important;
+              margin: 0 !important;
+              padding: 10mm !important;
+              box-sizing: border-box !important;
+              background-color: white !important;
+              color: black !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="cv-container">
+            ${previewElement.innerHTML}
+          </div>
+        </body>
+        </html>
       `;
       
-      tempContainer.appendChild(styleElement);
-      tempContainer.appendChild(templateClone);
-      document.body.appendChild(tempContainer);
+      // Create a blob from the HTML content
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
       
-      // Wait for styles to apply
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Create an iframe to render the HTML
+      const iframe = document.createElement('iframe');
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      iframe.style.position = 'absolute';
+      iframe.style.top = '-9999px';
+      iframe.style.left = '-9999px';
+      iframe.src = blobUrl;
       
-      // Use html2canvas to render the element
-      const canvas = await html2canvas(templateClone, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: true,
-        windowWidth: 800
+      document.body.appendChild(iframe);
+      
+      // Wait for iframe to load
+      await new Promise<void>((resolve) => {
+        iframe.onload = () => {
+          resolve();
+        };
       });
       
-      // Get image data
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      
-      // Calculate dimensions
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = canvas.height * imgWidth / canvas.width;
-      
-      // Create PDF
-      const pdf = new jsPDF({
-        orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      // Add image to PDF
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      // Handle multi-page if needed
-      if (imgHeight <= pdfHeight) {
-        // Single page - center the content
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight);
-      } else {
-        // Multi-page - split the content
-        let heightLeft = imgHeight;
-        let position = 0;
-        let page = 1;
-        
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdfHeight;
-        
-        // Add new pages if content exceeds page height
-        while (heightLeft > 0) {
-          position = -pdfHeight * page;
-          pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-          heightLeft -= pdfHeight;
-          page++;
+      // Open the print dialog which allows saving as PDF
+      setTimeout(() => {
+        try {
+          // Focus the iframe
+          iframe.contentWindow?.focus();
+          
+          // Print the iframe content
+          iframe.contentWindow?.print();
+          
+          // Clean up
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+            URL.revokeObjectURL(blobUrl);
+          }, 1000);
+          
+          console.log('Print dialog opened for PDF generation');
+        } catch (printError) {
+          console.error('Error during print operation:', printError);
+          document.body.removeChild(iframe);
+          URL.revokeObjectURL(blobUrl);
+          throw printError;
         }
-      }
+      }, 1000);
       
-      // Save the PDF
-      pdf.save(`${cvData.fullName || 'CV'}_Resume.pdf`);
-      
-      // Clean up
-      if (document.body.contains(tempContainer)) {
-        document.body.removeChild(tempContainer);
-      }
-      
-      console.log('PDF generated and downloaded successfully');
+      console.log('PDF generation process started');
 
     } catch (error) {
       console.error('Error generating PDF:', error);
