@@ -123,32 +123,52 @@ class CvAiController extends Controller
             // Sanitize content to fix UTF-8 encoding issues
             $fileContent = $this->sanitizeContent($fileContent);
             
-            // Check if the content is an error message about image-based PDFs
-            if (empty(trim($fileContent)) || 
-                strpos($fileContent, 'This appears to be an image-based PDF') !== false ||
-                strpos($fileContent, 'Unable to extract text') !== false) {
+            // For non-PDF files with empty content
+            if (empty(trim($fileContent)) && $fileType !== 'pdf') {
+                $errorMessage = 'No readable text found in the uploaded file. Please ensure the file contains text content.';
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 400);
+            }
+            
+            // For PDFs with error messages from OCR that indicate complete failure
+            if ($fileType === 'pdf' && 
+                (strpos($fileContent, 'The system attempted OCR but could not extract any text') !== false ||
+                 strpos($fileContent, 'The system attempted to extract text but was unsuccessful') !== false)) {
                 
-                // For completely empty content
-                if (empty(trim($fileContent))) {
-                    $errorMessage = 'No readable text found in the uploaded file. ';
-                    if ($fileType === 'pdf') {
-                        $errorMessage .= 'This appears to be an image-based PDF (scanned document). Please try uploading a text-based PDF or convert your CV to a text-based format.';
-                    } else {
-                        $errorMessage .= 'Please ensure the file contains text content.';
-                    }
-                    
+                // This means all OCR attempts have failed
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The system attempted multiple OCR methods but could not extract any text from this PDF. Please try uploading a clearer scan or a text-based PDF.'
+                ], 400);
+            }
+            
+            // For PDFs with warnings but some extracted text, continue processing
+            if ($fileType === 'pdf' && 
+                (strpos($fileContent, 'This appears to be an image-based PDF') !== false ||
+                 strpos($fileContent, 'Unable to extract text') !== false)) {
+                
+                // Log the warning but continue if there's some text
+                Log::warning('PDF extraction warning: ' . substr($fileContent, 0, 100) . '...');
+                
+                // If the content is just the warning message with no actual text, return an error
+                if (strlen(trim($fileContent)) < 200) {  // Warning messages are typically shorter than this
                     return response()->json([
                         'success' => false,
-                        'message' => $errorMessage
+                        'message' => 'The system could not extract sufficient text from this PDF. Please try uploading a clearer scan or a text-based PDF.'
                     ], 400);
                 }
                 
-                // For error messages from OCR, return the error
-                if (strpos($fileContent, 'This appears to be an image-based PDF') !== false ||
-                    strpos($fileContent, 'Unable to extract text') !== false) {
+                // Otherwise, remove the warning message and continue with the extracted text
+                $fileContent = preg_replace('/This appears to be an image-based PDF.*?format\.\s*/s', '', $fileContent);
+                $fileContent = preg_replace('/Unable to extract text.*?results\.\s*/s', '', $fileContent);
+                
+                // If after removing warnings, content is too short, return error
+                if (strlen(trim($fileContent)) < 100) {
                     return response()->json([
                         'success' => false,
-                        'message' => $fileContent
+                        'message' => 'The extracted text is too short for meaningful CV analysis. Please try uploading a clearer scan or a text-based PDF.'
                     ], 400);
                 }
             }

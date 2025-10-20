@@ -55,10 +55,40 @@ class FileProcessingService
             $pdf = $parser->parseFile($fullPath);
             $text = $pdf->getText();
             
-            // If no text extracted, try OCR
+            // If no text or minimal text extracted, try OCR
+            if (empty(trim($text)) || strlen(trim($text)) < 500) {
+                Log::info('No or minimal text found in PDF, attempting OCR...');
+                $ocrText = $this->extractPdfWithOCR($fullPath);
+                
+                // If OCR found more text than the parser, use OCR result
+                if (strlen(trim($ocrText)) > strlen(trim($text)) * 1.2) {
+                    Log::info('Using OCR result (more content than parser)');
+                    $text = $ocrText;
+                } else if (!empty(trim($ocrText)) && empty(trim($text))) {
+                    // If parser found nothing but OCR found something, use OCR
+                    Log::info('Using OCR result (parser found nothing)');
+                    $text = $ocrText;
+                } else if (strlen(trim($text)) < 200 && strlen(trim($ocrText)) > 100) {
+                    // If parser found very little but OCR found something substantial
+                    Log::info('Using OCR result (parser found very little)');
+                    $text = $ocrText;
+                }
+                
+                // If OCR returned an error message, use the parser result if available
+                if (strpos($ocrText, 'This appears to be an image-based PDF') !== false && !empty(trim($text))) {
+                    Log::info('OCR returned an error message, using parser result');
+                    // Keep using the parser text
+                } else if (strpos($ocrText, 'This appears to be an image-based PDF') !== false && empty(trim($text))) {
+                    // Both methods failed, return the OCR error
+                    Log::warning('Both parser and OCR failed to extract text');
+                    return $ocrText;
+                }
+            }
+            
+            // If still no text after all attempts
             if (empty(trim($text))) {
-                Log::info('No text found in PDF, attempting OCR...');
-                $text = $this->extractPdfWithOCR($fullPath);
+                Log::warning('No text extracted from PDF after all attempts');
+                return "The system could not extract any text from this PDF. It may be an image-based PDF with poor quality or no text content. Please try uploading a clearer scan or a text-based PDF.";
             }
             
             // Clean and normalize text
@@ -278,14 +308,18 @@ class FileProcessingService
             
             exec($command, $output, $returnCode);
             
+            $initialText = '';
             if (file_exists($outputFile) && filesize($outputFile) > 0) {
                 $text = file_get_contents($outputFile);
-                if (!empty(trim($text))) {
+                if (!empty(trim($text)) && strlen(trim($text)) > 500) {
+                    // If we have substantial text content (more than 500 chars), use it
                     // Clean up
                     unlink($outputFile);
                     rmdir($tempDir);
                     return trim($text);
                 }
+                // Store this text for later comparison if it's not empty
+                $initialText = !empty(trim($text)) ? trim($text) : '';
                 unlink($outputFile);
             }
             
@@ -301,11 +335,16 @@ class FileProcessingService
             
             if (file_exists($outputFile) && filesize($outputFile) > 0) {
                 $text = file_get_contents($outputFile);
-                if (!empty(trim($text))) {
+                if (!empty(trim($text)) && strlen(trim($text)) > 500) {
+                    // If we have substantial text content (more than 500 chars), use it
                     // Clean up
                     unlink($outputFile);
                     rmdir($tempDir);
                     return trim($text);
+                }
+                // If this attempt got more text than the initial one, store it
+                if (strlen(trim($text)) > strlen($initialText)) {
+                    $initialText = trim($text);
                 }
                 unlink($outputFile);
             }
@@ -328,11 +367,16 @@ class FileProcessingService
                 
                 if (file_exists($outputFile) && filesize($outputFile) > 0) {
                     $text = file_get_contents($outputFile);
-                    if (!empty(trim($text))) {
+                    if (!empty(trim($text)) && strlen(trim($text)) > 500) {
+                        // If we have substantial text content (more than 500 chars), use it
                         // Clean up
                         unlink($outputFile);
                         rmdir($tempDir);
                         return trim($text);
+                    }
+                    // If this attempt got more text than previous ones, store it
+                    if (strlen(trim($text)) > strlen($initialText)) {
+                        $initialText = trim($text);
                     }
                     unlink($outputFile);
                 }
@@ -458,7 +502,20 @@ class FileProcessingService
             
             // If still no text, provide a helpful message
             if (empty(trim($combinedText))) {
+                // If we have some text from pdftotext attempts, use that instead
+                if (!empty($initialText)) {
+                    Log::info('OCR failed but using text from pdftotext');
+                    return $initialText;
+                }
+                
                 return "This appears to be an image-based PDF with no recognizable text. The system attempted OCR but could not extract any text. Please try converting to a text-based PDF or DOCX format.";
+            }
+            
+            // Compare OCR result with pdftotext result and use the longer one
+            if (!empty($initialText) && strlen($initialText) > strlen(trim($combinedText)) * 1.2) {
+                // If pdftotext result is at least 20% longer, use that
+                Log::info('Using pdftotext result instead of OCR (longer text)');
+                return $initialText;
             }
             
             // Log success
