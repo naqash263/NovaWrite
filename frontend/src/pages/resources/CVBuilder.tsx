@@ -3301,7 +3301,7 @@ export default function CVBuilder() {
 
   const exportAsPDF = async (_options: any) => {
     try {
-      console.log('Starting PDF generation using html2canvas + jspdf...');
+      console.log('Starting PDF generation using direct HTML rendering...');
       console.log('CV Data:', cvData);
 
       // Get the preview element that contains the rendered template
@@ -3311,119 +3311,101 @@ export default function CVBuilder() {
       }
 
       // Import required libraries
-      const html2canvas = (await import('html2canvas')).default;
       const jsPDF = (await import('jspdf')).jsPDF;
-
-      // Create a temporary container with proper dimensions for PDF
+      
+      // Get the HTML content from the preview element
+      const htmlContent = previewElement.innerHTML;
+      
+      // Create a temporary container with proper styles for PDF
       const tempContainer = document.createElement('div');
       tempContainer.style.position = 'absolute';
       tempContainer.style.left = '-9999px';
       tempContainer.style.top = '0';
       tempContainer.style.width = '210mm'; // A4 width
-      tempContainer.style.minHeight = '297mm'; // A4 height
       tempContainer.style.backgroundColor = '#ffffff';
-      tempContainer.style.padding = '0';
-      tempContainer.style.margin = '0';
-      tempContainer.style.overflow = 'visible';
-      tempContainer.style.fontFamily = 'Arial, sans-serif'; // Ensure consistent font
+      tempContainer.style.fontFamily = 'Arial, sans-serif';
       
-      // Clone the preview element
-      const clonedPreview = previewElement.cloneNode(true) as HTMLElement;
-      clonedPreview.style.width = '100%';
-      clonedPreview.style.maxWidth = 'none';
-      clonedPreview.style.margin = '0';
-      clonedPreview.style.padding = '20px';
+      // Add the HTML content with proper styling
+      tempContainer.innerHTML = `
+        <style>
+          /* Reset styles for PDF */
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+          }
+          
+          /* PDF-specific styles */
+          .cv-template {
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 10px !important;
+            font-family: Arial, sans-serif !important;
+          }
+          
+          /* Ensure text is readable */
+          p, li, span, div {
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+          }
+          
+          h1, h2, h3, h4 {
+            margin-top: 0 !important;
+            line-height: 1.2 !important;
+          }
+          
+          .section {
+            margin-bottom: 10px !important;
+          }
+          
+          .section-title {
+            margin-bottom: 5px !important;
+            font-weight: bold !important;
+          }
+        </style>
+        ${htmlContent}
+      `;
       
-      // Apply template-specific styles to ensure full width
-      const templateElement = clonedPreview.querySelector('.cv-template');
-      if (templateElement) {
-        (templateElement as HTMLElement).style.width = '100%';
-        (templateElement as HTMLElement).style.maxWidth = 'none';
-        (templateElement as HTMLElement).style.margin = '0';
-      }
-      
-      tempContainer.appendChild(clonedPreview);
       document.body.appendChild(tempContainer);
-
-      // Capture the temporary container as an image with higher quality for better scaling
-      const canvas = await html2canvas(tempContainer, {
-        scale: 4, // Higher scale for better quality when scaled down
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: tempContainer.scrollWidth,
-        height: tempContainer.scrollHeight,
-        windowWidth: 1500,
-        windowHeight: 2000
-      });
-
-      // Clean up temporary container
-      document.body.removeChild(tempContainer);
-
-      const imgData = canvas.toDataURL('image/png');
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-
-      // Create PDF in portrait mode with A4 dimensions
+      
+      // PDF options are set directly in the html method
+      
+      // Use jsPDF's built-in HTML rendering capabilities
       const pdf = new jsPDF({
-        orientation: 'portrait', // Always use portrait
+        orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
-        compress: true // Enable compression for smaller file size
+        compress: true
       });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      // Calculate scaling to use full page width and height
-      const targetWidth = pdfWidth; // Use full page width
-      const scale = targetWidth / (imgWidth / 2); // Divide by 2 because scale is 2
-      const finalWidth = imgWidth * scale / 2;
-      const finalHeight = imgHeight * scale / 2;
-
-      // Calculate scaling to fit all content on a single page
-      const availableHeight = pdfHeight - 2; // Leave 10mm margin at top and bottom
-      const heightRatio = availableHeight / finalHeight;
       
-      // If content is taller than available hxeight, scale it down to fit
-      let scaledWidth = finalWidth;
-      let scaledHeight = finalHeight;
-      
-      if (finalHeight > availableHeight) {
-        scaledWidth = finalWidth * heightRatio;
-        scaledHeight = finalHeight * heightRatio;
-      }
-      
-      // Position with margins
-      const x = (pdfWidth - scaledWidth) / 2; // Center horizontally
-      const y = 10; // 10mm top margin
-      
-      // Add the image to the PDF, scaled to fit on one page
-      pdf.addImage(imgData, 'PNG', x, y, scaledWidth, scaledHeight);
-
-      // Save the PDF
-      const blob = pdf.output('blob');
-      console.log('PDF blob created, size:', blob.size);
-      
-      if (blob.size === 0) {
-        throw new Error('Generated PDF is empty');
-      }
-      
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${cvData.fullName || 'CV'}_Resume.pdf`;
-      
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up
-      URL.revokeObjectURL(url);
-      
-      console.log('PDF generated and downloaded successfully');
+      // Add HTML content to PDF
+      pdf.html(tempContainer, {
+        callback: function(pdf) {
+          // Save the PDF
+          pdf.save(`${cvData.fullName || 'CV'}_Resume.pdf`);
+          
+          // Clean up temporary container
+          if (document.body.contains(tempContainer)) {
+            document.body.removeChild(tempContainer);
+          }
+          
+          console.log('PDF generated and downloaded successfully');
+        },
+        x: 0, // No left margin
+        y: 0, // No top margin
+        width: pdf.internal.pageSize.getWidth(), // Use full page width
+        autoPaging: 'text',
+        html2canvas: {
+          scale: 3, // Higher scale for better quality
+          useCORS: true,
+          allowTaint: true,
+          letterRendering: true,
+          backgroundColor: '#ffffff',
+          logging: true,
+          windowWidth: 1200 // Wider window for better rendering
+        }
+      });
 
     } catch (error) {
       console.error('Error generating PDF:', error);
