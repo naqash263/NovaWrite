@@ -9,6 +9,20 @@ import CVExportOptions from '../../components/cv-builder/CVExportOptions';
 import { API_CONFIG } from '../../config/api';
 import apiClient from '../../api/axios';
 
+// Add custom CSS for mobile optimizations
+const MobileOptimizationStyles = () => (
+  <style dangerouslySetInnerHTML={{ __html: `
+    /* Hide scrollbars but maintain functionality */
+    .no-scrollbar {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;  /* Chrome, Safari and Opera */
+    }
+  `}} />
+);
+
 // Custom File Input Component
 const FileInput = ({ onFileSelect, isProcessing, buttonText, accept = ".pdf,.doc,.docx,.txt" }: {
   onFileSelect: (file: File) => void;
@@ -1370,77 +1384,84 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
 
         </div>
 
-        {/* Mobile Step Navigation - Enhanced */}
+        {/* Mobile Step Navigation - Completely Redesigned */}
         <div className="lg:hidden">
-          {/* Current Step Display */}
-          <div className="text-center mb-4">
-            <div className="inline-flex items-center space-x-3 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
-              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
+          {/* Current Step Display - Simplified for Mobile */}
+          <div className="text-center mb-3">
+            <div className="inline-flex flex-col items-center bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+              <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold mb-1">
                 {currentStep}
               </div>
-              <div>
-                <div className="font-semibold text-blue-900 text-sm">{currentStepData?.name}</div>
-                <div className="text-xs text-blue-700">{currentStepData?.description}</div>
-              </div>
+              <div className="font-semibold text-blue-900 text-sm">{currentStepData?.name}</div>
             </div>
           </div>
 
-          {/* Step Dots for Mobile */}
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            {steps.map((step, index) => {
-              const isActive = currentStep === step.id;
-              const isCompleted = completedSteps.has(step.id);
-              
-              return (
-                <div key={step.id} className="flex items-center">
-                  <button
-                    onClick={() => onStepClick(step.id)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
-                      isActive 
-                        ? 'bg-blue-600 text-white shadow-lg' 
-                        : isCompleted 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-gray-300 text-gray-600'
-                    }`}
-                    title={`${step.name}: ${step.description}`}
-                  >
-                    {isCompleted ? '✓' : step.id}
-                  </button>
-                  
-                  {index < steps.length - 1 && (
-                    <div className={`w-4 h-1 mx-1 rounded-full ${
-                      isCompleted ? 'bg-green-400' : 'bg-gray-300'
-                    }`} />
-                  )}
-                </div>
-              );
-            })}
+          {/* Step Indicator - Swipeable Strip */}
+          <div className="overflow-x-auto pb-2 mb-3 no-scrollbar">
+            <div className="flex items-center min-w-max px-2">
+              {steps.map((step, index) => {
+                const isActive = currentStep === step.id;
+                const isCompleted = completedSteps.has(step.id);
+                
+                return (
+                  <div key={step.id} className="flex items-center">
+                    <button
+                      onClick={() => onStepClick(step.id)}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-blue-600 text-white shadow-md transform scale-110' 
+                          : isCompleted 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-gray-300 text-gray-600'
+                      }`}
+                      aria-label={`Go to step ${step.id}: ${step.name}`}
+                    >
+                      {isCompleted ? '✓' : step.id}
+                    </button>
+                    
+                    {index < steps.length - 1 && (
+                      <div className={`w-3 h-0.5 mx-0.5 rounded-full ${
+                        isCompleted ? 'bg-green-400' : 'bg-gray-300'
+                      }`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Navigation Buttons */}
+          {/* Navigation Buttons - Icon Only for Mobile */}
           <div className="flex items-center justify-between">
             <button
               onClick={() => onStepClick(Math.max(1, currentStep - 1))}
               disabled={currentStep === 1}
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+                currentStep === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400'
+              }`}
+              aria-label="Previous step"
             >
-              <span>←</span>
-              <span>Previous</span>
+              <span className="text-lg">←</span>
             </button>
             
-            <div className="text-center">
-              <div className="text-xs text-gray-500">
-                Step {currentStep} of {totalSteps}
+            <div className="text-center px-2">
+              <div className="text-xs font-medium bg-gray-100 text-gray-700 px-2 py-1 rounded-md">
+                {currentStep}/{totalSteps}
               </div>
             </div>
             
             <button
               onClick={() => onStepClick(Math.min(totalSteps, currentStep + 1))}
               disabled={currentStep === totalSteps}
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+                currentStep === totalSteps
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
+              }`}
+              aria-label="Next step"
             >
-              <span>Next</span>
-              <span>→</span>
+              <span className="text-lg">→</span>
             </button>
           </div>
         </div>
@@ -4031,6 +4052,7 @@ export default function CVBuilder() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <MobileOptimizationStyles />
       <ToastContainer />
       
       {/* Header */}
