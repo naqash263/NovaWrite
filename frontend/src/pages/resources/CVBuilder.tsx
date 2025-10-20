@@ -3533,7 +3533,7 @@ export default function CVBuilder() {
       const previewDoc = parser.parseFromString(previewElement.innerHTML, 'text/html');
       
       // Find and remove empty sections more aggressively
-      const sections = previewDoc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"]');
+      const sections = previewDoc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"], div[id*="skills"]');
       
       sections.forEach(section => {
         // Get the section title
@@ -3555,22 +3555,95 @@ export default function CVBuilder() {
         const sectionClass = section.className?.toLowerCase() || '';
         const sectionHTML = section.innerHTML?.toLowerCase() || '';
         
-        // Check if this is a projects section
+        // Identify section type
         const isProjectsSection = 
           sectionId.includes('project') || 
           sectionClass.includes('project') || 
           sectionTitleText.toLowerCase().includes('project');
           
+        const isCertificatesSection = 
+          sectionId.includes('certif') || 
+          sectionClass.includes('certif') || 
+          sectionTitleText.toLowerCase().includes('certif');
+          
+        const isLanguagesSection = 
+          sectionId.includes('lang') || 
+          sectionClass.includes('lang') || 
+          sectionTitleText.toLowerCase().includes('lang');
+          
+        const isAchievementsSection = 
+          sectionId.includes('achiev') || 
+          sectionClass.includes('achiev') || 
+          sectionTitleText.toLowerCase().includes('achiev');
+          
+        const isInterestsSection = 
+          sectionId.includes('interest') || 
+          sectionClass.includes('interest') || 
+          sectionTitleText.toLowerCase().includes('interest');
+          
+        const isReferencesSection = 
+          sectionId.includes('refer') || 
+          sectionClass.includes('refer') || 
+          sectionTitleText.toLowerCase().includes('refer');
+          
         // Check if this section should be removed
         const shouldRemove = 
           !hasContent || 
           sectionHTML.includes('<!-- no-') || 
-          (isProjectsSection && (!cvData.projects || cvData.projects.length === 0));
+          (isProjectsSection && (!cvData.projects || cvData.projects.length === 0)) ||
+          (isCertificatesSection && (!cvData.certificates || cvData.certificates.length === 0)) ||
+          (isLanguagesSection && (!cvData.languages || cvData.languages.length === 0)) ||
+          (isAchievementsSection && (!cvData.achievements || cvData.achievements.length === 0)) ||
+          (isInterestsSection && (!cvData.interests || cvData.interests.length === 0)) ||
+          (isReferencesSection && (!cvData.references || cvData.references.length === 0));
           
         if (shouldRemove) {
           console.log('PDF Export: Removing empty section:', sectionTitleText || sectionId || sectionClass);
           section.remove();
         }
+      });
+      
+      // Second pass: Look for any divs with headings that might be sections
+      const potentialSections = previewDoc.querySelectorAll('div:not([class]):not([id])');
+      potentialSections.forEach(div => {
+        const heading = div.querySelector('h2, h3, h4, h5, h6');
+        if (heading) {
+          const headingText = heading.textContent?.trim() || '';
+          
+          // Check if this is likely a section for optional content
+          const isOptionalSection = 
+            headingText.toLowerCase().includes('project') ||
+            headingText.toLowerCase().includes('certif') ||
+            headingText.toLowerCase().includes('lang') ||
+            headingText.toLowerCase().includes('achiev') ||
+            headingText.toLowerCase().includes('interest') ||
+            headingText.toLowerCase().includes('refer');
+          
+          if (isOptionalSection) {
+            // Get content excluding heading
+            const divContent = div.cloneNode(true) as Element;
+            if (divContent.contains(heading)) {
+              divContent.removeChild(heading);
+            }
+            const contentText = divContent.textContent?.trim() || '';
+            
+            // Check if there's meaningful content
+            const hasContent = contentText && 
+              contentText.length > 5 && 
+              !contentText.match(/^\s*$/);
+            
+            if (!hasContent) {
+              console.log('PDF Export: Removing unmarked empty section:', headingText);
+              div.remove();
+            }
+          }
+        }
+      });
+      
+      // Third pass: Remove any leftover empty containers that might create space
+      const emptyContainers = previewDoc.querySelectorAll('div:empty, p:empty, section:empty, .section:empty, br + br');
+      emptyContainers.forEach(container => {
+        container.remove();
       });
       
       // Get the cleaned HTML
@@ -3636,7 +3709,33 @@ export default function CVBuilder() {
             div[id*="languages"]:empty,
             div[id*="achievements"]:empty,
             div[id*="interests"]:empty,
-            div[id*="references"]:empty {
+            div[id*="references"]:empty,
+            div:empty,
+            p:empty,
+            section:empty {
+              display: none !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              height: 0 !important;
+              min-height: 0 !important;
+              max-height: 0 !important;
+              overflow: hidden !important;
+            }
+            
+            /* Target sections by title text */
+            h2:contains("Projects"), h3:contains("Projects"), h4:contains("Projects"),
+            h2:contains("Certificates"), h3:contains("Certificates"), h4:contains("Certificates"),
+            h2:contains("Languages"), h3:contains("Languages"), h4:contains("Languages"),
+            h2:contains("Achievements"), h3:contains("Achievements"), h4:contains("Achievements"),
+            h2:contains("Interests"), h3:contains("Interests"), h4:contains("Interests"),
+            h2:contains("References"), h3:contains("References"), h4:contains("References") {
+              display: none !important;
+            }
+            
+            /* Remove excessive spacing */
+            .cv-template br + br,
+            .cv-template div > br:first-child,
+            .cv-template div > br:last-child {
               display: none !important;
             }
           </style>
@@ -3811,7 +3910,7 @@ export default function CVBuilder() {
       const previewDoc = parser.parseFromString(previewElement.innerHTML, 'text/html');
       
       // Find and remove empty sections more aggressively
-      const sections = previewDoc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"]');
+      const sections = previewDoc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"], div[id*="skills"]');
       
       sections.forEach(section => {
         // Get the section title
@@ -3833,22 +3932,95 @@ export default function CVBuilder() {
         const sectionClass = section.className?.toLowerCase() || '';
         const sectionHTML = section.innerHTML?.toLowerCase() || '';
         
-        // Check if this is a projects section
+        // Identify section type
         const isProjectsSection = 
           sectionId.includes('project') || 
           sectionClass.includes('project') || 
           sectionTitleText.toLowerCase().includes('project');
           
+        const isCertificatesSection = 
+          sectionId.includes('certif') || 
+          sectionClass.includes('certif') || 
+          sectionTitleText.toLowerCase().includes('certif');
+          
+        const isLanguagesSection = 
+          sectionId.includes('lang') || 
+          sectionClass.includes('lang') || 
+          sectionTitleText.toLowerCase().includes('lang');
+          
+        const isAchievementsSection = 
+          sectionId.includes('achiev') || 
+          sectionClass.includes('achiev') || 
+          sectionTitleText.toLowerCase().includes('achiev');
+          
+        const isInterestsSection = 
+          sectionId.includes('interest') || 
+          sectionClass.includes('interest') || 
+          sectionTitleText.toLowerCase().includes('interest');
+          
+        const isReferencesSection = 
+          sectionId.includes('refer') || 
+          sectionClass.includes('refer') || 
+          sectionTitleText.toLowerCase().includes('refer');
+          
         // Check if this section should be removed
         const shouldRemove = 
           !hasContent || 
           sectionHTML.includes('<!-- no-') || 
-          (isProjectsSection && (!cvData.projects || cvData.projects.length === 0));
+          (isProjectsSection && (!cvData.projects || cvData.projects.length === 0)) ||
+          (isCertificatesSection && (!cvData.certificates || cvData.certificates.length === 0)) ||
+          (isLanguagesSection && (!cvData.languages || cvData.languages.length === 0)) ||
+          (isAchievementsSection && (!cvData.achievements || cvData.achievements.length === 0)) ||
+          (isInterestsSection && (!cvData.interests || cvData.interests.length === 0)) ||
+          (isReferencesSection && (!cvData.references || cvData.references.length === 0));
           
         if (shouldRemove) {
           console.log('HTML Export: Removing empty section:', sectionTitleText || sectionId || sectionClass);
           section.remove();
         }
+      });
+      
+      // Second pass: Look for any divs with headings that might be sections
+      const potentialSections = previewDoc.querySelectorAll('div:not([class]):not([id])');
+      potentialSections.forEach(div => {
+        const heading = div.querySelector('h2, h3, h4, h5, h6');
+        if (heading) {
+          const headingText = heading.textContent?.trim() || '';
+          
+          // Check if this is likely a section for optional content
+          const isOptionalSection = 
+            headingText.toLowerCase().includes('project') ||
+            headingText.toLowerCase().includes('certif') ||
+            headingText.toLowerCase().includes('lang') ||
+            headingText.toLowerCase().includes('achiev') ||
+            headingText.toLowerCase().includes('interest') ||
+            headingText.toLowerCase().includes('refer');
+          
+          if (isOptionalSection) {
+            // Get content excluding heading
+            const divContent = div.cloneNode(true) as Element;
+            if (divContent.contains(heading)) {
+              divContent.removeChild(heading);
+            }
+            const contentText = divContent.textContent?.trim() || '';
+            
+            // Check if there's meaningful content
+            const hasContent = contentText && 
+              contentText.length > 5 && 
+              !contentText.match(/^\s*$/);
+            
+            if (!hasContent) {
+              console.log('HTML Export: Removing unmarked empty section:', headingText);
+              div.remove();
+            }
+          }
+        }
+      });
+      
+      // Third pass: Remove any leftover empty containers that might create space
+      const emptyContainers = previewDoc.querySelectorAll('div:empty, p:empty, section:empty, .section:empty, br + br');
+      emptyContainers.forEach(container => {
+        container.remove();
       });
       
       // Get the cleaned HTML
@@ -3898,7 +4070,33 @@ export default function CVBuilder() {
         div[id*="languages"]:empty,
         div[id*="achievements"]:empty,
         div[id*="interests"]:empty,
-        div[id*="references"]:empty {
+        div[id*="references"]:empty,
+        div:empty,
+        p:empty,
+        section:empty {
+          display: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          height: 0 !important;
+          min-height: 0 !important;
+          max-height: 0 !important;
+          overflow: hidden !important;
+        }
+        
+        /* Target sections by title text */
+        h2:contains("Projects"), h3:contains("Projects"), h4:contains("Projects"),
+        h2:contains("Certificates"), h3:contains("Certificates"), h4:contains("Certificates"),
+        h2:contains("Languages"), h3:contains("Languages"), h4:contains("Languages"),
+        h2:contains("Achievements"), h3:contains("Achievements"), h4:contains("Achievements"),
+        h2:contains("Interests"), h3:contains("Interests"), h4:contains("Interests"),
+        h2:contains("References"), h3:contains("References"), h4:contains("References") {
+          display: none !important;
+        }
+        
+        /* Remove excessive spacing */
+        .cv-template br + br,
+        .cv-template div > br:first-child,
+        .cv-template div > br:last-child {
           display: none !important;
         }
         

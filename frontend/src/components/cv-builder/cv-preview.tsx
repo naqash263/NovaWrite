@@ -145,8 +145,8 @@ const hideEmptySections = (html: string) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   
-  // Find all section-like elements
-  const sections = doc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"]');
+  // First pass: Find all section-like elements with explicit section markers
+  const sections = doc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"], div[id*="skills"]');
   
   sections.forEach(section => {
     // Get the section title element
@@ -173,23 +173,101 @@ const hideEmptySections = (html: string) => {
     const sectionClass = section.className?.toLowerCase() || '';
     const sectionHTML = section.innerHTML?.toLowerCase() || '';
     
-    // More aggressive check for empty projects section
+    // Identify section type
     const isProjectsSection = 
       sectionId.includes('project') || 
       sectionClass.includes('project') || 
       sectionTitleText.toLowerCase().includes('project') ||
       sectionHTML.includes('<!-- no-projects -->');
       
+    const isCertificatesSection = 
+      sectionId.includes('certif') || 
+      sectionClass.includes('certif') || 
+      sectionTitleText.toLowerCase().includes('certif') ||
+      sectionHTML.includes('<!-- no-certificates -->');
+      
+    const isLanguagesSection = 
+      sectionId.includes('lang') || 
+      sectionClass.includes('lang') || 
+      sectionTitleText.toLowerCase().includes('lang') ||
+      sectionHTML.includes('<!-- no-languages -->');
+      
+    const isAchievementsSection = 
+      sectionId.includes('achiev') || 
+      sectionClass.includes('achiev') || 
+      sectionTitleText.toLowerCase().includes('achiev') ||
+      sectionHTML.includes('<!-- no-achievements -->');
+      
+    const isInterestsSection = 
+      sectionId.includes('interest') || 
+      sectionClass.includes('interest') || 
+      sectionTitleText.toLowerCase().includes('interest') ||
+      sectionHTML.includes('<!-- no-interests -->');
+      
+    const isReferencesSection = 
+      sectionId.includes('refer') || 
+      sectionClass.includes('refer') || 
+      sectionTitleText.toLowerCase().includes('refer') ||
+      sectionHTML.includes('<!-- no-references -->');
+    
     // More aggressive check for other common empty sections
     const isEmptySection = 
       sectionHTML.includes('<!-- no-') || 
-      (isProjectsSection && (!hasContent || contentText.length < 10));
+      (isProjectsSection && (!hasContent || contentText.length < 10)) ||
+      (isCertificatesSection && (!hasContent || contentText.length < 10)) ||
+      (isLanguagesSection && (!hasContent || contentText.length < 10)) ||
+      (isAchievementsSection && (!hasContent || contentText.length < 10)) ||
+      (isInterestsSection && (!hasContent || contentText.length < 10)) ||
+      (isReferencesSection && (!hasContent || contentText.length < 10));
     
     // If no meaningful content or explicitly marked as empty, remove the entire section
     if (!hasContent || isEmptySection) {
       console.log('Removing empty section:', sectionTitleText || sectionId || sectionClass);
       section.remove();
     }
+  });
+  
+  // Second pass: Look for any divs with headings that might be sections
+  const potentialSections = doc.querySelectorAll('div:not([class]):not([id])');
+  potentialSections.forEach(div => {
+    const heading = div.querySelector('h2, h3, h4, h5, h6');
+    if (heading) {
+      const headingText = heading.textContent?.trim() || '';
+      
+      // Check if this is likely a section for optional content
+      const isOptionalSection = 
+        headingText.toLowerCase().includes('project') ||
+        headingText.toLowerCase().includes('certif') ||
+        headingText.toLowerCase().includes('lang') ||
+        headingText.toLowerCase().includes('achiev') ||
+        headingText.toLowerCase().includes('interest') ||
+        headingText.toLowerCase().includes('refer');
+      
+      if (isOptionalSection) {
+        // Get content excluding heading
+        const divContent = div.cloneNode(true) as Element;
+        if (divContent.contains(heading)) {
+          divContent.removeChild(heading);
+        }
+        const contentText = divContent.textContent?.trim() || '';
+        
+        // Check if there's meaningful content
+        const hasContent = contentText && 
+          contentText.length > 5 && 
+          !contentText.match(/^\s*$/);
+        
+        if (!hasContent) {
+          console.log('Removing unmarked empty section:', headingText);
+          div.remove();
+        }
+      }
+    }
+  });
+  
+  // Third pass: Remove any leftover empty containers that might create space
+  const emptyContainers = doc.querySelectorAll('div:empty, p:empty, section:empty, .section:empty');
+  emptyContainers.forEach(container => {
+    container.remove();
   });
   
   return doc.body.innerHTML;
