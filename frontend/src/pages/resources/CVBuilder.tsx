@@ -3053,7 +3053,7 @@ export default function CVBuilder() {
 
   const totalSteps = 10;
 
-  // Handle profile picture upload
+  // Handle profile picture upload using client-side FileReader (no backend upload)
   const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -3068,56 +3068,45 @@ export default function CVBuilder() {
       return;
     }
 
-    // Validate file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
+    // Validate file size (2MB limit for data URLs)
+    if (file.size > 2 * 1024 * 1024) {
       addToast({
         type: 'error',
         title: 'File Too Large',
-        description: 'Image file must be smaller than 10MB'
+        description: 'Image file must be smaller than 2MB for data URL encoding'
       });
       return;
     }
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('is_public', 'true');
-      formData.append('context', 'profile-picture');
-
-      // Upload file to backend
-      const response = await fetch('/api/files', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formData
-      });
-
-      const result = await response.json();
-
-      if (result.file) {
-        // Get the file URL from the response
-        const fileUrl = result.file.path;
-        const fullUrl = fileUrl.startsWith('http') ? fileUrl : `${window.location.origin}/storage/${fileUrl}`;
-        
-        // Update the profile picture URL
-        setCvData(prev => ({ ...prev, profilePictureUrl: fullUrl }));
-        
-        addToast({
-          type: 'success',
-          title: 'Profile Picture Uploaded',
-          description: 'Your profile picture has been uploaded successfully!'
-        });
-      } else {
-        throw new Error(result.message || 'Upload failed');
-      }
+      // Use FileReader to convert image to data URL
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          // Update the profile picture URL with data URL
+          setCvData(prev => ({ ...prev, profilePictureUrl: e.target!.result as string }));
+          
+          addToast({
+            type: 'success',
+            title: 'Profile Picture Added',
+            description: 'Your profile picture has been added successfully.'
+          });
+        }
+      };
+      
+      reader.onerror = () => {
+        throw new Error('Failed to read file');
+      };
+      
+      // Read the file as a data URL
+      reader.readAsDataURL(file);
     } catch (error) {
-      console.error('Profile picture upload error:', error);
+      console.error('Error processing profile picture:', error);
       addToast({
         type: 'error',
         title: 'Upload Failed',
-        description: 'Failed to upload profile picture. Please try again.'
+        description: 'Failed to process profile picture. Please try again.'
       });
     }
   };
