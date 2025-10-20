@@ -1299,15 +1299,16 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
           </div>
         </div>
 
-        {/* Desktop Step Indicator - Improved Layout */}
+        {/* Desktop Step Indicator - Improved Layout - Only visible on large screens */}
         <div className="hidden lg:block">
-          {/* Current Step Focus */}
+          {/* Current Step Focus - DESKTOP ONLY */}
           <div className="mb-4">
             <div className="flex items-center justify-center space-x-4">
+              {/* These navigation buttons are DESKTOP ONLY */}
               <button
                 onClick={() => onStepClick(Math.max(1, currentStep - 1))}
                 disabled={currentStep === 1}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                className="hidden lg:flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
               >
                 <span>←</span>
                 <span>Previous</span>
@@ -1323,10 +1324,11 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
                 </div>
               </div>
               
+              {/* These navigation buttons are DESKTOP ONLY */}
               <button
                 onClick={() => onStepClick(Math.min(totalSteps, currentStep + 1))}
                 disabled={currentStep === totalSteps}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                className="hidden lg:flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
               >
                 <span>Next</span>
                 <span>→</span>
