@@ -3501,10 +3501,8 @@ export default function CVBuilder() {
 
       // Generate the document as a blob
       const { Packer } = await import('docx');
-      const buffer = await Packer.toBuffer(doc);
-      // Convert the buffer to Uint8Array which is compatible with Blob
-      const uint8Array = new Uint8Array(buffer);
-      const docxBlob = new Blob([uint8Array], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      // Use toBlob for browser environments
+      const docxBlob = await Packer.toBlob(doc);
       
       // Create a FormData object to send the DOCX file to the server
       const formData = new FormData();
@@ -3752,10 +3750,8 @@ export default function CVBuilder() {
 
       // Generate the document as a blob
       const { Packer } = await import('docx');
-      const buffer = await Packer.toBuffer(doc);
-      // Convert the buffer to Uint8Array which is compatible with Blob
-      const uint8Array = new Uint8Array(buffer);
-      const blob = new Blob([uint8Array], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      // Use toBlob for browser environments
+      const blob = await Packer.toBlob(doc);
       
       // Save the document
       saveAs(blob, `${cvData.fullName || 'CV'}_Resume.docx`);
