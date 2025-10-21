@@ -238,7 +238,8 @@ class CvAiService
             }
 
             $aiResponse = $data['candidates'][0]['content']['parts'][0]['text'];
-            Log::info('AI Response: ' . $aiResponse);
+            Log::info('AI Response Length: ' . strlen($aiResponse));
+            Log::info('AI Response Preview: ' . substr($aiResponse, 0, 500) . '...');
             
             // Clean the response - remove markdown code blocks if present
             $cleanResponse = $aiResponse;
@@ -252,8 +253,22 @@ class CvAiService
                 Log::error('JSON parsing error: ' . json_last_error_msg());
                 Log::error('Raw AI response: ' . $aiResponse);
                 Log::error('Cleaned response: ' . $cleanResponse);
-                // Return empty data if JSON parsing fails
-                return [];
+                
+                // Try to extract JSON from the response if it's embedded in text
+                if (preg_match('/\{.*\}/s', $cleanResponse, $matches)) {
+                    Log::info('Attempting to extract JSON from embedded text...');
+                    $extractedJson = $matches[0];
+                    $parsedData = json_decode($extractedJson, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        Log::info('Successfully extracted JSON from embedded text');
+                    } else {
+                        Log::error('Failed to parse extracted JSON: ' . json_last_error_msg());
+                        return [];
+                    }
+                } else {
+                    Log::error('No JSON found in response');
+                    return [];
+                }
             }
             
             return $parsedData ?? [];
@@ -288,31 +303,80 @@ class CvAiService
      */
     private function buildExtractionPrompt(string $fileContent, string $fileType): string
     {
-        return "Extract CV information from this {$fileType} file and return it as JSON with the following structure:
+        return "You are an expert CV parser. Extract and structure ALL information from this {$fileType} CV file.
+
+        CRITICAL PARSING RULES:
+        1. Read the ENTIRE document carefully, including all pages
+        2. DISTINGUISH between job titles and job descriptions clearly
+        3. For work experience: jobTitle = the position/role name, description = what they did/achieved
+        4. For education: degree = qualification name, institution = school/university name
+        5. For projects: name = project title, description = what the project does/achieved
+        6. Look for information in ANY format - headers, bullet points, paragraphs, tables
+        7. Extract ALL available information, even if it seems incomplete
+        8. If a section has multiple entries, create multiple array items
+        9. If dates are in different formats, convert them to YYYY-MM format when possible
+        10. If information is missing, leave the field empty or as an empty array
+        11. Be thorough - extract everything you can find
+
+        FIELD MAPPING GUIDELINES:
+        - Personal Info: Name, Title, Email, Phone, Address
+        - Summary/Objective: Professional summary, career objective, profile
+        - Work Experience: 
+          * jobTitle = Position/Role (e.g., 'Software Engineer', 'Marketing Manager')
+          * company = Company name
+          * description = Responsibilities, achievements, what they did
+          * startDate/endDate = Employment dates
+        - Education: 
+          * degree = Qualification name (e.g., 'Bachelor of Science', 'MBA')
+          * institution = School/University name
+          * graduationYear = Year completed
+        - Skills: Technical skills, soft skills, tools, technologies (comma-separated)
+        - Projects: 
+          * name = Project title/name
+          * description = What the project does, technologies used, achievements
+          * technologies = Technologies/tools used
+        - Certificates: Professional certifications, licenses, awards
+        - Languages: Spoken languages with proficiency levels
+        - Achievements: Awards, recognitions, accomplishments
+        - References: Contact information for references
+
+        Return ONLY valid JSON with this exact structure:
         {
             \"fullName\": \"Full Name\",
-            \"jobTitle\": \"Job Title\",
+            \"jobTitle\": \"Current Job Title\",
             \"email\": \"email@example.com\",
             \"phoneNumber\": \"+1234567890\",
-            \"address\": \"Address\",
+            \"address\": \"Full Address\",
             \"professionalSummary\": \"Professional summary paragraph\",
             \"workExperience\": [
                 {
-                    \"jobTitle\": \"Job Title\",
-                    \"company\": \"Company Name\",
+                    \"jobTitle\": \"Software Engineer\",
+                    \"company\": \"Tech Company Inc\",
                     \"startDate\": \"2020-01\",
                     \"endDate\": \"2023-12\",
-                    \"description\": \"Job description with achievements\"
+                    \"description\": \"Developed web applications using React and Node.js. Led a team of 3 developers. Improved system performance by 40%. Implemented CI/CD pipelines.\"
+                },
+                {
+                    \"jobTitle\": \"Junior Developer\",
+                    \"company\": \"StartupXYZ\",
+                    \"startDate\": \"2018-06\",
+                    \"endDate\": \"2019-12\",
+                    \"description\": \"Built responsive websites using HTML, CSS, and JavaScript. Collaborated with design team. Maintained existing codebase.\"
                 }
             ],
             \"education\": [
                 {
-                    \"degree\": \"Degree Name\",
-                    \"institution\": \"Institution Name\",
+                    \"degree\": \"Bachelor of Science in Computer Science\",
+                    \"institution\": \"University of Technology\",
+                    \"graduationYear\": \"2018\"
+                },
+                {
+                    \"degree\": \"Master of Business Administration\",
+                    \"institution\": \"Business School\",
                     \"graduationYear\": \"2020\"
                 }
             ],
-            \"skills\": \"Skill1, Skill2, Skill3\",
+            \"skills\": \"JavaScript, React, Node.js, Python, SQL, Git, AWS, Docker\",
             \"projects\": [
                 {
                     \"name\": \"Project Name\",
@@ -328,8 +392,8 @@ class CvAiService
                     \"name\": \"Certificate Name\",
                     \"issuer\": \"Issuing Organization\",
                     \"date\": \"2020-01\",
-                    \"credentialId\": \"Credential ID (optional)\",
-                    \"url\": \"Certificate URL (optional)\"
+                    \"credentialId\": \"Credential ID (if available)\",
+                    \"url\": \"Certificate URL (if available)\"
                 }
             ],
             \"languages\": [
@@ -356,7 +420,7 @@ class CvAiService
             ]
         }
 
-        File content:
+        CV Content to Parse:
         {$fileContent}";
     }
 
@@ -401,6 +465,9 @@ class CvAiService
      */
     private function parseCvData(array $response): array
     {
+        Log::info('Parsing CV data from AI response...');
+        Log::info('Response keys: ' . implode(', ', array_keys($response)));
+        
         // Ensure all required fields have default values
         $data = array_merge([
             'fullName' => '',
@@ -418,6 +485,29 @@ class CvAiService
             'achievements' => [],
             'references' => []
         ], $response);
+        
+        // Clean up and validate the extracted data
+        $data = $this->cleanupExtractedData($data);
+        
+        // Log what we extracted
+        Log::info('Extracted data summary:');
+        Log::info('- Full Name: ' . ($data['fullName'] ?: 'Not found'));
+        Log::info('- Job Title: ' . ($data['jobTitle'] ?: 'Not found'));
+        Log::info('- Email: ' . ($data['email'] ?: 'Not found'));
+        Log::info('- Phone: ' . ($data['phoneNumber'] ?: 'Not found'));
+        Log::info('- Work Experience entries: ' . count($data['workExperience']));
+        Log::info('- Education entries: ' . count($data['education']));
+        Log::info('- Skills: ' . ($data['skills'] ?: 'Not found'));
+        Log::info('- Projects: ' . count($data['projects']));
+        Log::info('- Certificates: ' . count($data['certificates']));
+        Log::info('- Languages: ' . count($data['languages']));
+        Log::info('- Achievements: ' . count($data['achievements']));
+        Log::info('- References: ' . count($data['references']));
+        
+        // Log work experience details for debugging
+        foreach ($data['workExperience'] as $index => $exp) {
+            Log::info("Work Experience {$index}: JobTitle='{$exp['jobTitle']}', Company='{$exp['company']}', Description length=" . strlen($exp['description']));
+        }
         
         // Sanitize all string values to ensure valid UTF-8
         foreach ($data as $key => $value) {
@@ -554,5 +644,130 @@ class CvAiService
                 ];
             })
         ];
+    }
+    
+    /**
+     * Clean up and validate extracted CV data
+     */
+    private function cleanupExtractedData(array $data): array
+    {
+        // Clean up work experience
+        if (isset($data['workExperience']) && is_array($data['workExperience'])) {
+            $cleanedWorkExp = [];
+            foreach ($data['workExperience'] as $exp) {
+                if (!is_array($exp)) continue;
+                
+                $cleanedExp = [
+                    'jobTitle' => $this->cleanString($exp['jobTitle'] ?? ''),
+                    'company' => $this->cleanString($exp['company'] ?? ''),
+                    'startDate' => $this->cleanString($exp['startDate'] ?? ''),
+                    'endDate' => $this->cleanString($exp['endDate'] ?? ''),
+                    'description' => $this->cleanString($exp['description'] ?? '')
+                ];
+                
+                // Only add if we have at least a job title or company
+                if (!empty($cleanedExp['jobTitle']) || !empty($cleanedExp['company'])) {
+                    $cleanedWorkExp[] = $cleanedExp;
+                }
+            }
+            $data['workExperience'] = $cleanedWorkExp;
+        }
+        
+        // Clean up education
+        if (isset($data['education']) && is_array($data['education'])) {
+            $cleanedEducation = [];
+            foreach ($data['education'] as $edu) {
+                if (!is_array($edu)) continue;
+                
+                $cleanedEdu = [
+                    'degree' => $this->cleanString($edu['degree'] ?? ''),
+                    'institution' => $this->cleanString($edu['institution'] ?? ''),
+                    'graduationYear' => $this->cleanString($edu['graduationYear'] ?? '')
+                ];
+                
+                // Only add if we have at least a degree or institution
+                if (!empty($cleanedEdu['degree']) || !empty($cleanedEdu['institution'])) {
+                    $cleanedEducation[] = $cleanedEdu;
+                }
+            }
+            $data['education'] = $cleanedEducation;
+        }
+        
+        // Clean up projects
+        if (isset($data['projects']) && is_array($data['projects'])) {
+            $cleanedProjects = [];
+            foreach ($data['projects'] as $project) {
+                if (!is_array($project)) continue;
+                
+                $cleanedProject = [
+                    'name' => $this->cleanString($project['name'] ?? ''),
+                    'description' => $this->cleanString($project['description'] ?? ''),
+                    'technologies' => $this->cleanString($project['technologies'] ?? ''),
+                    'url' => $this->cleanString($project['url'] ?? ''),
+                    'startDate' => $this->cleanString($project['startDate'] ?? ''),
+                    'endDate' => $this->cleanString($project['endDate'] ?? '')
+                ];
+                
+                // Only add if we have at least a name or description
+                if (!empty($cleanedProject['name']) || !empty($cleanedProject['description'])) {
+                    $cleanedProjects[] = $cleanedProject;
+                }
+            }
+            $data['projects'] = $cleanedProjects;
+        }
+        
+        // Clean up other array fields
+        $arrayFields = ['certificates', 'languages', 'achievements', 'references'];
+        foreach ($arrayFields as $field) {
+            if (isset($data[$field]) && is_array($data[$field])) {
+                $cleanedArray = [];
+                foreach ($data[$field] as $item) {
+                    if (is_array($item)) {
+                        $cleanedItem = [];
+                        foreach ($item as $key => $value) {
+                            $cleanedItem[$key] = $this->cleanString($value);
+                        }
+                        // Only add if at least one field has content
+                        if (!empty(array_filter($cleanedItem))) {
+                            $cleanedArray[] = $cleanedItem;
+                        }
+                    }
+                }
+                $data[$field] = $cleanedArray;
+            }
+        }
+        
+        // Clean up string fields
+        $stringFields = ['fullName', 'jobTitle', 'email', 'phoneNumber', 'address', 'professionalSummary', 'skills'];
+        foreach ($stringFields as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = $this->cleanString($data[$field]);
+            }
+        }
+        
+        return $data;
+    }
+    
+    /**
+     * Clean a string value
+     */
+    private function cleanString($value): string
+    {
+        if (!is_string($value)) {
+            return '';
+        }
+        
+        // Remove extra whitespace
+        $value = trim($value);
+        
+        // Remove common artifacts
+        $value = preg_replace('/\s+/', ' ', $value);
+        
+        // Remove empty or very short values that are likely errors
+        if (strlen($value) < 2) {
+            return '';
+        }
+        
+        return $value;
     }
 }

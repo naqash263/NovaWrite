@@ -8,6 +8,7 @@ import { uploadFileForProcessing, validateFile } from '../../utils/fileProcessor
 import CVExportOptions from '../../components/cv-builder/CVExportOptions';
 import { API_CONFIG } from '../../config/api';
 import apiClient from '../../api/axios';
+import jsPDF from 'jspdf';
 
 // Add custom CSS for mobile optimizations
 const MobileOptimizationStyles = () => (
@@ -1284,7 +1285,7 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
                   <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">
                     {currentStepData?.description || 'Complete this step to continue'}
                   </p>
-                </div>
+          </div>
               </div>
             </div>
             <div className="text-left sm:text-right w-full sm:w-auto mt-2 sm:mt-0 hidden sm:block">
@@ -1301,9 +1302,9 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
         <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2 mb-1">
           <div 
             className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 sm:h-2 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-          />
-        </div>
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            />
+          </div>
         <div className="text-center text-xs text-gray-500">
           <span className="font-medium text-blue-600">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
         </div>
@@ -1332,9 +1333,9 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
               const isCompleted = completedSteps.has(step.id);
               
               return (
-                <div key={step.id} className="flex items-center">
-                  <button
-                    onClick={() => onStepClick(step.id)}
+            <div key={step.id} className="flex items-center">
+              <button
+                onClick={() => onStepClick(step.id)}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
                       isActive 
                         ? 'bg-blue-600 text-white shadow-md transform scale-110' 
@@ -1345,19 +1346,19 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
                     title={`${step.name}: ${step.description}`}
                   >
                     {isCompleted ? '✓' : step.id}
-                  </button>
+              </button>
                   
-                  {index < steps.length - 1 && (
+              {index < steps.length - 1 && (
                     <div className={`w-5 h-0.5 mx-1 rounded-full ${
                       isCompleted ? 'bg-green-400' : 'bg-gray-300'
-                    }`} />
-                  )}
-                </div>
+                }`} />
+              )}
+            </div>
               );
             })}
-          </div>
-
         </div>
+
+      </div>
 
         {/* Mobile Step Navigation - Ultra Compact */}
         <div className="lg:hidden">
@@ -1484,19 +1485,19 @@ const StepNavigation = ({
         <div className="flex justify-between items-center gap-2">
           {/* Mobile View: Simplified Navigation */}
           <div className="sm:hidden flex justify-between w-full">
-            <button
-              onClick={onPrevious}
+        <button
+          onClick={onPrevious}
               disabled={isFirstStep}
               className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
                 isFirstStep
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400'
-              }`}
+          }`}
               aria-label="Previous step"
-            >
+        >
               <span className="text-xl">←</span>
-            </button>
-            
+        </button>
+
             {/* Mobile Next/Download Button */}
             {isLastStep ? (
               <button
@@ -1557,27 +1558,27 @@ const StepNavigation = ({
           {/* Desktop View: Show text and icon for Download/Next */}
           <div className="hidden sm:block">
             {isLastStep ? (
-              <button
-                onClick={onFinish}
+            <button
+              onClick={onFinish}
                 className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
+            >
                 <span className="text-lg">📄</span>
-                <span>Download CV</span>
-              </button>
-            ) : (
-              <button
-                onClick={onNext}
-                disabled={isNextDisabled}
+              <span>Download CV</span>
+            </button>
+          ) : (
+            <button
+              onClick={onNext}
+              disabled={isNextDisabled}
                 className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  isNextDisabled
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                isNextDisabled
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl'
-                }`}
-              >
-                <span>Next</span>
+              }`}
+            >
+              <span>Next</span>
                 <span className="text-lg">→</span>
-              </button>
-            )}
+            </button>
+          )}
           </div>
         </div>
       </div>
@@ -1657,13 +1658,13 @@ const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data
             {/* URL Input */}
             <div className="space-y-2">
               <label className="block text-sm text-gray-600">Or enter image URL:</label>
-              <input
-                type="url"
-                value={data.profilePictureUrl}
-                onChange={(e) => onDataChange({ ...data, profilePictureUrl: e.target.value })}
-                placeholder="https://example.com/your-photo.jpg"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-              />
+            <input
+              type="url"
+              value={data.profilePictureUrl}
+              onChange={(e) => onDataChange({ ...data, profilePictureUrl: e.target.value })}
+              placeholder="https://example.com/your-photo.jpg"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            />
             </div>
 
             {/* File Upload */}
@@ -3258,7 +3259,7 @@ export default function CVBuilder() {
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem('cv-builder-data', JSON.stringify(cvData));
+      localStorage.setItem('cv-builder-data', JSON.stringify(cvData));
       } catch (error) {
         console.error('Error saving CV data to localStorage:', error);
         
@@ -3415,6 +3416,7 @@ export default function CVBuilder() {
     }
   };
 
+
   const exportAsPDF = async (_options: any) => {
     try {
       console.log('Starting ATS-friendly PDF generation...');
@@ -3426,291 +3428,61 @@ export default function CVBuilder() {
         throw new Error('CV preview element not found');
       }
       
-      // Create a text-based version of the CV content for ATS compatibility
-      const fullName = cvData.fullName || 'Candidate';
-      const jobTitle = cvData.jobTitle || '';
-      const email = cvData.email || '';
-      const phone = cvData.phoneNumber || '';
-      const address = cvData.address || '';
-      const summary = cvData.professionalSummary || '';
+      // Get the rendered template HTML from the preview element
+      const templateHTML = previewElement.innerHTML;
       
-      // Build ATS-friendly content
-      let atsContent = `${fullName}\n${jobTitle}\n${email} | ${phone}\n${address}\n\n`;
+      // Get the template's CSS from the preview element's computed styles
+      const templateElement = previewElement.querySelector('.cv-template');
+      const templateCSS = templateElement ? templateElement.getAttribute('style') || '' : '';
       
-      // Professional Summary
-      if (summary) {
-        atsContent += `PROFESSIONAL SUMMARY\n${summary}\n\n`;
-      }
-      
-      // Work Experience
-      if (cvData.workExperience && cvData.workExperience.length > 0) {
-        atsContent += `WORK EXPERIENCE\n`;
-        cvData.workExperience.forEach(job => {
-          atsContent += `${job.jobTitle} | ${job.company}\n`;
-          atsContent += `${job.startDate} - ${job.endDate}\n`;
-          atsContent += `${job.description}\n\n`;
-        });
-      }
-      
-      // Education
-      if (cvData.education && cvData.education.length > 0) {
-        atsContent += `EDUCATION\n`;
-        cvData.education.forEach(edu => {
-          atsContent += `${edu.degree} | ${edu.institution}\n`;
-          atsContent += `${edu.graduationYear}\n`;
-          atsContent += `\n`;
-        });
-      }
-      
-      // Skills
-      if (cvData.skills) {
-        atsContent += `SKILLS\n${cvData.skills}\n\n`;
-      }
-      
-      // Projects
-      if (cvData.projects && cvData.projects.length > 0) {
-        atsContent += `PROJECTS\n`;
-        cvData.projects.forEach(project => {
-          atsContent += `${project.name}\n`;
-          if (project.startDate || project.endDate) {
-            atsContent += `${project.startDate || ''} - ${project.endDate || ''}\n`;
-          }
-          atsContent += `${project.description}\n`;
-          if (project.url) atsContent += `URL: ${project.url}\n`;
-          atsContent += `\n`;
-        });
-      }
-      
-      // Certificates
-      if (cvData.certificates && cvData.certificates.length > 0) {
-        atsContent += `CERTIFICATES\n`;
-        cvData.certificates.forEach(cert => {
-          atsContent += `${cert.name} | ${cert.issuer}\n`;
-          atsContent += `${cert.date}\n`;
-          if (cert.credentialId) atsContent += `ID: ${cert.credentialId}\n`;
-          if (cert.url) atsContent += `URL: ${cert.url}\n`;
-          atsContent += `\n`;
-        });
-      }
-      
-      // Languages
-      if (cvData.languages && cvData.languages.length > 0) {
-        atsContent += `LANGUAGES\n`;
-        cvData.languages.forEach(lang => {
-          atsContent += `${lang.language} - ${lang.proficiency}\n`;
-        });
-        atsContent += `\n`;
-      }
-      
-      // Achievements
-      if (cvData.achievements && cvData.achievements.length > 0) {
-        atsContent += `ACHIEVEMENTS\n`;
-        cvData.achievements.forEach(achievement => {
-          atsContent += `${achievement.title}\n${achievement.description}\n\n`;
-        });
-      }
-      
-      // Interests
-      if (cvData.interests) {
-        atsContent += `INTERESTS\n${cvData.interests}\n\n`;
-      }
-      
-      // References
-      if (cvData.references && cvData.references.length > 0) {
-        atsContent += `REFERENCES\n`;
-        cvData.references.forEach(ref => {
-          atsContent += `${ref.name} | ${ref.position} at ${ref.company}\n`;
-          atsContent += `Email: ${ref.email}\n`;
-          if (ref.phone) atsContent += `Phone: ${ref.phone}\n`;
-          atsContent += `\n`;
-        });
-      }
-      
-      // Create a full HTML document for the iframe with both ATS content and visual content
-      
-      // First, let's make sure we're removing empty sections
-      const parser = new DOMParser();
-      const previewDoc = parser.parseFromString(previewElement.innerHTML, 'text/html');
-      
-      // Find and remove empty sections more aggressively
-      const sections = previewDoc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"], div[id*="skills"]');
-      
-      sections.forEach(section => {
-        // Get the section title
-        const sectionTitle = section.querySelector('.section-title, h2, h3, h4, [class*="title"], [class*="heading"]');
-        const sectionTitleText = sectionTitle?.textContent?.trim() || '';
-        
-        // Get content without title
-        const sectionContent = section.cloneNode(true) as Element;
-        if (sectionTitle && sectionContent.contains(sectionTitle)) {
-          sectionContent.removeChild(sectionTitle);
-        }
-        const contentText = sectionContent.textContent?.trim() || '';
-        
-        // Check if this is an empty section
-        const hasContent = contentText && contentText.length > 5 && !contentText.match(/^\s*$/);
-        
-        // Check for specific section types
-        const sectionId = section.id?.toLowerCase() || '';
-        const sectionClass = section.className?.toLowerCase() || '';
-        const sectionHTML = section.innerHTML?.toLowerCase() || '';
-        
-        // Identify section type
-        const isProjectsSection = 
-          sectionId.includes('project') || 
-          sectionClass.includes('project') || 
-          sectionTitleText.toLowerCase().includes('project');
-          
-        const isCertificatesSection = 
-          sectionId.includes('certif') || 
-          sectionClass.includes('certif') || 
-          sectionTitleText.toLowerCase().includes('certif');
-          
-        const isLanguagesSection = 
-          sectionId.includes('lang') || 
-          sectionClass.includes('lang') || 
-          sectionTitleText.toLowerCase().includes('lang');
-          
-        const isAchievementsSection = 
-          sectionId.includes('achiev') || 
-          sectionClass.includes('achiev') || 
-          sectionTitleText.toLowerCase().includes('achiev');
-          
-        const isInterestsSection = 
-          sectionId.includes('interest') || 
-          sectionClass.includes('interest') || 
-          sectionTitleText.toLowerCase().includes('interest');
-          
-        const isReferencesSection = 
-          sectionId.includes('refer') || 
-          sectionClass.includes('refer') || 
-          sectionTitleText.toLowerCase().includes('refer');
-          
-        // Check if this section should be removed
-        const shouldRemove = 
-          !hasContent || 
-          sectionHTML.includes('<!-- no-') || 
-          (isProjectsSection && (!cvData.projects || cvData.projects.length === 0)) ||
-          (isCertificatesSection && (!cvData.certificates || cvData.certificates.length === 0)) ||
-          (isLanguagesSection && (!cvData.languages || cvData.languages.length === 0)) ||
-          (isAchievementsSection && (!cvData.achievements || cvData.achievements.length === 0)) ||
-          (isInterestsSection && (!cvData.interests || cvData.interests.length === 0)) ||
-          (isReferencesSection && (!cvData.references || cvData.references.length === 0));
-          
-        if (shouldRemove) {
-          console.log('PDF Export: Removing empty section:', sectionTitleText || sectionId || sectionClass);
-          section.remove();
-        }
+      // Create ATS-friendly PDF using jsPDF's HTML method with template design
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
       });
-      
-      // Second pass: Look for any divs with headings that might be sections
-      const potentialSections = previewDoc.querySelectorAll('div:not([class]):not([id])');
-      potentialSections.forEach(div => {
-        const heading = div.querySelector('h2, h3, h4, h5, h6');
-        if (heading) {
-          const headingText = heading.textContent?.trim() || '';
-          
-          // Check if this is likely a section for optional content
-          const isOptionalSection = 
-            headingText.toLowerCase().includes('project') ||
-            headingText.toLowerCase().includes('certif') ||
-            headingText.toLowerCase().includes('lang') ||
-            headingText.toLowerCase().includes('achiev') ||
-            headingText.toLowerCase().includes('interest') ||
-            headingText.toLowerCase().includes('refer');
-          
-          if (isOptionalSection) {
-            // Get content excluding heading
-            const divContent = div.cloneNode(true) as Element;
-            if (divContent.contains(heading)) {
-              divContent.removeChild(heading);
-            }
-            const contentText = divContent.textContent?.trim() || '';
-            
-            // Check if there's meaningful content
-            const hasContent = contentText && 
-              contentText.length > 5 && 
-              !contentText.match(/^\s*$/);
-            
-            if (!hasContent) {
-              console.log('PDF Export: Removing unmarked empty section:', headingText);
-              div.remove();
-            }
-          }
-        }
-      });
-      
-      // Third pass: Remove any leftover empty containers that might create space
-      const emptyContainers = previewDoc.querySelectorAll('div:empty, p:empty, section:empty, .section:empty, br + br');
-      emptyContainers.forEach(container => {
-        container.remove();
-      });
-      
-      // Get the cleaned HTML
-      const cleanedHTML = previewDoc.body.innerHTML;
-      
-      const htmlContent = `
+
+      // Create HTML document that combines template design with ATS-friendly structure
+      const templateWithATS = `
         <!DOCTYPE html>
         <html>
         <head>
-          <title>${cvData.fullName || 'CV'} - Resume</title>
           <meta charset="utf-8">
           <style>
-            @page {
-              size: A4 portrait;
-              margin: 0;
+            /* Import the template's original CSS */
+            ${document.querySelector('style')?.textContent || ''}
+            
+            /* Get all style tags from the document */
+            ${Array.from(document.querySelectorAll('style')).map(style => style.textContent).join('\n')}
+            
+            /* Template inline styles */
+            .cv-template {
+              ${templateCSS}
             }
+            
+            /* Override for PDF generation */
             body {
               margin: 0;
-              padding: 0;
-              background-color: white;
-              color: black;
-              font-family: Arial, sans-serif;
-              /* Force content to fit on a single page */
-              overflow: auto;
-              height: auto;
+              padding: 10mm;
+              background: white;
+              font-size: 11px;
+              line-height: 1.4;
             }
-            /* Hidden but parseable ATS content */
-            .ats-content {
-              position: absolute;
-              left: -9999px;
-              top: 0;
-              width: 1px;
-              height: 1px;
-              overflow: hidden;
-              opacity: 0.01;
-              /* This content is invisible but accessible to ATS parsers */
-            }
-            .cv-container {
-              width: 100%;
-              max-width: 100%;
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-              /* Ensure container fits on one page */
-              page-break-inside: avoid;
-              break-inside: avoid;
-            }
+            
+            /* Ensure template styles work in PDF */
             .cv-template {
               width: 100% !important;
               max-width: none !important;
               margin: 0 !important;
-              padding: 1mm !important;
-              box-sizing: border-box !important;
-              background-color: white !important;
-              color: black !important;
-              /* Ensure template fits on one page */
-              page-break-inside: avoid;
-              break-inside: avoid;
+              padding: 0 !important;
             }
-            /* Prevent ANY page breaks */
-            html, body, div, section, article, aside, header, footer, nav, figure, figcaption, 
-            main, form, fieldset, legend, pre, code, p, blockquote, ol, ul, li, dl, dt, dd, 
-            h1, h2, h3, h4, h5, h6, hr, table, caption, tbody, thead, tfoot, tr, th, td {
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
+            
+            /* Force colors to be preserved */
+            * {
+              color: inherit !important;
             }
-            /* Hide any remaining empty sections */
+            
+            /* Hide empty sections */
             .section:empty, 
             [class*="section"]:empty, 
             div[id*="projects"]:empty,
@@ -3718,171 +3490,42 @@ export default function CVBuilder() {
             div[id*="languages"]:empty,
             div[id*="achievements"]:empty,
             div[id*="interests"]:empty,
-            div[id*="references"]:empty,
-            div:empty,
-            p:empty,
-            section:empty {
-              display: none !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              height: 0 !important;
-              min-height: 0 !important;
-              max-height: 0 !important;
-              overflow: hidden !important;
-            }
-            
-            /* Target sections by title text */
-            h2:contains("Projects"), h3:contains("Projects"), h4:contains("Projects"),
-            h2:contains("Certificates"), h3:contains("Certificates"), h4:contains("Certificates"),
-            h2:contains("Languages"), h3:contains("Languages"), h4:contains("Languages"),
-            h2:contains("Achievements"), h3:contains("Achievements"), h4:contains("Achievements"),
-            h2:contains("Interests"), h3:contains("Interests"), h4:contains("Interests"),
-            h2:contains("References"), h3:contains("References"), h4:contains("References") {
+            div[id*="references"]:empty {
               display: none !important;
             }
             
-            /* Remove excessive spacing */
-            .cv-template br + br,
-            .cv-template div > br:first-child,
-            .cv-template div > br:last-child {
-              display: none !important;
-            }
           </style>
         </head>
         <body>
-          <!-- Hidden ATS-friendly content -->
-          <div class="ats-content" aria-hidden="true">
-            <pre>${atsContent}</pre>
-          </div>
-          
-          <!-- Visible styled content -->
-          <div class="cv-container">
-            ${cleanedHTML}
-          </div>
+          <!-- Template HTML with design and data (includes embedded styles) -->
+          ${templateHTML}
         </body>
         </html>
       `;
-      
-      // Create a blob from the HTML content
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const blobUrl = URL.createObjectURL(blob);
-      
-      // Create an iframe to render the HTML
-      const iframe = document.createElement('iframe');
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = 'none';
-      iframe.style.position = 'absolute';
-      iframe.style.top = '-9999px';
-      iframe.style.left = '-9999px';
-      iframe.src = blobUrl;
-      
-      document.body.appendChild(iframe);
-      
-      // Wait for iframe to load
-      await new Promise<void>((resolve) => {
-        iframe.onload = () => {
-          resolve();
-        };
+
+      // Generate PDF from HTML with proper scaling
+      await pdf.html(templateWithATS, {
+        callback: function (_doc) {
+          // PDF is ready
+        },
+        x: 0,
+        y: 0,
+        width: 210, // A4 width in mm
+        windowWidth: 870, // Increased window width for better scaling
+        margin: [5, 5, 5, 5], // Reduced margins
+        html2canvas: {
+          scale: 0.22, // Reduced scale to prevent zooming
+          useCORS: true,
+          width: 800, // Fixed width
+          height: 1500 // Fixed height
+        }
       });
       
-      // Open the print dialog which allows saving as PDF
-      setTimeout(() => {
-        try {
-          // Set print options to force single page and prevent page breaks
-          if (iframe.contentWindow?.document) {
-            const styleElement = document.createElement('style');
-            styleElement.textContent = `
-              @media print {
-                body {
-                  margin: 10px !important;
-                  width: 910mm;
-                  height: 40000mm !important;
-                  overflow: visible !important;
-                  zoom: 99; /* Scale content to fit on one page */
-                }
-                
-                /* Force all content to fit on one page by disabling page breaks */
-                * {
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
-                }
-                
-                /* Preserve template font size */
-                .cv-template {
-                  font-size: inherit !important;
-                }
-                
-                /* Reduce margins and padding */
-                div, section, p, h1, h2, h3, h4, h5, h6 {
-                  margin-top: 0.1em !important;
-                  margin-bottom: 0.1em !important;
-                  padding-top: 0.1em !important;
-                  padding-bottom: 0.1em !important;
-                }
-                
-                /* Compress vertical spacing */
-                .section, [class*="section"] {
-                  margin-bottom: 0.2em !important;
-                }
-                
-                /* Ensure single page */
-                @page {
-                  size: A4 portrait;
-                  margin: 10px !important;
-                }
-              }
-            `;
-            iframe.contentWindow.document.head.appendChild(styleElement);
-            
-            // Add script to adjust content to fit on one page
-            const scriptElement = document.createElement('script');
-            scriptElement.textContent = `
-              window.onbeforeprint = function() {
-                // Ensure the template's original font size is preserved
-                const template = document.querySelector('.cv-template');
-                if (template) {
-                  // Extract font size from template style if available
-                  const templateStyle = window.getComputedStyle(template);
-                  const fontSize = templateStyle.fontSize;
-                  
-                  if (fontSize) {
-                    // Apply the template's font size to all text elements
-                    const textElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, span');
-                    textElements.forEach(el => {
-                      // Only set font size if it's smaller than the template's
-                      const elSize = window.getComputedStyle(el).fontSize;
-                      if (parseInt(elSize) < parseInt(fontSize)) {
-                        el.style.fontSize = fontSize;
-                      }
-                    });
-                  }
-                }
-              };
-            `;
-            iframe.contentWindow.document.head.appendChild(scriptElement);
-          }
-          
-          // Focus the iframe
-          iframe.contentWindow?.focus();
-          
-          // Print the iframe content
-          iframe.contentWindow?.print();
-          
-          // Clean up
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-            URL.revokeObjectURL(blobUrl);
-          }, 1000);
-          
-          console.log('Print dialog opened for ATS-friendly PDF generation');
-        } catch (printError) {
-          console.error('Error during print operation:', printError);
-          document.body.removeChild(iframe);
-          URL.revokeObjectURL(blobUrl);
-          throw printError;
-        }
-      }, 1000);
+      // Download the PDF
+      const fileName = `${cvData.fullName?.replace(/[^a-zA-Z0-9]/g, '_') || 'CV'}_Resume.pdf`;
+      pdf.save(fileName);
+      
+      console.log('Single-page PDF generated successfully');
       
       console.log('ATS-friendly PDF generation process started');
 
@@ -4174,36 +3817,7 @@ export default function CVBuilder() {
                 padding: 0; 
                 background: white; 
                 margin: 0;
-                width: 210mm;
-                height: auto !important;
-                overflow: visible !important;
-                zoom: 0.85; /* Scale content to fit on one page */
             }
-            
-            /* Force all content to fit on one page by disabling page breaks */
-            * {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-            
-            /* Preserve template font size */
-            .cv-template {
-                font-size: inherit !important;
-            }
-            
-            /* Reduce margins and padding */
-            div, section, p, h1, h2, h3, h4, h5, h6 {
-                margin-top: 0.1em !important;
-                margin-bottom: 0.1em !important;
-                padding-top: 0.1em !important;
-                padding-bottom: 0.1em !important;
-            }
-            
-            /* Compress vertical spacing */
-            .section, [class*="section"] {
-                margin-bottom: 0.2em !important;
-            }
-            
             @page {
                 margin: 0;
                 size: A4 portrait;
@@ -4231,31 +3845,6 @@ export default function CVBuilder() {
         "telephone": "${cvData.phoneNumber || ''}",
         "address": "${cvData.address || ''}"
     }
-    </script>
-    
-    <!-- Script to preserve template font sizes -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Ensure the template's original font size is preserved
-      const template = document.querySelector('.cv-template');
-      if (template) {
-        // Extract font size from template style if available
-        const templateStyle = window.getComputedStyle(template);
-        const fontSize = templateStyle.fontSize;
-        
-        if (fontSize) {
-          // Apply the template's font size to all text elements
-          const textElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, span');
-          textElements.forEach(el => {
-            // Only set font size if it's smaller than the template's
-            const elSize = window.getComputedStyle(el).fontSize;
-            if (parseInt(elSize) < parseInt(fontSize)) {
-              el.style.fontSize = fontSize;
-            }
-          });
-        }
-      }
-    });
     </script>
 </body>
 </html>`;

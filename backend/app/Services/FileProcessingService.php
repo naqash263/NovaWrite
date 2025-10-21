@@ -50,38 +50,113 @@ class FileProcessingService
             $tempPath = $file->store('temp');
             $fullPath = Storage::path($tempPath);
             
-            // Try regular PDF parsing first
-            $parser = new Parser();
-            $pdf = $parser->parseFile($fullPath);
-            $text = $pdf->getText();
+            // Check if file exists and is readable
+            if (!file_exists($fullPath)) {
+                throw new \Exception('Temporary file was not created properly');
+            }
+            
+            Log::info('Temporary file created: ' . $fullPath . ' (size: ' . filesize($fullPath) . ' bytes)');
+            
+            // Try multiple PDF parsing approaches with smart deduplication
+            $text = '';
+            $bestMethod = '';
+            $allResults = [];
+            
+            // Method 1: Standard Smalot PDF Parser
+            try {
+                Log::info('=== METHOD 1: Standard Smalot PDF Parser ===');
+                $parser = new Parser();
+                $pdf = $parser->parseFile($fullPath);
+                Log::info('PDF parsed successfully with Smalot parser');
+                
+                $method1Text = $this->extractWithSmalotParser($pdf);
+                if (!empty(trim($method1Text))) {
+                    $allResults[] = [
+                        'method' => 'Smalot Parser',
+                        'text' => $method1Text,
+                        'length' => strlen(trim($method1Text))
+                    ];
+                    Log::info('Method 1 (Smalot) found ' . strlen(trim($method1Text)) . ' characters');
+                }
+            } catch (\Exception $e) {
+                Log::warning('Method 1 (Smalot) failed: ' . $e->getMessage());
+            }
+            
+            // Method 2: pdftotext command line tool
+            try {
+                Log::info('=== METHOD 2: pdftotext Command Line ===');
+                $method2Text = $this->extractWithPdftotext($fullPath);
+                if (!empty(trim($method2Text))) {
+                    $allResults[] = [
+                        'method' => 'pdftotext',
+                        'text' => $method2Text,
+                        'length' => strlen(trim($method2Text))
+                    ];
+                    Log::info('Method 2 (pdftotext) found ' . strlen(trim($method2Text)) . ' characters');
+                }
+            } catch (\Exception $e) {
+                Log::warning('Method 2 (pdftotext) failed: ' . $e->getMessage());
+            }
+            
+            // Method 3: Try different pdftotext options
+            try {
+                Log::info('=== METHOD 3: pdftotext with different options ===');
+                $method3Text = $this->extractWithPdftotextOptions($fullPath);
+                if (!empty(trim($method3Text))) {
+                    $allResults[] = [
+                        'method' => 'pdftotext (options)',
+                        'text' => $method3Text,
+                        'length' => strlen(trim($method3Text))
+                    ];
+                    Log::info('Method 3 (pdftotext options) found ' . strlen(trim($method3Text)) . ' characters');
+                }
+            } catch (\Exception $e) {
+                Log::warning('Method 3 (pdftotext options) failed: ' . $e->getMessage());
+            }
+            
+            // Select the best result and deduplicate if needed
+            if (!empty($allResults)) {
+                // Sort by length (longest first)
+                usort($allResults, function($a, $b) {
+                    return $b['length'] - $a['length'];
+                });
+                
+                $text = $allResults[0]['text'];
+                $bestMethod = $allResults[0]['method'];
+                
+                // Check if we need to deduplicate (if results are very similar)
+                if (count($allResults) > 1) {
+                    $text = $this->deduplicateText($allResults);
+                    Log::info('Applied deduplication to remove duplicate content');
+                }
+                
+                Log::info('Best extraction method: ' . $bestMethod . ' with ' . strlen(trim($text)) . ' characters');
+            }
             
             // If no text or minimal text extracted, try OCR
             if (empty(trim($text)) || strlen(trim($text)) < 500) {
                 Log::info('No or minimal text found in PDF, attempting OCR...');
                 $ocrText = $this->extractPdfWithOCR($fullPath);
                 
-                // If OCR found more text than the parser, use OCR result
-                if (strlen(trim($ocrText)) > strlen(trim($text)) * 1.2) {
-                    Log::info('Using OCR result (more content than parser)');
+                if (!empty(trim($ocrText))) {
                     $text = $ocrText;
-                } else if (!empty(trim($ocrText)) && empty(trim($text))) {
-                    // If parser found nothing but OCR found something, use OCR
-                    Log::info('Using OCR result (parser found nothing)');
-                    $text = $ocrText;
-                } else if (strlen(trim($text)) < 200 && strlen(trim($ocrText)) > 100) {
-                    // If parser found very little but OCR found something substantial
-                    Log::info('Using OCR result (parser found very little)');
-                    $text = $ocrText;
+                    Log::info('OCR extraction successful, text length: ' . strlen($text));
                 }
+            } else {
+                // Even if we got some text, check if it seems incomplete
+                // (e.g., very short text for what should be a multi-page CV)
+                $textLength = strlen(trim($text));
+                Log::info('Text extraction successful, length: ' . $textLength);
                 
-                // If OCR returned an error message, use the parser result if available
-                if (strpos($ocrText, 'This appears to be an image-based PDF') !== false && !empty(trim($text))) {
-                    Log::info('OCR returned an error message, using parser result');
-                    // Keep using the parser text
-                } else if (strpos($ocrText, 'This appears to be an image-based PDF') !== false && empty(trim($text))) {
-                    // Both methods failed, return the OCR error
-                    Log::warning('Both parser and OCR failed to extract text');
-                    return $ocrText;
+                // If text seems too short for a CV, try OCR as backup
+                if ($textLength < 1000) {
+                    Log::info('Text seems short for a CV, trying OCR as backup...');
+                    $ocrText = $this->extractPdfWithOCR($fullPath);
+                    
+                    if (!empty(trim($ocrText)) && strlen(trim($ocrText)) > $textLength) {
+                        Log::info('OCR found more text (' . strlen(trim($ocrText)) . ' chars), using OCR result');
+                        $text = $ocrText;
+                    }
                 }
             }
             
@@ -394,10 +469,10 @@ class FileProcessingService
                 return "This appears to be an image-based PDF. The system attempted to extract text but was unsuccessful. Please try converting to a text-based PDF or DOCX format.";
             }
             
-            // Extract images from PDF (first 10 pages max to avoid excessive processing)
+            // Extract images from PDF (first 20 pages max to avoid excessive processing)
             $imagePrefix = $tempDir . '/page';
             $extractCommand = sprintf(
-                'pdftoppm -png -r 300 -f 1 -l 10 "%s" "%s"',
+                'pdftoppm -png -r 300 -f 1 -l 20 "%s" "%s"',
                 escapeshellarg($pdfPath),
                 escapeshellarg($imagePrefix)
             );
@@ -435,9 +510,9 @@ class FileProcessingService
             // Label for goto statement
             process_images:
             
-            // Process each page with Tesseract (limit to 10 pages)
+            // Process each page with Tesseract (limit to 20 pages)
             foreach ($pageFiles as $index => $pageFile) {
-                if ($index >= 10) break; // Limit to 10 pages to avoid excessive processing
+                if ($index >= 20) break; // Limit to 20 pages to avoid excessive processing
                 
                 $pageOutputBase = $tempDir . '/ocr_output_' . $index;
                 
@@ -465,25 +540,30 @@ class FileProcessingService
                 
                 // Try each configuration and keep the best result
                 foreach ($ocrConfigs as $config) {
-                    $configOutputBase = $pageOutputBase . '_' . $config['description'];
-                    $ocrCommand = sprintf(
-                        'tesseract "%s" "%s" %s 2>/dev/null',
-                        escapeshellarg($pageFile),
-                        escapeshellarg($configOutputBase),
-                        $config['params']
-                    );
-                    
-                    exec($ocrCommand, $ocrOutput, $ocrCode);
-                    
-                    // Read OCR output
-                    $configOutputFile = $configOutputBase . '.txt';
-                    if (file_exists($configOutputFile)) {
-                        $configText = file_get_contents($configOutputFile);
-                        if (strlen(trim($configText)) > strlen(trim($bestText))) {
-                            $bestText = $configText;
-                            $bestConfig = $config['description'];
+                    try {
+                        $configOutputBase = $pageOutputBase . '_' . $config['description'];
+                        $ocrCommand = sprintf(
+                            'tesseract "%s" "%s" %s 2>/dev/null',
+                            escapeshellarg($pageFile),
+                            escapeshellarg($configOutputBase),
+                            $config['params']
+                        );
+                        
+                        exec($ocrCommand, $ocrOutput, $ocrCode);
+                        
+                        // Read OCR output
+                        $configOutputFile = $configOutputBase . '.txt';
+                        if (file_exists($configOutputFile)) {
+                            $configText = file_get_contents($configOutputFile);
+                            if ($configText && strlen(trim($configText)) > strlen(trim($bestText))) {
+                                $bestText = $configText;
+                                $bestConfig = $config['description'];
+                            }
+                            unlink($configOutputFile);
                         }
-                        unlink($configOutputFile);
+                    } catch (\Exception $e) {
+                        Log::warning("OCR config {$config['description']} failed for page {$index}: " . $e->getMessage());
+                        continue;
                     }
                 }
                 
@@ -527,6 +607,234 @@ class FileProcessingService
             Log::error('OCR extraction failed: ' . $e->getMessage());
             return "Unable to extract text from this PDF. The system attempted OCR but encountered an error. Please try converting to a text-based format for better results.";
         }
+    }
+    
+    /**
+     * Extract text using Smalot PDF Parser with multiple approaches
+     */
+    private function extractWithSmalotParser($pdf): string
+    {
+        $text = '';
+        
+        // Approach 1: Simple getText()
+        try {
+            $simpleText = $pdf->getText();
+            if (!empty(trim($simpleText))) {
+                $text = $simpleText;
+                Log::info('Smalot simple extraction: ' . strlen(trim($text)) . ' chars');
+            }
+        } catch (\Exception $e) {
+            Log::warning('Smalot simple extraction failed: ' . $e->getMessage());
+        }
+        
+        // Approach 2: Page-by-page extraction
+        try {
+            $pages = $pdf->getPages();
+            if (is_array($pages) && count($pages) > 0) {
+                $pageText = '';
+                Log::info('Smalot page-by-page: processing ' . count($pages) . ' pages');
+                
+                for ($i = 0; $i < count($pages); $i++) {
+                    $page = $pages[$i];
+                    if ($page && method_exists($page, 'getText')) {
+                        try {
+                            $currentPageText = $page->getText();
+                            if ($currentPageText && trim($currentPageText)) {
+                                $pageText .= "=== PAGE " . ($i + 1) . " ===\n";
+                                $pageText .= $currentPageText . "\n\n";
+                            }
+                        } catch (\Exception $pageError) {
+                            Log::warning("Smalot page {$i} error: " . $pageError->getMessage());
+                        }
+                    }
+                }
+                
+                if (strlen(trim($pageText)) > strlen(trim($text))) {
+                    $text = $pageText;
+                    Log::info('Smalot page-by-page: ' . strlen(trim($text)) . ' chars');
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Smalot page-by-page failed: ' . $e->getMessage());
+        }
+        
+        return $text;
+    }
+    
+    /**
+     * Extract text using pdftotext command line tool
+     */
+    private function extractWithPdftotext(string $pdfPath): string
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'pdftotext_') . '.txt';
+        
+        // Try different pdftotext options
+        $commands = [
+            "pdftotext -layout \"{$pdfPath}\" \"{$tempFile}\" 2>/dev/null",
+            "pdftotext -raw \"{$pdfPath}\" \"{$tempFile}\" 2>/dev/null",
+            "pdftotext -bbox \"{$pdfPath}\" \"{$tempFile}\" 2>/dev/null"
+        ];
+        
+        $bestText = '';
+        
+        foreach ($commands as $index => $command) {
+            exec($command, $output, $returnCode);
+            
+            if (file_exists($tempFile) && filesize($tempFile) > 0) {
+                $text = file_get_contents($tempFile);
+                if (strlen(trim($text)) > strlen(trim($bestText))) {
+                    $bestText = $text;
+                    Log::info("pdftotext option " . ($index + 1) . ": " . strlen(trim($text)) . " chars");
+                }
+            }
+        }
+        
+        if (file_exists($tempFile)) {
+            unlink($tempFile);
+        }
+        
+        return $bestText;
+    }
+    
+    /**
+     * Extract text using pdftotext with various options for multi-page PDFs
+     */
+    private function extractWithPdftotextOptions(string $pdfPath): string
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'pdftotext_options_') . '.txt';
+        
+        // Try more aggressive options for multi-page PDFs
+        $commands = [
+            "pdftotext -layout -f 1 -l 20 \"{$pdfPath}\" \"{$tempFile}\" 2>/dev/null",
+            "pdftotext -raw -f 1 -l 20 \"{$pdfPath}\" \"{$tempFile}\" 2>/dev/null",
+            "pdftotext -table \"{$pdfPath}\" \"{$tempFile}\" 2>/dev/null",
+            "pdftotext -lineprinter \"{$pdfPath}\" \"{$tempFile}\" 2>/dev/null"
+        ];
+        
+        $bestText = '';
+        
+        foreach ($commands as $index => $command) {
+            exec($command, $output, $returnCode);
+            
+            if (file_exists($tempFile) && filesize($tempFile) > 0) {
+                $text = file_get_contents($tempFile);
+                if (strlen(trim($text)) > strlen(trim($bestText))) {
+                    $bestText = $text;
+                    Log::info("pdftotext options " . ($index + 1) . ": " . strlen(trim($text)) . " chars");
+                }
+            }
+        }
+        
+        if (file_exists($tempFile)) {
+            unlink($tempFile);
+        }
+        
+        return $bestText;
+    }
+    
+    /**
+     * Deduplicate text from multiple extraction methods
+     */
+    private function deduplicateText(array $results): string
+    {
+        if (count($results) < 2) {
+            return $results[0]['text'];
+        }
+        
+        // Start with the longest result
+        $bestResult = $results[0];
+        $text = $bestResult['text'];
+        
+        // Check if other results have significantly different content
+        for ($i = 1; $i < count($results); $i++) {
+            $currentResult = $results[$i];
+            $similarity = $this->calculateTextSimilarity($text, $currentResult['text']);
+            
+            Log::info("Similarity between {$bestResult['method']} and {$currentResult['method']}: " . round($similarity * 100, 2) . "%");
+            
+            // If similarity is low (< 80%), the results are different enough to consider merging
+            if ($similarity < 0.8) {
+                // Check if the current result has unique content not in the best result
+                $uniqueContent = $this->extractUniqueContent($text, $currentResult['text']);
+                if (!empty(trim($uniqueContent))) {
+                    Log::info("Found unique content in {$currentResult['method']}: " . strlen($uniqueContent) . " chars");
+                    $text .= "\n\n" . $uniqueContent;
+                }
+            }
+        }
+        
+        return $text;
+    }
+    
+    /**
+     * Calculate similarity between two texts (0-1 scale)
+     */
+    private function calculateTextSimilarity(string $text1, string $text2): float
+    {
+        // Normalize texts for comparison
+        $normalize = function($text) {
+            return strtolower(preg_replace('/\s+/', ' ', trim($text)));
+        };
+        
+        $norm1 = $normalize($text1);
+        $norm2 = $normalize($text2);
+        
+        // If one is much shorter, they're probably not similar
+        $len1 = strlen($norm1);
+        $len2 = strlen($norm2);
+        
+        if ($len1 == 0 || $len2 == 0) {
+            return 0;
+        }
+        
+        $ratio = min($len1, $len2) / max($len1, $len2);
+        if ($ratio < 0.5) {
+            return 0;
+        }
+        
+        // Use similar_text for similarity calculation
+        similar_text($norm1, $norm2, $percent);
+        return $percent / 100;
+    }
+    
+    /**
+     * Extract unique content from text2 that's not in text1
+     */
+    private function extractUniqueContent(string $text1, string $text2): string
+    {
+        // Split texts into sentences for better comparison
+        $sentences1 = preg_split('/[.!?]+/', $text1);
+        $sentences2 = preg_split('/[.!?]+/', $text2);
+        
+        $uniqueSentences = [];
+        
+        foreach ($sentences2 as $sentence2) {
+            $sentence2 = trim($sentence2);
+            if (empty($sentence2)) continue;
+            
+            $isUnique = true;
+            $norm2 = strtolower(preg_replace('/\s+/', ' ', $sentence2));
+            
+            foreach ($sentences1 as $sentence1) {
+                $sentence1 = trim($sentence1);
+                if (empty($sentence1)) continue;
+                
+                $norm1 = strtolower(preg_replace('/\s+/', ' ', $sentence1));
+                
+                // If sentences are very similar, it's not unique
+                similar_text($norm1, $norm2, $percent);
+                if ($percent > 85) {
+                    $isUnique = false;
+                    break;
+                }
+            }
+            
+            if ($isUnique) {
+                $uniqueSentences[] = $sentence2;
+            }
+        }
+        
+        return implode('. ', $uniqueSentences);
     }
 }
 
