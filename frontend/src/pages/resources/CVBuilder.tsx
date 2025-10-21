@@ -3646,52 +3646,6 @@ export default function CVBuilder() {
         container.remove();
       });
       
-      // Fourth pass: Reduce spacing between sections and elements
-      const sectionElements = previewDoc.querySelectorAll('.section, section, [class*="section"], div > h2, div > h3, div > h4');
-      sectionElements.forEach(section => {
-        if (section instanceof HTMLElement) {
-          // Reduce margins moderately
-          if (parseInt(section.style.marginTop || '0') > 8) {
-            section.style.marginTop = '8px';
-          }
-          if (parseInt(section.style.marginBottom || '0') > 8) {
-            section.style.marginBottom = '8px';
-          }
-          if (parseInt(section.style.paddingTop || '0') > 5) {
-            section.style.paddingTop = '5px';
-          }
-          if (parseInt(section.style.paddingBottom || '0') > 5) {
-            section.style.paddingBottom = '5px';
-          }
-        }
-      });
-      
-      // Fifth pass: Reduce spacing in specific elements
-      const headings = previewDoc.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      headings.forEach(heading => {
-        if (heading instanceof HTMLElement) {
-          if (parseInt(heading.style.marginTop || '0') > 6) {
-            heading.style.marginTop = '6px';
-          }
-          if (parseInt(heading.style.marginBottom || '0') > 4) {
-            heading.style.marginBottom = '4px';
-          }
-        }
-      });
-      
-      // Adjust paragraphs
-      const paragraphs = previewDoc.querySelectorAll('p');
-      paragraphs.forEach(p => {
-        if (p instanceof HTMLElement) {
-          if (parseInt(p.style.marginTop || '0') > 3) {
-            p.style.marginTop = '3px';
-          }
-          if (parseInt(p.style.marginBottom || '0') > 3) {
-            p.style.marginBottom = '3px';
-          }
-        }
-      });
-      
       // Get the cleaned HTML
       const cleanedHTML = previewDoc.body.innerHTML;
       
@@ -3712,6 +3666,9 @@ export default function CVBuilder() {
               background-color: white;
               color: black;
               font-family: Arial, sans-serif;
+              /* Force content to fit on a single page */
+              overflow: auto;
+              height: auto;
             }
             /* Hidden but parseable ATS content */
             .ats-content {
@@ -3730,6 +3687,9 @@ export default function CVBuilder() {
               margin: 0;
               padding: 0;
               box-sizing: border-box;
+              /* Ensure container fits on one page */
+              page-break-inside: avoid;
+              break-inside: avoid;
             }
             .cv-template {
               width: 100% !important;
@@ -3739,61 +3699,16 @@ export default function CVBuilder() {
               box-sizing: border-box !important;
               background-color: white !important;
               color: black !important;
-            }
-            /* Compact layout with minimal spacing */
-            .cv-template * {
-              line-height: 1.2 !important;
-            }
-            
-            .cv-template h1, 
-            .cv-template h2, 
-            .cv-template h3, 
-            .cv-template h4, 
-            .cv-template h5, 
-            .cv-template h6 {
-              margin-top: 4px !important;
-              margin-bottom: 4px !important;
-              line-height: 1.2 !important;
-            }
-            
-            .cv-template p {
-              margin-top: 3px !important;
-              margin-bottom: 3px !important;
-              line-height: 1.2 !important;
-            }
-            
-            .cv-template .section, 
-            .cv-template section, 
-            .cv-template [class*="section"] {
-              margin-top: 5px !important;
-              margin-bottom: 5px !important;
-              padding-top: 3px !important;
-              padding-bottom: 3px !important;
-            }
-            
-            .cv-template .item, 
-            .cv-template .experience-card, 
-            .cv-template .project-card, 
-            .cv-template .education-item, 
-            .cv-template .certificate-item {
-              margin-top: 3px !important;
-              margin-bottom: 3px !important;
-              padding-top: 2px !important;
-              padding-bottom: 2px !important;
-            }
-            
-            /* Force single page */
-            @page {
-              size: A4 portrait;
-              margin: 0;
-            }
-            
-            /* Prevent page breaks inside important sections */
-            .section {
+              /* Ensure template fits on one page */
               page-break-inside: avoid;
+              break-inside: avoid;
             }
-            .item {
-              page-break-inside: avoid;
+            /* Prevent ANY page breaks */
+            html, body, div, section, article, aside, header, footer, nav, figure, figcaption, 
+            main, form, fieldset, legend, pre, code, p, blockquote, ol, ul, li, dl, dt, dd, 
+            h1, h2, h3, h4, h5, h6, hr, table, caption, tbody, thead, tfoot, tr, th, td {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
             }
             /* Hide any remaining empty sections */
             .section:empty, 
@@ -3816,7 +3731,15 @@ export default function CVBuilder() {
               overflow: hidden !important;
             }
             
-            /* Empty sections will be hidden by JavaScript */
+            /* Target sections by title text */
+            h2:contains("Projects"), h3:contains("Projects"), h4:contains("Projects"),
+            h2:contains("Certificates"), h3:contains("Certificates"), h4:contains("Certificates"),
+            h2:contains("Languages"), h3:contains("Languages"), h4:contains("Languages"),
+            h2:contains("Achievements"), h3:contains("Achievements"), h4:contains("Achievements"),
+            h2:contains("Interests"), h3:contains("Interests"), h4:contains("Interests"),
+            h2:contains("References"), h3:contains("References"), h4:contains("References") {
+              display: none !important;
+            }
             
             /* Remove excessive spacing */
             .cv-template br + br,
@@ -3866,18 +3789,78 @@ export default function CVBuilder() {
       // Open the print dialog which allows saving as PDF
       setTimeout(() => {
         try {
-          // Set print options to prevent multiple pages if possible
+          // Set print options to force single page and prevent page breaks
           if (iframe.contentWindow?.document) {
             const styleElement = document.createElement('style');
             styleElement.textContent = `
               @media print {
                 body {
-                  width: 210mm;
-                  height: 297mm;
+                  margin: 10px !important;
+                  width: 910mm;
+                  height: 40000mm !important;
+                  overflow: visible !important;
+                  zoom: 99; /* Scale content to fit on one page */
+                }
+                
+                /* Force all content to fit on one page by disabling page breaks */
+                * {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                }
+                
+                /* Preserve template font size */
+                .cv-template {
+                  font-size: inherit !important;
+                }
+                
+                /* Reduce margins and padding */
+                div, section, p, h1, h2, h3, h4, h5, h6 {
+                  margin-top: 0.1em !important;
+                  margin-bottom: 0.1em !important;
+                  padding-top: 0.1em !important;
+                  padding-bottom: 0.1em !important;
+                }
+                
+                /* Compress vertical spacing */
+                .section, [class*="section"] {
+                  margin-bottom: 0.2em !important;
+                }
+                
+                /* Ensure single page */
+                @page {
+                  size: A4 portrait;
+                  margin: 10px !important;
                 }
               }
             `;
             iframe.contentWindow.document.head.appendChild(styleElement);
+            
+            // Add script to adjust content to fit on one page
+            const scriptElement = document.createElement('script');
+            scriptElement.textContent = `
+              window.onbeforeprint = function() {
+                // Ensure the template's original font size is preserved
+                const template = document.querySelector('.cv-template');
+                if (template) {
+                  // Extract font size from template style if available
+                  const templateStyle = window.getComputedStyle(template);
+                  const fontSize = templateStyle.fontSize;
+                  
+                  if (fontSize) {
+                    // Apply the template's font size to all text elements
+                    const textElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, span');
+                    textElements.forEach(el => {
+                      // Only set font size if it's smaller than the template's
+                      const elSize = window.getComputedStyle(el).fontSize;
+                      if (parseInt(elSize) < parseInt(fontSize)) {
+                        el.style.fontSize = fontSize;
+                      }
+                    });
+                  }
+                }
+              };
+            `;
+            iframe.contentWindow.document.head.appendChild(scriptElement);
           }
           
           // Focus the iframe
@@ -4109,52 +4092,6 @@ export default function CVBuilder() {
         container.remove();
       });
       
-      // Fourth pass: Reduce spacing between sections and elements
-      const sectionElements = previewDoc.querySelectorAll('.section, section, [class*="section"], div > h2, div > h3, div > h4');
-      sectionElements.forEach(section => {
-        if (section instanceof HTMLElement) {
-          // Reduce margins moderately
-          if (parseInt(section.style.marginTop || '0') > 8) {
-            section.style.marginTop = '8px';
-          }
-          if (parseInt(section.style.marginBottom || '0') > 8) {
-            section.style.marginBottom = '8px';
-          }
-          if (parseInt(section.style.paddingTop || '0') > 5) {
-            section.style.paddingTop = '5px';
-          }
-          if (parseInt(section.style.paddingBottom || '0') > 5) {
-            section.style.paddingBottom = '5px';
-          }
-        }
-      });
-      
-      // Fifth pass: Reduce spacing in specific elements
-      const headings = previewDoc.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      headings.forEach(heading => {
-        if (heading instanceof HTMLElement) {
-          if (parseInt(heading.style.marginTop || '0') > 6) {
-            heading.style.marginTop = '6px';
-          }
-          if (parseInt(heading.style.marginBottom || '0') > 4) {
-            heading.style.marginBottom = '4px';
-          }
-        }
-      });
-      
-      // Adjust paragraphs
-      const paragraphs = previewDoc.querySelectorAll('p');
-      paragraphs.forEach(p => {
-        if (p instanceof HTMLElement) {
-          if (parseInt(p.style.marginTop || '0') > 3) {
-            p.style.marginTop = '3px';
-          }
-          if (parseInt(p.style.marginBottom || '0') > 3) {
-            p.style.marginBottom = '3px';
-          }
-        }
-      });
-      
       // Get the cleaned HTML
       const cleanedHTML = previewDoc.body.innerHTML;
 
@@ -4237,7 +4174,36 @@ export default function CVBuilder() {
                 padding: 0; 
                 background: white; 
                 margin: 0;
+                width: 210mm;
+                height: auto !important;
+                overflow: visible !important;
+                zoom: 0.85; /* Scale content to fit on one page */
             }
+            
+            /* Force all content to fit on one page by disabling page breaks */
+            * {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            
+            /* Preserve template font size */
+            .cv-template {
+                font-size: inherit !important;
+            }
+            
+            /* Reduce margins and padding */
+            div, section, p, h1, h2, h3, h4, h5, h6 {
+                margin-top: 0.1em !important;
+                margin-bottom: 0.1em !important;
+                padding-top: 0.1em !important;
+                padding-bottom: 0.1em !important;
+            }
+            
+            /* Compress vertical spacing */
+            .section, [class*="section"] {
+                margin-bottom: 0.2em !important;
+            }
+            
             @page {
                 margin: 0;
                 size: A4 portrait;
@@ -4265,6 +4231,31 @@ export default function CVBuilder() {
         "telephone": "${cvData.phoneNumber || ''}",
         "address": "${cvData.address || ''}"
     }
+    </script>
+    
+    <!-- Script to preserve template font sizes -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Ensure the template's original font size is preserved
+      const template = document.querySelector('.cv-template');
+      if (template) {
+        // Extract font size from template style if available
+        const templateStyle = window.getComputedStyle(template);
+        const fontSize = templateStyle.fontSize;
+        
+        if (fontSize) {
+          // Apply the template's font size to all text elements
+          const textElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, span');
+          textElements.forEach(el => {
+            // Only set font size if it's smaller than the template's
+            const elSize = window.getComputedStyle(el).fontSize;
+            if (parseInt(elSize) < parseInt(fontSize)) {
+              el.style.fontSize = fontSize;
+            }
+          });
+        }
+      }
+    });
     </script>
 </body>
 </html>`;
