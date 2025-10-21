@@ -3435,6 +3435,11 @@ export default function CVBuilder() {
       const templateElement = previewElement.querySelector('.cv-template');
       const templateCSS = templateElement ? templateElement.getAttribute('style') || '' : '';
       
+      // Debug: Log the template HTML to see if colors are properly replaced
+      console.log('Template HTML with colors:', templateHTML.substring(0, 500));
+      console.log('CV Style:', cvStyle);
+      console.log('Template CSS:', templateCSS);
+      
       // Create ATS-friendly PDF using jsPDF's HTML method with template design
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -3477,9 +3482,39 @@ export default function CVBuilder() {
               padding: 0 !important;
             }
             
-            /* Force colors to be preserved */
-            * {
-              color: inherit !important;
+            /* Preserve template colors more carefully */
+            .cv-template * {
+              /* Don't force color inherit on all elements, let template colors work */
+            }
+            
+            /* Ensure specific color elements maintain their colors */
+            .name, .profile-name, h1, h2, h3, h4, h5, h6 {
+              /* Let template colors work naturally */
+            }
+            
+            .section-title, .right-section-title, .sidebar-section h3 {
+              /* Preserve section title colors */
+            }
+            
+            .item-title, .experience-header h4, .project-header h4 {
+              /* Preserve item title colors */
+            }
+            
+            .item-subtitle, .item-date {
+              /* Preserve subtitle and date colors */
+            }
+            
+            .contact, .contact-info, .contact-item {
+              /* Preserve contact info colors */
+            }
+            
+            /* Background colors for sections */
+            .left-sidebar, .sidebar {
+              /* Preserve sidebar background colors */
+            }
+            
+            .experience-card, .project-card, .certificate-item, .education-item, .achievement-item {
+              /* Preserve card background and border colors */
             }
             
             /* Hide empty sections */
@@ -3494,6 +3529,15 @@ export default function CVBuilder() {
               display: none !important;
             }
             
+            /* Print-specific styles to ensure colors are preserved */
+            @media print {
+              * {
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+            }
+            
           </style>
         </head>
         <body>
@@ -3503,7 +3547,7 @@ export default function CVBuilder() {
         </html>
       `;
 
-      // Generate PDF from HTML with proper scaling
+      // Generate PDF from HTML with proper scaling and color preservation
       await pdf.html(templateWithATS, {
         callback: function (_doc) {
           // PDF is ready
@@ -3514,10 +3558,20 @@ export default function CVBuilder() {
         windowWidth: 870, // Increased window width for better scaling
         margin: [5, 5, 5, 5], // Reduced margins
         html2canvas: {
-          scale: 0.22, // Reduced scale to prevent zooming
+          scale: 2, // Higher scale for better quality and color preservation
           useCORS: true,
           width: 800, // Fixed width
-          height: 1500 // Fixed height
+          height: 1500, // Fixed height
+          backgroundColor: '#ffffff', // Ensure white background
+          logging: false, // Disable logging for cleaner output
+          allowTaint: true, // Allow cross-origin images
+          foreignObjectRendering: true, // Better support for CSS
+          imageTimeout: 0, // No timeout for images
+          removeContainer: true, // Remove container after rendering
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 800,
+          windowHeight: 1200
         }
       });
       
