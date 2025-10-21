@@ -94,9 +94,10 @@ class UserApiKeyController extends Controller
             'user_id' => $user->id,
             'name' => $request->name,
             'api_key' => $request->api_key,
-            'requests_per_key' => 5, // Default 5 requests per key
+            'requests_per_key' => 100, // Default 100 requests per key
             'usage_count' => 0,
-            'is_active' => true
+            'is_active' => true,
+            'last_reset_at' => now()
         ]);
 
         return response()->json([

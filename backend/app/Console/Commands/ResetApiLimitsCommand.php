@@ -51,14 +51,13 @@ class ResetApiLimitsCommand extends Command
         $userKeys = UserApiKey::where('is_active', true)->get();
         
         foreach ($userKeys as $key) {
-            if ($force || $this->userKeyNeedsReset($key)) {
-                $key->update([
-                    'requests_per_key' => 100,
-                    'usage_count' => 0
-                ]);
+            if ($force || $key->needsDailyReset()) {
+                $key->resetDailyLimit();
                 $resetCount++;
                 $this->info("Reset user API key: {$key->name} (ID: {$key->id})");
                 Log::info("Daily API limit reset for user key: {$key->name} (ID: {$key->id})");
+            } else {
+                $this->line("Skipping user API key: {$key->name} - not due for reset yet");
             }
         }
         
@@ -66,20 +65,5 @@ class ResetApiLimitsCommand extends Command
         Log::info("Daily API limits reset completed. {$resetCount} keys were reset.");
         
         return Command::SUCCESS;
-    }
-    
-    /**
-     * Check if a user API key needs reset
-     */
-    private function userKeyNeedsReset(UserApiKey $key): bool
-    {
-        // For user keys, we'll reset if they have less than 50 requests remaining
-        // or if they've been used heavily (more than 80% of their limit)
-        $remainingRequests = $key->remaining_requests;
-        $usagePercentage = $key->requests_per_key > 0 
-            ? ($key->usage_count / $key->requests_per_key) * 100 
-            : 0;
-            
-        return $remainingRequests < 50 || $usagePercentage > 80;
     }
 }

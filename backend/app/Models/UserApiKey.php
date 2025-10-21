@@ -17,13 +17,15 @@ class UserApiKey extends Model
         'api_key',
         'requests_per_key',
         'usage_count',
-        'is_active'
+        'is_active',
+        'last_reset_at'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'requests_per_key' => 'integer',
-        'usage_count' => 'integer'
+        'usage_count' => 'integer',
+        'last_reset_at' => 'datetime'
     ];
     
     protected $hidden = [
@@ -94,5 +96,57 @@ class UserApiKey extends Model
     public function incrementUsage(): void
     {
         $this->increment('usage_count');
+    }
+    
+    /**
+     * Reset usage for this API key
+     */
+    public function resetUsage(): bool
+    {
+        return $this->update([
+            'usage_count' => 0,
+            'last_reset_at' => now()
+        ]);
+    }
+    
+    /**
+     * Reset usage and set daily limit to 100
+     */
+    public function resetDailyLimit(): bool
+    {
+        return $this->update([
+            'usage_count' => 0,
+            'requests_per_key' => 100,
+            'last_reset_at' => now()
+        ]);
+    }
+    
+    /**
+     * Check if this API key needs daily reset
+     */
+    public function needsDailyReset(): bool
+    {
+        if (!$this->last_reset_at) {
+            return true; // Never been reset
+        }
+        
+        // Check if it's been more than 24 hours since last reset
+        return $this->last_reset_at->addDay()->isPast();
+    }
+    
+    /**
+     * Get usage statistics
+     */
+    public function getUsageStats(): array
+    {
+        return [
+            'total_requests' => $this->requests_per_key,
+            'used_requests' => $this->usage_count,
+            'remaining_requests' => $this->remaining_requests,
+            'usage_percentage' => $this->requests_per_key > 0 
+                ? round(($this->usage_count / $this->requests_per_key) * 100, 2) 
+                : 0,
+            'last_reset_at' => $this->last_reset_at
+        ];
     }
 }

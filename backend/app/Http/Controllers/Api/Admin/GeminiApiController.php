@@ -263,10 +263,7 @@ class GeminiApiController extends Controller
             // Reset User API keys
             $userKeys = UserApiKey::where('is_active', true)->get();
             foreach ($userKeys as $key) {
-                $key->update([
-                    'requests_per_key' => 100,
-                    'usage_count' => 0
-                ]);
+                $key->resetDailyLimit();
                 $resetCount++;
             }
             
