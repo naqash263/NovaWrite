@@ -3646,6 +3646,33 @@ export default function CVBuilder() {
         container.remove();
       });
       
+      // Fourth pass: Reduce spacing between sections and elements
+      const sectionElements = previewDoc.querySelectorAll('.section, section, [class*="section"], div > h2, div > h3, div > h4');
+      sectionElements.forEach(section => {
+        if (section instanceof HTMLElement) {
+          // Reduce margins drastically
+          section.style.marginTop = '2px';
+          section.style.marginBottom = '2px';
+          section.style.paddingTop = '2px';
+          section.style.paddingBottom = '2px';
+        }
+      });
+      
+      // Fifth pass: Reduce spacing in all elements
+      const allElements = previewDoc.querySelectorAll('*');
+      allElements.forEach(element => {
+        if (element instanceof HTMLElement) {
+          // Reduce margins and paddings
+          element.style.marginBottom = '2px';
+          element.style.marginTop = '2px';
+          element.style.paddingBottom = '2px';
+          element.style.paddingTop = '2px';
+          
+          // Reduce line height
+          element.style.lineHeight = '1.1';
+        }
+      });
+      
       // Get the cleaned HTML
       const cleanedHTML = previewDoc.body.innerHTML;
       
@@ -3666,9 +3693,6 @@ export default function CVBuilder() {
               background-color: white;
               color: black;
               font-family: Arial, sans-serif;
-              /* Force content to fit on a single page */
-              overflow: hidden;
-              max-height: 297mm;
             }
             /* Hidden but parseable ATS content */
             .ats-content {
@@ -3687,9 +3711,6 @@ export default function CVBuilder() {
               margin: 0;
               padding: 0;
               box-sizing: border-box;
-              /* Force content to fit on a single page */
-              max-height: 297mm;
-              overflow: hidden;
             }
             .cv-template {
               width: 100% !important;
@@ -3699,17 +3720,52 @@ export default function CVBuilder() {
               box-sizing: border-box !important;
               background-color: white !important;
               color: black !important;
-              /* Force content to fit on a single page */
-              max-height: 295mm;
-              overflow: hidden;
-              transform: scale(0.95);
-              transform-origin: top center;
             }
-            /* Disable page breaks */
+            /* Compact layout with minimal spacing */
             * {
-              page-break-inside: avoid !important;
-              page-break-before: avoid !important;
-              page-break-after: avoid !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              line-height: 1.1 !important;
+            }
+            
+            h1, h2, h3, h4, h5, h6 {
+              margin-top: 2px !important;
+              margin-bottom: 2px !important;
+              line-height: 1.1 !important;
+            }
+            
+            p {
+              margin-top: 1px !important;
+              margin-bottom: 1px !important;
+              line-height: 1.1 !important;
+            }
+            
+            .section, section, [class*="section"] {
+              margin-top: 2px !important;
+              margin-bottom: 2px !important;
+              padding-top: 2px !important;
+              padding-bottom: 2px !important;
+            }
+            
+            .item, .experience-card, .project-card, .education-item, .certificate-item {
+              margin-top: 1px !important;
+              margin-bottom: 1px !important;
+              padding-top: 1px !important;
+              padding-bottom: 1px !important;
+            }
+            
+            /* Force single page */
+            @page {
+              size: A4 portrait;
+              margin: 0;
+            }
+            
+            /* Prevent page breaks inside important sections */
+            .section {
+              page-break-inside: avoid;
+            }
+            .item {
+              page-break-inside: avoid;
             }
             /* Hide any remaining empty sections */
             .section:empty, 
@@ -3790,99 +3846,14 @@ export default function CVBuilder() {
       // Open the print dialog which allows saving as PDF
       setTimeout(() => {
         try {
-          // Set print options to force single page
+          // Set print options to prevent multiple pages if possible
           if (iframe.contentWindow?.document) {
-            // Add dynamic scaling function to fit content on one page
-            const scriptElement = document.createElement('script');
-            scriptElement.textContent = `
-              function scaleContentToFitOnePage() {
-                const cvTemplate = document.querySelector('.cv-template');
-                if (!cvTemplate) return;
-                
-                const maxHeight = 297; // A4 height in mm
-                const currentHeight = cvTemplate.scrollHeight;
-                const pageHeight = 297 * 3.7795275591; // Convert mm to px (96dpi)
-                
-                // If content is taller than page, scale it down
-                if (currentHeight > pageHeight) {
-                  const scale = Math.min(0.95, pageHeight / currentHeight);
-                  cvTemplate.style.transform = 'scale(' + scale + ')';
-                  cvTemplate.style.transformOrigin = 'top center';
-                  console.log('Scaling CV content by factor:', scale);
-                }
-              }
-              
-              // Run immediately and also before print
-              scaleContentToFitOnePage();
-              
-              window.onbeforeprint = function() {
-                scaleContentToFitOnePage();
-                
-                // Force single page in print dialog
-                document.body.style.overflow = 'hidden';
-                document.body.style.maxHeight = '297mm';
-                
-                // Try to modify print settings programmatically
-                if (window.matchMedia) {
-                  const mediaQueryList = window.matchMedia('print');
-                  mediaQueryList.addListener(function(mql) {
-                    if (mql.matches) {
-                      document.body.style.overflow = 'hidden';
-                      document.body.style.maxHeight = '297mm';
-                    }
-                  });
-                }
-              };
-            `;
-            iframe.contentWindow.document.head.appendChild(scriptElement);
-            
-            // Add print-specific CSS
             const styleElement = document.createElement('style');
             styleElement.textContent = `
-              @page {
-                size: A4 portrait;
-                margin: 0;
-              }
-              
               @media print {
                 body {
                   width: 210mm;
                   height: 297mm;
-                  overflow: hidden !important;
-                }
-                
-                /* Force content to fit on a single page */
-                html, body, .cv-container, .cv-template {
-                  max-height: 297mm !important;
-                  overflow: hidden !important;
-                }
-                
-                /* Disable all page breaks */
-                * {
-                  page-break-inside: avoid !important;
-                  page-break-before: avoid !important;
-                  page-break-after: avoid !important;
-                }
-                
-                /* Compress vertical spacing */
-                .section {
-                  margin-bottom: 8px !important;
-                  padding-bottom: 0 !important;
-                }
-                
-                h1, h2, h3, h4, h5, h6 {
-                  margin-top: 8px !important;
-                  margin-bottom: 4px !important;
-                }
-                
-                p {
-                  margin-top: 2px !important;
-                  margin-bottom: 2px !important;
-                }
-                
-                .item, .experience-card, .project-card, .education-item {
-                  margin-bottom: 6px !important;
-                  padding-bottom: 0 !important;
                 }
               }
             `;
@@ -4116,6 +4087,33 @@ export default function CVBuilder() {
       const emptyContainers = previewDoc.querySelectorAll('div:empty, p:empty, section:empty, .section:empty, br + br');
       emptyContainers.forEach(container => {
         container.remove();
+      });
+      
+      // Fourth pass: Reduce spacing between sections and elements
+      const sectionElements = previewDoc.querySelectorAll('.section, section, [class*="section"], div > h2, div > h3, div > h4');
+      sectionElements.forEach(section => {
+        if (section instanceof HTMLElement) {
+          // Reduce margins drastically
+          section.style.marginTop = '2px';
+          section.style.marginBottom = '2px';
+          section.style.paddingTop = '2px';
+          section.style.paddingBottom = '2px';
+        }
+      });
+      
+      // Fifth pass: Reduce spacing in all elements
+      const allElements = previewDoc.querySelectorAll('*');
+      allElements.forEach(element => {
+        if (element instanceof HTMLElement) {
+          // Reduce margins and paddings
+          element.style.marginBottom = '2px';
+          element.style.marginTop = '2px';
+          element.style.paddingBottom = '2px';
+          element.style.paddingTop = '2px';
+          
+          // Reduce line height
+          element.style.lineHeight = '1.1';
+        }
       });
       
       // Get the cleaned HTML
