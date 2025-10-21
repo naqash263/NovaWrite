@@ -19,7 +19,7 @@ Route::get('/test-auth', function () {
         'user_id' => $user ? $user->id : null,
         'user_email' => $user ? $user->email : null
     ]);
-})->middleware('auth:api');
+})->middleware('api.auth');
 
 // Alert endpoints (no authentication required for critical alerts)
 Route::post('/alerts/critical', [App\Http\Controllers\Api\AlertController::class, 'sendCriticalAlert']);
@@ -728,7 +728,7 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
 });
 
 // User API Key Management (authenticated users only)
-Route::middleware('auth:api')->group(function () {
+Route::middleware('api.auth')->group(function () {
     Route::apiResource('user-api-keys', \App\Http\Controllers\Api\UserApiKeyController::class)->only(['index', 'store', 'destroy']);
     Route::get('user-api-keys/stats', [\App\Http\Controllers\Api\UserApiKeyController::class, 'stats']);
 });
