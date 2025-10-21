@@ -72,7 +72,14 @@ class UserApiKeyController extends Controller
         // Since api_key is encrypted, we need to get all keys and compare them
         $existingKeys = UserApiKey::where('user_id', $user->id)->get();
         $existingKey = $existingKeys->first(function ($key) use ($request) {
-            return $key->api_key === $request->api_key;
+            try {
+                // Decrypt the stored key and compare with the request key
+                $decryptedKey = $key->api_key; // This will use the accessor to decrypt
+                return $decryptedKey === $request->api_key;
+            } catch (\Exception $e) {
+                // If decryption fails, skip this key
+                return false;
+            }
         });
 
         if ($existingKey) {
@@ -83,10 +90,11 @@ class UserApiKeyController extends Controller
         }
 
         // Validate the API key by making a test request
-        if (!$this->validateApiKey($request->api_key)) {
+        $validationResult = $this->validateApiKey($request->api_key);
+        if (!$validationResult['valid']) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid API key. Please check your Gemini API key and try again.'
+                'message' => $validationResult['message']
             ], 400);
         }
 
@@ -167,12 +175,27 @@ class UserApiKeyController extends Controller
     /**
      * Validate API key by making a test request to Gemini.
      */
-    private function validateApiKey(string $apiKey): bool
+    private function validateApiKey(string $apiKey): array
     {
         try {
+            // Basic format validation
+            if (empty($apiKey) || strlen($apiKey) < 20) {
+                return [
+                    'valid' => false,
+                    'message' => 'API key appears to be invalid. Please check the format and try again.'
+                ];
+            }
+            
+            if (!str_starts_with($apiKey, 'AIza')) {
+                return [
+                    'valid' => false,
+                    'message' => 'Invalid API key format. Gemini API keys should start with "AIza".'
+                ];
+            }
+
             $response = \Http::withHeaders([
                 'Content-Type' => 'application/json',
-            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
+            ])->timeout(10)->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
                 'contents' => [
                     [
                         'parts' => [
@@ -182,10 +205,52 @@ class UserApiKeyController extends Controller
                 ]
             ]);
     
-            return $response->successful();
+            if ($response->successful()) {
+                return [
+                    'valid' => true,
+                    'message' => 'API key is valid'
+                ];
+            }
+            
+            // Parse error response for more specific messages
+            $errorData = $response->json();
+            if (isset($errorData['error']['message'])) {
+                $errorMessage = $errorData['error']['message'];
+                
+                if (str_contains($errorMessage, 'API_KEY_INVALID')) {
+                    return [
+                        'valid' => false,
+                        'message' => 'Invalid API key. Please check your Gemini API key and try again.'
+                    ];
+                } elseif (str_contains($errorMessage, 'API_KEY_EXPIRED')) {
+                    return [
+                        'valid' => false,
+                        'message' => 'API key has expired. Please generate a new key from Google AI Studio.'
+                    ];
+                } elseif (str_contains($errorMessage, 'QUOTA_EXCEEDED')) {
+                    return [
+                        'valid' => false,
+                        'message' => 'API key quota exceeded. Please check your usage limits.'
+                    ];
+                } else {
+                    return [
+                        'valid' => false,
+                        'message' => 'API key validation failed: ' . $errorMessage
+                    ];
+                }
+            }
+            
+            return [
+                'valid' => false,
+                'message' => 'API key validation failed. Please check your key and try again.'
+            ];
+            
         } catch (\Exception $e) {
             Log::error('User API key validation failed: ' . $e->getMessage());
-            return false;
+            return [
+                'valid' => false,
+                'message' => 'Unable to validate API key. Please check your internet connection and try again.'
+            ];
         }
     }
 }
