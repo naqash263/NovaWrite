@@ -9,6 +9,7 @@ import CVExportOptions from '../../components/cv-builder/CVExportOptions';
 import { API_CONFIG } from '../../config/api';
 import apiClient from '../../api/axios';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // Add custom CSS for mobile optimizations
 const MobileOptimizationStyles = () => (
@@ -3429,7 +3430,7 @@ export default function CVBuilder() {
       }
       
       // Get the rendered template HTML from the preview element
-      const templateHTML = previewElement.innerHTML;
+      let templateHTML = previewElement.innerHTML;
       
       // Get the template's CSS from the preview element's computed styles
       const templateElement = previewElement.querySelector('.cv-template');
@@ -3439,6 +3440,70 @@ export default function CVBuilder() {
       console.log('Template HTML with colors:', templateHTML.substring(0, 500));
       console.log('CV Style:', cvStyle);
       console.log('Template CSS:', templateCSS);
+      
+      // Ensure all placeholders are replaced in the template HTML
+      // This is a safety measure in case the preview element still has unprocessed placeholders
+      templateHTML = templateHTML.replace(/\{\{primaryColor\}\}/g, cvStyle.primaryColor);
+      templateHTML = templateHTML.replace(/\{\{secondaryColor\}\}/g, cvStyle.secondaryColor);
+      templateHTML = templateHTML.replace(/\{\{fontFamily\}\}/g, cvStyle.fontFamily);
+      templateHTML = templateHTML.replace(/\{\{fontSize\}\}/g, cvStyle.fontSize.toString());
+      
+      // Replace CV data placeholders
+      templateHTML = templateHTML.replace(/\{\{fullName\}\}/g, (cvData.fullName || ''));
+      templateHTML = templateHTML.replace(/\{\{jobTitle\}\}/g, (cvData.jobTitle || ''));
+      templateHTML = templateHTML.replace(/\{\{email\}\}/g, (cvData.email || ''));
+      templateHTML = templateHTML.replace(/\{\{phoneNumber\}\}/g, (cvData.phoneNumber || ''));
+      templateHTML = templateHTML.replace(/\{\{address\}\}/g, (cvData.address || ''));
+      templateHTML = templateHTML.replace(/\{\{professionalSummary\}\}/g, (cvData.professionalSummary || ''));
+      
+      // Handle array data types
+      if (cvData.workExperience && cvData.workExperience.length > 0) {
+        const workExpHTML = cvData.workExperience.map(exp => `
+          <div class="experience-card">
+            <div class="experience-header">
+              <h4 class="item-title">${exp.jobTitle || 'Position Title'}</h4>
+              <span class="item-date">${exp.startDate || 'Start Date'} - ${exp.endDate || 'Present'}</span>
+            </div>
+            <div class="item-subtitle">${exp.company || 'Company Name'}</div>
+            <p class="item-description">${exp.description || ''}</p>
+          </div>
+        `).join('');
+        templateHTML = templateHTML.replace(/\{\{workExperience\}\}/g, workExpHTML);
+      } else {
+        templateHTML = templateHTML.replace(/\{\{workExperience\}\}/g, '');
+      }
+      
+      if (cvData.education && cvData.education.length > 0) {
+        const educationHTML = cvData.education.map(edu => `
+          <div class="education-item">
+            <div class="education-header">
+              <h4 class="item-title">${edu.degree || 'Degree'}</h4>
+              <span class="item-date">${edu.graduationYear || 'Year'}</span>
+            </div>
+            <div class="item-subtitle">${edu.institution || 'Institution'}</div>
+          </div>
+        `).join('');
+        templateHTML = templateHTML.replace(/\{\{education\}\}/g, educationHTML);
+      } else {
+        templateHTML = templateHTML.replace(/\{\{education\}\}/g, '');
+      }
+      
+      if (cvData.skills) {
+        templateHTML = templateHTML.replace(/\{\{skills\}\}/g, (cvData.skills || ''));
+      } else {
+        templateHTML = templateHTML.replace(/\{\{skills\}\}/g, '');
+      }
+      
+      // Process Handlebars conditionals
+      templateHTML = templateHTML.replace(/\{\{#if profileImage\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, content) => {
+        if (cvData.profilePictureUrl && cvData.profilePictureUrl.trim()) {
+          return content.replace(/\{\{profileImage\}\}/g, cvData.profilePictureUrl);
+        }
+        return '';
+      });
+      
+      console.log('Processed template HTML length:', templateHTML.length);
+      console.log('Processed template HTML preview:', templateHTML.substring(0, 500));
       
       // Create ATS-friendly PDF using jsPDF's HTML method with template design
       const pdf = new jsPDF({
@@ -3548,32 +3613,80 @@ export default function CVBuilder() {
       `;
 
       // Generate PDF from HTML with proper scaling and color preservation
-      await pdf.html(templateWithATS, {
-        callback: function (_doc) {
-          // PDF is ready
-        },
-        x: 0,
-        y: 0,
-        width: 210, // A4 width in mm
-        windowWidth: 870, // Increased window width for better scaling
-        margin: [5, 5, 5, 5], // Reduced margins
-        html2canvas: {
-          scale: 2, // Higher scale for better quality and color preservation
-          useCORS: true,
-          width: 800, // Fixed width
-          height: 1500, // Fixed height
-          backgroundColor: '#ffffff', // Ensure white background
-          logging: false, // Disable logging for cleaner output
-          allowTaint: true, // Allow cross-origin images
-          foreignObjectRendering: true, // Better support for CSS
-          imageTimeout: 0, // No timeout for images
-          removeContainer: true, // Remove container after rendering
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: 800,
-          windowHeight: 1200
+      try {
+        await pdf.html(templateWithATS, {
+          callback: function (_doc) {
+            // PDF is ready
+          },
+          x: 0,
+          y: 0,
+          width: 210, // A4 width in mm
+          windowWidth: 870, // Increased window width for better scaling
+          margin: [5, 5, 5, 5], // Reduced margins
+          html2canvas: {
+            scale: 2, // Higher scale for better quality and color preservation
+            useCORS: true,
+            width: 800, // Fixed width
+            height: 1500, // Fixed height
+            backgroundColor: '#ffffff', // Ensure white background
+            logging: false, // Disable logging for cleaner output
+            allowTaint: true, // Allow cross-origin images
+            foreignObjectRendering: true, // Better support for CSS
+            imageTimeout: 0, // No timeout for images
+            removeContainer: true, // Remove container after rendering
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 800,
+            windowHeight: 1200
+          }
+        });
+      } catch (htmlError) {
+        console.warn('html2canvas method failed, trying alternative approach:', htmlError);
+        
+        // Fallback: Use a simpler approach without html2canvas
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = templateWithATS;
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.top = '0';
+        tempDiv.style.width = '800px';
+        tempDiv.style.backgroundColor = 'white';
+        document.body.appendChild(tempDiv);
+        
+        try {
+          // Use html2canvas directly on the temp element
+          const canvas = await html2canvas(tempDiv, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            allowTaint: true,
+            width: 800,
+            height: 1500
+          });
+          
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = 210; // A4 width in mm
+          const pageHeight = 297; // A4 height in mm
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          
+          let heightLeft = imgHeight;
+          let position = 0;
+          
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+          
+          while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+          }
+        } finally {
+          // Clean up
+          document.body.removeChild(tempDiv);
         }
-      });
+      }
       
       // Download the PDF
       const fileName = `${cvData.fullName?.replace(/[^a-zA-Z0-9]/g, '_') || 'CV'}_Resume.pdf`;
