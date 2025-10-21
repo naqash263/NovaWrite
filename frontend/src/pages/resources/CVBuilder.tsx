@@ -3438,14 +3438,62 @@ export default function CVBuilder() {
       // Debug: Log the template HTML to see if colors are properly replaced
       console.log('Template HTML with colors:', templateHTML.substring(0, 500));
       console.log('CV Style:', cvStyle);
+      console.log('Selected Template:', selectedTemplate);
       console.log('Template CSS:', templateCSS);
+      
+      // Extract colors from the selected template's HTML content
+      // Look for color definitions in the template's CSS
+      let templatePrimaryColor = '#2563eb'; // Default blue
+      let templateSecondaryColor = '#64748b'; // Default gray
+      let templateFontFamily = 'Arial, sans-serif'; // Default font
+      let templateFontSize = 12; // Default font size
+      
+      if (selectedTemplate && selectedTemplate.html_content) {
+        const templateContent = selectedTemplate.html_content;
+        
+        // Extract primary color from template CSS
+        const primaryColorMatch = templateContent.match(/primaryColor[^:]*:\s*([^;]+)/i) || 
+                                 templateContent.match(/color:\s*([^;]+)/i);
+        if (primaryColorMatch) {
+          templatePrimaryColor = primaryColorMatch[1].trim();
+        }
+        
+        // Extract secondary color from template CSS
+        const secondaryColorMatch = templateContent.match(/secondaryColor[^:]*:\s*([^;]+)/i) ||
+                                   templateContent.match(/color:\s*([^;]+)/i);
+        if (secondaryColorMatch) {
+          templateSecondaryColor = secondaryColorMatch[1].trim();
+        }
+        
+        // Extract font family from template CSS
+        const fontFamilyMatch = templateContent.match(/font-family[^:]*:\s*([^;]+)/i);
+        if (fontFamilyMatch) {
+          templateFontFamily = fontFamilyMatch[1].trim();
+        }
+        
+        // Extract font size from template CSS
+        const fontSizeMatch = templateContent.match(/font-size[^:]*:\s*([^;]+)/i);
+        if (fontSizeMatch) {
+          const size = parseInt(fontSizeMatch[1].trim());
+          if (!isNaN(size)) {
+            templateFontSize = size;
+          }
+        }
+      }
+      
+      console.log('Extracted template colors:', {
+        primary: templatePrimaryColor,
+        secondary: templateSecondaryColor,
+        fontFamily: templateFontFamily,
+        fontSize: templateFontSize
+      });
       
       // Ensure all placeholders are replaced in the template HTML
       // This is a safety measure in case the preview element still has unprocessed placeholders
-      templateHTML = templateHTML.replace(/\{\{primaryColor\}\}/g, cvStyle.primaryColor);
-      templateHTML = templateHTML.replace(/\{\{secondaryColor\}\}/g, cvStyle.secondaryColor);
-      templateHTML = templateHTML.replace(/\{\{fontFamily\}\}/g, cvStyle.fontFamily);
-      templateHTML = templateHTML.replace(/\{\{fontSize\}\}/g, cvStyle.fontSize.toString());
+      templateHTML = templateHTML.replace(/\{\{primaryColor\}\}/g, templatePrimaryColor);
+      templateHTML = templateHTML.replace(/\{\{secondaryColor\}\}/g, templateSecondaryColor);
+      templateHTML = templateHTML.replace(/\{\{fontFamily\}\}/g, templateFontFamily);
+      templateHTML = templateHTML.replace(/\{\{fontSize\}\}/g, templateFontSize.toString());
       
       // Replace CV data placeholders
       templateHTML = templateHTML.replace(/\{\{fullName\}\}/g, (cvData.fullName || ''));
@@ -3542,21 +3590,21 @@ export default function CVBuilder() {
             .header {
               text-align: center;
               margin-bottom: 20px;
-              
-              border-bottom: 2px solid ${cvStyle.primaryColor};
+              color: ${templatePrimaryColor} !important;
+              border-bottom: 2px solid ${templatePrimaryColor};
               padding-bottom: 15px;
             }
             
             .name {
               font-size: 18px;
               font-weight: bold;
-              color: ${cvStyle.primaryColor} !important;
+              color: ${templatePrimaryColor} !important;
               margin-bottom: 3px;
             }
             
             .title {
               font-size: 12px;
-              color: ${cvStyle.secondaryColor} !important;
+              color: ${templateSecondaryColor} !important;
               margin-bottom: 8px;
             }
             
@@ -3568,13 +3616,14 @@ export default function CVBuilder() {
             /* Section styles */
             .section {
               margin-bottom: 20px;
+              color: ${templatePrimaryColor} !important;
             }
             
             .section-title {
               font-size: 12px;
               font-weight: bold;
-              color: ${cvStyle.primaryColor} !important;
-              border-bottom: 1px solid ${cvStyle.primaryColor} !important;
+              color: ${templatePrimaryColor} !important;
+              border-bottom: 1px solid ${templatePrimaryColor} !important;
               padding-bottom: 3px;
               margin-bottom: 8px;
             }
@@ -3583,7 +3632,7 @@ export default function CVBuilder() {
             .experience-card, .education-item, .project-card {
               margin-bottom: 15px;
               padding: 10px;
-              border-left: 3px solid ${cvStyle.primaryColor} !important;
+              border-left: 3px solid ${templatePrimaryColor} !important;
               background: #f9f9f9;
             }
             
@@ -3595,7 +3644,7 @@ export default function CVBuilder() {
             }
             
             .item-subtitle {
-              color: ${cvStyle.secondaryColor} !important;
+              color: ${templateSecondaryColor} !important;
               font-size: 10px;
               margin-bottom: 2px;
             }
@@ -3622,7 +3671,7 @@ export default function CVBuilder() {
               margin-bottom: 10px;
               padding: 8px;
               background: #f0f0f0;
-              border-left: 3px solid ${cvStyle.primaryColor} !important;
+              border-left: 3px solid ${templatePrimaryColor} !important;
             }
             
             /* Hide empty sections */
@@ -3648,18 +3697,18 @@ export default function CVBuilder() {
               
               .name {
                 font-size: 16px !important;
-                color: ${cvStyle.primaryColor} !important;
+                color: ${templatePrimaryColor} !important;
               }
               
               .title {
                 font-size: 11px !important;
-                color: ${cvStyle.secondaryColor} !important;
+                color: ${templateSecondaryColor} !important;
               }
               
               .section-title {
                 font-size: 11px !important;
-                color: ${cvStyle.primaryColor} !important;
-                border-bottom-color: ${cvStyle.primaryColor} !important;
+                color: ${templatePrimaryColor} !important;
+                border-bottom-color: ${templatePrimaryColor} !important;
               }
               
               .item-title {
@@ -3668,7 +3717,7 @@ export default function CVBuilder() {
               
               .item-subtitle {
                 font-size: 9px !important;
-                color: ${cvStyle.secondaryColor} !important;
+                color: ${templateSecondaryColor} !important;
               }
               
               .item-description {
@@ -3676,11 +3725,11 @@ export default function CVBuilder() {
               }
               
               .experience-card, .education-item, .project-card {
-                border-left-color: ${cvStyle.primaryColor} !important;
+                border-left-color: ${templatePrimaryColor} !important;
               }
               
               .skill-category {
-                border-left-color: ${cvStyle.primaryColor} !important;
+                border-left-color: ${templatePrimaryColor} !important;
               }
               
               * {
@@ -3709,23 +3758,23 @@ export default function CVBuilder() {
           callback: function (_doc) {
             console.log('ATS-friendly PDF generation completed');
           },
-          x: 0,
+          x: -30,
           y: 0,
           width: 210, // A4 width in mm
           windowWidth: 1025, // Window width for better scaling
-          margin: [10, 10, 10, 10], // Reasonable margins
+          margin: [1, 1, 1, 1], // Reasonable margins
           html2canvas: {
-            scale: 0.8, // Better scale for single page
+            scale: 0.26, // Better scale for single page
             useCORS: true,
             backgroundColor: '#ffffff',
             logging: false,
             allowTaint: true,
             width: 1025, // Width for better scaling
-            height: 1400, // Reduced height to fit single page
+            height: 1600, // Reduced height to fit single page
             scrollX: 0,
             scrollY: 0,
             windowWidth: 1025,
-            windowHeight: 1400
+            windowHeight: 1600
           }
         });
         
