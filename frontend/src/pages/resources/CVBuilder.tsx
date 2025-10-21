@@ -3553,11 +3553,13 @@ export default function CVBuilder() {
       console.log('Processed template HTML preview:', templateHTML.substring(0, 500));
       
       // Create ATS-friendly PDF using jsPDF's HTML method with template design
-      let pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
+        let pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+          putOnlyUsedFonts: true,
+          compress: true
+        });
 
       // Create ATS-friendly HTML document with proper text structure
       const templateWithATS = `
@@ -3575,6 +3577,8 @@ export default function CVBuilder() {
               font-size: 10px;
               line-height: 1.3;
               color: #333;
+              min-height: auto;
+              height: auto;
             }
             
             /* Template styles with ATS-friendly structure */
@@ -3584,13 +3588,15 @@ export default function CVBuilder() {
               margin: 0;
               padding: 0;
               background: white;
+              min-height: auto;
+              height: auto;
             }
             
             /* Header styles */
             .header {
               text-align: center;
               margin-bottom: 20px;
-              color: ${templatePrimaryColor} !important;
+              color: ${cvStyle.primaryColor} !important;
               border-bottom: 2px solid ${templatePrimaryColor};
               padding-bottom: 15px;
               background-color: ${cvStyle.primaryColor} !important;
@@ -3791,19 +3797,18 @@ export default function CVBuilder() {
           width: 210, // A4 width in mm
           windowWidth: 1025, // Window width for better scaling
           margin: [1, 1, 1, 1], // Reasonable margins
-          html2canvas: {
-            scale: 0.26, // Better scale for single page
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            logging: false,
-            allowTaint: true,
-            width: 1025, // Width for better scaling
-            height: 1600, // Reduced height to fit single page
-            scrollX: 0,
-            scrollY: 0,
-            windowWidth: 1025,
-            windowHeight: 1600
-          }
+            html2canvas: {
+              scale: 0.26, // Better scale for single page
+              useCORS: true,
+              backgroundColor: '#ffffff',
+              logging: false,
+              allowTaint: true,
+              width: 1025, // Width for better scaling
+              scrollX: 0,
+              scrollY: 0,
+              windowWidth: 1025
+              // Removed height and windowHeight to allow auto-sizing
+            }
         });
         
         console.log('ATS-friendly PDF generation completed successfully');
