@@ -769,10 +769,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       {/* API Key Status */}
                       <div className="px-3 py-2">
                         <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-500 text-sm">AI Requests:</span>
-                            <span className="font-medium text-gray-700">0/0</span>
-                          </div>
                           <ApiKeyManager />
                         </div>
                       </div>

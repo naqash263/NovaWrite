@@ -116,13 +116,16 @@ const ApiKeyManager: React.FC = () => {
   return (
     <>
       {/* API Stats Display */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center justify-between w-full">
         <div className="flex items-center space-x-2 text-sm">
           <span className="text-gray-600">AI Requests:</span>
           <span className={`font-semibold ${apiStats.availableRequests > 0 ? 'text-green-600' : 'text-red-600'}`}>
             {apiStats.availableRequests}
           </span>
-          <span className="text-gray-500">/ {apiStats.totalRequests}</span>
+          <span className="text-gray-500">/ {apiStats.totalRequests || 100}</span>
+          {apiStats.totalRequests === 0 && (
+            <span className="text-xs text-gray-400">(Add API key for 100 daily requests)</span>
+          )}
         </div>
         
         <button
@@ -153,11 +156,11 @@ const ApiKeyManager: React.FC = () => {
 
               <div className="space-y-4">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-green-900 mb-2">🚀 Free AI-Powered Tools</h4>
+                  <h4 className="font-semibold text-green-900 mb-2">🚀 100 Daily AI Requests</h4>
                   <ul className="text-sm text-green-800 space-y-1">
-                    <li>• Get unlimited CV processing for free</li>
+                    <li>• Get 100 AI requests per day (resets daily)</li>
                     <li>• Faster processing with dedicated resources</li>
-                    <li>• Support the platform's free tools for everyone</li>
+                    <li>• Free CV processing and tailoring</li>
                     <li>• Your key is only used for your account</li>
                   </ul>
                 </div>

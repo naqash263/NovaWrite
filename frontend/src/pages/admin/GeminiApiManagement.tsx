@@ -79,7 +79,7 @@ export default function GeminiApiManagement() {
     is_active: true
   });
   const [userKeyFormData, setUserKeyFormData] = useState({
-    requests_per_key: 10,
+    requests_per_key: 100,
     is_active: true
   });
   const [testing, setTesting] = useState<number | null>(null);
