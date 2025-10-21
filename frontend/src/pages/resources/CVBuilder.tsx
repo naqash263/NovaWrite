@@ -9,7 +9,6 @@ import CVExportOptions from '../../components/cv-builder/CVExportOptions';
 import { API_CONFIG } from '../../config/api';
 import apiClient from '../../api/axios';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 // Add custom CSS for mobile optimizations
 const MobileOptimizationStyles = () => (
@@ -3512,90 +3511,139 @@ export default function CVBuilder() {
         format: 'a4'
       });
 
-      // Create HTML document that combines template design with ATS-friendly structure
+      // Create ATS-friendly HTML document with proper text structure
       const templateWithATS = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <style>
-            /* Import the template's original CSS */
-            ${document.querySelector('style')?.textContent || ''}
-            
-            /* Get all style tags from the document */
-            ${Array.from(document.querySelectorAll('style')).map(style => style.textContent).join('\n')}
-            
-            /* Template inline styles */
-            .cv-template {
-              ${templateCSS}
-            }
-            
-            /* Override for PDF generation */
+            /* ATS-friendly styles with template design */
             body {
               margin: 0;
-              padding: 10mm;
+              padding: 15mm;
               background: white;
-              font-size: 11px;
+              font-family: Arial, sans-serif;
+              font-size: 12px;
               line-height: 1.4;
+              color: #333;
             }
             
-            /* Ensure template styles work in PDF */
+            /* Template styles with ATS-friendly structure */
             .cv-template {
-              width: 100% !important;
-              max-width: none !important;
-              margin: 0 !important;
-              padding: 0 !important;
+              width: 100%;
+              max-width: none;
+              margin: 0;
+              padding: 0;
+              background: white;
             }
             
-            /* Preserve template colors more carefully */
-            .cv-template * {
-              /* Don't force color inherit on all elements, let template colors work */
+            /* Header styles */
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+              border-bottom: 2px solid ${cvStyle.primaryColor};
+              padding-bottom: 15px;
             }
             
-            /* Ensure specific color elements maintain their colors */
-            .name, .profile-name, h1, h2, h3, h4, h5, h6 {
-              /* Let template colors work naturally */
+            .name {
+              font-size: 24px;
+              font-weight: bold;
+              color: ${cvStyle.primaryColor};
+              margin-bottom: 5px;
             }
             
-            .section-title, .right-section-title, .sidebar-section h3 {
-              /* Preserve section title colors */
+            .title {
+              font-size: 16px;
+              color: ${cvStyle.secondaryColor};
+              margin-bottom: 10px;
             }
             
-            .item-title, .experience-header h4, .project-header h4 {
-              /* Preserve item title colors */
+            .contact {
+              font-size: 12px;
+              color: #666;
             }
             
-            .item-subtitle, .item-date {
-              /* Preserve subtitle and date colors */
+            /* Section styles */
+            .section {
+              margin-bottom: 20px;
             }
             
-            .contact, .contact-info, .contact-item {
-              /* Preserve contact info colors */
+            .section-title {
+              font-size: 16px;
+              font-weight: bold;
+              color: ${cvStyle.primaryColor};
+              border-bottom: 1px solid ${cvStyle.primaryColor};
+              padding-bottom: 5px;
+              margin-bottom: 10px;
             }
             
-            /* Background colors for sections */
-            .left-sidebar, .sidebar {
-              /* Preserve sidebar background colors */
+            /* Experience and Education styles */
+            .experience-card, .education-item, .project-card {
+              margin-bottom: 15px;
+              padding: 10px;
+              border-left: 3px solid ${cvStyle.primaryColor};
+              background: #f9f9f9;
             }
             
-            .experience-card, .project-card, .certificate-item, .education-item, .achievement-item {
-              /* Preserve card background and border colors */
+            .item-title {
+              font-weight: bold;
+              font-size: 14px;
+              color: #2c3e50;
+              margin-bottom: 3px;
+            }
+            
+            .item-subtitle {
+              color: ${cvStyle.secondaryColor};
+              font-size: 12px;
+              margin-bottom: 3px;
+            }
+            
+            .item-date {
+              color: #666;
+              font-size: 11px;
+              font-style: italic;
+            }
+            
+            .item-description {
+              margin-top: 8px;
+              font-size: 11px;
+              line-height: 1.3;
+              color: #555;
+            }
+            
+            /* Skills styles */
+            .skills-container {
+              display: block;
+            }
+            
+            .skill-category {
+              margin-bottom: 10px;
+              padding: 8px;
+              background: #f0f0f0;
+              border-left: 3px solid ${cvStyle.primaryColor};
             }
             
             /* Hide empty sections */
             .section:empty, 
-            [class*="section"]:empty, 
-            div[id*="projects"]:empty,
-            div[id*="certificates"]:empty,
-            div[id*="languages"]:empty,
-            div[id*="achievements"]:empty,
-            div[id*="interests"]:empty,
-            div[id*="references"]:empty {
+            [class*="section"]:empty {
               display: none !important;
             }
             
-            /* Print-specific styles to ensure colors are preserved */
+            /* Print styles for better PDF output */
             @media print {
+              body {
+                font-size: 11px;
+                line-height: 1.3;
+              }
+              
+              .cv-template {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              
               * {
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
@@ -3606,87 +3654,46 @@ export default function CVBuilder() {
           </style>
         </head>
         <body>
-          <!-- Template HTML with design and data (includes embedded styles) -->
-          ${templateHTML}
+          <div class="cv-template">
+            ${templateHTML}
+          </div>
         </body>
         </html>
       `;
 
-      // Generate PDF using direct html2canvas approach for better reliability
-      console.log('Creating temporary element for PDF generation...');
-      
-      // Create a temporary container for the CV content with optimized dimensions
-      const tempContainer = document.createElement('div');
-      tempContainer.innerHTML = templateWithATS;
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.width = '600px'; // Reduced width for smaller file size
-      tempContainer.style.backgroundColor = 'white';
-      tempContainer.style.fontFamily = 'Arial, sans-serif';
-      tempContainer.style.fontSize = '12px'; // Slightly smaller font for better fit
-      tempContainer.style.lineHeight = '1.3'; // Tighter line height
-      tempContainer.style.color = '#333';
-      tempContainer.style.padding = '15px'; // Reduced padding
-      tempContainer.style.boxSizing = 'border-box';
-      
-      // Add to DOM temporarily
-      document.body.appendChild(tempContainer);
+      // Generate ATS-friendly PDF using jsPDF's HTML method
+      console.log('Generating ATS-friendly PDF...');
       
       try {
-        console.log('Rendering CV with html2canvas...');
-        
-        // Wait a bit for the element to render
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Use html2canvas to capture the content with optimized settings
-        const canvas = await html2canvas(tempContainer, {
-          scale: 1.0, // Reduced scale for smaller file size
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          logging: false, // Disable logging for production
-          allowTaint: true,
-          width: 600, // Reduced width for smaller file size
-          height: 800, // Reduced height for smaller file size
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: 600,
-          windowHeight: 800
+        // Use jsPDF's HTML method for ATS-friendly text-based PDF
+        await pdf.html(templateWithATS, {
+          callback: function (_doc) {
+            console.log('ATS-friendly PDF generation completed');
+          },
+          x: 0,
+          y: 0,
+          width: 210, // A4 width in mm
+          windowWidth: 800, // Window width for rendering
+          margin: [10, 10, 10, 10], // Small margins
+          html2canvas: {
+            scale: 1.5, // Good quality for text readability
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            allowTaint: true,
+            width: 800,
+            height: 1200,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 800,
+            windowHeight: 1200
+          }
         });
         
-        console.log('Canvas created:', canvas.width, 'x', canvas.height);
+        console.log('ATS-friendly PDF generation completed successfully');
         
-        // Convert canvas to image data with optimized compression
-        const imgData = canvas.toDataURL('image/jpeg', 0.75); // Use JPEG with 75% quality for smaller file size
-        console.log('Image data length:', imgData.length);
-        
-        // Calculate dimensions for PDF
-        const imgWidth = 210; // A4 width in mm
-        const pageHeight = 297; // A4 height in mm
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        console.log('PDF dimensions:', imgWidth, 'x', imgHeight, 'mm');
-        
-        // Add the image to PDF - single page approach
-        // Scale the image to fit within A4 dimensions
-        const maxHeight = pageHeight - 10; // Leave some margin
-        const scaleFactor = Math.min(1, maxHeight / imgHeight);
-        const scaledWidth = imgWidth * scaleFactor;
-        const scaledHeight = imgHeight * scaleFactor;
-        
-        // Center the image on the page
-        const xOffset = (210 - scaledWidth) / 2; // Center horizontally
-        const yOffset = (pageHeight - scaledHeight) / 2; // Center vertically
-        
-        pdf.addImage(imgData, 'JPEG', xOffset, yOffset, scaledWidth, scaledHeight);
-        
-        console.log('PDF dimensions:', scaledWidth, 'x', scaledHeight, 'mm');
-        console.log('Image positioned at:', xOffset, yOffset);
-        
-        console.log('PDF generation completed successfully');
-        
-      } catch (canvasError) {
-        console.error('html2canvas failed:', canvasError);
+      } catch (htmlError) {
+        console.error('jsPDF HTML method failed:', htmlError);
         
         // Final fallback: Create a simple text-based PDF
         console.log('Using text-based fallback...');
@@ -3761,10 +3768,8 @@ export default function CVBuilder() {
         console.log('Text-based PDF fallback completed');
         
       } finally {
-        // Clean up the temporary element
-        if (document.body.contains(tempContainer)) {
-          document.body.removeChild(tempContainer);
-        }
+        // Clean up completed
+        console.log('PDF generation cleanup completed');
       }
       
       // Download the PDF
