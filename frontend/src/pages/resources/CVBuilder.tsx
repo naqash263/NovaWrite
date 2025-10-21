@@ -3650,26 +3650,45 @@ export default function CVBuilder() {
       const sectionElements = previewDoc.querySelectorAll('.section, section, [class*="section"], div > h2, div > h3, div > h4');
       sectionElements.forEach(section => {
         if (section instanceof HTMLElement) {
-          // Reduce margins drastically
-          section.style.marginTop = '2px';
-          section.style.marginBottom = '2px';
-          section.style.paddingTop = '2px';
-          section.style.paddingBottom = '2px';
+          // Reduce margins moderately
+          if (parseInt(section.style.marginTop || '0') > 8) {
+            section.style.marginTop = '8px';
+          }
+          if (parseInt(section.style.marginBottom || '0') > 8) {
+            section.style.marginBottom = '8px';
+          }
+          if (parseInt(section.style.paddingTop || '0') > 5) {
+            section.style.paddingTop = '5px';
+          }
+          if (parseInt(section.style.paddingBottom || '0') > 5) {
+            section.style.paddingBottom = '5px';
+          }
         }
       });
       
-      // Fifth pass: Reduce spacing in all elements
-      const allElements = previewDoc.querySelectorAll('*');
-      allElements.forEach(element => {
-        if (element instanceof HTMLElement) {
-          // Reduce margins and paddings
-          element.style.marginBottom = '2px';
-          element.style.marginTop = '2px';
-          element.style.paddingBottom = '2px';
-          element.style.paddingTop = '2px';
-          
-          // Reduce line height
-          element.style.lineHeight = '1.1';
+      // Fifth pass: Reduce spacing in specific elements
+      const headings = previewDoc.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      headings.forEach(heading => {
+        if (heading instanceof HTMLElement) {
+          if (parseInt(heading.style.marginTop || '0') > 6) {
+            heading.style.marginTop = '6px';
+          }
+          if (parseInt(heading.style.marginBottom || '0') > 4) {
+            heading.style.marginBottom = '4px';
+          }
+        }
+      });
+      
+      // Adjust paragraphs
+      const paragraphs = previewDoc.querySelectorAll('p');
+      paragraphs.forEach(p => {
+        if (p instanceof HTMLElement) {
+          if (parseInt(p.style.marginTop || '0') > 3) {
+            p.style.marginTop = '3px';
+          }
+          if (parseInt(p.style.marginBottom || '0') > 3) {
+            p.style.marginBottom = '3px';
+          }
         }
       });
       
@@ -3722,36 +3741,45 @@ export default function CVBuilder() {
               color: black !important;
             }
             /* Compact layout with minimal spacing */
-            * {
-              margin: 0 !important;
-              padding: 0 !important;
-              line-height: 1.1 !important;
+            .cv-template * {
+              line-height: 1.2 !important;
             }
             
-            h1, h2, h3, h4, h5, h6 {
-              margin-top: 2px !important;
-              margin-bottom: 2px !important;
-              line-height: 1.1 !important;
+            .cv-template h1, 
+            .cv-template h2, 
+            .cv-template h3, 
+            .cv-template h4, 
+            .cv-template h5, 
+            .cv-template h6 {
+              margin-top: 4px !important;
+              margin-bottom: 4px !important;
+              line-height: 1.2 !important;
             }
             
-            p {
-              margin-top: 1px !important;
-              margin-bottom: 1px !important;
-              line-height: 1.1 !important;
+            .cv-template p {
+              margin-top: 3px !important;
+              margin-bottom: 3px !important;
+              line-height: 1.2 !important;
             }
             
-            .section, section, [class*="section"] {
-              margin-top: 2px !important;
-              margin-bottom: 2px !important;
+            .cv-template .section, 
+            .cv-template section, 
+            .cv-template [class*="section"] {
+              margin-top: 5px !important;
+              margin-bottom: 5px !important;
+              padding-top: 3px !important;
+              padding-bottom: 3px !important;
+            }
+            
+            .cv-template .item, 
+            .cv-template .experience-card, 
+            .cv-template .project-card, 
+            .cv-template .education-item, 
+            .cv-template .certificate-item {
+              margin-top: 3px !important;
+              margin-bottom: 3px !important;
               padding-top: 2px !important;
               padding-bottom: 2px !important;
-            }
-            
-            .item, .experience-card, .project-card, .education-item, .certificate-item {
-              margin-top: 1px !important;
-              margin-bottom: 1px !important;
-              padding-top: 1px !important;
-              padding-bottom: 1px !important;
             }
             
             /* Force single page */
@@ -3788,15 +3816,7 @@ export default function CVBuilder() {
               overflow: hidden !important;
             }
             
-            /* Target sections by title text */
-            h2:contains("Projects"), h3:contains("Projects"), h4:contains("Projects"),
-            h2:contains("Certificates"), h3:contains("Certificates"), h4:contains("Certificates"),
-            h2:contains("Languages"), h3:contains("Languages"), h4:contains("Languages"),
-            h2:contains("Achievements"), h3:contains("Achievements"), h4:contains("Achievements"),
-            h2:contains("Interests"), h3:contains("Interests"), h4:contains("Interests"),
-            h2:contains("References"), h3:contains("References"), h4:contains("References") {
-              display: none !important;
-            }
+            /* Empty sections will be hidden by JavaScript */
             
             /* Remove excessive spacing */
             .cv-template br + br,
@@ -4093,26 +4113,45 @@ export default function CVBuilder() {
       const sectionElements = previewDoc.querySelectorAll('.section, section, [class*="section"], div > h2, div > h3, div > h4');
       sectionElements.forEach(section => {
         if (section instanceof HTMLElement) {
-          // Reduce margins drastically
-          section.style.marginTop = '2px';
-          section.style.marginBottom = '2px';
-          section.style.paddingTop = '2px';
-          section.style.paddingBottom = '2px';
+          // Reduce margins moderately
+          if (parseInt(section.style.marginTop || '0') > 8) {
+            section.style.marginTop = '8px';
+          }
+          if (parseInt(section.style.marginBottom || '0') > 8) {
+            section.style.marginBottom = '8px';
+          }
+          if (parseInt(section.style.paddingTop || '0') > 5) {
+            section.style.paddingTop = '5px';
+          }
+          if (parseInt(section.style.paddingBottom || '0') > 5) {
+            section.style.paddingBottom = '5px';
+          }
         }
       });
       
-      // Fifth pass: Reduce spacing in all elements
-      const allElements = previewDoc.querySelectorAll('*');
-      allElements.forEach(element => {
-        if (element instanceof HTMLElement) {
-          // Reduce margins and paddings
-          element.style.marginBottom = '2px';
-          element.style.marginTop = '2px';
-          element.style.paddingBottom = '2px';
-          element.style.paddingTop = '2px';
-          
-          // Reduce line height
-          element.style.lineHeight = '1.1';
+      // Fifth pass: Reduce spacing in specific elements
+      const headings = previewDoc.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      headings.forEach(heading => {
+        if (heading instanceof HTMLElement) {
+          if (parseInt(heading.style.marginTop || '0') > 6) {
+            heading.style.marginTop = '6px';
+          }
+          if (parseInt(heading.style.marginBottom || '0') > 4) {
+            heading.style.marginBottom = '4px';
+          }
+        }
+      });
+      
+      // Adjust paragraphs
+      const paragraphs = previewDoc.querySelectorAll('p');
+      paragraphs.forEach(p => {
+        if (p instanceof HTMLElement) {
+          if (parseInt(p.style.marginTop || '0') > 3) {
+            p.style.marginTop = '3px';
+          }
+          if (parseInt(p.style.marginBottom || '0') > 3) {
+            p.style.marginBottom = '3px';
+          }
         }
       });
       
