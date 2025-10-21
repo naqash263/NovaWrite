@@ -3521,11 +3521,11 @@ export default function CVBuilder() {
             /* ATS-friendly styles with template design */
             body {
               margin: 0;
-              padding: 15mm;
+              padding: 10mm;
               background: white;
               font-family: Arial, sans-serif;
-              font-size: 12px;
-              line-height: 1.4;
+              font-size: 10px;
+              line-height: 1.3;
               color: #333;
             }
             
@@ -3542,25 +3542,26 @@ export default function CVBuilder() {
             .header {
               text-align: center;
               margin-bottom: 20px;
+              
               border-bottom: 2px solid ${cvStyle.primaryColor};
               padding-bottom: 15px;
             }
             
             .name {
-              font-size: 24px;
+              font-size: 18px;
               font-weight: bold;
               color: ${cvStyle.primaryColor};
-              margin-bottom: 5px;
+              margin-bottom: 3px;
             }
             
             .title {
-              font-size: 16px;
+              font-size: 12px;
               color: ${cvStyle.secondaryColor};
-              margin-bottom: 10px;
+              margin-bottom: 8px;
             }
             
             .contact {
-              font-size: 12px;
+              font-size: 9px;
               color: #666;
             }
             
@@ -3570,12 +3571,12 @@ export default function CVBuilder() {
             }
             
             .section-title {
-              font-size: 16px;
+              font-size: 12px;
               font-weight: bold;
               color: ${cvStyle.primaryColor};
               border-bottom: 1px solid ${cvStyle.primaryColor};
-              padding-bottom: 5px;
-              margin-bottom: 10px;
+              padding-bottom: 3px;
+              margin-bottom: 8px;
             }
             
             /* Experience and Education styles */
@@ -3588,27 +3589,27 @@ export default function CVBuilder() {
             
             .item-title {
               font-weight: bold;
-              font-size: 14px;
+              font-size: 11px;
               color: #2c3e50;
-              margin-bottom: 3px;
+              margin-bottom: 2px;
             }
             
             .item-subtitle {
               color: ${cvStyle.secondaryColor};
-              font-size: 12px;
-              margin-bottom: 3px;
+              font-size: 10px;
+              margin-bottom: 2px;
             }
             
             .item-date {
               color: #666;
-              font-size: 11px;
+              font-size: 9px;
               font-style: italic;
             }
             
             .item-description {
-              margin-top: 8px;
-              font-size: 11px;
-              line-height: 1.3;
+              margin-top: 5px;
+              font-size: 9px;
+              line-height: 1.2;
               color: #555;
             }
             
@@ -3633,8 +3634,9 @@ export default function CVBuilder() {
             /* Print styles for better PDF output */
             @media print {
               body {
-                font-size: 11px;
-                line-height: 1.3;
+                font-size: 9px;
+                line-height: 1.2;
+                padding: 8mm;
               }
               
               .cv-template {
@@ -3642,6 +3644,30 @@ export default function CVBuilder() {
                 max-width: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
+              }
+              
+              .name {
+                font-size: 16px !important;
+              }
+              
+              .title {
+                font-size: 11px !important;
+              }
+              
+              .section-title {
+                font-size: 11px !important;
+              }
+              
+              .item-title {
+                font-size: 10px !important;
+              }
+              
+              .item-subtitle {
+                font-size: 9px !important;
+              }
+              
+              .item-description {
+                font-size: 8px !important;
               }
               
               * {
@@ -3673,20 +3699,20 @@ export default function CVBuilder() {
           x: 0,
           y: 0,
           width: 210, // A4 width in mm
-          windowWidth: 800, // Window width for rendering
-          margin: [10, 10, 10, 10], // Small margins
+          windowWidth: 1200, // Larger window width for better scaling
+          margin: [15, 15, 15, 15], // Increased margins
           html2canvas: {
-            scale: 1.5, // Good quality for text readability
+            scale: 1.0, // Reduced scale to prevent zooming
             useCORS: true,
             backgroundColor: '#ffffff',
             logging: false,
             allowTaint: true,
-            width: 800,
-            height: 1200,
+            width: 1200, // Larger width for better scaling
+            height: 1600, // Larger height
             scrollX: 0,
             scrollY: 0,
-            windowWidth: 800,
-            windowHeight: 1200
+            windowWidth: 1200,
+            windowHeight: 1600
           }
         });
         
