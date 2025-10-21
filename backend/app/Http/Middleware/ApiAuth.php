@@ -61,7 +61,9 @@ class ApiAuth
             \Log::info('JWT authentication result', [
                 'user_found' => $user ? true : false,
                 'user_id' => $user ? $user->id : null,
-                'user_email' => $user ? $user->email : null
+                'user_email' => $user ? $user->email : null,
+                'user_class' => $user ? get_class($user) : null,
+                'user_exists' => $user ? $user->exists : null
             ]);
             
             if (!$user) {
