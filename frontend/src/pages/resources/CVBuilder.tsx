@@ -3506,7 +3506,7 @@ export default function CVBuilder() {
       console.log('Processed template HTML preview:', templateHTML.substring(0, 500));
       
       // Create ATS-friendly PDF using jsPDF's HTML method with template design
-      const pdf = new jsPDF({
+      let pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
@@ -3612,79 +3612,156 @@ export default function CVBuilder() {
         </html>
       `;
 
-      // Generate PDF from HTML with proper scaling and color preservation
+      // Generate PDF using direct html2canvas approach for better reliability
+      console.log('Creating temporary element for PDF generation...');
+      
+      // Create a temporary container for the CV content
+      const tempContainer = document.createElement('div');
+      tempContainer.innerHTML = templateWithATS;
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '800px';
+      tempContainer.style.backgroundColor = 'white';
+      tempContainer.style.fontFamily = 'Arial, sans-serif';
+      tempContainer.style.fontSize = '14px';
+      tempContainer.style.lineHeight = '1.4';
+      tempContainer.style.color = '#333';
+      tempContainer.style.padding = '20px';
+      tempContainer.style.boxSizing = 'border-box';
+      
+      // Add to DOM temporarily
+      document.body.appendChild(tempContainer);
+      
       try {
-        await pdf.html(templateWithATS, {
-          callback: function (_doc) {
-            // PDF is ready
-          },
-          x: 0,
-          y: 0,
-          width: 210, // A4 width in mm
-          windowWidth: 870, // Increased window width for better scaling
-          margin: [5, 5, 5, 5], // Reduced margins
-          html2canvas: {
-            scale: 2, // Higher scale for better quality and color preservation
-            useCORS: true,
-            width: 800, // Fixed width
-            height: 1500, // Fixed height
-            backgroundColor: '#ffffff', // Ensure white background
-            logging: false, // Disable logging for cleaner output
-            allowTaint: true, // Allow cross-origin images
-            foreignObjectRendering: true, // Better support for CSS
-            imageTimeout: 0, // No timeout for images
-            removeContainer: true, // Remove container after rendering
-            scrollX: 0,
-            scrollY: 0,
-            windowWidth: 800,
-            windowHeight: 1200
-          }
+        console.log('Rendering CV with html2canvas...');
+        
+        // Wait a bit for the element to render
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Use html2canvas to capture the content
+        const canvas = await html2canvas(tempContainer, {
+          scale: 1.5, // Good balance between quality and performance
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: true, // Enable logging to debug
+          allowTaint: true,
+          width: 800,
+          height: 1200,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 800,
+          windowHeight: 1200
         });
-      } catch (htmlError) {
-        console.warn('html2canvas method failed, trying alternative approach:', htmlError);
         
-        // Fallback: Use a simpler approach without html2canvas
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = templateWithATS;
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.left = '-9999px';
-        tempDiv.style.top = '0';
-        tempDiv.style.width = '800px';
-        tempDiv.style.backgroundColor = 'white';
-        document.body.appendChild(tempDiv);
+        console.log('Canvas created:', canvas.width, 'x', canvas.height);
         
-        try {
-          // Use html2canvas directly on the temp element
-          const canvas = await html2canvas(tempDiv, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            logging: false,
-            allowTaint: true,
-            width: 800,
-            height: 1500
-          });
-          
-          const imgData = canvas.toDataURL('image/png');
-          const imgWidth = 210; // A4 width in mm
-          const pageHeight = 297; // A4 height in mm
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
-          let heightLeft = imgHeight;
-          let position = 0;
-          
+        // Convert canvas to image data
+        const imgData = canvas.toDataURL('image/png', 0.95);
+        console.log('Image data length:', imgData.length);
+        
+        // Calculate dimensions for PDF
+        const imgWidth = 210; // A4 width in mm
+        const pageHeight = 297; // A4 height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        console.log('PDF dimensions:', imgWidth, 'x', imgHeight, 'mm');
+        
+        // Add the image to PDF
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        
+        // Handle multiple pages if content is too tall
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        while (heightLeft >= pageHeight) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
           pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
           heightLeft -= pageHeight;
-          
-          while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
+        }
+        
+        console.log('PDF generation completed successfully');
+        
+      } catch (canvasError) {
+        console.error('html2canvas failed:', canvasError);
+        
+        // Final fallback: Create a simple text-based PDF
+        console.log('Using text-based fallback...');
+        
+        // Clear the PDF
+        pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        // Add text content
+        let yPosition = 20;
+        const pageHeight = 280;
+        const lineHeight = 7;
+        
+        const addText = (text: string, fontSize: number = 12, isBold: boolean = false) => {
+          if (yPosition > pageHeight) {
             pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+            yPosition = 20;
           }
-        } finally {
-          // Clean up
-          document.body.removeChild(tempDiv);
+          
+          pdf.setFontSize(fontSize);
+          if (isBold) {
+            pdf.setFont('helvetica', 'bold');
+          } else {
+            pdf.setFont('helvetica', 'normal');
+          }
+          
+          pdf.text(text, 20, yPosition);
+          yPosition += lineHeight;
+        };
+        
+        // Add CV content
+        addText(cvData.fullName || 'CV', 20, true);
+        addText(cvData.jobTitle || '', 14);
+        addText(`${cvData.email || ''} | ${cvData.phoneNumber || ''} | ${cvData.address || ''}`, 10);
+        addText('', 5); // Empty line
+        
+        if (cvData.professionalSummary) {
+          addText('PROFESSIONAL SUMMARY', 14, true);
+          addText(cvData.professionalSummary, 10);
+          addText('', 5);
+        }
+        
+        if (cvData.workExperience && cvData.workExperience.length > 0) {
+          addText('WORK EXPERIENCE', 14, true);
+          cvData.workExperience.forEach(job => {
+            addText(`${job.jobTitle} | ${job.company}`, 12, true);
+            addText(`${job.startDate} - ${job.endDate}`, 10);
+            if (job.description) {
+              addText(job.description, 10);
+            }
+            addText('', 3);
+          });
+        }
+        
+        if (cvData.education && cvData.education.length > 0) {
+          addText('EDUCATION', 14, true);
+          cvData.education.forEach(edu => {
+            addText(`${edu.degree} | ${edu.institution}`, 12, true);
+            addText(edu.graduationYear || '', 10);
+            addText('', 3);
+          });
+        }
+        
+        if (cvData.skills) {
+          addText('SKILLS', 14, true);
+          addText(cvData.skills, 10);
+        }
+        
+        console.log('Text-based PDF fallback completed');
+        
+      } finally {
+        // Clean up the temporary element
+        if (document.body.contains(tempContainer)) {
+          document.body.removeChild(tempContainer);
         }
       }
       
