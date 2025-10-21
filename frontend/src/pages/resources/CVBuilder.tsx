@@ -3667,19 +3667,21 @@ export default function CVBuilder() {
         
         console.log('PDF dimensions:', imgWidth, 'x', imgHeight, 'mm');
         
-        // Add the image to PDF
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        // Add the image to PDF - single page approach
+        // Scale the image to fit within A4 dimensions
+        const maxHeight = pageHeight - 10; // Leave some margin
+        const scaleFactor = Math.min(1, maxHeight / imgHeight);
+        const scaledWidth = imgWidth * scaleFactor;
+        const scaledHeight = imgHeight * scaleFactor;
         
-        // Handle multiple pages if content is too tall
-        let heightLeft = imgHeight;
-        let position = 0;
+        // Center the image on the page
+        const xOffset = (210 - scaledWidth) / 2; // Center horizontally
+        const yOffset = (pageHeight - scaledHeight) / 2; // Center vertically
         
-        while (heightLeft >= pageHeight) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-        }
+        pdf.addImage(imgData, 'PNG', xOffset, yOffset, scaledWidth, scaledHeight);
+        
+        console.log('PDF dimensions:', scaledWidth, 'x', scaledHeight, 'mm');
+        console.log('Image positioned at:', xOffset, yOffset);
         
         console.log('PDF generation completed successfully');
         
