@@ -19,6 +19,14 @@ class Kernel extends ConsoleKernel
                  ->timezone('UTC')
                  ->withoutOverlapping()
                  ->runInBackground();
+                 
+        // Reset API limits daily at 1:00 AM UTC
+        $schedule->command('api:reset-limits')
+                 ->daily()
+                 ->at('01:00')
+                 ->timezone('UTC')
+                 ->withoutOverlapping()
+                 ->runInBackground();
     }
 
     /**

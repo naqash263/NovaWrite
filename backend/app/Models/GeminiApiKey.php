@@ -16,14 +16,16 @@ class GeminiApiKey extends Model
         'max_requests',
         'total_requests',
         'used_requests',
-        'is_active'
+        'is_active',
+        'last_reset_at'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'max_requests' => 'integer',
         'total_requests' => 'integer',
-        'used_requests' => 'integer'
+        'used_requests' => 'integer',
+        'last_reset_at' => 'datetime'
     ];
 
     protected $hidden = [
@@ -96,7 +98,36 @@ class GeminiApiKey extends Model
      */
     public function resetUsage(): bool
     {
-        return $this->update(['used_requests' => 0]);
+        return $this->update([
+            'used_requests' => 0,
+            'last_reset_at' => now()
+        ]);
+    }
+    
+    /**
+     * Reset usage and set daily limit to 100
+     */
+    public function resetDailyLimit(): bool
+    {
+        return $this->update([
+            'used_requests' => 0,
+            'total_requests' => 100,
+            'max_requests' => 100,
+            'last_reset_at' => now()
+        ]);
+    }
+    
+    /**
+     * Check if this API key needs daily reset
+     */
+    public function needsDailyReset(): bool
+    {
+        if (!$this->last_reset_at) {
+            return true; // Never been reset
+        }
+        
+        // Check if it's been more than 24 hours since last reset
+        return $this->last_reset_at->addDay()->isPast();
     }
 
     /**
