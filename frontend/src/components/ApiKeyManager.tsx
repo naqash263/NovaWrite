@@ -49,16 +49,12 @@ const ApiKeyManager: React.FC = () => {
           });
         }
       } catch (authError) {
-        // If user-specific stats fail, fall back to public stats
-        console.warn('Failed to load user-specific API stats, falling back to public stats:', authError);
-        const response = await apiClient.get('/cv-ai/stats');
-        const data = response.data;
-        if (data.success) {
-          setApiStats({
-            availableRequests: data.data.available_requests,
-            totalRequests: data.data.total_requests
-          });
-        }
+        // If user-specific stats fail, show default values (no API key added yet)
+        console.warn('Failed to load user-specific API stats:', authError);
+        setApiStats({
+          availableRequests: 0,
+          totalRequests: 0
+        });
       }
     } catch (error) {
       console.error('Failed to load API stats:', error);

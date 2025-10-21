@@ -521,7 +521,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
                     <span className="text-gray-500">AI:</span>
                     <span className="font-medium text-gray-700">0/0</span>
-                    <ApiKeyManager />
+                    {user && <ApiKeyManager />}
                   </div>
                   
                   {/* User Dropdown */}

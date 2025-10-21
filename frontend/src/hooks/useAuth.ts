@@ -23,9 +23,16 @@ export function useAuth() {
 
   const fetchUser = async () => {
     try {
+      // Ensure the API client has the current token
+      const currentToken = localStorage.getItem('token');
+      if (currentToken) {
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+      }
+      
       const response = await apiClient.get('/auth/me');
       setUser(response.data);
     } catch (error) {
+      console.error('Failed to fetch user:', error);
       logout();
     } finally {
       setLoading(false);

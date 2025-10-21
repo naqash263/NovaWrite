@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import apiClient from '../../api/axios';
 
 const GoogleSuccess: React.FC = () => {
   const navigate = useNavigate();
@@ -30,10 +31,7 @@ const GoogleSuccess: React.FC = () => {
         setTokenState(token);
 
         // Update API client with new token
-        const apiClient = (window as any).apiClient;
-        if (apiClient) {
-          apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        }
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
         // Show success message and redirect
         setTimeout(() => {
