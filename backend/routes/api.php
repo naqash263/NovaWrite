@@ -749,8 +749,8 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
 
 // User API Key Management (authenticated users only)
 Route::middleware('api.auth')->group(function () {
-    Route::apiResource('user-api-keys', \App\Http\Controllers\Api\UserApiKeyController::class)->only(['index', 'store', 'destroy']);
     Route::get('user-api-keys/stats', [\App\Http\Controllers\Api\UserApiKeyController::class, 'stats']);
+    Route::apiResource('user-api-keys', \App\Http\Controllers\Api\UserApiKeyController::class)->only(['index', 'store', 'destroy']);
 });
 
 // CV AI Routes (public)
