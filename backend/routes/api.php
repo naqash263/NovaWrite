@@ -11,6 +11,16 @@ Route::get('/health/comprehensive', [App\Http\Controllers\Api\HealthController::
 Route::get('/health/database', [App\Http\Controllers\Api\HealthController::class, 'database']);
 Route::get('/health/storage', [App\Http\Controllers\Api\HealthController::class, 'storage']);
 
+// Test authentication endpoint
+Route::get('/test-auth', function () {
+    $user = Auth::user();
+    return response()->json([
+        'authenticated' => Auth::check(),
+        'user_id' => $user ? $user->id : null,
+        'user_email' => $user ? $user->email : null
+    ]);
+})->middleware('auth:api');
+
 // Alert endpoints (no authentication required for critical alerts)
 Route::post('/alerts/critical', [App\Http\Controllers\Api\AlertController::class, 'sendCriticalAlert']);
 Route::get('/alerts/recent', [App\Http\Controllers\Api\AlertController::class, 'getRecentAlerts']);
