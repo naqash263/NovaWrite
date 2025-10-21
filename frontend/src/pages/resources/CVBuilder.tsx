@@ -3550,13 +3550,13 @@ export default function CVBuilder() {
             .name {
               font-size: 18px;
               font-weight: bold;
-              color: ${cvStyle.primaryColor};
+              color: ${cvStyle.primaryColor} !important;
               margin-bottom: 3px;
             }
             
             .title {
               font-size: 12px;
-              color: ${cvStyle.secondaryColor};
+              color: ${cvStyle.secondaryColor} !important;
               margin-bottom: 8px;
             }
             
@@ -3573,8 +3573,8 @@ export default function CVBuilder() {
             .section-title {
               font-size: 12px;
               font-weight: bold;
-              color: ${cvStyle.primaryColor};
-              border-bottom: 1px solid ${cvStyle.primaryColor};
+              color: ${cvStyle.primaryColor} !important;
+              border-bottom: 1px solid ${cvStyle.primaryColor} !important;
               padding-bottom: 3px;
               margin-bottom: 8px;
             }
@@ -3583,7 +3583,7 @@ export default function CVBuilder() {
             .experience-card, .education-item, .project-card {
               margin-bottom: 15px;
               padding: 10px;
-              border-left: 3px solid ${cvStyle.primaryColor};
+              border-left: 3px solid ${cvStyle.primaryColor} !important;
               background: #f9f9f9;
             }
             
@@ -3595,7 +3595,7 @@ export default function CVBuilder() {
             }
             
             .item-subtitle {
-              color: ${cvStyle.secondaryColor};
+              color: ${cvStyle.secondaryColor} !important;
               font-size: 10px;
               margin-bottom: 2px;
             }
@@ -3622,7 +3622,7 @@ export default function CVBuilder() {
               margin-bottom: 10px;
               padding: 8px;
               background: #f0f0f0;
-              border-left: 3px solid ${cvStyle.primaryColor};
+              border-left: 3px solid ${cvStyle.primaryColor} !important;
             }
             
             /* Hide empty sections */
@@ -3648,14 +3648,18 @@ export default function CVBuilder() {
               
               .name {
                 font-size: 16px !important;
+                color: ${cvStyle.primaryColor} !important;
               }
               
               .title {
                 font-size: 11px !important;
+                color: ${cvStyle.secondaryColor} !important;
               }
               
               .section-title {
                 font-size: 11px !important;
+                color: ${cvStyle.primaryColor} !important;
+                border-bottom-color: ${cvStyle.primaryColor} !important;
               }
               
               .item-title {
@@ -3664,10 +3668,19 @@ export default function CVBuilder() {
               
               .item-subtitle {
                 font-size: 9px !important;
+                color: ${cvStyle.secondaryColor} !important;
               }
               
               .item-description {
                 font-size: 8px !important;
+              }
+              
+              .experience-card, .education-item, .project-card {
+                border-left-color: ${cvStyle.primaryColor} !important;
+              }
+              
+              .skill-category {
+                border-left-color: ${cvStyle.primaryColor} !important;
               }
               
               * {
@@ -3699,20 +3712,20 @@ export default function CVBuilder() {
           x: 0,
           y: 0,
           width: 210, // A4 width in mm
-          windowWidth: 1200, // Larger window width for better scaling
-          margin: [15, 15, 15, 15], // Increased margins
+          windowWidth: 1025, // Window width for better scaling
+          margin: [10, 10, 10, 10], // Reasonable margins
           html2canvas: {
-            scale: 1.0, // Reduced scale to prevent zooming
+            scale: 0.8, // Better scale for single page
             useCORS: true,
             backgroundColor: '#ffffff',
             logging: false,
             allowTaint: true,
-            width: 1200, // Larger width for better scaling
-            height: 1600, // Larger height
+            width: 1025, // Width for better scaling
+            height: 1400, // Reduced height to fit single page
             scrollX: 0,
             scrollY: 0,
-            windowWidth: 1200,
-            windowHeight: 1600
+            windowWidth: 1025,
+            windowHeight: 1400
           }
         });
         
