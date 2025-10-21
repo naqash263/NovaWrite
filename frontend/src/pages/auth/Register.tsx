@@ -63,16 +63,12 @@ export default function Register() {
   };
 
   const handleGoogleSuccess = (user: any) => {
-    if (user.role === 'admin') {
-      navigate('/admin');
-    } else {
-      // Show success popup for regular users
-      setSuccess(true);
-      setVerificationEmail(user.email);
-      setTimeout(() => {
-        window.location.reload(); // Refresh to show user name
-      }, 2000);
-    }
+    // Show success popup for all users - no automatic redirects
+    setSuccess(true);
+    setVerificationEmail(user.email);
+    setTimeout(() => {
+      window.location.reload(); // Refresh to show user name
+    }, 2000);
   };
 
   const handleGoogleError = (error: string) => {

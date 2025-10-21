@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { GoogleLoginButton } from '../../components/GoogleLoginButton';
 import axios from 'axios';
@@ -15,7 +15,6 @@ export default function Login() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
-  const navigate = useNavigate();
   const { login } = useAuth();
 
   // Countdown timer effect
@@ -62,16 +61,12 @@ export default function Login() {
     }
   };
 
-  const handleGoogleSuccess = (user: any) => {
-    if (user.role === 'admin') {
-      navigate('/admin');
-    } else {
-      // Show success popup for regular users
-      setShowSuccess(true);
-      setTimeout(() => {
-        window.location.reload(); // Refresh to show user name
-      }, 2000);
-    }
+  const handleGoogleSuccess = () => {
+    // Show success popup for all users - no automatic redirects
+    setShowSuccess(true);
+    setTimeout(() => {
+      window.location.reload(); // Refresh to show user name
+    }, 2000);
   };
 
   const handleGoogleError = (error: string) => {
@@ -84,18 +79,13 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await login(email, password);
-      const { user } = response;
+      await login(email, password);
       
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        // Show success popup for regular users
-        setShowSuccess(true);
-        setTimeout(() => {
-          window.location.reload(); // Refresh to show user name
-        }, 2000);
-      }
+      // Show success popup for all users - no automatic redirects
+      setShowSuccess(true);
+      setTimeout(() => {
+        window.location.reload(); // Refresh to show user name
+      }, 2000);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Login failed. Please try again.';
       const isEmailNotVerified = err.response?.data?.email_verification_required;

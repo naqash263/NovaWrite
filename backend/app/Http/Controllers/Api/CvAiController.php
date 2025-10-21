@@ -239,6 +239,7 @@ class CvAiController extends Controller
         }
 
         try {
+            Log::info('extractCvFromContent called, getting API key');
             // Get available API key (user-specific or admin)
             $apiKey = $this->getAvailableApiKey();
             
@@ -551,17 +552,21 @@ class CvAiController extends Controller
     private function getAvailableApiKey()
     {
         try {
-            $user = Auth::user();
+            $user = Auth::guard('api')->user();
 
             // If user is authenticated, try to use their API keys first
             if ($user) {
+                Log::info('User authenticated, looking for user API keys', ['user_id' => $user->id]);
                 $userApiKey = UserApiKey::where('user_id', $user->id)
                     ->active()
                     ->withRemainingRequests()
                     ->first();
 
                 if ($userApiKey) {
+                    Log::info('Found user API key', ['key_id' => $userApiKey->id, 'user_id' => $user->id]);
                     return $userApiKey;
+                } else {
+                    Log::info('No user API key found for user', ['user_id' => $user->id]);
                 }
             }
 

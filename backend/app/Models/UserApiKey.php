@@ -15,16 +15,16 @@ class UserApiKey extends Model
         'user_id',
         'name',
         'api_key',
-        'requests_per_key',
-        'usage_count',
+        'max_requests',
+        'used_requests',
         'is_active',
         'last_reset_at'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'requests_per_key' => 'integer',
-        'usage_count' => 'integer',
+        'max_requests' => 'integer',
+        'used_requests' => 'integer',
         'last_reset_at' => 'datetime'
     ];
     
@@ -71,7 +71,7 @@ class UserApiKey extends Model
      */
     public function scopeWithRemainingRequests($query)
     {
-        return $query->whereRaw('usage_count < requests_per_key');
+        return $query->whereRaw('used_requests < max_requests');
     }
 
     /**
@@ -79,7 +79,7 @@ class UserApiKey extends Model
      */
     public function getRemainingRequestsAttribute(): int
     {
-        return max(0, $this->requests_per_key - $this->usage_count);
+        return max(0, $this->max_requests - $this->used_requests);
     }
 
     /**
@@ -95,7 +95,7 @@ class UserApiKey extends Model
      */
     public function incrementUsage(): void
     {
-        $this->increment('usage_count');
+        $this->increment('used_requests');
     }
     
     /**
@@ -104,7 +104,7 @@ class UserApiKey extends Model
     public function resetUsage(): bool
     {
         return $this->update([
-            'usage_count' => 0,
+            'used_requests' => 0,
             'last_reset_at' => now()
         ]);
     }
@@ -115,8 +115,8 @@ class UserApiKey extends Model
     public function resetDailyLimit(): bool
     {
         return $this->update([
-            'usage_count' => 0,
-            'requests_per_key' => 100,
+            'used_requests' => 0,
+            'max_requests' => 100,
             'last_reset_at' => now()
         ]);
     }
@@ -140,11 +140,11 @@ class UserApiKey extends Model
     public function getUsageStats(): array
     {
         return [
-            'total_requests' => $this->requests_per_key,
-            'used_requests' => $this->usage_count,
+            'total_requests' => $this->max_requests,
+            'used_requests' => $this->used_requests,
             'remaining_requests' => $this->remaining_requests,
-            'usage_percentage' => $this->requests_per_key > 0 
-                ? round(($this->usage_count / $this->requests_per_key) * 100, 2) 
+            'usage_percentage' => $this->max_requests > 0 
+                ? round(($this->used_requests / $this->max_requests) * 100, 2) 
                 : 0,
             'last_reset_at' => $this->last_reset_at
         ];

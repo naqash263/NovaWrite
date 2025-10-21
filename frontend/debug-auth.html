@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Authentication</title>
+</head>
+<body>
+    <h1>Debug Authentication</h1>
+    <div id="status"></div>
+    <button onclick="testAuth()">Test Authentication</button>
+    <button onclick="setTestToken()">Set Test Token</button>
+    <button onclick="testApiKey()">Test API Key Addition</button>
+    
+    <script>
+        const testToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDEiLCJpYXQiOjE3NjEwNzYyMDksImV4cCI6MTc2MTA3OTgwOSwibmJmIjoxNzYxMDc2MjA5LCJqdGkiOiJ4a0NObDZhZzdPNWQyT1hQIiwic3ViIjoiMSIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjcifQ.sD8cDBX0DlMZJIzu2cf8hoAmqlsw1smwgwMRcqI-87I';
+        
+        function setTestToken() {
+            localStorage.setItem('token', testToken);
+            localStorage.setItem('user', JSON.stringify({
+                id: 1,
+                name: 'Naqash Thaheem',
+                email: 'naqash263@gmail.com',
+                role: 'admin'
+            }));
+            document.getElementById('status').innerHTML = 'Test token set in localStorage';
+        }
+        
+        async function testAuth() {
+            try {
+                const response = await fetch('http://localhost:8001/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${testToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                document.getElementById('status').innerHTML = 'Auth test result: ' + JSON.stringify(data);
+            } catch (error) {
+                document.getElementById('status').innerHTML = 'Auth test error: ' + error.message;
+            }
+        }
+        
+        async function testApiKey() {
+            try {
+                const response = await fetch('http://localhost:8001/api/user-api-keys', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${testToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: 'Test API Key',
+                        api_key: 'AIzaSyDummyKeyForTesting123456789012345678901234567890'
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('status').innerHTML = 'API Key test result: ' + JSON.stringify(data);
+            } catch (error) {
+                document.getElementById('status').innerHTML = 'API Key test error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

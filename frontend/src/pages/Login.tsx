@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useSEO } from '../utils/seo';
 
@@ -9,7 +8,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   useSEO({ title: 'Admin Login | Naqash Thaheem' });
 
@@ -20,7 +18,8 @@ export default function Login() {
 
     try {
       await login(email, password);
-      navigate('/admin');
+      // No automatic redirect - let user navigate manually
+      window.location.reload(); // Refresh to show user name
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {

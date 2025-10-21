@@ -42,25 +42,8 @@ apiClient.interceptors.response.use(
       
       switch (status) {
         case 401:
-          // Unauthorized - only redirect if it's a critical authentication failure
-          // Don't redirect for API calls that might fail due to expired tokens
-          if (window.location.pathname !== '/admin/login' && window.location.pathname !== '/login') {
-            // Only redirect if the request was for a critical endpoint
-            const criticalEndpoints = ['/auth/me', '/auth/login', '/auth/register'];
-            const isCriticalEndpoint = criticalEndpoints.some(endpoint => 
-              error.config?.url?.includes(endpoint)
-            );
-            
-            if (isCriticalEndpoint) {
-              localStorage.removeItem('token');
-              // Check if user is on admin pages, otherwise redirect to regular login
-              if (window.location.pathname.startsWith('/admin')) {
-                window.location.href = '/admin/login';
-              } else {
-                window.location.href = '/login';
-              }
-            }
-          }
+          // Unauthorized - no automatic redirects, let components handle this
+          error.message = 'Authentication required. Please log in to continue.';
           break;
           
         case 403:

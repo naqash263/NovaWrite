@@ -16,7 +16,7 @@ class UserApiKeyController extends Controller
      */
     public function index(): JsonResponse
     {
-        $user = Auth::user();
+        $user = Auth::guard('api')->user();
         
         $userKeys = UserApiKey::where('user_id', $user->id)
             ->active()
@@ -33,8 +33,8 @@ class UserApiKeyController extends Controller
                 ];
             });
 
-        $totalRequests = $userKeys->sum('requests_per_key');
-        $totalUsed = $userKeys->sum('usage_count');
+        $totalRequests = $userKeys->sum('max_requests');
+        $totalUsed = $userKeys->sum('used_requests');
         $availableRequests = $totalRequests - $totalUsed;
 
         return response()->json([
@@ -73,7 +73,7 @@ class UserApiKeyController extends Controller
                 ], 422);
             }
 
-            $user = Auth::user();
+            $user = Auth::guard('api')->user();
             
             if (!$user) {
                 \Log::error('No authenticated user found');
@@ -113,15 +113,15 @@ class UserApiKeyController extends Controller
             ], 400);
         }
 
-        $userApiKey = UserApiKey::create([
-            'user_id' => $user->id,
-            'name' => $request->name,
-            'api_key' => $request->api_key,
-            'requests_per_key' => 100, // Default 100 requests per key
-            'usage_count' => 0,
-            'is_active' => true,
-            'last_reset_at' => now()
-        ]);
+            $userApiKey = UserApiKey::create([
+                'user_id' => $user->id,
+                'name' => $request->name,
+                'api_key' => $request->api_key,
+                'max_requests' => 100, // Default 100 requests per key
+                'used_requests' => 0,
+                'is_active' => true,
+                'last_reset_at' => now()
+            ]);
 
             \Log::info('API key created successfully', ['key_id' => $userApiKey->id]);
             
@@ -131,7 +131,7 @@ class UserApiKeyController extends Controller
                 'data' => [
                     'id' => $userApiKey->id,
                     'name' => $userApiKey->name,
-                    'requests_per_key' => $userApiKey->requests_per_key,
+                    'max_requests' => $userApiKey->max_requests,
                     'remaining_requests' => $userApiKey->remaining_requests
                 ]
             ]);
@@ -155,14 +155,14 @@ class UserApiKeyController extends Controller
      */
     public function stats(): JsonResponse
     {
-        $user = Auth::user();
+        $user = Auth::guard('api')->user();
         
         $userKeys = UserApiKey::where('user_id', $user->id)
             ->active()
             ->get();
 
-        $totalRequests = $userKeys->sum('requests_per_key');
-        $totalUsed = $userKeys->sum('usage_count');
+        $totalRequests = $userKeys->sum('max_requests');
+        $totalUsed = $userKeys->sum('used_requests');
         $availableRequests = $totalRequests - $totalUsed;
 
         return response()->json([
@@ -181,7 +181,7 @@ class UserApiKeyController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        $user = Auth::user();
+        $user = Auth::guard('api')->user();
         
         $userApiKey = UserApiKey::where('user_id', $user->id)
             ->where('id', $id)

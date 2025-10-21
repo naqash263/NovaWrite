@@ -87,20 +87,33 @@ class CvAiService
     private function getAvailableApiKey()
     {
         try {
-            // Try Laravel's Eloquent first
-            // Try to get a user API key first (if authenticated)
-            $userApiKey = UserApiKey::where('is_active', true)
-                ->whereRaw('usage_count < requests_per_key')
-                ->first();
+            // Check if user is authenticated and get their API keys first
+            $user = auth('api')->user();
+            
+            if ($user) {
+                $userApiKey = UserApiKey::where('user_id', $user->id)
+                    ->where('is_active', true)
+                    ->whereRaw('used_requests < max_requests')
+                    ->first();
 
-            if ($userApiKey) {
-                return $userApiKey;
+                if ($userApiKey) {
+                    Log::info('Using user API key for authenticated user', ['user_id' => $user->id, 'key_id' => $userApiKey->id]);
+                    return $userApiKey;
+                }
             }
 
             // Fallback to admin API keys
-            return GeminiApiKey::where('is_active', true)
+            $adminApiKey = GeminiApiKey::where('is_active', true)
                 ->whereRaw('used_requests < total_requests')
                 ->first();
+                
+            if ($adminApiKey) {
+                Log::info('Using admin API key as fallback');
+                return $adminApiKey;
+            }
+
+            Log::warning('No available API keys found');
+            return null;
         } catch (\Exception $e) {
             // If Laravel connection fails, use direct PDO
             Log::warning('Laravel database connection failed, using direct PDO: ' . $e->getMessage());
@@ -117,8 +130,38 @@ class CvAiService
             $pdo = new \PDO('pgsql:dbname=novawrite_local');
             $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
-            // Try to get a user API key first
-            $stmt = $pdo->prepare("SELECT * FROM user_api_keys WHERE is_active = true AND usage_count < requests_per_key LIMIT 1");
+            // Check if user is authenticated and get their API keys first
+            $user = auth('api')->user();
+            
+            if ($user) {
+                $stmt = $pdo->prepare("SELECT * FROM user_api_keys WHERE user_id = ? AND is_active = true AND used_requests < max_requests LIMIT 1");
+                $stmt->execute([$user->id]);
+                $userApiKey = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+                if ($userApiKey) {
+                    // Create a simple object that mimics the UserApiKey model
+                    $key = new \stdClass();
+                    $key->api_key = $userApiKey['api_key'];
+                    $key->id = $userApiKey['id'];
+                    $key->user_id = $userApiKey['user_id'];
+                    $key->name = $userApiKey['name'];
+                    $key->is_active = $userApiKey['is_active'];
+                    $key->max_requests = $userApiKey['max_requests'];
+                    $key->used_requests = $userApiKey['used_requests'];
+                    
+                    // Add incrementUsage method
+                    $key->incrementUsage = function() use ($pdo, $userApiKey) {
+                        $stmt = $pdo->prepare("UPDATE user_api_keys SET used_requests = used_requests + 1 WHERE id = ?");
+                        $stmt->execute([$userApiKey['id']]);
+                    };
+                    
+                    Log::info('Using user API key via PDO for authenticated user', ['user_id' => $user->id, 'key_id' => $userApiKey['id']]);
+                    return $key;
+                }
+            }
+
+            // Try to get any user API key as fallback
+            $stmt = $pdo->prepare("SELECT * FROM user_api_keys WHERE is_active = true AND used_requests < max_requests LIMIT 1");
             $stmt->execute();
             $userApiKey = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -130,15 +173,16 @@ class CvAiService
                 $key->user_id = $userApiKey['user_id'];
                 $key->name = $userApiKey['name'];
                 $key->is_active = $userApiKey['is_active'];
-                $key->requests_per_key = $userApiKey['requests_per_key'];
-                $key->usage_count = $userApiKey['usage_count'];
+                $key->max_requests = $userApiKey['max_requests'];
+                $key->used_requests = $userApiKey['used_requests'];
                 
                 // Add incrementUsage method
                 $key->incrementUsage = function() use ($pdo, $userApiKey) {
-                    $stmt = $pdo->prepare("UPDATE user_api_keys SET usage_count = usage_count + 1 WHERE id = ?");
+                    $stmt = $pdo->prepare("UPDATE user_api_keys SET used_requests = used_requests + 1 WHERE id = ?");
                     $stmt->execute([$userApiKey['id']]);
                 };
                 
+                Log::info('Using user API key via PDO as fallback', ['key_id' => $userApiKey['id']]);
                 return $key;
             }
 
