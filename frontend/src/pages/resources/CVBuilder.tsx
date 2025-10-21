@@ -3615,19 +3615,19 @@ export default function CVBuilder() {
       // Generate PDF using direct html2canvas approach for better reliability
       console.log('Creating temporary element for PDF generation...');
       
-      // Create a temporary container for the CV content
+      // Create a temporary container for the CV content with optimized dimensions
       const tempContainer = document.createElement('div');
       tempContainer.innerHTML = templateWithATS;
       tempContainer.style.position = 'absolute';
       tempContainer.style.left = '-9999px';
       tempContainer.style.top = '0';
-      tempContainer.style.width = '800px';
+      tempContainer.style.width = '600px'; // Reduced width for smaller file size
       tempContainer.style.backgroundColor = 'white';
       tempContainer.style.fontFamily = 'Arial, sans-serif';
-      tempContainer.style.fontSize = '14px';
-      tempContainer.style.lineHeight = '1.4';
+      tempContainer.style.fontSize = '12px'; // Slightly smaller font for better fit
+      tempContainer.style.lineHeight = '1.3'; // Tighter line height
       tempContainer.style.color = '#333';
-      tempContainer.style.padding = '20px';
+      tempContainer.style.padding = '15px'; // Reduced padding
       tempContainer.style.boxSizing = 'border-box';
       
       // Add to DOM temporarily
@@ -3639,25 +3639,25 @@ export default function CVBuilder() {
         // Wait a bit for the element to render
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Use html2canvas to capture the content
+        // Use html2canvas to capture the content with optimized settings
         const canvas = await html2canvas(tempContainer, {
-          scale: 1.5, // Good balance between quality and performance
+          scale: 1.0, // Reduced scale for smaller file size
           useCORS: true,
           backgroundColor: '#ffffff',
-          logging: true, // Enable logging to debug
+          logging: false, // Disable logging for production
           allowTaint: true,
-          width: 800,
-          height: 1200,
+          width: 600, // Reduced width for smaller file size
+          height: 800, // Reduced height for smaller file size
           scrollX: 0,
           scrollY: 0,
-          windowWidth: 800,
-          windowHeight: 1200
+          windowWidth: 600,
+          windowHeight: 800
         });
         
         console.log('Canvas created:', canvas.width, 'x', canvas.height);
         
-        // Convert canvas to image data
-        const imgData = canvas.toDataURL('image/png', 0.95);
+        // Convert canvas to image data with optimized compression
+        const imgData = canvas.toDataURL('image/jpeg', 0.75); // Use JPEG with 75% quality for smaller file size
         console.log('Image data length:', imgData.length);
         
         // Calculate dimensions for PDF
@@ -3678,7 +3678,7 @@ export default function CVBuilder() {
         const xOffset = (210 - scaledWidth) / 2; // Center horizontally
         const yOffset = (pageHeight - scaledHeight) / 2; // Center vertically
         
-        pdf.addImage(imgData, 'PNG', xOffset, yOffset, scaledWidth, scaledHeight);
+        pdf.addImage(imgData, 'JPEG', xOffset, yOffset, scaledWidth, scaledHeight);
         
         console.log('PDF dimensions:', scaledWidth, 'x', scaledHeight, 'mm');
         console.log('Image positioned at:', xOffset, yOffset);
