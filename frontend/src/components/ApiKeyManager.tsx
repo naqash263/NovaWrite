@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import apiClient from '../api/axios';
 
 interface ApiStats {
   availableRequests: number;
@@ -39,13 +40,8 @@ const ApiKeyManager: React.FC = () => {
 
       // User is logged in, try to get user-specific stats
       try {
-        const response = await fetch('/api/user-api-keys/stats', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        const data = await response.json();
+        const response = await apiClient.get('/user-api-keys/stats');
+        const data = response.data;
         if (data.success) {
           setApiStats({
             availableRequests: data.data.available_requests,
@@ -55,8 +51,8 @@ const ApiKeyManager: React.FC = () => {
       } catch (authError) {
         // If user-specific stats fail, fall back to public stats
         console.warn('Failed to load user-specific API stats, falling back to public stats:', authError);
-        const response = await fetch('/api/cv-ai/stats');
-        const data = await response.json();
+        const response = await apiClient.get('/cv-ai/stats');
+        const data = response.data;
         if (data.success) {
           setApiStats({
             availableRequests: data.data.available_requests,
@@ -79,20 +75,12 @@ const ApiKeyManager: React.FC = () => {
     setMessage('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/user-api-keys', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          api_key: userApiKey,
-          name: 'My API Key'
-        })
+      const response = await apiClient.post('/user-api-keys', {
+        api_key: userApiKey,
+        name: 'My API Key'
       });
 
-      const result = await response.json();
+      const result = response.data;
 
       if (result.success) {
         setMessage('API key added successfully!');
@@ -102,8 +90,10 @@ const ApiKeyManager: React.FC = () => {
       } else {
         setMessage(result.message || 'Failed to add API key');
       }
-    } catch (error) {
-      setMessage('Failed to add API key. Please try again.');
+    } catch (error: any) {
+      console.error('API key addition error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to add API key. Please try again.';
+      setMessage(errorMessage);
     } finally {
       setIsLoading(false);
     }
