@@ -53,20 +53,35 @@ class UserApiKeyController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'api_key' => 'required|string|min:10',
-            'name' => 'required|string|max:255'
-        ]);
+        try {
+            \Log::info('UserApiKeyController::store called', [
+                'user_id' => Auth::id(),
+                'request_data' => $request->only(['name', 'api_key'])
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+            $validator = Validator::make($request->all(), [
+                'api_key' => 'required|string|min:10',
+                'name' => 'required|string|max:255'
+            ]);
 
-        $user = Auth::user();
+            if ($validator->fails()) {
+                \Log::warning('Validation failed', ['errors' => $validator->errors()]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = Auth::user();
+            
+            if (!$user) {
+                \Log::error('No authenticated user found');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required'
+                ], 401);
+            }
 
         // Check if user already has this API key
         // Since api_key is encrypted, we need to get all keys and compare them
@@ -108,16 +123,31 @@ class UserApiKeyController extends Controller
             'last_reset_at' => now()
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'API key added successfully',
-            'data' => [
-                'id' => $userApiKey->id,
-                'name' => $userApiKey->name,
-                'requests_per_key' => $userApiKey->requests_per_key,
-                'remaining_requests' => $userApiKey->remaining_requests
-            ]
-        ]);
+            \Log::info('API key created successfully', ['key_id' => $userApiKey->id]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'API key added successfully',
+                'data' => [
+                    'id' => $userApiKey->id,
+                    'name' => $userApiKey->name,
+                    'requests_per_key' => $userApiKey->requests_per_key,
+                    'remaining_requests' => $userApiKey->remaining_requests
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in UserApiKeyController::store', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while adding the API key. Please try again.'
+            ], 500);
+        }
     }
 
     /**
@@ -178,8 +208,11 @@ class UserApiKeyController extends Controller
     private function validateApiKey(string $apiKey): array
     {
         try {
+            \Log::info('Validating API key', ['key_length' => strlen($apiKey), 'key_prefix' => substr($apiKey, 0, 10)]);
+            
             // Basic format validation
             if (empty($apiKey) || strlen($apiKey) < 20) {
+                \Log::warning('API key validation failed: too short', ['length' => strlen($apiKey)]);
                 return [
                     'valid' => false,
                     'message' => 'API key appears to be invalid. Please check the format and try again.'
@@ -187,12 +220,15 @@ class UserApiKeyController extends Controller
             }
             
             if (!str_starts_with($apiKey, 'AIza')) {
+                \Log::warning('API key validation failed: wrong format', ['prefix' => substr($apiKey, 0, 10)]);
                 return [
                     'valid' => false,
                     'message' => 'Invalid API key format. Gemini API keys should start with "AIza".'
                 ];
             }
 
+            \Log::info('Making test request to Gemini API');
+            
             $response = \Http::withHeaders([
                 'Content-Type' => 'application/json',
             ])->timeout(10)->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
@@ -203,6 +239,11 @@ class UserApiKeyController extends Controller
                         ]
                     ]
                 ]
+            ]);
+            
+            \Log::info('Gemini API response received', [
+                'status' => $response->status(),
+                'successful' => $response->successful()
             ]);
     
             if ($response->successful()) {
@@ -246,7 +287,11 @@ class UserApiKeyController extends Controller
             ];
             
         } catch (\Exception $e) {
-            Log::error('User API key validation failed: ' . $e->getMessage());
+            \Log::error('User API key validation failed', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'api_key_prefix' => substr($apiKey, 0, 10)
+            ]);
             return [
                 'valid' => false,
                 'message' => 'Unable to validate API key. Please check your internet connection and try again.'
