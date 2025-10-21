@@ -518,11 +518,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {user ? (
                 <>
                   {/* API Key Status - Compact */}
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
-                    <span className="text-gray-500">AI:</span>
-                    <span className="font-medium text-gray-700">0/0</span>
-                    {user && <ApiKeyManager />}
-                  </div>
+                  {user && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
+                      <ApiKeyManager />
+                    </div>
+                  )}
                   
                   {/* User Dropdown */}
                   <div className="relative" data-user-dropdown>

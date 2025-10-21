@@ -33,7 +33,10 @@ export function useAuth() {
       setUser(response.data);
     } catch (error) {
       console.error('Failed to fetch user:', error);
-      logout();
+      // Don't call logout() immediately - just set user to null
+      // This prevents redirect to login when token is invalid
+      setUser(null);
+      setTokenState(null);
     } finally {
       setLoading(false);
     }
