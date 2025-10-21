@@ -11,15 +11,35 @@ Route::get('/health/comprehensive', [App\Http\Controllers\Api\HealthController::
 Route::get('/health/database', [App\Http\Controllers\Api\HealthController::class, 'database']);
 Route::get('/health/storage', [App\Http\Controllers\Api\HealthController::class, 'storage']);
 
-// Test authentication endpoint
-Route::get('/test-auth', function () {
-    $user = Auth::user();
-    return response()->json([
-        'authenticated' => Auth::check(),
-        'user_id' => $user ? $user->id : null,
-        'user_email' => $user ? $user->email : null
-    ]);
-})->middleware('api.auth');
+    // Test authentication endpoint
+    Route::get('/test-auth', function () {
+        $user = Auth::user();
+        return response()->json([
+            'authenticated' => Auth::check(),
+            'user_id' => $user ? $user->id : null,
+            'user_email' => $user ? $user->email : null
+        ]);
+    })->middleware('api.auth');
+    
+    // Get current user endpoint
+    Route::get('/auth/me', function () {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not authenticated'
+            ], 401);
+        }
+        
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'avatar' => $user->avatar,
+            'email_verified_at' => $user->email_verified_at,
+            'google_id' => $user->google_id
+        ]);
+    })->middleware('api.auth');
 
 // Alert endpoints (no authentication required for critical alerts)
 Route::post('/alerts/critical', [App\Http\Controllers\Api\AlertController::class, 'sendCriticalAlert']);
