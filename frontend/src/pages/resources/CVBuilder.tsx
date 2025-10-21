@@ -3593,30 +3593,35 @@ export default function CVBuilder() {
               color: ${templatePrimaryColor} !important;
               border-bottom: 2px solid ${templatePrimaryColor};
               padding-bottom: 15px;
+              background-color: ${cvStyle.primaryColor} !important;
+              color: white !important;
             }
             
             .name {
               font-size: 18px;
               font-weight: bold;
-              color: ${templatePrimaryColor} !important;
+              color: white !important;
               margin-bottom: 3px;
             }
             
             .title {
               font-size: 12px;
-              color: ${templateSecondaryColor} !important;
+              color: white !important;
               margin-bottom: 8px;
             }
             
             .contact {
               font-size: 9px;
-              color: #666;
+              color: white !important;
             }
             
             /* Section styles */
             .section {
               margin-bottom: 20px;
               color: ${templatePrimaryColor} !important;
+              background-color: ${cvStyle.secondaryColor} !important;
+              padding: 15px;
+              border-radius: 8px;
             }
             
             .section-title {
@@ -3633,7 +3638,8 @@ export default function CVBuilder() {
               margin-bottom: 15px;
               padding: 10px;
               border-left: 3px solid ${templatePrimaryColor} !important;
-              background: #f9f9f9;
+              background-color: ${cvStyle.secondaryColor} !important;
+              border-radius: 6px;
             }
             
             .item-title {
@@ -3670,8 +3676,9 @@ export default function CVBuilder() {
             .skill-category {
               margin-bottom: 10px;
               padding: 8px;
-              background: #f0f0f0;
+              background-color: ${cvStyle.secondaryColor} !important;
               border-left: 3px solid ${templatePrimaryColor} !important;
+              border-radius: 4px;
             }
             
             /* Hide empty sections */
@@ -3695,14 +3702,35 @@ export default function CVBuilder() {
                 padding: 0 !important;
               }
               
+              .header {
+                background-color: ${cvStyle.primaryColor} !important;
+                color: white !important;
+              }
+              
               .name {
                 font-size: 16px !important;
-                color: ${templatePrimaryColor} !important;
+                color: white !important;
               }
               
               .title {
                 font-size: 11px !important;
-                color: ${templateSecondaryColor} !important;
+                color: white !important;
+              }
+              
+              .contact {
+                color: white !important;
+              }
+              
+              .section {
+                background-color: ${cvStyle.secondaryColor} !important;
+              }
+              
+              .experience-card, .education-item, .project-card {
+                background-color: ${cvStyle.secondaryColor} !important;
+              }
+              
+              .skill-category {
+                background-color: ${cvStyle.secondaryColor} !important;
               }
               
               .section-title {
