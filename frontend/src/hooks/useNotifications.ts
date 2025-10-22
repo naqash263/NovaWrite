@@ -108,7 +108,7 @@ export const useNotifications = () => {
       const registration = await navigator.serviceWorker.ready;
       console.log('Service worker ready, creating subscription...');
       
-      // Convert VAPID key to Uint8Array for PushManager
+      // Convert VAPID key to proper format for PushManager
       console.log('Original VAPID key:', vapidPublicKey.substring(0, 20) + '...');
       
       // Convert base64 to base64url
@@ -119,18 +119,10 @@ export const useNotifications = () => {
       
       console.log('Base64url key:', base64urlKey.substring(0, 20) + '...');
       
-      // Convert base64url to Uint8Array
-      const keyArray = new Uint8Array(
-        atob(base64urlKey)
-          .split('')
-          .map(char => char.charCodeAt(0))
-      );
-      
-      console.log('Key array length:', keyArray.length);
-      
+      // Use the base64url key directly (most browsers accept this format)
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: keyArray
+        applicationServerKey: base64urlKey
       });
 
       console.log('Push subscription created:', subscription);
