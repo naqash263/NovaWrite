@@ -27,7 +27,7 @@ const Analytics: React.FC = () => {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState(30);
+  const [days] = useState(30);
 
   useEffect(() => {
     fetchAnalytics();
@@ -52,10 +52,6 @@ const Analytics: React.FC = () => {
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat().format(num);
-  };
-
-  const formatPercentage = (num: number) => {
-    return `${num.toFixed(1)}%`;
   };
 
   if (loading) {
