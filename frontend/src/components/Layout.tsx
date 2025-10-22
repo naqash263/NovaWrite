@@ -5,11 +5,23 @@ import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import ApiKeyManager from './ApiKeyManager';
 import InstallBanner from './InstallBanner';
 import NotificationSettings from './NotificationSettings';
+import analyticsService from '../services/analyticsService';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, logout, loading } = useAuth();
   const { canInstall, promptInstall } = useInstallPrompt();
+
+  // Custom install handler that tracks the source
+  const handleInstall = async (source: string) => {
+    try {
+      await promptInstall();
+      // Track install attempt (success/failure will be tracked in the hook)
+      await analyticsService.trackInstall(source);
+    } catch (error) {
+      console.error('Install failed:', error);
+    }
+  };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
@@ -114,6 +126,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       { path: '/admin/files', label: 'Files', icon: '📁' },
       { path: '/admin/monitoring', label: 'Monitoring', icon: '🏥' },
       { path: '/admin/push-notifications', label: 'Push Notifications', icon: '🔔' },
+    { path: '/admin/analytics', label: 'Analytics', icon: '📊' },
     ];
 
     // Settings dropdown menu items (moved from main navigation)
@@ -605,7 +618,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {/* Install App Button */}
               {canInstall && (
                 <button
-                  onClick={promptInstall}
+                  onClick={() => handleInstall('header_button')}
                   className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -941,7 +954,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   {/* Install App Button - Mobile */}
                   {canInstall && (
                     <button
-                      onClick={promptInstall}
+                      onClick={() => handleInstall('mobile_menu')}
                       className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md w-full"
                     >
                       <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

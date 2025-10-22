@@ -31,6 +31,21 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, 'admin'])->prefix('admin
     Route::post('/trigger-update', [App\Http\Controllers\Api\CareerToolController::class, 'triggerUpdate']);
 });
 
+// App analytics routes
+Route::middleware(\App\Http\Middleware\ApiAuth::class)->prefix('analytics')->group(function () {
+    Route::post('/track/install', [App\Http\Controllers\Api\AppAnalyticsController::class, 'trackInstall']);
+    Route::post('/track/uninstall', [App\Http\Controllers\Api\AppAnalyticsController::class, 'trackUninstall']);
+    Route::post('/track/launch', [App\Http\Controllers\Api\AppAnalyticsController::class, 'trackLaunch']);
+    Route::post('/track/background', [App\Http\Controllers\Api\AppAnalyticsController::class, 'trackBackground']);
+});
+
+// Admin analytics routes
+Route::middleware([\App\Http\Middleware\ApiAuth::class, 'admin'])->prefix('admin/analytics')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Api\AppAnalyticsController::class, 'getDashboard']);
+    Route::get('/summary', [App\Http\Controllers\Api\AppAnalyticsController::class, 'getSummary']);
+    Route::get('/retention', [App\Http\Controllers\Api\AppAnalyticsController::class, 'getRetention']);
+});
+
     // Test authentication endpoint
     Route::get('/test-auth', function () {
         $user = Auth::user();

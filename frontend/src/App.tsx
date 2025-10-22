@@ -49,6 +49,7 @@ const Monitoring = lazy(() => import('./pages/admin/Monitoring'));
 const CvTemplates = lazy(() => import('./pages/admin/CvTemplates'));
 const CvTemplateCreate = lazy(() => import('./pages/admin/CvTemplateCreate'));
 const PushNotifications = lazy(() => import('./pages/admin/PushNotifications'));
+const Analytics = lazy(() => import('./pages/admin/Analytics'));
 const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
 const GoogleSuccess = lazy(() => import('./pages/auth/GoogleSuccess'));
 const Unauthorized = lazy(() => import('./pages/Unauthorized'));
@@ -118,6 +119,7 @@ function App() {
               <Route path="/admin/cv-templates" element={<ProtectedRoute requireAdmin><CvTemplates /></ProtectedRoute>} />
               <Route path="/admin/cv-templates/create" element={<ProtectedRoute requireAdmin><CvTemplateCreate /></ProtectedRoute>} />
               <Route path="/admin/push-notifications" element={<ProtectedRoute requireAdmin><PushNotifications /></ProtectedRoute>} />
+            <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><Analytics /></ProtectedRoute>} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />
