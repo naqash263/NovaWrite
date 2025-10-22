@@ -61,6 +61,10 @@ export const useInstallPrompt = (): InstallPromptState => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      // Show banner immediately when prompt is available
+      if (newVisitCount >= 1 && !bannerDismissed && !checkIfInstalled()) {
+        setShowBanner(true);
+      }
     };
 
     // Listen for appinstalled event
