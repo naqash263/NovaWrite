@@ -794,7 +794,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-5a7.5 7.5 0 1 0-15 0v5h5l-5 5-5-5h5v-5a10 10 0 1 1 20 0v5z" />
                   </svg>
-                  <span className="hidden sm:block">Notifications</span>
+                  <span>Notifications</span>
                 </button>
 
                 {/* Resources Section */}
