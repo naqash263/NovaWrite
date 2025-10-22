@@ -4,9 +4,9 @@ import { useToast } from '../../hooks/use-toast';
 import apiClient from '../../api/axios';
 
 interface NotificationStats {
-  totalSubscribers: number;
-  activeSubscribers: number;
-  notificationTypes: {
+  total_subscribers: number;
+  active_subscribers: number;
+  notification_types: {
     blogPosts: number;
     courses: number;
     workflows: number;
@@ -164,12 +164,12 @@ const PushNotifications: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Total Subscribers</span>
-                    <span className="text-2xl font-bold text-blue-600">{stats.totalSubscribers || 0}</span>
+                    <span className="text-2xl font-bold text-blue-600">{stats.total_subscribers || 0}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Active Subscribers</span>
-                    <span className="text-2xl font-bold text-green-600">{stats.activeSubscribers || 0}</span>
+                    <span className="text-2xl font-bold text-green-600">{stats.active_subscribers || 0}</span>
                   </div>
 
                   <div className="border-t pt-4">
@@ -177,19 +177,19 @@ const PushNotifications: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Blog Posts</span>
-                        <span className="text-sm font-medium">{stats.notificationTypes?.blogPosts || 0}</span>
+                        <span className="text-sm font-medium">{stats.notification_types?.blogPosts || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Courses</span>
-                        <span className="text-sm font-medium">{stats.notificationTypes?.courses || 0}</span>
+                        <span className="text-sm font-medium">{stats.notification_types?.courses || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Workflows</span>
-                        <span className="text-sm font-medium">{stats.notificationTypes?.workflows || 0}</span>
+                        <span className="text-sm font-medium">{stats.notification_types?.workflows || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Career Tools</span>
-                        <span className="text-sm font-medium">{stats.notificationTypes?.careerTools || 0}</span>
+                        <span className="text-sm font-medium">{stats.notification_types?.careerTools || 0}</span>
                       </div>
                     </div>
                   </div>
