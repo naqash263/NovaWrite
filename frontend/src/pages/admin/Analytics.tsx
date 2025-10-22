@@ -188,7 +188,7 @@ const Analytics: React.FC = () => {
 
         {/* Debug info - remove in production */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <h3 className="text-sm font-medium text-yellow-800 mb-2">Debug Information</h3>
+          <h3 className="text-sm font-medium text-yellow-800 mb-2">Debug Information (Updated)</h3>
           <p className="text-xs text-yellow-700">
             <strong>Raw data:</strong> {JSON.stringify(data, null, 2)}
           </p>
