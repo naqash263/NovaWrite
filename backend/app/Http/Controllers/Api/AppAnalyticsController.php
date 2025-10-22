@@ -167,7 +167,13 @@ class AppAnalyticsController extends Controller
                 $data = $this->analyticsService->getDashboardData($days);
             }
 
-            return response()->json($data);
+            return response()->json(array_merge($data, [
+                'debug_info' => [
+                    'timestamp' => now()->toISOString(),
+                    'server' => 'production',
+                    'code_version' => 'updated'
+                ]
+            ]));
 
         } catch (\Exception $e) {
             \Log::error('Failed to get analytics dashboard', [
