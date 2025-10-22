@@ -27,17 +27,25 @@ const Analytics: React.FC = () => {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [days] = useState(30);
+  const [days, setDays] = useState(30);
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   useEffect(() => {
     fetchAnalytics();
-  }, [days]);
+  }, [days, startDate, endDate]);
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
       console.log('Fetching analytics data...');
-      const response = await apiClient.get(`/admin/analytics/dashboard?days=${days}`);
+      
+      let url = `/admin/analytics/dashboard?days=${days}`;
+      if (startDate && endDate) {
+        url += `&start_date=${startDate}&end_date=${endDate}`;
+      }
+      
+      const response = await apiClient.get(url);
       console.log('Analytics response:', response.data);
       setData(response.data);
       setError(null);
@@ -108,6 +116,74 @@ const Analytics: React.FC = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">App Analytics Dashboard</h1>
           <p className="mt-2 text-gray-600">Track app installs, usage, and user behavior</p>
+        </div>
+
+        {/* Date Range Selector */}
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Filter by Date Range</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Quick Select</label>
+              <select
+                value={days}
+                onChange={(e) => {
+                  setDays(Number(e.target.value));
+                  setStartDate('');
+                  setEndDate('');
+                }}
+                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={7}>Last 7 days</option>
+                <option value={30}>Last 30 days</option>
+                <option value={90}>Last 90 days</option>
+                <option value={365}>Last year</option>
+                <option value={0}>All time</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setDays(0); // Reset quick select when using custom dates
+                }}
+                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setDays(0); // Reset quick select when using custom dates
+                }}
+                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  setDays(30);
+                }}
+                className="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+          {(startDate || endDate) && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Custom Date Range:</strong> {startDate || 'Start'} to {endDate || 'End'}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Debug info - remove in production */}

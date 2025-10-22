@@ -157,7 +157,15 @@ class AppAnalyticsController extends Controller
     {
         try {
             $days = $request->get('days', 30);
-            $data = $this->analyticsService->getDashboardData($days);
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+            
+            // If custom date range is provided, use it; otherwise use days
+            if ($startDate && $endDate) {
+                $data = $this->analyticsService->getDashboardDataByDateRange($startDate, $endDate);
+            } else {
+                $data = $this->analyticsService->getDashboardData($days);
+            }
 
             return response()->json($data);
 

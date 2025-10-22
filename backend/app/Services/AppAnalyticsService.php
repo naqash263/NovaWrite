@@ -248,6 +248,26 @@ class AppAnalyticsService
     }
 
     /**
+     * Get analytics dashboard data by custom date range.
+     */
+    public function getDashboardDataByDateRange($startDate, $endDate)
+    {
+        $start = \Carbon\Carbon::parse($startDate)->startOfDay();
+        $end = \Carbon\Carbon::parse($endDate)->endOfDay();
+        $days = $start->diffInDays($end);
+
+        return [
+            'summary' => AppAnalytics::getSummary($start, $end),
+            'daily_installs' => $this->getDailyInstalls($start, $end),
+            'daily_uninstalls' => $this->getDailyUninstalls($start, $end),
+            'retention_data' => AppAnalytics::getRetentionData($days),
+            'top_countries' => $this->getTopCountries($start, $end),
+            'platform_distribution' => $this->getPlatformDistribution($start, $end),
+            'device_type_distribution' => $this->getDeviceTypeDistribution($start, $end),
+        ];
+    }
+
+    /**
      * Get daily install counts.
      */
     private function getDailyInstalls($startDate, $endDate)
