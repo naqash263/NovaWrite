@@ -49,10 +49,13 @@ const PushNotifications: React.FC = () => {
   const fetchStats = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching push notification stats...');
       const response = await apiClient.get('/admin/push-notifications/stats');
+      console.log('Stats response:', response.data);
       setStats(response.data);
     } catch (error: any) {
       console.error('Failed to fetch stats:', error);
+      console.error('Error details:', error.response?.data);
       setStats(null);
       addToast({
         type: 'error',
@@ -161,12 +164,12 @@ const PushNotifications: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Total Subscribers</span>
-                    <span className="text-2xl font-bold text-blue-600">{stats.totalSubscribers}</span>
+                    <span className="text-2xl font-bold text-blue-600">{stats.totalSubscribers || 0}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Active Subscribers</span>
-                    <span className="text-2xl font-bold text-green-600">{stats.activeSubscribers}</span>
+                    <span className="text-2xl font-bold text-green-600">{stats.activeSubscribers || 0}</span>
                   </div>
 
                   <div className="border-t pt-4">
@@ -189,6 +192,13 @@ const PushNotifications: React.FC = () => {
                         <span className="text-sm font-medium">{stats.notificationTypes?.careerTools || 0}</span>
                       </div>
                     </div>
+                  </div>
+                  
+                  {/* Debug info - remove in production */}
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
+                    <p className="text-xs text-yellow-800">
+                      <strong>Debug:</strong> Raw stats data: {JSON.stringify(stats, null, 2)}
+                    </p>
                   </div>
                 </div>
               ) : (
