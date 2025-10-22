@@ -782,6 +782,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
 
+                {/* Notification Settings Button */}
+                <button
+                  onClick={() => {
+                    const event = new CustomEvent('openNotificationSettings');
+                    window.dispatchEvent(event);
+                  }}
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  title="Notification Settings"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-5a7.5 7.5 0 1 0-15 0v5h5l-5 5-5-5h5v-5a10 10 0 1 1 20 0v5z" />
+                  </svg>
+                  <span className="hidden sm:block">Notifications</span>
+                </button>
+
                 {/* Resources Section */}
                 <div>
                   <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">

@@ -153,6 +153,10 @@ jobs:
           export VITE_API_URL=https://naqashthaheem.com/api
           export VITE_APP_NAME="Naqash Thaheem"
           export VITE_APP_ENV=production
+          export VITE_VAPID_PUBLIC_KEY="${{ secrets.VAPID_PUBLIC_KEY }}"
+          
+          # Debug: Check VAPID key is set
+          echo -e "${BLUE}🔑 VAPID Public Key: ${VITE_VAPID_PUBLIC_KEY:0:20}...${NC}"
           
           # Show current directory and files
           echo -e "${BLUE}📁 Current directory: $(pwd)${NC}"
