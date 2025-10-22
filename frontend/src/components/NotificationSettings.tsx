@@ -124,9 +124,17 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
             </svg>
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">Not Supported</h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-4">
             Push notifications are not supported in this browser or device.
           </p>
+          {location.protocol !== 'https:' && location.hostname !== 'localhost' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-sm text-yellow-800">
+                <strong>HTTPS Required:</strong> Push notifications require a secure connection (HTTPS). 
+                Please visit the production site at <a href="https://naqashthaheem.com" className="text-blue-600 hover:underline">https://naqashthaheem.com</a> to enable notifications.
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-6">

@@ -23,6 +23,14 @@ export const useNotifications = () => {
   useEffect(() => {
     // Check if notifications are supported
     if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.log('Push notifications not supported: Missing required APIs');
+      setIsSupported(false);
+      return;
+    }
+
+    // Check if we're on HTTPS (required for push notifications)
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      console.log('Push notifications require HTTPS. Current protocol:', location.protocol);
       setIsSupported(false);
       return;
     }
@@ -34,6 +42,8 @@ export const useNotifications = () => {
     const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
     console.log('VAPID Public Key:', vapidKey ? 'Present' : 'Missing');
     console.log('Environment variables:', import.meta.env);
+    console.log('Current protocol:', location.protocol);
+    console.log('Current hostname:', location.hostname);
 
     // Check if user is already subscribed
     checkSubscriptionStatus();
