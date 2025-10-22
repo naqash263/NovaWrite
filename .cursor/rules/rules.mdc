@@ -136,6 +136,9 @@ alwaysApply: true
 - [ ] Caches cleared and rebuilt
 - [ ] Browser cache cleared after deployment
 - [ ] **STABLE_APP_KEY GitHub Secret is set and correct**
+- [ ] **VAPID_PUBLIC_KEY GitHub Secret is set and correct**
+- [ ] **VAPID_PRIVATE_KEY GitHub Secret is set and correct**
+- [ ] **VAPID_SUBJECT GitHub Secret is set and correct**
 - [ ] Encryption keys are environment-specific
 - [ ] API keys can be decrypted successfully
 - [ ] Wait 2.5 minutes after deployment before testing
@@ -143,6 +146,10 @@ alwaysApply: true
 - [ ] Encryption key backed up before migration
 - [ ] Post-deployment verification completed
 - [ ] **Test encryption key stability after deployment**
+- [ ] **Test PWA install banner shows after 2-3 visits**
+- [ ] **Test push notification subscription works**
+- [ ] **Test admin push notification panel works**
+- [ ] **Test push notification delivery**
 
 ## 13. GitHub Secret Management
 - ✅ **STABLE_APP_KEY Secret**: Stores the production encryption key securely
@@ -154,6 +161,22 @@ alwaysApply: true
 - ⚠️ **CRITICAL**: Never change this secret without updating all encrypted data
 - ✅ **Verification**: Check `/api/cv-ai/check-encryption` after deployment
 - ✅ **Backup**: Key is automatically backed up to database before migrations
+
+### VAPID Keys for Push Notifications
+- ✅ **VAPID_PUBLIC_KEY Secret**: Stores the public VAPID key for push notifications
+- ✅ **VAPID_PRIVATE_KEY Secret**: Stores the private VAPID key for push notifications
+- ✅ **VAPID_SUBJECT Secret**: Stores the VAPID subject (email) for push notifications
+- ✅ **Secret Names**: 
+  - `VAPID_PUBLIC_KEY`
+  - `VAPID_PRIVATE_KEY` 
+  - `VAPID_SUBJECT`
+- ✅ **Secret Values**:
+  - `VAPID_PUBLIC_KEY`: `BP14D5v2po9EP7s3-FP29FlJhqiWmOhGSHwpduUx-GkBWaXpCpYuaX1fL5YxiPyXmu0B6Lnu5KOqG3LlQd9ZD74`
+  - `VAPID_PRIVATE_KEY`: `J2xYDqkuqAn4ck68xyWnpn3LCfbdY4tltbzX6zTmEMw`
+  - `VAPID_SUBJECT`: `mailto:naqash263@gmail.com`
+- ✅ **Automatic Injection**: GitHub Actions automatically injects VAPID keys into both frontend and backend .env files
+- ✅ **Frontend Usage**: `VITE_VAPID_PUBLIC_KEY` for push subscription
+- ✅ **Backend Usage**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` for sending notifications
 
 ## 14. Database Management Workflow
 - ✅ **Automatic Permission Granting**: GitHub Actions automatically grants database permissions during deployment
@@ -168,7 +191,39 @@ alwaysApply: true
   - Check migration status
 - ✅ **Post-Deployment Verification**: Automatic testing of encryption system and API health
 
-## 15. SSH Access & Production Server Management
+## 15. PWA & Push Notifications
+- ✅ **PWA Install Banner**: Shows after 2-3 visits with custom UI
+- ✅ **Install Prompt Management**: useInstallPrompt hook handles beforeinstallprompt event
+- ✅ **Service Worker**: Registered with push notification support
+- ✅ **Push Notifications**: Full backend and frontend implementation
+- ✅ **VAPID Keys**: Securely managed via GitHub Secrets
+- ✅ **Notification Settings**: User can manage notification preferences
+- ✅ **Admin Panel**: Send notifications and view subscription stats
+- ⚠️ **CRITICAL**: VAPID keys must be set in GitHub Secrets for push notifications to work
+- ✅ **Frontend Environment**: `VITE_VAPID_PUBLIC_KEY` injected from GitHub Secret
+- ✅ **Backend Environment**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` injected from GitHub Secrets
+- ✅ **Database**: `push_subscriptions` table stores user notification preferences
+- ✅ **Event System**: Laravel events trigger push notifications for new content
+- ✅ **Testing**: Use admin panel to send test notifications
+
+### PWA Configuration
+- ✅ **Manifest**: Configured with proper icons and metadata
+- ✅ **Icons**: PNG format required (pwa-192x192.png, pwa-512x512.png)
+- ✅ **Meta Tags**: Apple mobile web app capable, theme colors
+- ✅ **Service Worker**: Handles push events and notification clicks
+- ✅ **Install Flow**: Custom banner + native browser prompt
+
+### Push Notification Flow
+1. User enables notifications in settings
+2. Browser requests permission
+3. If granted, create push subscription with VAPID key
+4. Send subscription to backend API
+5. Backend stores in database with user preferences
+6. When event triggers, backend sends push to subscribed users
+7. Service worker receives push, shows notification
+8. User clicks notification, opens relevant page
+
+## 16. SSH Access & Production Server Management
 - ✅ **SSH Credentials**: Available in GitHub Secrets for automated deployments
 - ✅ **Server Details**:
   - Host: `${{ secrets.HOST }}`
@@ -462,6 +517,66 @@ curl https://naqashthaheem.com/api/cv-ai/check-encryption
 ssh -p 21098 timesovh@162.254.39.126
 cd ~/naqashthaheem.com/backend
 php fix_production_encryption_script.php
+```
+
+## Mistake 15: PWA install banner not showing
+**Cause:** beforeinstallprompt event not captured or visit count not met
+**Solution:**
+```bash
+# Check if banner should show
+# 1. Visit site 2-3 times
+# 2. Check localStorage: pwa_visit_count
+# 3. Check console for "beforeinstallprompt event received"
+# 4. Use debug button in Layout component to force show
+
+# Debug in browser console:
+localStorage.setItem('pwa_visit_count', '3');
+localStorage.removeItem('pwa_install_dismissed');
+window.location.reload();
+```
+
+## Mistake 16: Push notifications not working (VAPID errors)
+**Cause:** VAPID keys not set in GitHub Secrets or wrong format
+**Solution:**
+```bash
+# 1. Add VAPID keys to GitHub Secrets:
+# VAPID_PUBLIC_KEY: BP14D5v2po9EP7s3-FP29FlJhqiWmOhGSHwpduUx-GkBWaXpCpYuaX1fL5YxiPyXmu0B6Lnu5KOqG3LlQd9ZD74
+# VAPID_PRIVATE_KEY: J2xYDqkuqAn4ck68xyWnpn3LCfbdY4tltbzX6zTmEMw
+# VAPID_SUBJECT: mailto:naqash263@gmail.com
+
+# 2. Check if keys are injected in production
+curl https://naqashthaheem.com/api/admin/push-notifications/stats
+
+# 3. Test push notification from admin panel
+# Go to: Admin → Push Notifications → Send Test Notification
+```
+
+## Mistake 17: Push notification API returns 500 error
+**Cause:** Missing methods in PushNotificationService or authentication issues
+**Solution:**
+```bash
+# Check if sendToSubscribersByType method exists
+# Check if user is authenticated and has admin role
+# Check Laravel logs for specific error:
+tail -f storage/logs/laravel.log
+
+# Verify push notification service is working:
+php artisan tinker
+$service = app(\App\Services\PushNotificationService::class);
+$service->getStatistics();
+```
+
+## Mistake 18: PWA icons not showing correctly
+**Cause:** Using SVG instead of PNG or wrong file paths
+**Solution:**
+```bash
+# Ensure icons are PNG format:
+# frontend/public/pwa-192x192.png
+# frontend/public/pwa-512x512.png
+
+# Check manifest.json references correct files
+# Update vite.config.ts to include PNG icons in assets
+# Verify icons exist in dist/ after build
 ```
 
 Try to open the browser's developer tools by opening the page when ever request to test on browser
