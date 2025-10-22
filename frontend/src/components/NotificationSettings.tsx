@@ -21,19 +21,23 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubscribe = async () => {
+    console.log('handleSubscribe called');
     setIsLoading(true);
     try {
+      console.log('Calling subscribe()...');
       await subscribe();
+      console.log('Subscribe successful');
       addToast({
         type: 'success',
         title: 'Notifications Enabled',
         description: 'You will now receive push notifications for updates.'
       });
     } catch (error) {
+      console.error('Subscribe error:', error);
       addToast({
         type: 'error',
         title: 'Subscription Failed',
-        description: 'Failed to enable notifications. Please try again.'
+        description: `Failed to enable notifications: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`
       });
     } finally {
       setIsLoading(false);

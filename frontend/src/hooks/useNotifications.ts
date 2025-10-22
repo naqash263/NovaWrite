@@ -57,12 +57,16 @@ export const useNotifications = () => {
   };
 
   const requestPermission = async (): Promise<boolean> => {
+    console.log('requestPermission() called - isSupported:', isSupported);
+    
     if (!isSupported) {
       throw new Error('Notifications are not supported in this browser');
     }
 
     try {
+      console.log('Calling Notification.requestPermission()...');
       const permission = await Notification.requestPermission();
+      console.log('Permission result:', permission);
       setPermission(permission);
       return permission === 'granted';
     } catch (error) {
@@ -72,30 +76,41 @@ export const useNotifications = () => {
   };
 
   const subscribe = async (): Promise<boolean> => {
+    console.log('subscribe() called - isSupported:', isSupported, 'permission:', permission);
+    
     if (!isSupported || permission !== 'granted') {
+      console.log('Requesting permission...');
       const granted = await requestPermission();
+      console.log('Permission granted:', granted);
       if (!granted) {
         throw new Error('Notification permission denied');
       }
     }
 
     const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    console.log('VAPID key:', vapidPublicKey ? 'Present' : 'Missing');
     if (!vapidPublicKey) {
       throw new Error('VAPID public key is not configured. Please check your environment variables.');
     }
 
     try {
+      console.log('Getting service worker registration...');
       const registration = await navigator.serviceWorker.ready;
+      console.log('Service worker ready, creating subscription...');
+      
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidPublicKey
       });
 
+      console.log('Push subscription created:', subscription);
       setSubscription(subscription);
       setIsSubscribed(true);
 
       // Send subscription to backend
+      console.log('Sending subscription to backend...');
       await sendSubscriptionToBackend(subscription);
+      console.log('Subscription sent to backend successfully');
 
       return true;
     } catch (error) {
