@@ -515,14 +515,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             
             {/* Desktop Auth Menu */}
             <div className="hidden sm:flex items-center gap-3">
+              {/* API Key Status - Compact */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
+                <ApiKeyManager />
+              </div>
+              
               {user ? (
                 <>
-                  {/* API Key Status - Compact */}
-                  {user && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
-                      <ApiKeyManager />
-                    </div>
-                  )}
                   
                   {/* User Dropdown */}
                   <div className="relative" data-user-dropdown>
@@ -764,14 +763,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 
                 {/* User Section */}
                 <div className="border-t border-gray-200 pt-4 mt-4">
+                  {/* API Key Status */}
+                  <div className="px-3 py-2">
+                    <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                      <ApiKeyManager />
+                    </div>
+                  </div>
+                  
                   {user ? (
                     <>
-                      {/* API Key Status */}
-                      <div className="px-3 py-2">
-                        <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
-                          <ApiKeyManager />
-                        </div>
-                      </div>
                       
                       <Link
                         to="/my-courses"

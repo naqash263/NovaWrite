@@ -17,9 +17,7 @@ const ApiKeyManager: React.FC = () => {
 
   // Load API stats on mount
   useEffect(() => {
-    if (isAuthenticated) {
-      loadApiStats();
-    }
+    loadApiStats();
   }, [isAuthenticated]);
 
   const loadApiStats = async () => {
@@ -95,10 +93,6 @@ const ApiKeyManager: React.FC = () => {
     }
   };
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
     <>
       {/* API Stats Display */}
@@ -109,18 +103,33 @@ const ApiKeyManager: React.FC = () => {
             {apiStats.availableRequests}
           </span>
           <span className="text-gray-500">/ {apiStats.totalRequests || 100}</span>
-          {apiStats.totalRequests === 0 && (
+          {!isAuthenticated && (
+            <span className="text-xs text-gray-400">(Public API)</span>
+          )}
+          {isAuthenticated && apiStats.totalRequests === 0 && (
             <span className="text-xs text-gray-400">(Add API key for 100 daily requests)</span>
           )}
         </div>
         
-        <button
-          onClick={() => setShowApiKeyModal(true)}
-          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 border border-green-300 rounded-md hover:bg-green-200 transition-colors duration-200"
-        >
-          <span className="mr-1">🔑</span>
-          Add API Key
-        </button>
+        {isAuthenticated && (
+          <button
+            onClick={() => setShowApiKeyModal(true)}
+            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 border border-green-300 rounded-md hover:bg-green-200 transition-colors duration-200"
+          >
+            <span className="mr-1">🔑</span>
+            Add API Key
+          </button>
+        )}
+        
+        {!isAuthenticated && (
+          <button
+            onClick={() => window.location.href = '/login'}
+            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 border border-blue-300 rounded-md hover:bg-blue-200 transition-colors duration-200"
+          >
+            <span className="mr-1">🔑</span>
+            Login for More
+          </button>
+        )}
       </div>
 
       {/* API Key Modal */}
