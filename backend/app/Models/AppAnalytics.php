@@ -117,27 +117,27 @@ class AppAnalytics extends Model
      */
     public static function getSummary($startDate = null, $endDate = null)
     {
-        $query = static::query();
+        $baseQuery = static::query();
         
         if ($startDate && $endDate) {
-            $query->inDateRange($startDate, $endDate);
+            $baseQuery->inDateRange($startDate, $endDate);
         }
 
         return [
-            'total_installs' => $query->installs()->count(),
-            'total_uninstalls' => $query->uninstalls()->count(),
-            'total_launches' => $query->launches()->count(),
-            'net_installs' => $query->installs()->count() - $query->uninstalls()->count(),
-            'platforms' => $query->selectRaw('platform, COUNT(*) as count')
+            'total_installs' => (clone $baseQuery)->installs()->count(),
+            'total_uninstalls' => (clone $baseQuery)->uninstalls()->count(),
+            'total_launches' => (clone $baseQuery)->launches()->count(),
+            'net_installs' => (clone $baseQuery)->installs()->count() - (clone $baseQuery)->uninstalls()->count(),
+            'platforms' => (clone $baseQuery)->selectRaw('platform, COUNT(*) as count')
                 ->groupBy('platform')
                 ->pluck('count', 'platform'),
-            'countries' => $query->selectRaw('country, COUNT(*) as count')
+            'countries' => (clone $baseQuery)->selectRaw('country, COUNT(*) as count')
                 ->whereNotNull('country')
                 ->groupBy('country')
                 ->orderBy('count', 'desc')
                 ->limit(10)
                 ->pluck('count', 'country'),
-            'device_types' => $query->selectRaw('device_type, COUNT(*) as count')
+            'device_types' => (clone $baseQuery)->selectRaw('device_type, COUNT(*) as count')
                 ->whereNotNull('device_type')
                 ->groupBy('device_type')
                 ->pluck('count', 'device_type'),
