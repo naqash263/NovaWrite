@@ -20,7 +20,6 @@ export default defineConfig({
         scope: '/',
         start_url: '/',
         categories: ['productivity', 'business', 'education'],
-        permissions: ['notifications'],
         icons: [
           {
             src: 'pwa-192x192.png',

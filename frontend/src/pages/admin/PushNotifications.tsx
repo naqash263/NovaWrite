@@ -83,7 +83,7 @@ const PushNotifications: React.FC = () => {
 
     setIsSending(true);
     try {
-      const response = await apiClient.post('/admin/push-notifications/send', form);
+      await apiClient.post('/admin/push-notifications/send', form);
       
       addToast({
         type: 'success',
@@ -116,7 +116,7 @@ const PushNotifications: React.FC = () => {
   const handleTestNotification = async () => {
     setIsSending(true);
     try {
-      const response = await apiClient.post('/admin/push-notifications/test');
+      await apiClient.post('/admin/push-notifications/test');
       
       addToast({
         type: 'success',
