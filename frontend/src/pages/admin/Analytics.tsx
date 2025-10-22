@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../api/axios';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 interface AnalyticsData {
   summary: {
@@ -24,6 +25,7 @@ interface AnalyticsData {
 }
 
 const Analytics: React.FC = () => {
+  const { user, isAuthenticated, isAdmin } = useAuthContext();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,21 +40,35 @@ const Analytics: React.FC = () => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      console.log('Fetching analytics data...');
+      console.log('=== ANALYTICS DEBUG ===');
+      console.log('User:', user);
+      console.log('Is authenticated:', isAuthenticated);
+      console.log('Is admin:', isAdmin);
+      console.log('Days:', days);
+      console.log('Start date:', startDate);
+      console.log('End date:', endDate);
       
       let url = `/admin/analytics/dashboard?days=${days}`;
       if (startDate && endDate) {
         url += `&start_date=${startDate}&end_date=${endDate}`;
       }
       
+      console.log('API URL:', url);
+      console.log('Auth token present:', !!localStorage.getItem('token'));
+      console.log('Token value:', localStorage.getItem('token')?.substring(0, 20) + '...');
+      
       const response = await apiClient.get(url);
-      console.log('Analytics response:', response.data);
+      console.log('Analytics response status:', response.status);
+      console.log('Analytics response data:', response.data);
       setData(response.data);
       setError(null);
     } catch (err: any) {
-      console.error('Analytics fetch error:', err);
+      console.error('=== ANALYTICS ERROR ===');
+      console.error('Error status:', err.response?.status);
       console.error('Error details:', err.response?.data);
-      setError(err.response?.data?.message || 'Failed to fetch analytics data');
+      console.error('Error message:', err.message);
+      console.error('Full error:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to fetch analytics data');
     } finally {
       setLoading(false);
     }
