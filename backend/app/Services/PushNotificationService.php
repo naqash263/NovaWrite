@@ -14,11 +14,18 @@ class PushNotificationService
 
     public function __construct()
     {
+        $vapidPublicKey = config('push.vapid.public_key');
+        $vapidPrivateKey = config('push.vapid.private_key');
+        
+        if (!$vapidPublicKey || !$vapidPrivateKey) {
+            throw new Exception('VAPID keys are not configured. Please check your environment variables.');
+        }
+        
         $this->webPush = new WebPush([
             'VAPID' => [
                 'subject' => config('app.url'),
-                'publicKey' => config('push.vapid.public_key'),
-                'privateKey' => config('push.vapid.private_key'),
+                'publicKey' => $vapidPublicKey,
+                'privateKey' => $vapidPrivateKey,
             ],
         ]);
     }
@@ -146,38 +153,29 @@ class PushNotificationService
      */
     public function getStatistics(): array
     {
-        $totalSubscribers = PushSubscription::count();
-        $activeSubscribers = PushSubscription::active()->count();
-        
-        $notificationTypes = [
-            'blogPosts' => PushSubscription::active()->forNotificationType('blogPosts')->count(),
-            'courses' => PushSubscription::active()->forNotificationType('courses')->count(),
-            'workflows' => PushSubscription::active()->forNotificationType('workflows')->count(),
-            'careerTools' => PushSubscription::active()->forNotificationType('careerTools')->count(),
-        ];
+        try {
+            $totalSubscribers = PushSubscription::count();
+            $activeSubscribers = PushSubscription::active()->count();
+            
+            $notificationTypes = [
+                'blogPosts' => PushSubscription::active()->forNotificationType('blogPosts')->count(),
+                'courses' => PushSubscription::active()->forNotificationType('courses')->count(),
+                'workflows' => PushSubscription::active()->forNotificationType('workflows')->count(),
+                'careerTools' => PushSubscription::active()->forNotificationType('careerTools')->count(),
+            ];
 
-        return [
-            'total_subscribers' => $totalSubscribers,
-            'active_subscribers' => $activeSubscribers,
-            'notification_types' => $notificationTypes,
-        ];
-    }
-
-    /**
-     * Send notification to subscribers by type.
-     */
-    public function sendToSubscribersByType(string $type, string $title, string $body, ?string $url = null, ?string $imageUrl = null): array
-    {
-        $subscriptions = PushSubscription::where('is_active', true)
-            ->whereJsonContains('preferences->' . $type, true)
-            ->get();
-
-        return $this->sendToSubscriptions($subscriptions, $title, $body, [
-            'url' => $url,
-            'icon' => config('app.url') . '/pwa-192x192.png',
-            'badge' => config('app.url') . '/pwa-192x192.png',
-            'image' => $imageUrl,
-        ]);
+            return [
+                'total_subscribers' => $totalSubscribers,
+                'active_subscribers' => $activeSubscribers,
+                'notification_types' => $notificationTypes,
+            ];
+        } catch (Exception $e) {
+            Log::error('Error getting push notification statistics', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     /**
