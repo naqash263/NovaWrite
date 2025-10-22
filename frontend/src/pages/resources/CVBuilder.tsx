@@ -3549,6 +3549,17 @@ export default function CVBuilder() {
         return '';
       });
       
+      // Preserve icons in the template HTML
+      templateHTML = templateHTML.replace(/<i[^>]*class="[^"]*icon[^"]*"[^>]*>.*?<\/i>/gi, (match) => {
+        // Ensure icons are properly formatted for PDF generation
+        return match.replace(/style="[^"]*"/gi, 'style="display: inline-block !important; visibility: visible !important; vertical-align: middle !important; margin-right: 4px !important;"');
+      });
+      
+      // Also preserve SVG icons
+      templateHTML = templateHTML.replace(/<svg[^>]*>.*?<\/svg>/gi, (match) => {
+        return match.replace(/style="[^"]*"/gi, 'style="display: inline-block !important; visibility: visible !important; vertical-align: middle !important; margin-right: 4px !important;"');
+      });
+      
       console.log('Processed template HTML length:', templateHTML.length);
       console.log('Processed template HTML preview:', templateHTML.substring(0, 500));
       
@@ -3687,6 +3698,29 @@ export default function CVBuilder() {
               border-radius: 4px;
             }
             
+            /* Icon support */
+            i, svg, .icon, [class*="icon"] {
+              display: inline-block !important;
+              visibility: visible !important;
+              vertical-align: middle !important;
+              margin-right: 4px !important;
+            }
+            
+            /* Font Awesome and other icon fonts */
+            .fa, .fas, .far, .fab, .fal, .fad {
+              font-family: "Font Awesome 5 Free", "Font Awesome 5 Pro", "Font Awesome 5 Brands" !important;
+              font-weight: 900 !important;
+              display: inline-block !important;
+            }
+            
+            /* Material Icons */
+            .material-icons {
+              font-family: 'Material Icons' !important;
+              font-weight: normal !important;
+              font-style: normal !important;
+              display: inline-block !important;
+            }
+            
             /* Hide empty sections */
             .section:empty, 
             [class*="section"]:empty {
@@ -3737,6 +3771,27 @@ export default function CVBuilder() {
               
               .skill-category {
                 background-color: ${cvStyle.secondaryColor} !important;
+              }
+              
+              /* Icon support in print */
+              i, svg, .icon, [class*="icon"] {
+                display: inline-block !important;
+                visibility: visible !important;
+                vertical-align: middle !important;
+                margin-right: 3px !important;
+              }
+              
+              .fa, .fas, .far, .fab, .fal, .fad {
+                font-family: "Font Awesome 5 Free", "Font Awesome 5 Pro", "Font Awesome 5 Brands" !important;
+                font-weight: 900 !important;
+                display: inline-block !important;
+              }
+              
+              .material-icons {
+                font-family: 'Material Icons' !important;
+                font-weight: normal !important;
+                font-style: normal !important;
+                display: inline-block !important;
               }
               
               .section-title {
@@ -3806,8 +3861,19 @@ export default function CVBuilder() {
               width: 1025, // Width for better scaling
               scrollX: 0,
               scrollY: 0,
-              windowWidth: 1025
-              // Removed height and windowHeight to allow auto-sizing
+              windowWidth: 1025,
+              foreignObjectRendering: true, // Enable foreign object rendering for icons
+              imageTimeout: 0, // No timeout for images/icons
+              removeContainer: false, // Keep container for proper icon rendering
+              onclone: function(clonedDoc: Document) {
+                // Ensure icons are properly rendered in the cloned document
+                const icons = clonedDoc.querySelectorAll('i, svg, img[src*="icon"], [class*="icon"]');
+                icons.forEach(icon => {
+                  const htmlIcon = icon as HTMLElement;
+                  htmlIcon.style.display = 'inline-block';
+                  htmlIcon.style.visibility = 'visible';
+                });
+              }
             }
         });
         
