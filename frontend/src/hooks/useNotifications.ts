@@ -111,18 +111,46 @@ export const useNotifications = () => {
       // Convert VAPID key to proper format for PushManager
       console.log('Original VAPID key:', vapidPublicKey.substring(0, 20) + '...');
       
-      // Convert base64 to base64url
-      const base64urlKey = vapidPublicKey
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
+      // Function to convert base64url to Uint8Array
+      const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+        // Convert base64url to base64
+        const base64 = base64String
+          .replace(/-/g, '+')
+          .replace(/_/g, '/');
+        
+        // Add padding if needed
+        const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
+        
+        // Decode base64 to binary string
+        const binaryString = atob(padded);
+        
+        // Convert to Uint8Array
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        return bytes;
+      };
+      
+      // Convert VAPID key to base64url if it's not already
+      let base64urlKey = vapidPublicKey;
+      if (vapidPublicKey.includes('+') || vapidPublicKey.includes('/') || vapidPublicKey.includes('=')) {
+        base64urlKey = vapidPublicKey
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=/g, '');
+      }
       
       console.log('Base64url key:', base64urlKey.substring(0, 20) + '...');
       
-      // Use the base64url key directly (most browsers accept this format)
+      // Convert to Uint8Array
+      const keyArray = urlBase64ToUint8Array(base64urlKey);
+      console.log('Key array length:', keyArray.length);
+      
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: base64urlKey
+        applicationServerKey: keyArray.buffer as ArrayBuffer
       });
 
       console.log('Push subscription created:', subscription);
