@@ -615,6 +615,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </button>
               )}
               
+              {/* Debug: Force Show Install Banner (Remove in production) */}
+              <button
+                onClick={() => {
+                  localStorage.setItem('pwa_visit_count', '1');
+                  localStorage.removeItem('pwa_install_dismissed');
+                  window.location.reload();
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <span className="text-xs">Debug: Show Install</span>
+              </button>
+              
               {user ? (
                 <>
                   

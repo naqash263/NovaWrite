@@ -52,8 +52,8 @@ export const useInstallPrompt = (): InstallPromptState => {
     // Check if banner was previously dismissed
     const bannerDismissed = localStorage.getItem('pwa_install_dismissed') === 'true';
     
-    // Show banner if: visits >= 2 AND not dismissed AND not installed
-    if (newVisitCount >= 2 && !bannerDismissed && !checkIfInstalled()) {
+    // Show banner if: visits >= 1 AND not dismissed AND not installed
+    if (newVisitCount >= 1 && !bannerDismissed && !checkIfInstalled()) {
       setShowBanner(true);
     }
 
@@ -127,6 +127,6 @@ export const useInstallPrompt = (): InstallPromptState => {
     dismissPrompt,
     isInstalled,
     visitCount,
-    showBanner: showBanner && !!deferredPrompt && !isInstalled
+    showBanner: showBanner && !isInstalled
   };
 };

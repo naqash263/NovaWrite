@@ -29,25 +29,27 @@ const InstallBanner: React.FC = () => {
             <div className="flex items-center space-x-4">
               {/* App Icon */}
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                  <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                  </svg>
+                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-2">
+                  <img 
+                    src="/pwa-192x192.svg" 
+                    alt="Naqash Thaheem Portfolio" 
+                    className="w-full h-full object-contain"
+                  />
                 </div>
               </div>
 
               {/* Content */}
               <div className="flex-1">
-                <h3 className="text-lg font-semibold">Install Naqash Thaheem Portfolio</h3>
+                <h3 className="text-lg font-semibold">Install App</h3>
                 <p className="text-sm text-blue-100">
-                  Get quick access to career tools, faster loading, and offline support
+                  Get instant access to AI-powered career tools, faster loading, and work offline
                 </p>
                 <div className="flex items-center space-x-4 mt-1 text-xs text-blue-200">
                   <span className="flex items-center">
                     <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    Offline Access
+                    CV Builder & Tools
                   </span>
                   <span className="flex items-center">
                     <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -59,7 +61,7 @@ const InstallBanner: React.FC = () => {
                     <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    App-like Experience
+                    Faster Loading
                   </span>
                 </div>
               </div>
