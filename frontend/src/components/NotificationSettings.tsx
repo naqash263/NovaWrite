@@ -86,6 +86,16 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
 
   const permissionStatus = getPermissionStatus();
 
+  // Debug: Log VAPID key status
+  React.useEffect(() => {
+    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    console.log('NotificationSettings - VAPID Public Key:', vapidKey ? 'Present' : 'Missing');
+    console.log('NotificationSettings - Environment variables:', import.meta.env);
+    console.log('NotificationSettings - Permission:', permission);
+    console.log('NotificationSettings - Is Supported:', isSupported);
+    console.log('NotificationSettings - Is Subscribed:', isSubscribed);
+  }, [permission, isSupported, isSubscribed]);
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -155,7 +165,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
                 : 'Subscribe to receive push notifications on this device.'}
             </p>
             
-            {permissionStatus === 'granted' && (
+            {permissionStatus === 'granted' ? (
               <button
                 onClick={isSubscribed ? handleUnsubscribe : handleSubscribe}
                 disabled={isLoading}
@@ -166,6 +176,14 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {isLoading ? 'Processing...' : (isSubscribed ? 'Unsubscribe' : 'Subscribe')}
+              </button>
+            ) : (
+              <button
+                onClick={handleSubscribe}
+                disabled={isLoading}
+                className="w-full py-2 px-4 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isLoading ? 'Processing...' : 'Enable Notifications'}
               </button>
             )}
           </div>
@@ -204,6 +222,24 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
               </div>
             </div>
           )}
+
+          {/* Debug Info - Remove in production */}
+          <div className="bg-yellow-50 rounded-lg p-4">
+            <div className="flex">
+              <svg className="w-5 h-5 text-yellow-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <h4 className="text-sm font-medium text-yellow-900">Debug Info</h4>
+                <p className="text-sm text-yellow-800 mt-1">
+                  VAPID Key: {import.meta.env.VITE_VAPID_PUBLIC_KEY ? '✅ Present' : '❌ Missing'}<br/>
+                  Permission: {permission || 'null'}<br/>
+                  Supported: {isSupported ? '✅ Yes' : '❌ No'}<br/>
+                  Subscribed: {isSubscribed ? '✅ Yes' : '❌ No'}
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Help Text */}
           <div className="bg-blue-50 rounded-lg p-4">
