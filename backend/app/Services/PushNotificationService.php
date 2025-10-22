@@ -164,6 +164,23 @@ class PushNotificationService
     }
 
     /**
+     * Send notification to subscribers by type.
+     */
+    public function sendToSubscribersByType(string $type, string $title, string $body, ?string $url = null, ?string $imageUrl = null): array
+    {
+        $subscriptions = PushSubscription::where('is_active', true)
+            ->whereJsonContains('preferences->' . $type, true)
+            ->get();
+
+        return $this->sendToSubscriptions($subscriptions, $title, $body, [
+            'url' => $url,
+            'icon' => config('app.url') . '/pwa-192x192.png',
+            'badge' => config('app.url') . '/pwa-192x192.png',
+            'image' => $imageUrl,
+        ]);
+    }
+
+    /**
      * Clean up inactive subscriptions.
      */
     public function cleanupInactiveSubscriptions(int $daysInactive = 30): int

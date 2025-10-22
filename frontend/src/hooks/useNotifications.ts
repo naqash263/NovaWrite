@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import apiClient from '../api/axios';
 
 interface NotificationPreferences {
   blogPosts: boolean;
@@ -28,6 +29,11 @@ export const useNotifications = () => {
 
     setIsSupported(true);
     setPermission(Notification.permission);
+
+    // Debug: Log VAPID key status
+    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    console.log('VAPID Public Key:', vapidKey ? 'Present' : 'Missing');
+    console.log('Environment variables:', import.meta.env);
 
     // Check if user is already subscribed
     checkSubscriptionStatus();
@@ -73,11 +79,16 @@ export const useNotifications = () => {
       }
     }
 
+    const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    if (!vapidPublicKey) {
+      throw new Error('VAPID public key is not configured. Please check your environment variables.');
+    }
+
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY
+        applicationServerKey: vapidPublicKey
       });
 
       setSubscription(subscription);
@@ -118,26 +129,16 @@ export const useNotifications = () => {
 
   const sendSubscriptionToBackend = async (subscription: PushSubscription) => {
     try {
-      const response = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      await apiClient.post('/push/subscribe', {
+        subscription: {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
+            auth: arrayBufferToBase64(subscription.getKey('auth'))
+          }
         },
-        body: JSON.stringify({
-          subscription: {
-            endpoint: subscription.endpoint,
-            keys: {
-              p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
-              auth: arrayBufferToBase64(subscription.getKey('auth'))
-            }
-          },
-          preferences
-        })
+        preferences
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to save subscription to backend');
-      }
     } catch (error) {
       console.error('Error sending subscription to backend:', error);
       throw error;
@@ -146,12 +147,7 @@ export const useNotifications = () => {
 
   const removeSubscriptionFromBackend = async () => {
     try {
-      await fetch('/api/push/unsubscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      await apiClient.post('/push/unsubscribe');
     } catch (error) {
       console.error('Error removing subscription from backend:', error);
     }
@@ -162,17 +158,7 @@ export const useNotifications = () => {
     setPreferences(updatedPreferences);
 
     try {
-      const response = await fetch('/api/push/preferences', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedPreferences)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update notification preferences');
-      }
+      await apiClient.put('/push/preferences', updatedPreferences);
     } catch (error) {
       console.error('Error updating preferences:', error);
       throw error;
@@ -181,12 +167,9 @@ export const useNotifications = () => {
 
   const fetchUserPreferences = async () => {
     try {
-      const response = await fetch('/api/push/status');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.preferences) {
-          setPreferences(data.preferences);
-        }
+      const response = await apiClient.get('/push/status');
+      if (response.data.preferences) {
+        setPreferences(response.data.preferences);
       }
     } catch (error) {
       console.error('Error fetching user preferences:', error);

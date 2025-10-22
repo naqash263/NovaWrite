@@ -276,6 +276,14 @@ class PushNotificationController extends Controller
     {
         try {
             $userId = Auth::guard('api')->id();
+            
+            if (!$userId) {
+                return response()->json([
+                    'message' => 'User not authenticated',
+                    'error' => 'Authentication required'
+                ], 401);
+            }
+            
             $result = $this->pushService->sendTestNotification($userId);
 
             return response()->json([
@@ -297,11 +305,26 @@ class PushNotificationController extends Controller
     public function getStatistics(): JsonResponse
     {
         try {
+            // Debug: Check authentication
+            if (!Auth::guard('api')->check()) {
+                return response()->json(['message' => 'Not authenticated'], 401);
+            }
+            
+            $user = Auth::guard('api')->user();
+            if (!$user->isAdmin()) {
+                return response()->json(['message' => 'Admin access required'], 403);
+            }
+            
             $stats = $this->pushService->getStatistics();
 
             return response()->json($stats);
 
         } catch (Exception $e) {
+            \Log::error('Push notification stats error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'message' => 'Failed to get statistics',
                 'error' => $e->getMessage()
