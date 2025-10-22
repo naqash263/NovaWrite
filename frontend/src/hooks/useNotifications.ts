@@ -108,9 +108,15 @@ export const useNotifications = () => {
       const registration = await navigator.serviceWorker.ready;
       console.log('Service worker ready, creating subscription...');
       
+      // Convert base64 to base64url for VAPID key
+      const base64urlKey = vapidPublicKey
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+      
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapidPublicKey
+        applicationServerKey: base64urlKey
       });
 
       console.log('Push subscription created:', subscription);

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
 import apiClient from '../../api/axios';
 
 interface AnalyticsData {
@@ -25,7 +24,6 @@ interface AnalyticsData {
 }
 
 const Analytics: React.FC = () => {
-  const { user } = useAuth();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
