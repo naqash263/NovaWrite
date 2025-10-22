@@ -162,7 +162,7 @@ self.addEventListener('push', (event) => {
   console.log('Push event received:', event);
   
   let notificationData = {
-    title: 'NovaWrite',
+    title: 'Naqash Thaheem Portfolio',
     body: 'You have a new notification',
     icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',

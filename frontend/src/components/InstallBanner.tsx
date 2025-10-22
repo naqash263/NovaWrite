@@ -38,7 +38,7 @@ const InstallBanner: React.FC = () => {
 
               {/* Content */}
               <div className="flex-1">
-                <h3 className="text-lg font-semibold">Install NovaWrite</h3>
+                <h3 className="text-lg font-semibold">Install Naqash Thaheem Portfolio</h3>
                 <p className="text-sm text-blue-100">
                   Get quick access to career tools, faster loading, and offline support
                 </p>
