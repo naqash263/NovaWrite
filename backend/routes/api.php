@@ -11,6 +11,26 @@ Route::get('/health/comprehensive', [App\Http\Controllers\Api\HealthController::
 Route::get('/health/database', [App\Http\Controllers\Api\HealthController::class, 'database']);
 Route::get('/health/storage', [App\Http\Controllers\Api\HealthController::class, 'storage']);
 
+// Push notification routes
+Route::middleware(\App\Http\Middleware\ApiAuth::class)->group(function () {
+    Route::post('/push/subscribe', [App\Http\Controllers\PushNotificationController::class, 'subscribe']);
+    Route::post('/push/unsubscribe', [App\Http\Controllers\PushNotificationController::class, 'unsubscribe']);
+    Route::put('/push/preferences', [App\Http\Controllers\PushNotificationController::class, 'updatePreferences']);
+    Route::get('/push/status', [App\Http\Controllers\PushNotificationController::class, 'status']);
+});
+
+// Admin push notification routes
+Route::middleware([\App\Http\Middleware\ApiAuth::class, 'admin'])->prefix('admin/push-notifications')->group(function () {
+    Route::post('/send', [App\Http\Controllers\PushNotificationController::class, 'send']);
+    Route::post('/test', [App\Http\Controllers\PushNotificationController::class, 'sendTest']);
+    Route::get('/stats', [App\Http\Controllers\PushNotificationController::class, 'getStatistics']);
+});
+
+// Career tool notification routes
+Route::middleware([\App\Http\Middleware\ApiAuth::class, 'admin'])->prefix('admin/career-tools')->group(function () {
+    Route::post('/trigger-update', [App\Http\Controllers\Api\CareerToolController::class, 'triggerUpdate']);
+});
+
     // Test authentication endpoint
     Route::get('/test-auth', function () {
         $user = Auth::user();

@@ -165,8 +165,8 @@ To automate this in future deployments, add to `.github/workflows/deploy.yml`:
 ### **Test Locally:**
 
 1. **Check Backend Config:**
-```bash
-cd backend
+   ```bash
+   cd backend
 php artisan tinker
 >>> config('services.google.client_id')
 # Should output your client ID
@@ -195,7 +195,7 @@ php artisan tinker --execute="echo config('services.google.redirect');"
 ```
 
 2. **Test API Endpoint:**
-```bash
+   ```bash
 # Test the Google URL endpoint
 curl -H "Accept: application/json" \
   https://naqashthaheem.com/api/auth/google/url
@@ -243,7 +243,7 @@ client_id: null
 ```
 
 **Solution:**
-```bash
+   ```bash
 # Check if environment variables are set
 grep "^GOOGLE_" /home/timesovh/naqashthaheem.com/backend/.env
 
@@ -253,9 +253,9 @@ echo "GOOGLE_CLIENT_SECRET=your-secret-here" >> .env
 echo "GOOGLE_REDIRECT_URI=https://naqashthaheem.com/auth/google/callback" >> .env
 
 # Clear and rebuild config
-php artisan config:clear
-php artisan config:cache
-```
+   php artisan config:clear
+   php artisan config:cache
+   ```
 
 ---
 

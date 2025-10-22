@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Workflow;
 use App\Models\WorkflowFile;
+use App\Events\NewWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -46,6 +47,11 @@ class WorkflowController extends Controller
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
+
+        // Dispatch event for push notifications (only for published workflows)
+        if ($workflow->status === 'published') {
+            event(new NewWorkflow($workflow));
+        }
 
         return response()->json($workflow->load(['category', 'files']), 201);
     }

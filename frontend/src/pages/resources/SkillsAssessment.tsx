@@ -27,7 +27,6 @@ const SkillsAssessment: React.FC = () => {
   const [assessmentResults, setAssessmentResults] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   useSEO({
     title: 'Skills Assessment Tool - AI-Powered Skill Analysis | Naqash Thaheem',
@@ -514,7 +513,7 @@ const SkillsAssessment: React.FC = () => {
                             style={{ width: `${score}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">{score}%</span>
+                        <span className="text-sm font-medium text-gray-900">{score as number}%</span>
                       </div>
                     </div>
                   ))}
@@ -731,7 +730,7 @@ const SkillsAssessment: React.FC = () => {
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            {steps.map((step, index) => (
+            {steps.map((_, index) => (
               <div key={index} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   index <= currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'

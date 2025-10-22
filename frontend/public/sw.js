@@ -12,6 +12,15 @@ const API_CACHE_URLS = [
   '/api/workflow-categories'
 ];
 
+// Notification options
+const NOTIFICATION_OPTIONS = {
+  icon: '/pwa-192x192.png',
+  badge: '/pwa-192x192.png',
+  vibrate: [200, 100, 200],
+  requireInteraction: false,
+  silent: false
+};
+
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -146,4 +155,111 @@ self.addEventListener('fetch', (event) => {
         return caches.match(request);
       })
   );
+});
+
+// Push event - handle incoming push notifications
+self.addEventListener('push', (event) => {
+  console.log('Push event received:', event);
+  
+  let notificationData = {
+    title: 'NovaWrite',
+    body: 'You have a new notification',
+    icon: '/pwa-192x192.png',
+    badge: '/pwa-192x192.png',
+    data: {
+      url: '/'
+    }
+  };
+
+  if (event.data) {
+    try {
+      const pushData = event.data.json();
+      notificationData = {
+        ...notificationData,
+        ...pushData,
+        data: {
+          url: pushData.url || '/',
+          ...pushData.data
+        }
+      };
+    } catch (error) {
+      console.error('Error parsing push data:', error);
+    }
+  }
+
+  const promiseChain = self.registration.showNotification(
+    notificationData.title,
+    {
+      ...NOTIFICATION_OPTIONS,
+      body: notificationData.body,
+      data: notificationData.data,
+      actions: [
+        {
+          action: 'open',
+          title: 'Open',
+          icon: '/pwa-192x192.png'
+        },
+        {
+          action: 'dismiss',
+          title: 'Dismiss'
+        }
+      ]
+    }
+  );
+
+  event.waitUntil(promiseChain);
+});
+
+// Notification click event - handle user interaction with notifications
+self.addEventListener('notificationclick', (event) => {
+  console.log('Notification click received:', event);
+  
+  event.notification.close();
+
+  if (event.action === 'dismiss') {
+    return;
+  }
+
+  // Default action or 'open' action
+  const urlToOpen = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Check if there's already a window/tab open with the target URL
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url === urlToOpen && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        
+        // If no existing window, open a new one
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});
+
+// Background sync event - handle offline actions
+self.addEventListener('sync', (event) => {
+  console.log('Background sync event:', event);
+  
+  if (event.tag === 'background-sync') {
+    event.waitUntil(
+      // Handle background sync tasks here
+      // For example, sync offline data when connection is restored
+      Promise.resolve()
+    );
+  }
+});
+
+// Message event - handle messages from the main thread
+self.addEventListener('message', (event) => {
+  console.log('Service worker received message:', event.data);
+  
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

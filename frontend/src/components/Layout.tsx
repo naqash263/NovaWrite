@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import ApiKeyManager from './ApiKeyManager';
+import InstallBanner from './InstallBanner';
+import NotificationSettings from './NotificationSettings';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, logout, loading } = useAuth();
+  const { canInstall, promptInstall } = useInstallPrompt();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
+  const [notificationSettingsOpen, setNotificationSettingsOpen] = useState(false);
   const isAdmin = location.pathname.startsWith('/admin');
   const isLoginPage = location.pathname === '/admin/login';
   
@@ -31,6 +36,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
+
+  // Listen for notification settings modal events
+  useEffect(() => {
+    const handleOpenNotificationSettings = () => {
+      setNotificationSettingsOpen(true);
+    };
+
+    window.addEventListener('openNotificationSettings', handleOpenNotificationSettings);
+    return () => {
+      window.removeEventListener('openNotificationSettings', handleOpenNotificationSettings);
+    };
+  }, []);
 
   // Close dropdowns when user changes (login/logout)
   useEffect(() => {
@@ -96,6 +113,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       { path: '/admin/courses', label: 'Courses', icon: '📚' },
       { path: '/admin/files', label: 'Files', icon: '📁' },
       { path: '/admin/monitoring', label: 'Monitoring', icon: '🏥' },
+      { path: '/admin/push-notifications', label: 'Push Notifications', icon: '🔔' },
     ];
 
     // Settings dropdown menu items (moved from main navigation)
@@ -251,10 +269,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                               })}
                             </div>
                           )}
-                        </div>
+                    </div>
                         
                         <div className="border-t border-gray-100 mt-1 pt-1">
-                          <button
+                    <button
                             onClick={() => {
                               setUserDropdownOpen(false);
                               logout('/');
@@ -262,10 +280,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                           >
                             <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Logout
-                          </button>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Logout
+                    </button>
                         </div>
                       </div>
                     )}
@@ -299,13 +317,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Content Management
                     </div>
-                    <div className="space-y-1">
-                      {adminNavItems.map((item) => {
-                        const isActive = location.pathname === item.path;
-                        return (
-                          <Link
-                            key={item.path}
-                            to={item.path}
+                <div className="space-y-1">
+                  {adminNavItems.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
                             className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
                               isActive
                                 ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -333,16 +351,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             key={item.path}
                             to={item.path}
                             className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
-                              isActive
-                                ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                                : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                            }`}
-                          >
+                          isActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                        }`}
+                      >
                             <span className="mr-3 text-lg">{item.icon}</span>
-                            {item.label}
-                          </Link>
-                        );
-                      })}
+                        {item.label}
+                      </Link>
+                    );
+                  })}
                     </div>
                   </div>
                 </div>
@@ -548,27 +566,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                         </svg>
                         Blog
-                      </Link>
-                      <Link
-                        to="/about"
+                </Link>
+                <Link
+                  to="/about"
                         onClick={() => setMoreDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
+                >
                         <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        About
-                      </Link>
-                      <Link
-                        to="/contact"
+                  About
+                </Link>
+                <Link
+                  to="/contact"
                         onClick={() => setMoreDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
+                >
                         <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        Contact
-                      </Link>
+                  Contact
+                </Link>
                     </div>
                   )}
                 </div>
@@ -582,6 +600,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
                   <ApiKeyManager />
                 </div>
+              )}
+
+              {/* Install App Button */}
+              {canInstall && (
+                <button
+                  onClick={promptInstall}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="hidden md:block">Install App</span>
+                </button>
               )}
               
               {user ? (
@@ -612,14 +643,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           <p className="text-xs text-gray-500">{user.email}</p>
                         </div>
                         
-                        <Link
-                          to="/my-courses"
+                  <Link
+                    to="/my-courses"
                           onClick={() => setUserDropdownOpen(false)}
                           className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
+                  >
                           <span className="mr-3">📚</span>
-                          My Courses
-                        </Link>
+                    My Courses
+                  </Link>
+                        
+                        <button
+                          onClick={() => {
+                            setUserDropdownOpen(false);
+                            // Open notification settings modal
+                            const event = new CustomEvent('openNotificationSettings');
+                            window.dispatchEvent(event);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <span className="mr-3">🔔</span>
+                          Notification Settings
+                        </button>
                         
                         {user.role === 'admin' && (
                           <Link
@@ -633,7 +677,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         )}
                         
                         <div className="border-t border-gray-100 mt-1 pt-1">
-                          <button
+                  <button
                             onClick={() => {
                               setUserDropdownOpen(false);
                               logout('/');
@@ -643,8 +687,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
-                            Logout
-                          </button>
+                    Logout
+                  </button>
                         </div>
                       </div>
                     )}
@@ -694,9 +738,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Main Navigation
                   </div>
-                  <div className="space-y-1">
-                    <Link
-                      to="/"
+              <div className="space-y-1">
+                <Link
+                  to="/"
                       className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
                         location.pathname === '/'
                           ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -706,10 +750,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                       </svg>
-                      Home
-                    </Link>
-                    <Link
-                      to="/courses"
+                  Home
+                </Link>
+                <Link
+                  to="/courses"
                       className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
                         location.pathname.startsWith('/courses')
                           ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -719,8 +763,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                       </svg>
-                      Courses
-                    </Link>
+                  Courses
+                </Link>
                     <Link
                       to="/workflows"
                       className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
@@ -825,8 +869,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     Information
                   </div>
                   <div className="space-y-1">
-                    <Link
-                      to="/blog"
+                <Link
+                  to="/blog"
                       className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
                         location.pathname.startsWith('/blog')
                           ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -836,10 +880,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                       </svg>
-                      Blog
-                    </Link>
-                    <Link
-                      to="/about"
+                  Blog
+                </Link>
+                <Link
+                  to="/about"
                       className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
                         location.pathname.startsWith('/about')
                           ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -849,10 +893,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      About
-                    </Link>
-                    <Link
-                      to="/contact"
+                  About
+                </Link>
+                <Link
+                  to="/contact"
                       className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
                         location.pathname.startsWith('/contact')
                           ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -862,8 +906,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
-                      Contact
-                    </Link>
+                  Contact
+                </Link>
                   </div>
                 </div>
                 
@@ -876,6 +920,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         <ApiKeyManager />
                       </div>
                     </div>
+                  )}
+
+                  {/* Install App Button - Mobile */}
+                  {canInstall && (
+                    <button
+                      onClick={promptInstall}
+                      className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md w-full"
+                    >
+                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Install App
+                    </button>
                   )}
                   
                   {user ? (
@@ -974,6 +1031,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </footer>
+
+      {/* Install Banner */}
+      <InstallBanner />
+
+      {/* Notification Settings Modal */}
+      {notificationSettingsOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="max-w-md w-full">
+            <NotificationSettings onClose={() => setNotificationSettingsOpen(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

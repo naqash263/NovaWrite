@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Events\NewCourse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -371,6 +372,11 @@ class CourseController extends Controller
             'is_published' => $request->is_published ?? true,
             'order' => $request->order ?? 0,
         ]);
+
+        // Dispatch event for push notifications (only for published courses)
+        if ($course->is_published) {
+            event(new NewCourse($course));
+        }
 
         return response()->json($course, 201);
     }

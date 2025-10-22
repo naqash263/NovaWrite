@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\Events\NewBlogPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
@@ -190,6 +191,11 @@ class PostController extends Controller
         // Attach tags if provided
         if ($request->has('tags')) {
             $post->tags()->attach($request->tags);
+        }
+
+        // Dispatch event for push notifications (only for published posts)
+        if ($post->is_published) {
+            event(new NewBlogPost($post));
         }
 
         // Clear related caches - comprehensive cache invalidation

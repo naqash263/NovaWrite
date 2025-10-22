@@ -72,7 +72,7 @@ const LinkedInOptimizer: React.FC = () => {
     return linkedinRegex.test(url);
   };
 
-  const extractProfileData = async (url: string) => {
+  const extractProfileData = async (_url: string) => {
     // In a real implementation, this would use a web scraping service or LinkedIn API
     // For now, we'll simulate the data extraction
     return new Promise((resolve) => {

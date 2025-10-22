@@ -65,8 +65,8 @@ class FileProcessingService
             // Method 1: Standard Smalot PDF Parser
             try {
                 Log::info('=== METHOD 1: Standard Smalot PDF Parser ===');
-                $parser = new Parser();
-                $pdf = $parser->parseFile($fullPath);
+            $parser = new Parser();
+            $pdf = $parser->parseFile($fullPath);
                 Log::info('PDF parsed successfully with Smalot parser');
                 
                 $method1Text = $this->extractWithSmalotParser($pdf);
