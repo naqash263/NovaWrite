@@ -23,27 +23,18 @@ export const useNotifications = () => {
   useEffect(() => {
     // Check if notifications are supported
     if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.log('Push notifications not supported: Missing required APIs');
       setIsSupported(false);
       return;
     }
 
     // Check if we're on HTTPS (required for push notifications)
     if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-      console.log('Push notifications require HTTPS. Current protocol:', location.protocol);
       setIsSupported(false);
       return;
     }
 
     setIsSupported(true);
     setPermission(Notification.permission);
-
-    // Debug: Log VAPID key status
-    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-    console.log('VAPID Public Key:', vapidKey ? 'Present' : 'Missing');
-    console.log('Environment variables:', import.meta.env);
-    console.log('Current protocol:', location.protocol);
-    console.log('Current hostname:', location.hostname);
 
     // Check if user is already subscribed
     checkSubscriptionStatus();
@@ -67,16 +58,12 @@ export const useNotifications = () => {
   };
 
   const requestPermission = async (): Promise<boolean> => {
-    console.log('requestPermission() called - isSupported:', isSupported);
-    
     if (!isSupported) {
       throw new Error('Notifications are not supported in this browser');
     }
 
     try {
-      console.log('Calling Notification.requestPermission()...');
       const permission = await Notification.requestPermission();
-      console.log('Permission result:', permission);
       setPermission(permission);
       return permission === 'granted';
     } catch (error) {
@@ -86,31 +73,22 @@ export const useNotifications = () => {
   };
 
   const subscribe = async (): Promise<boolean> => {
-    console.log('subscribe() called - isSupported:', isSupported, 'permission:', permission);
-    
     if (!isSupported || permission !== 'granted') {
-      console.log('Requesting permission...');
       const granted = await requestPermission();
-      console.log('Permission granted:', granted);
       if (!granted) {
         throw new Error('Notification permission denied');
       }
     }
 
     const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-    console.log('VAPID key:', vapidPublicKey ? 'Present' : 'Missing');
     if (!vapidPublicKey) {
       throw new Error('VAPID public key is not configured. Please check your environment variables.');
     }
 
     try {
-      console.log('Getting service worker registration...');
       const registration = await navigator.serviceWorker.ready;
-      console.log('Service worker ready, creating subscription...');
       
       // Convert VAPID key to proper format for PushManager
-      console.log('Original VAPID key:', vapidPublicKey.substring(0, 20) + '...');
-      
       // Function to convert base64url to Uint8Array
       const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
         // Convert base64url to base64
@@ -142,25 +120,19 @@ export const useNotifications = () => {
           .replace(/=/g, '');
       }
       
-      console.log('Base64url key:', base64urlKey.substring(0, 20) + '...');
-      
       // Convert to Uint8Array
       const keyArray = urlBase64ToUint8Array(base64urlKey);
-      console.log('Key array length:', keyArray.length);
       
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: keyArray.buffer as ArrayBuffer
       });
 
-      console.log('Push subscription created:', subscription);
       setSubscription(subscription);
       setIsSubscribed(true);
 
       // Send subscription to backend
-      console.log('Sending subscription to backend...');
       await sendSubscriptionToBackend(subscription);
-      console.log('Subscription sent to backend successfully');
 
       return true;
     } catch (error) {
