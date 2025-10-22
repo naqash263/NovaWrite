@@ -12,9 +12,9 @@ export default function Resources() {
 
   useSEO({
     title: 'Professional Tools & Resources - AI-Powered Career Tools | Naqash Thaheem',
-    description: 'Professional AI-powered tools for career advancement including CV Builder and Watermark Remover. Boost your productivity with free, easy-to-use automation tools.',
+    description: 'Professional AI-powered tools for career advancement including CV Builder, LinkedIn Optimizer, Salary Negotiation, Interview Prep, Career Planning, Job Search, and Skills Assessment. Boost your productivity with free, easy-to-use automation tools.',
     url: '/resources',
-    keywords: ['CV builder', 'resume builder', 'watermark remover', 'AI tools', 'career tools', 'professional templates', 'productivity tools', 'free tools']
+    keywords: ['CV builder', 'resume builder', 'LinkedIn optimizer', 'salary negotiation', 'interview prep', 'career planning', 'job search', 'skills assessment', 'AI tools', 'career tools', 'professional templates', 'productivity tools', 'free tools']
   });
 
   useEffect(() => {
@@ -49,8 +49,8 @@ export default function Resources() {
       name: 'Cover Letter Generator',
       description: 'AI-powered cover letter creation',
       icon: '✉️',
-      available: false,
-      features: ['AI-generated content', 'Job-specific tailoring', 'Multiple formats', 'Professional tone']
+      available: true,
+      path: '/resources/cover-letter-generator'
     },
     {
       id: 'portfolio-builder',
@@ -65,32 +65,48 @@ export default function Resources() {
       name: 'Interview Prep',
       description: 'Practice and prepare for interviews',
       icon: '🎯',
-      available: false,
-      features: ['Mock interviews', 'Question bank', 'AI feedback', 'Industry-specific']
+      available: true,
+      path: '/resources/interview-prep'
     },
     {
       id: 'linkedin-optimizer',
       name: 'LinkedIn Profile Optimizer',
       description: 'Optimize your LinkedIn profile for maximum visibility',
       icon: '💼',
-      available: false,
-      features: ['Profile analysis', 'Keyword optimization', 'Headline suggestions', 'Skills recommendations']
+      available: true,
+      path: '/resources/linkedin-optimizer'
     },
     {
       id: 'salary-negotiation',
       name: 'Salary Negotiation Tool',
       description: 'AI-powered salary negotiation guidance',
       icon: '💰',
-      available: false,
-      features: ['Market research', 'Negotiation scripts', 'Counter-offer strategies', 'Industry benchmarks']
+      available: true,
+      path: '/resources/salary-negotiation'
     },
     {
-      id: 'skill-assessment',
-      name: 'Skill Assessment',
+      id: 'skills-assessment',
+      name: 'Skills Assessment',
       description: 'Evaluate and improve your professional skills',
       icon: '📊',
-      available: false,
-      features: ['Skill gap analysis', 'Learning paths', 'Progress tracking', 'Certification recommendations']
+      available: true,
+      path: '/resources/skills-assessment'
+    },
+    {
+      id: 'career-path-planner',
+      name: 'Career Path Planner',
+      description: 'Plan your career journey with AI guidance',
+      icon: '🗺️',
+      available: true,
+      path: '/resources/career-path-planner'
+    },
+    {
+      id: 'job-search-optimizer',
+      name: 'Job Search Optimizer',
+      description: 'Optimize your job search with AI strategies',
+      icon: '🔍',
+      available: true,
+      path: '/resources/job-search-optimizer'
     },
     {
       id: 'job-tracker',
@@ -113,6 +129,76 @@ export default function Resources() {
       icon: "📄",
       benefits: "Save 2-3 hours per CV creation, increase interview callbacks by 40%"
     },
+    {
+      id: 'linkedin-optimizer',
+      title: "LinkedIn Profile Optimizer",
+      description: "Boost your LinkedIn visibility with AI-powered analysis. Get keyword suggestions, headline improvements, and engagement strategies to maximize your professional presence.",
+      category: "Career Tools",
+      features: ["AI profile analysis", "Keyword optimization", "Headline enhancement", "Skills recommendations", "Engagement strategies", "Visibility insights"],
+      path: "/resources/linkedin-optimizer",
+      icon: "💼",
+      benefits: "Increase profile views by 60%, get more connection requests and job opportunities"
+    },
+    {
+      id: 'salary-negotiation',
+      title: "Salary Negotiation Tool",
+      description: "Master salary negotiations with AI-powered guidance. Get market research, negotiation scripts, and industry-specific strategies to maximize your earning potential.",
+      category: "Career Tools",
+      features: ["Market research", "Negotiation scripts", "Talking points", "Counter-offer strategies", "Industry benchmarks", "Red flags to avoid"],
+      path: "/resources/salary-negotiation",
+      icon: "💰",
+      benefits: "Increase salary offers by 15-25%, negotiate with confidence and data"
+    },
+    {
+      id: 'interview-prep',
+      title: "Interview Preparation Tool",
+      description: "Ace your next interview with AI-powered preparation. Get practice questions, STAR method guidance, company research, and personalized feedback.",
+      category: "Career Tools",
+      features: ["Practice questions", "STAR method training", "Company research", "Mock interviews", "Common mistakes guide", "Success tips"],
+      path: "/resources/interview-prep",
+      icon: "🎯",
+      benefits: "Increase interview success rate by 50%, prepare for any interview scenario"
+    },
+    {
+      id: 'career-path-planner',
+      title: "Career Path Planner",
+      description: "Plan your career journey with AI-powered guidance. Get personalized career paths, skill recommendations, and strategic advice for professional growth.",
+      category: "Career Tools",
+      features: ["Career mapping", "Skill development", "Strategic planning", "Market insights", "Learning paths", "Goal setting"],
+      path: "/resources/career-path-planner",
+      icon: "🗺️",
+      benefits: "Clarify career direction, identify growth opportunities, plan long-term success"
+    },
+    {
+      id: 'job-search-optimizer',
+      title: "Job Search Optimizer",
+      description: "Optimize your job search with AI-powered strategies. Get personalized job recommendations, application tips, and networking strategies.",
+      category: "Career Tools",
+      features: ["Job matching", "Application tips", "Networking strategy", "Interview prep", "Salary negotiation", "Search optimization"],
+      path: "/resources/job-search-optimizer",
+      icon: "🔍",
+      benefits: "Find better job matches, optimize applications, accelerate job search success"
+    },
+    {
+      id: 'skills-assessment',
+      title: "Skills Assessment Tool",
+      description: "Assess your professional skills with AI-powered analysis. Get personalized skill recommendations, learning paths, and career development insights.",
+      category: "Career Tools",
+      features: ["Skill analysis", "Gap identification", "Learning recommendations", "Progress tracking", "Career alignment", "Certification guidance"],
+      path: "/resources/skills-assessment",
+      icon: "📊",
+      benefits: "Identify skill gaps, get personalized learning plans, advance your career strategically"
+    },
+    {
+      id: 'cover-letter-generator',
+      title: "AI Cover Letter Generator",
+      description: "Create personalized, ATS-friendly cover letters tailored to specific job postings. Generate compelling content that matches your CV and job requirements.",
+      category: "Career Tools",
+      features: ["Job-specific tailoring", "AI-generated content", "Multiple tones", "ATS optimization", "Keyword matching", "Professional templates"],
+      path: "/resources/cover-letter-generator",
+      icon: "✉️",
+      benefits: "Save 2-3 hours per application, increase interview callbacks by 35%, create targeted content"
+    },
   ];
 
   const comingSoonTools = [
@@ -126,15 +212,6 @@ export default function Resources() {
       expectedRelease: "Q2 2024"
     },
     {
-      id: 'cover-letter-generator',
-      title: "AI Cover Letter Generator",
-      description: "Generate personalized cover letters tailored to specific job postings. AI-powered content that matches your CV and the job requirements.",
-      category: "Career Tools",
-      features: ["Job-specific tailoring", "AI-generated content", "Multiple tones", "CV integration"],
-      icon: "✉️",
-      expectedRelease: "Q2 2024"
-    },
-    {
       id: 'portfolio-builder',
       title: "Portfolio Builder",
       description: "Create stunning online portfolios to showcase your work. Drag-and-drop builder with professional themes and mobile optimization.",
@@ -142,42 +219,6 @@ export default function Resources() {
       features: ["Drag & drop builder", "Professional themes", "Mobile responsive", "SEO optimized"],
       icon: "🎨",
       expectedRelease: "Q3 2024"
-    },
-    {
-      id: 'interview-prep',
-      title: "Interview Preparation Tool",
-      description: "Practice interviews with AI-powered feedback. Industry-specific questions, mock interviews, and personalized improvement suggestions.",
-      category: "Career Tools",
-      features: ["Mock interviews", "AI feedback", "Industry questions", "Progress tracking"],
-      icon: "🎯",
-      expectedRelease: "Q3 2024"
-    },
-    {
-      id: 'linkedin-optimizer',
-      title: "LinkedIn Profile Optimizer",
-      description: "Maximize your LinkedIn visibility with AI-powered profile optimization. Get keyword suggestions, headline improvements, and engagement strategies.",
-      category: "Career Tools",
-      features: ["Profile analysis", "Keyword optimization", "Headline suggestions", "Skills recommendations"],
-      icon: "💼",
-      expectedRelease: "Q4 2024"
-    },
-    {
-      id: 'salary-negotiation',
-      title: "Salary Negotiation Tool",
-      description: "Master salary negotiations with AI-powered guidance. Get market research, negotiation scripts, and industry-specific strategies.",
-      category: "Career Tools",
-      features: ["Market research", "Negotiation scripts", "Counter-offer strategies", "Industry benchmarks"],
-      icon: "💰",
-      expectedRelease: "Q4 2024"
-    },
-    {
-      id: 'skill-assessment',
-      title: "Professional Skill Assessment",
-      description: "Evaluate your skills and get personalized improvement plans. Identify skill gaps and get recommendations for growth.",
-      category: "Career Tools",
-      features: ["Skill gap analysis", "Learning paths", "Progress tracking", "Certification recommendations"],
-      icon: "📊",
-      expectedRelease: "Q1 2025"
     },
     {
       id: 'job-tracker',
@@ -254,7 +295,7 @@ export default function Resources() {
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">Professional Tools & Resources</h1>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-8">
-            Boost your career and productivity with AI-powered tools designed for professionals. Create stunning CVs, optimize your content, and accelerate your success with our free, easy-to-use automation tools.
+            Boost your career and productivity with 7 comprehensive AI-powered tools designed for professionals. Create stunning CVs, optimize your LinkedIn profile, negotiate better salaries, prepare for interviews, plan your career path, find better jobs, and assess your skills - all with our free, easy-to-use automation tools.
           </p>
           <div className="bg-blue-50 rounded-2xl p-8 mb-8 max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Choose Our Tools?</h2>
@@ -325,7 +366,7 @@ export default function Resources() {
         {/* Available Tools Section */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Available Tools</h2>
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {availableTools.map((tool, index) => (
               <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
                 <div className="p-8">
@@ -514,19 +555,21 @@ export default function Resources() {
             </div>
             
             <div className="border-b border-gray-200 pb-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">What new tools are you developing?</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">What career tools are currently available?</h3>
               <p className="text-gray-600">
-                We're actively developing LinkedIn Profile Optimizer, Salary Negotiation Tool, Professional Skill Assessment, and Job Application Tracker. 
-                These tools will help you optimize your online presence, negotiate better salaries, assess your skills, and manage your job search more effectively.
+                We currently offer 7 comprehensive career tools: AI-Powered CV Builder, LinkedIn Profile Optimizer, Salary Negotiation Tool, 
+                Interview Preparation Tool, Career Path Planner, Job Search Optimizer, and Skills Assessment Tool. 
+                These tools help you create professional CVs, optimize your online presence, negotiate better salaries, prepare for interviews, 
+                plan your career, find better jobs, and assess your skills for continuous growth.
               </p>
             </div>
             
             <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">When will the upcoming tools be available?</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">What new tools are you developing?</h3>
               <p className="text-gray-600">
-                We're actively developing new tools based on user feedback and industry needs. Resume Templates and Cover Letter Generator are expected in Q2 2024, 
-                with Portfolio Builder and Interview Prep tools following in Q3 2024. LinkedIn Optimizer and Salary Negotiation tools are planned for Q4 2024, 
-                with Skill Assessment and Job Tracker coming in Q1 2025. Sign up for notifications to be the first to know when they're released.
+                We're actively developing additional tools including Professional Resume Templates, AI Cover Letter Generator, Portfolio Builder, 
+                and Job Application Tracker. These tools will further enhance your career toolkit with more specialized features for resume creation, 
+                cover letter writing, portfolio building, and job search management. Sign up for notifications to be the first to know when they're released.
               </p>
             </div>
           </div>

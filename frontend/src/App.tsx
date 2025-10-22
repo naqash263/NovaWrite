@@ -56,6 +56,13 @@ const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const Resources = lazy(() => import('./pages/Resources'));
 const CVBuilder = lazy(() => import('./pages/resources/CVBuilder'));
+const LinkedInOptimizer = lazy(() => import('./pages/resources/LinkedInOptimizer'));
+const SalaryNegotiation = lazy(() => import('./pages/resources/SalaryNegotiation'));
+const InterviewPrep = lazy(() => import('./pages/resources/InterviewPrep'));
+const CareerPathPlanner = lazy(() => import('./pages/resources/CareerPathPlanner'));
+const JobSearchOptimizer = lazy(() => import('./pages/resources/JobSearchOptimizer'));
+const SkillsAssessment = lazy(() => import('./pages/resources/SkillsAssessment'));
+const CoverLetterGenerator = lazy(() => import('./pages/resources/CoverLetterGenerator'));
 
 // Enhanced loading with performance optimizations
 
@@ -112,8 +119,15 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />
-              <Route path="/resources" element={<Resources />} />
-              <Route path="/resources/cv-builder" element={<CVBuilder />} />
+        <Route path="/resources" element={<Resources />} />
+        <Route path="/resources/cv-builder" element={<CVBuilder />} />
+        <Route path="/resources/linkedin-optimizer" element={<LinkedInOptimizer />} />
+        <Route path="/resources/salary-negotiation" element={<SalaryNegotiation />} />
+        <Route path="/resources/interview-prep" element={<InterviewPrep />} />
+        <Route path="/resources/career-path-planner" element={<CareerPathPlanner />} />
+        <Route path="/resources/job-search-optimizer" element={<JobSearchOptimizer />} />
+        <Route path="/resources/skills-assessment" element={<SkillsAssessment />} />
+        <Route path="/resources/cover-letter-generator" element={<CoverLetterGenerator />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

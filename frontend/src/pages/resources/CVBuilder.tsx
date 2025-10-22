@@ -1307,7 +1307,7 @@ const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }:
           </div>
         <div className="text-center text-xs text-gray-500">
           <span className="font-medium text-blue-600">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
-        </div>
+          </div>
         </div>
 
         {/* Desktop Step Indicator - Compact Layout - Only visible on large screens */}

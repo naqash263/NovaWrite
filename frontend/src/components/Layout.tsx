@@ -16,6 +16,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Pages that use Gemini API - only show API stats on these pages
   const geminiApiPages = [
     '/resources/cv-builder',
+    '/resources/linkedin-optimizer',
+    '/resources/salary-negotiation',
+    '/resources/interview-prep',
+    '/resources/career-path-planner',
+    '/resources/job-search-optimizer',
+    '/resources/skills-assessment',
+    '/resources/cover-letter-generator',
     '/admin/gemini-api'
   ];
   const shouldShowApiStats = geminiApiPages.some(page => location.pathname.startsWith(page));
@@ -444,7 +451,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
                   {/* Resources Dropdown Menu */}
                   {moreDropdownOpen && (
-                    <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <div className="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                       <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Tools & Resources
                       </div>
@@ -458,25 +465,73 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         </svg>
                         All Resources
                       </Link>
+                      
+                      <div className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-2">
+                        Career Tools
+                      </div>
                       <Link
                         to="/resources/cv-builder"
                         onClick={() => setMoreDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
-                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
+                        <span className="mr-3 text-base">📄</span>
                         CV Builder
                       </Link>
                       <Link
-                        to="/resources/watermark-remover"
+                        to="/resources/linkedin-optimizer"
                         onClick={() => setMoreDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
-                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Watermark Remover
+                        <span className="mr-3 text-base">💼</span>
+                        LinkedIn Optimizer
+                      </Link>
+                      <Link
+                        to="/resources/salary-negotiation"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="mr-3 text-base">💰</span>
+                        Salary Negotiation
+                      </Link>
+                      <Link
+                        to="/resources/interview-prep"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="mr-3 text-base">🎯</span>
+                        Interview Prep
+                      </Link>
+                      <Link
+                        to="/resources/career-path-planner"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="mr-3 text-base">🗺️</span>
+                        Career Path Planner
+                      </Link>
+                      <Link
+                        to="/resources/job-search-optimizer"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="mr-3 text-base">🔍</span>
+                        Job Search Optimizer
+                      </Link>
+                      <Link
+                        to="/resources/skills-assessment"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="mr-3 text-base">📊</span>
+                        Skills Assessment
+                      </Link>
+                      <Link
+                        to="/resources/cover-letter-generator"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="mr-3 text-base">✉️</span>
+                        Cover Letter Generator
                       </Link>
                       
                       <div className="border-t border-gray-100 my-2"></div>
@@ -701,23 +756,65 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       </svg>
                       All Resources
                     </Link>
+                    
+                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Career Tools
+                    </div>
                     <Link
                       to="/resources/cv-builder"
                       className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
                     >
-                      <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+                      <span className="mr-3 text-base">📄</span>
                       CV Builder
                     </Link>
                     <Link
-                      to="/resources/watermark-remover"
+                      to="/resources/linkedin-optimizer"
                       className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
                     >
-                      <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      Watermark Remover
+                      <span className="mr-3 text-base">💼</span>
+                      LinkedIn Optimizer
+                    </Link>
+                    <Link
+                      to="/resources/salary-negotiation"
+                      className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <span className="mr-3 text-base">💰</span>
+                      Salary Negotiation
+                    </Link>
+                    <Link
+                      to="/resources/interview-prep"
+                      className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <span className="mr-3 text-base">🎯</span>
+                      Interview Prep
+                    </Link>
+                    <Link
+                      to="/resources/career-path-planner"
+                      className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <span className="mr-3 text-base">🗺️</span>
+                      Career Path Planner
+                    </Link>
+                    <Link
+                      to="/resources/job-search-optimizer"
+                      className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <span className="mr-3 text-base">🔍</span>
+                      Job Search Optimizer
+                    </Link>
+                    <Link
+                      to="/resources/skills-assessment"
+                      className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <span className="mr-3 text-base">📊</span>
+                      Skills Assessment
+                    </Link>
+                    <Link
+                      to="/resources/cover-letter-generator"
+                      className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <span className="mr-3 text-base">✉️</span>
+                      Cover Letter Generator
                     </Link>
                   </div>
                 </div>
