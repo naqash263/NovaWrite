@@ -56,7 +56,6 @@ const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const Resources = lazy(() => import('./pages/Resources'));
 const CVBuilder = lazy(() => import('./pages/resources/CVBuilder'));
-const WatermarkRemover = lazy(() => import('./pages/resources/WatermarkRemover'));
 
 // Enhanced loading with performance optimizations
 
@@ -115,7 +114,6 @@ function App() {
               <Route path="/cookie-policy" element={<CookiePolicy />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/resources/cv-builder" element={<CVBuilder />} />
-              <Route path="/resources/watermark-remover" element={<WatermarkRemover />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

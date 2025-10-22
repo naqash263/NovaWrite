@@ -69,13 +69,37 @@ export default function Resources() {
       features: ['Mock interviews', 'Question bank', 'AI feedback', 'Industry-specific']
     },
     {
-      id: 'watermark-remover',
-      name: 'Watermark Remover',
-      description: 'Remove watermarks from Sora videos',
-      icon: '🎬',
-      available: true,
-      path: '/resources/watermark-remover'
-    }
+      id: 'linkedin-optimizer',
+      name: 'LinkedIn Profile Optimizer',
+      description: 'Optimize your LinkedIn profile for maximum visibility',
+      icon: '💼',
+      available: false,
+      features: ['Profile analysis', 'Keyword optimization', 'Headline suggestions', 'Skills recommendations']
+    },
+    {
+      id: 'salary-negotiation',
+      name: 'Salary Negotiation Tool',
+      description: 'AI-powered salary negotiation guidance',
+      icon: '💰',
+      available: false,
+      features: ['Market research', 'Negotiation scripts', 'Counter-offer strategies', 'Industry benchmarks']
+    },
+    {
+      id: 'skill-assessment',
+      name: 'Skill Assessment',
+      description: 'Evaluate and improve your professional skills',
+      icon: '📊',
+      available: false,
+      features: ['Skill gap analysis', 'Learning paths', 'Progress tracking', 'Certification recommendations']
+    },
+    {
+      id: 'job-tracker',
+      name: 'Job Application Tracker',
+      description: 'Track and manage your job applications',
+      icon: '📋',
+      available: false,
+      features: ['Application tracking', 'Interview scheduling', 'Follow-up reminders', 'Progress analytics']
+    },
   ];
 
   const availableTools = [
@@ -89,16 +113,6 @@ export default function Resources() {
       icon: "📄",
       benefits: "Save 2-3 hours per CV creation, increase interview callbacks by 40%"
     },
-    {
-      id: 'watermark-remover',
-      title: "AI Watermark Remover",
-      description: "Remove watermarks from Sora videos and other content using advanced AI technology. Clean, professional results in seconds.",
-      category: "Content Tools",
-      features: ["AI-powered removal", "Batch processing", "High-quality output", "Multiple format support", "Privacy-focused", "Instant results"],
-      path: "/resources/watermark-remover",
-      icon: "🎬",
-      benefits: "Process videos 10x faster than manual editing, maintain professional quality"
-    }
   ];
 
   const comingSoonTools = [
@@ -137,6 +151,42 @@ export default function Resources() {
       features: ["Mock interviews", "AI feedback", "Industry questions", "Progress tracking"],
       icon: "🎯",
       expectedRelease: "Q3 2024"
+    },
+    {
+      id: 'linkedin-optimizer',
+      title: "LinkedIn Profile Optimizer",
+      description: "Maximize your LinkedIn visibility with AI-powered profile optimization. Get keyword suggestions, headline improvements, and engagement strategies.",
+      category: "Career Tools",
+      features: ["Profile analysis", "Keyword optimization", "Headline suggestions", "Skills recommendations"],
+      icon: "💼",
+      expectedRelease: "Q4 2024"
+    },
+    {
+      id: 'salary-negotiation',
+      title: "Salary Negotiation Tool",
+      description: "Master salary negotiations with AI-powered guidance. Get market research, negotiation scripts, and industry-specific strategies.",
+      category: "Career Tools",
+      features: ["Market research", "Negotiation scripts", "Counter-offer strategies", "Industry benchmarks"],
+      icon: "💰",
+      expectedRelease: "Q4 2024"
+    },
+    {
+      id: 'skill-assessment',
+      title: "Professional Skill Assessment",
+      description: "Evaluate your skills and get personalized improvement plans. Identify skill gaps and get recommendations for growth.",
+      category: "Career Tools",
+      features: ["Skill gap analysis", "Learning paths", "Progress tracking", "Certification recommendations"],
+      icon: "📊",
+      expectedRelease: "Q1 2025"
+    },
+    {
+      id: 'job-tracker',
+      title: "Job Application Tracker",
+      description: "Organize and track your job search with intelligent application management. Never miss a follow-up or interview again.",
+      category: "Career Tools",
+      features: ["Application tracking", "Interview scheduling", "Follow-up reminders", "Progress analytics"],
+      icon: "📋",
+      expectedRelease: "Q1 2025"
     }
   ];
 
@@ -464,10 +514,10 @@ export default function Resources() {
             </div>
             
             <div className="border-b border-gray-200 pb-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">How effective is the Watermark Remover tool?</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">What new tools are you developing?</h3>
               <p className="text-gray-600">
-                Our AI-powered Watermark Remover uses advanced computer vision technology to intelligently remove watermarks while preserving video quality. 
-                It's particularly effective with Sora-generated content and maintains professional output suitable for business use.
+                We're actively developing LinkedIn Profile Optimizer, Salary Negotiation Tool, Professional Skill Assessment, and Job Application Tracker. 
+                These tools will help you optimize your online presence, negotiate better salaries, assess your skills, and manage your job search more effectively.
               </p>
             </div>
             
@@ -475,7 +525,8 @@ export default function Resources() {
               <h3 className="text-xl font-semibold text-gray-900 mb-3">When will the upcoming tools be available?</h3>
               <p className="text-gray-600">
                 We're actively developing new tools based on user feedback and industry needs. Resume Templates and Cover Letter Generator are expected in Q2 2024, 
-                with Portfolio Builder and Interview Prep tools following in Q3 2024. Sign up for notifications to be the first to know when they're released.
+                with Portfolio Builder and Interview Prep tools following in Q3 2024. LinkedIn Optimizer and Salary Negotiation tools are planned for Q4 2024, 
+                with Skill Assessment and Job Tracker coming in Q1 2025. Sign up for notifications to be the first to know when they're released.
               </p>
             </div>
           </div>

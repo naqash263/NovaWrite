@@ -12,6 +12,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const isAdmin = location.pathname.startsWith('/admin');
   const isLoginPage = location.pathname === '/admin/login';
+  
+  // Pages that use Gemini API - only show API stats on these pages
+  const geminiApiPages = [
+    '/resources/cv-builder',
+    '/admin/gemini-api'
+  ];
+  const shouldShowApiStats = geminiApiPages.some(page => location.pathname.startsWith(page));
 
   // Close mobile menu when location changes
   useEffect(() => {
@@ -515,10 +522,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             
             {/* Desktop Auth Menu */}
             <div className="hidden sm:flex items-center gap-3">
-              {/* API Key Status - Compact */}
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
-                <ApiKeyManager />
-              </div>
+              {/* API Key Status - Only show on Gemini API pages */}
+              {shouldShowApiStats && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
+                  <ApiKeyManager />
+                </div>
+              )}
               
               {user ? (
                 <>
@@ -763,12 +772,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 
                 {/* User Section */}
                 <div className="border-t border-gray-200 pt-4 mt-4">
-                  {/* API Key Status */}
-                  <div className="px-3 py-2">
-                    <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
-                      <ApiKeyManager />
+                  {/* API Key Status - Only show on Gemini API pages */}
+                  {shouldShowApiStats && (
+                    <div className="px-3 py-2">
+                      <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                        <ApiKeyManager />
+                      </div>
                     </div>
-                  </div>
+                  )}
                   
                   {user ? (
                     <>
