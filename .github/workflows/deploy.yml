@@ -146,6 +146,7 @@ jobs:
           echo "VITE_APP_URL=https://naqashthaheem.com" >> .env
           echo "VITE_APP_NAME=Naqash Thaheem" >> .env
           echo "VITE_APP_ENV=production" >> .env
+          echo "VITE_VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
           
           # Build frontend
           echo -e "${BLUE}🔨 Building frontend...${NC}"
@@ -265,7 +266,7 @@ jobs:
             echo 'MAIL_USERNAME=null' >> .env
             echo 'MAIL_PASSWORD=null' >> .env
             echo 'MAIL_ENCRYPTION=null' >> .env
-            echo 'MAIL_FROM_ADDRESS="noreply@naqashthaheem.com"' >> .env
+            echo 'MAIL_FROM_ADDRESS="contact@naqashthaheem.com"' >> .env
             echo 'MAIL_FROM_NAME="${APP_NAME}"' >> .env
             echo '' >> .env
             echo 'AWS_ACCESS_KEY_ID=' >> .env
@@ -292,6 +293,10 @@ jobs:
             echo 'JWT_SECRET=' >> .env
             echo 'JWT_ALGO=HS256' >> .env
             echo 'JWT_TTL=60' >> .env
+            echo '' >> .env
+            echo 'VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}' >> .env
+            echo 'VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}' >> .env
+            echo 'VAPID_SUBJECT=${{ secrets.VAPID_SUBJECT }}' >> .env
             echo '' >> .env
             echo 'GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}' >> .env
             echo 'GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}' >> .env
@@ -327,6 +332,29 @@ jobs:
             echo 'FRONTEND_URL=https://naqashthaheem.com' >> .env
           else
             sed -i 's|^FRONTEND_URL=.*|FRONTEND_URL=https://naqashthaheem.com|' .env
+          fi
+          
+          # Configure VAPID keys for push notifications
+          echo -e "${BLUE}🔔 Configuring VAPID keys for push notifications...${NC}"
+          if ! grep -q "^VAPID_PUBLIC_KEY=" .env || grep -q "^VAPID_PUBLIC_KEY=$" .env; then
+            sed -i '/^VAPID_PUBLIC_KEY=/d' .env
+            echo "VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
+          else
+            sed -i "s|^VAPID_PUBLIC_KEY=.*|VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}|" .env
+          fi
+          
+          if ! grep -q "^VAPID_PRIVATE_KEY=" .env || grep -q "^VAPID_PRIVATE_KEY=$" .env; then
+            sed -i '/^VAPID_PRIVATE_KEY=/d' .env
+            echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> .env
+          else
+            sed -i "s|^VAPID_PRIVATE_KEY=.*|VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}|" .env
+          fi
+          
+          if ! grep -q "^VAPID_SUBJECT=" .env || grep -q "^VAPID_SUBJECT=$" .env; then
+            sed -i '/^VAPID_SUBJECT=/d' .env
+            echo "VAPID_SUBJECT=${{ secrets.VAPID_SUBJECT }}" >> .env
+          else
+            sed -i "s|^VAPID_SUBJECT=.*|VAPID_SUBJECT=${{ secrets.VAPID_SUBJECT }}|" .env
           fi
           
               # Use stable APP_KEY from GitHub Secret
