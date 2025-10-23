@@ -66,7 +66,7 @@ export function useHomeSettings() {
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
       // Remove /api from base URL if present
       const storageBaseUrl = baseUrl.replace('/api', '');
-      return `${storageBaseUrl}/storage/${setting.value}`;
+      return `${storageBaseUrl}/api/storage/${setting.value}`;
     }
     
     return defaultValue;

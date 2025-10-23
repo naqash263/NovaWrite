@@ -15,12 +15,12 @@ export const API_CONFIG = {
   // Full storage URL for file paths
   getStorageUrl: (filePath: string) => {
     const baseUrl = API_CONFIG.STORAGE_URL;
-    // Remove leading slash and add /storage/ if not already present
+    // Remove leading slash and add /api/storage/ if not already present
     const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
     if (cleanPath.startsWith('storage/')) {
-      return `${baseUrl}/${cleanPath}`;
+      return `${baseUrl}/api/${cleanPath}`;
     }
-    return `${baseUrl}/storage/${cleanPath}`;
+    return `${baseUrl}/api/storage/${cleanPath}`;
   },
   
   // API endpoints
