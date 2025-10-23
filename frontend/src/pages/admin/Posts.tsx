@@ -90,7 +90,7 @@ export default function Posts() {
       name: 'category',
       label: 'Category',
       type: 'select' as const,
-      options: categories.map(cat => ({ value: cat.id.toString(), label: cat.name }))
+      options: (categories || []).map(cat => ({ value: cat.id.toString(), label: cat.name }))
     },
     {
       name: 'status',
@@ -116,7 +116,7 @@ export default function Posts() {
       name: 'tags',
       label: 'Tags',
       type: 'multiselect' as const,
-      options: tags.map(tag => ({ value: tag.id.toString(), label: tag.name }))
+      options: (tags || []).map(tag => ({ value: tag.id.toString(), label: tag.name }))
     },
     {
       name: 'dateFrom',
@@ -209,16 +209,21 @@ export default function Posts() {
   const fetchCategories = async () => {
     try {
       const response = await apiClient.get('/categories');
-      setCategories(response.data);
+      // Handle both old format (array) and new format (object with data property)
+      const categoriesData = Array.isArray(response.data) ? response.data : response.data.data || [];
+      setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategories([]); // Ensure categories is always an array
     }
   };
 
   const fetchTags = async () => {
     try {
       const response = await apiClient.get('/tags');
-      setTags(response.data);
+      // Handle both old format (array) and new format (object with data property)
+      const tagsData = Array.isArray(response.data) ? response.data : response.data.data || [];
+      setTags(tagsData);
     } catch (error) {
       console.error('Error fetching tags:', error);
       // Fallback to default tags if API fails
@@ -398,7 +403,7 @@ export default function Posts() {
                 required
               >
                 <option value="">Select Category</option>
-                {categories.map(cat => (
+                {(categories || []).map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
@@ -407,7 +412,7 @@ export default function Posts() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
-                  {tags.map(tag => (
+                  {(tags || []).map(tag => (
                     <label key={tag.id} className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
