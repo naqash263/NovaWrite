@@ -22,14 +22,7 @@ class CategoryController extends Controller
             });
         }
 
-        // Posts count filter
-        if ($request->has('min_posts')) {
-            $query->having('posts_count', '>=', $request->min_posts);
-        }
-
-        if ($request->has('max_posts')) {
-            $query->having('posts_count', '<=', $request->max_posts);
-        }
+        // Posts count filter will be handled after query execution
 
         // Date range filters for created date
         if ($request->has('created_from')) {
@@ -99,7 +92,35 @@ class CategoryController extends Controller
         }
 
         $categories = $query->get();
-        return response()->json($categories);
+        
+        // Apply posts count filters after query execution
+        if ($request->has('min_posts')) {
+            $minPosts = (int) $request->min_posts;
+            $categories = $categories->filter(function($category) use ($minPosts) {
+                return $category->posts_count >= $minPosts;
+            });
+        }
+        
+        if ($request->has('max_posts')) {
+            $maxPosts = (int) $request->max_posts;
+            $categories = $categories->filter(function($category) use ($maxPosts) {
+                return $category->posts_count <= $maxPosts;
+            });
+        }
+        
+        // Prepare response data
+        $responseData = [
+            'data' => $categories->values(), // Reset array keys
+            'meta' => [
+                'total' => $categories->count(),
+                'search_applied' => $request->has('search'),
+                'search_term' => $request->get('search'),
+                'filters_applied' => $this->getAppliedFilters($request),
+                'message' => $categories->isEmpty() ? 'No categories found matching your criteria.' : null
+            ]
+        ];
+        
+        return response()->json($responseData);
     }
 
     public function store(Request $request)
@@ -147,5 +168,67 @@ class CategoryController extends Controller
         $category = Category::findOrFail($id);
         $category->delete();
         return response()->json(['message' => 'Category deleted successfully']);
+    }
+
+    /**
+     * Get applied filters for metadata
+     */
+    private function getAppliedFilters(Request $request)
+    {
+        $filters = [];
+        
+        if ($request->has('search')) {
+            $filters['search'] = $request->get('search');
+        }
+        
+        if ($request->has('min_posts')) {
+            $filters['min_posts'] = $request->get('min_posts');
+        }
+        
+        if ($request->has('max_posts')) {
+            $filters['max_posts'] = $request->get('max_posts');
+        }
+        
+        if ($request->has('created_from')) {
+            $filters['created_from'] = $request->get('created_from');
+        }
+        
+        if ($request->has('created_to')) {
+            $filters['created_to'] = $request->get('created_to');
+        }
+        
+        if ($request->has('updated_from')) {
+            $filters['updated_from'] = $request->get('updated_from');
+        }
+        
+        if ($request->has('updated_to')) {
+            $filters['updated_to'] = $request->get('updated_to');
+        }
+        
+        if ($request->has('created_year')) {
+            $filters['created_year'] = $request->get('created_year');
+        }
+        
+        if ($request->has('updated_year')) {
+            $filters['updated_year'] = $request->get('updated_year');
+        }
+        
+        if ($request->has('created_month')) {
+            $filters['created_month'] = $request->get('created_month');
+        }
+        
+        if ($request->has('updated_month')) {
+            $filters['updated_month'] = $request->get('updated_month');
+        }
+        
+        if ($request->has('recent_days')) {
+            $filters['recent_days'] = $request->get('recent_days');
+        }
+        
+        if ($request->has('recent_updated_days')) {
+            $filters['recent_updated_days'] = $request->get('recent_updated_days');
+        }
+        
+        return $filters;
     }
 }
