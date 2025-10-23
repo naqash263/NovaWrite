@@ -296,4 +296,41 @@ class FileController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Serve storage files
+     */
+    public function serve($path)
+    {
+        try {
+            // Construct the full file path
+            $filePath = storage_path('app/public/uploads/' . $path);
+            
+            // Check if file exists
+            if (!file_exists($filePath)) {
+                return response()->json(['message' => 'File not found'], 404);
+            }
+            
+            // Get file info
+            $mimeType = mime_content_type($filePath);
+            $fileSize = filesize($filePath);
+            
+            // Set appropriate headers
+            $headers = [
+                'Content-Type' => $mimeType,
+                'Content-Length' => $fileSize,
+                'Cache-Control' => 'public, max-age=31536000', // 1 year cache
+                'Last-Modified' => gmdate('D, d M Y H:i:s', filemtime($filePath)) . ' GMT',
+            ];
+            
+            // Return file response
+            return response()->file($filePath, $headers);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error serving file.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

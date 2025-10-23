@@ -11,6 +11,9 @@ Route::get('/health/comprehensive', [App\Http\Controllers\Api\HealthController::
 Route::get('/health/database', [App\Http\Controllers\Api\HealthController::class, 'database']);
 Route::get('/health/storage', [App\Http\Controllers\Api\HealthController::class, 'storage']);
 
+// Storage file serving (no authentication required)
+Route::get('/storage/{path}', [App\Http\Controllers\Api\FileController::class, 'serve'])->where('path', '.*');
+
 // Push notification routes
 Route::middleware(\App\Http\Middleware\ApiAuth::class)->group(function () {
     Route::post('/push/subscribe', [App\Http\Controllers\PushNotificationController::class, 'subscribe']);

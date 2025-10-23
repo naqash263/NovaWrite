@@ -48,6 +48,7 @@ export default function RichTextEditor({
         <div className="flex justify-end mb-2">
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
+              type="button"
               onClick={() => setPreviewMode('edit')}
               className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                 previewMode === 'edit' 
@@ -59,6 +60,7 @@ export default function RichTextEditor({
               Edit
             </button>
             <button
+              type="button"
               onClick={() => setPreviewMode('preview')}
               className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                 previewMode === 'preview' 
@@ -78,8 +80,8 @@ export default function RichTextEditor({
         onChange={(val) => onChange(val || '')}
         height={height}
         data-color-mode="light"
-        preview={previewMode}
-        hideToolbar={false}
+        preview={previewMode === 'preview' ? 'preview' : 'edit'}
+        hideToolbar={previewMode === 'preview'}
         visibleDragbar={false}
         textareaProps={{
           placeholder: placeholder,
