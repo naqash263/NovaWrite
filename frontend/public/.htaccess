@@ -1,5 +1,9 @@
 RewriteEngine On
 
+# Handle storage files first - redirect to backend storage
+RewriteCond %{REQUEST_URI} ^/storage/(.*)$
+RewriteRule ^storage/(.*)$ /api/storage/$1 [L]
+
 # Handle Angular and React Router
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
