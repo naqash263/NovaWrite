@@ -235,7 +235,7 @@ class PostController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'excerpt' => 'nullable|string',
-            'content' => 'required|string',
+            'content' => 'nullable|string', // Made optional for updates
             'featured_image' => 'nullable|string',
             'category_id' => 'required|exists:categories,id',
             'is_published' => 'boolean',
@@ -249,11 +249,11 @@ class PostController extends Controller
             'tags.*' => 'exists:tags,id',
         ]);
 
-        $post->update([
+        // Prepare update data
+        $updateData = [
             'title' => $request->title,
             'slug' => Str::slug($request->title),
             'excerpt' => $request->excerpt,
-            'content' => $request->content,
             'featured_image' => $request->featured_image,
             'category_id' => $request->category_id,
             'is_published' => $request->is_published ?? $post->is_published,
@@ -264,7 +264,14 @@ class PostController extends Controller
             'approved_by' => $request->approved_by ?? $post->approved_by,
             'approved_at' => $request->approved_at ?? $post->approved_at,
             'rejection_reason' => $request->rejection_reason ?? $post->rejection_reason,
-        ]);
+        ];
+
+        // Only update content if provided
+        if ($request->has('content') && $request->content !== null) {
+            $updateData['content'] = $request->content;
+        }
+
+        $post->update($updateData);
 
         // Sync tags if provided
         if ($request->has('tags')) {
