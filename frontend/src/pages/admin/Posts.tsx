@@ -81,6 +81,14 @@ export default function Posts() {
   const processContent = (content: string) => {
     if (!content) return '';
     
+    // Check content size to prevent 414 errors
+    const maxContentLength = 1000000; // 1MB limit
+    if (content.length > maxContentLength) {
+      console.warn('Content is very large:', content.length, 'characters');
+      // Truncate if too large, but this shouldn't happen in normal usage
+      content = content.substring(0, maxContentLength) + '... [Content truncated due to size]';
+    }
+    
     // Convert line breaks to proper HTML breaks
     let processedContent = content
       .replace(/\n\n/g, '\n\n') // Preserve double line breaks for paragraphs
@@ -269,6 +277,11 @@ export default function Posts() {
         category_id: Number(formData.category_id),
         content: processContent(formData.content) // Process content for better HTML handling
       };
+      
+      // Log data size for debugging
+      const dataSize = JSON.stringify(data).length;
+      console.log('Submitting post data, size:', dataSize, 'characters');
+      
       if (editingId) {
         await apiClient.put(`/admin/posts/${editingId}`, data);
       } else {
@@ -276,8 +289,19 @@ export default function Posts() {
       }
       resetForm();
       fetchPosts(pagination.currentPage);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving post:', error);
+      
+      // Provide specific error messages
+      if (error.response?.status === 414) {
+        alert('Content is too large. Please reduce the content size and try again.');
+      } else if (error.response?.status === 413) {
+        alert('Request is too large. Please reduce the content size and try again.');
+      } else if (error.message) {
+        alert(`Error: ${error.message}`);
+      } else {
+        alert('An error occurred while saving the post. Please try again.');
+      }
     }
   };
 
@@ -483,6 +507,12 @@ export default function Posts() {
               <p className="text-xs text-gray-500 mb-2">
                 💡 Supports Markdown and HTML. Use <code className="bg-gray-100 px-1 rounded">![alt text](image-url)</code> for images or <code className="bg-gray-100 px-1 rounded">&lt;img src="URL" alt="description" class="w-full rounded-lg my-4" /&gt;</code>
               </p>
+              <div className="text-xs text-gray-400 mb-2">
+                Content size: {formData.content.length.toLocaleString()} characters
+                {formData.content.length > 500000 && (
+                  <span className="text-yellow-600 ml-2">⚠️ Large content - consider breaking into smaller sections</span>
+                )}
+              </div>
               <RichTextEditor
                 value={formData.content}
                 onChange={(value) => setFormData({ ...formData, content: value })}
