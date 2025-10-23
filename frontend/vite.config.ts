@@ -100,7 +100,9 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     hmr: {
-      overlay: false
+      overlay: false,
+      port: 3000,
+      host: 'localhost'
     },
     proxy: {
         '/api': {

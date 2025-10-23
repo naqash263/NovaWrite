@@ -58,6 +58,16 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Skip service worker for development files and Vite HMR
+  if (url.pathname.includes('/src/') || 
+      url.pathname.includes('?v=') || 
+      url.pathname.includes('?t=') ||
+      url.pathname.includes('@vite') ||
+      url.pathname.includes('@fs') ||
+      url.hostname === 'localhost' && url.port === '3000' && url.pathname.startsWith('/src/')) {
+    return; // Let the browser handle these requests normally
+  }
+
   // Handle API requests with cache-first strategy for GET requests
   if (url.pathname.startsWith('/api/') && request.method === 'GET') {
     event.respondWith(
