@@ -3,6 +3,7 @@ import apiClient from '../../api/axios';
 import Pagination from '../../components/Pagination';
 import EnhancedImageUpload from '../../components/EnhancedImageUpload';
 import AdvancedFilters from '../../components/AdvancedFilters';
+import RichTextEditor from '../../components/RichTextEditor';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useSEO } from '../../utils/seo';
 
@@ -75,6 +76,24 @@ export default function Posts() {
     meta_keywords: '',
     tags: [] as number[],
   });
+
+  // Helper function to process content for better HTML and line break handling
+  const processContent = (content: string) => {
+    if (!content) return '';
+    
+    // Convert line breaks to proper HTML breaks
+    let processedContent = content
+      .replace(/\n\n/g, '\n\n') // Preserve double line breaks for paragraphs
+      .replace(/\n/g, '<br>'); // Convert single line breaks to <br> tags
+    
+    // Ensure proper HTML structure
+    if (!processedContent.includes('<p>') && !processedContent.includes('<div>')) {
+      // Wrap in paragraph tags if no block elements exist
+      processedContent = `<p>${processedContent}</p>`;
+    }
+    
+    return processedContent;
+  };
 
   useSEO({ title: 'Manage Posts | Admin' });
 
@@ -245,7 +264,11 @@ export default function Posts() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const data = { ...formData, category_id: Number(formData.category_id) };
+      const data = { 
+        ...formData, 
+        category_id: Number(formData.category_id),
+        content: processContent(formData.content) // Process content for better HTML handling
+      };
       if (editingId) {
         await apiClient.put(`/admin/posts/${editingId}`, data);
       } else {
@@ -456,16 +479,15 @@ export default function Posts() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Content (HTML)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Content (Markdown/HTML)</label>
               <p className="text-xs text-gray-500 mb-2">
-                💡 To add images: Use <code className="bg-gray-100 px-1 rounded">&lt;img src="URL" alt="description" class="w-full rounded-lg my-4" /&gt;</code>
+                💡 Supports Markdown and HTML. Use <code className="bg-gray-100 px-1 rounded">![alt text](image-url)</code> for images or <code className="bg-gray-100 px-1 rounded">&lt;img src="URL" alt="description" class="w-full rounded-lg my-4" /&gt;</code>
               </p>
-              <textarea
+              <RichTextEditor
                 value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono text-sm"
-                rows={10}
-                required
+                onChange={(value) => setFormData({ ...formData, content: value })}
+                placeholder="Write your content here... You can use Markdown or HTML"
+                height={400}
               />
             </div>
             <EnhancedImageUpload
