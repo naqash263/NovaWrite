@@ -23,7 +23,7 @@ export function CategoryFilter({ categories, selectedCategory, onSelect }: Categ
       >
         All
       </button>
-      {categories.map((category) => (
+      {(categories || []).map((category) => (
         <button
           key={category.id}
           onClick={() => onSelect(category.id)}
