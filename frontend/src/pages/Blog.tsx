@@ -292,6 +292,7 @@ export default function Blog() {
                 filterConfigs={filterConfigs}
                 onClearAll={handleClearAllFilters}
                 onApply={() => setShowFilters(false)}
+                onToggle={() => setShowFilters(!showFilters)}
                 isOpen={showFilters}
                 resultsCount={pagination.total}
               />

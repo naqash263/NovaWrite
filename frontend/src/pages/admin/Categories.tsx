@@ -24,9 +24,12 @@ export default function Categories() {
   const fetchCategories = async () => {
     try {
       const response = await apiClient.get('/categories');
-      setCategories(response.data);
+      // Handle both old format (array) and new format (object with data property)
+      const categoriesData = Array.isArray(response.data) ? response.data : response.data.data || [];
+      setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategories([]); // Ensure categories is always an array
     }
   };
 

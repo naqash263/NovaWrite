@@ -31,7 +31,8 @@ export default function Tags() {
     queryKey: ['tags'],
     queryFn: async () => {
       const response = await apiClient.get('/tags');
-      return response.data;
+      // Handle both old format (array) and new format (object with data property)
+      return Array.isArray(response.data) ? response.data : response.data.data || [];
     },
   });
 
