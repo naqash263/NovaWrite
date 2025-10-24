@@ -151,65 +151,6 @@ const EmailService: React.FC<EmailServiceProps> = () => {
     }
   };
 
-  const generateVariables = () => {
-    const baseVariables: Record<string, any> = {
-      current_year: new Date().getFullYear(),
-      app_name: 'NovaWrite',
-      app_url: window.location.origin,
-      support_email: 'support@naqashthaheem.com',
-    };
-
-    // Add user data
-    if (selectedUser) {
-      baseVariables.user_name = selectedUser.name;
-      baseVariables.user_email = selectedUser.email;
-      baseVariables.user_id = selectedUser.id;
-      baseVariables.registration_date = 'Recently';
-      baseVariables.profile_url = `${window.location.origin}/profile`;
-    }
-
-    // Add course data
-    if (selectedCourse) {
-      baseVariables.course_title = selectedCourse.title;
-      baseVariables.course_description = selectedCourse.description;
-      baseVariables.course_url = `${window.location.origin}/courses/${selectedCourse.id}`;
-      baseVariables.course_instructor = selectedCourse.instructor;
-      baseVariables.course_duration = selectedCourse.duration;
-      baseVariables.course_price = selectedCourse.price;
-      baseVariables.course_category = selectedCourse.category;
-      baseVariables.enrollment_date = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', month: 'long', day: 'numeric' 
-      });
-    }
-
-    // Add workflow data
-    if (selectedWorkflow) {
-      baseVariables.workflow_title = selectedWorkflow.title;
-      baseVariables.workflow_description = selectedWorkflow.description;
-      baseVariables.workflow_url = `${window.location.origin}/workflows/${selectedWorkflow.id}`;
-      baseVariables.workflow_category = selectedWorkflow.category;
-      baseVariables.workflow_type = selectedWorkflow.type;
-      baseVariables.workflow_author = selectedWorkflow.author;
-      baseVariables.workflow_steps = selectedWorkflow.steps;
-      baseVariables.workflow_difficulty = selectedWorkflow.difficulty;
-    }
-
-    // Add post data
-    if (selectedPost) {
-      baseVariables.post_title = selectedPost.title;
-      baseVariables.post_excerpt = selectedPost.excerpt || selectedPost.content.substring(0, 150) + '...';
-      baseVariables.post_url = `${window.location.origin}/blog/${selectedPost.slug}`;
-      baseVariables.post_author = selectedPost.author;
-      baseVariables.post_category = selectedPost.category;
-      baseVariables.post_published_date = new Date(selectedPost.published_at).toLocaleDateString('en-US', { 
-        year: 'numeric', month: 'long', day: 'numeric' 
-      });
-      baseVariables.post_read_time = selectedPost.read_time;
-    }
-
-    // Add custom variables
-    return { ...baseVariables, ...customVariables };
-  };
 
   const sendEmail = async () => {
     if (!selectedTemplate || !selectedUser) {
@@ -268,7 +209,7 @@ const EmailService: React.FC<EmailServiceProps> = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <style jsx="true">{`
+      <style>{`
         .react-select-container .react-select__control {
           border: 1px solid #d1d5db;
           border-radius: 0.375rem;

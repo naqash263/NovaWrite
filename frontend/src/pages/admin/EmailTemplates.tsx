@@ -136,11 +136,11 @@ const EmailTemplates: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      if (editingTemplate.id) {
+      if (editingTemplate && editingTemplate.id) {
         // Update existing template
         await apiClient.put(`/admin/email-templates/${editingTemplate.id}`, editingTemplate);
         await fetchTemplates();
-      } else {
+      } else if (editingTemplate) {
         // Create new template
         await apiClient.post('/admin/email-templates', editingTemplate);
         await fetchTemplates();
@@ -197,6 +197,7 @@ const EmailTemplates: React.FC = () => {
           </div>
           <button
             onClick={() => setEditingTemplate({
+              id: 0,
               name: '',
               subject: '',
               body: '',
@@ -206,8 +207,11 @@ const EmailTemplates: React.FC = () => {
               language: 'en',
               is_active: true,
               is_system: false,
-              variables: []
-            } as EmailTemplate)}
+              variables: [],
+              metadata: {},
+              created_at: '',
+              updated_at: ''
+            })}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center space-x-2"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

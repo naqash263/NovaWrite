@@ -7,24 +7,13 @@ import ApiKeyManager from './ApiKeyManager';
 import InstallBanner from './InstallBanner';
 import NotificationSettings from './NotificationSettings';
 import AdminLayout from './AdminLayout';
-import analyticsService from '../services/analyticsService';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, logout, loading } = useAuth();
-  const { canInstall, promptInstall } = useInstallPrompt();
+  const { canInstall } = useInstallPrompt();
   const { apiStats, loading: apiStatsLoading } = useApiStats();
 
-  // Custom install handler that tracks the source
-  const handleInstall = async (source: string) => {
-    try {
-      await promptInstall();
-      // Track install attempt (success/failure will be tracked in the hook)
-      await analyticsService.trackInstall(source);
-    } catch (error) {
-      console.error('Install failed:', error);
-    }
-  };
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);

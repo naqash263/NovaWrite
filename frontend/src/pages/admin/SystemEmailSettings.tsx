@@ -78,7 +78,7 @@ const SystemEmailSettings: React.FC = () => {
         controller.abort();
       }, 10000); // 10 second timeout
 
-      const response = await apiClient.post('/admin/system-email-settings', settings, {
+      await apiClient.post('/admin/system-email-settings', settings, {
         signal: controller.signal,
         timeout: 10000
       });
@@ -131,7 +131,7 @@ const SystemEmailSettings: React.FC = () => {
 
   return (
     <>
-      <style jsx="true">{`
+      <style>{`
         .react-select-container .react-select__control {
           border: 1px solid #d1d5db;
           border-radius: 0.375rem;
@@ -343,7 +343,7 @@ const SystemEmailSettings: React.FC = () => {
                     const response = await apiClient.get('/admin/system-email-settings/health');
                     console.log('Health check response:', response.data);
                     setSuccess('Health check successful!');
-                  } catch (err) {
+                  } catch (err: any) {
                     console.error('Health check failed:', err);
                     setError('Health check failed: ' + (err.response?.data?.message || err.message));
                   }
