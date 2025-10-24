@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getLatestPosts, getCurrentTimestamp, LatestPostsParams, LatestPostsResponse } from '../utils/postsApi';
+import { getLatestPosts, getCurrentTimestamp } from '../utils/postsApi';
+import type { LatestPostsParams, LatestPostsResponse } from '../utils/postsApi';
 
 interface UseLatestPostsOptions {
   autoFetch?: boolean;

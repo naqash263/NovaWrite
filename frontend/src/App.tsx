@@ -37,6 +37,7 @@ const Users = lazy(() => import('./pages/admin/Users'));
 const UserGroups = lazy(() => import('./pages/admin/UserGroups'));
 const ApiTokens = lazy(() => import('./pages/admin/ApiTokens'));
 const ApiDocs = lazy(() => import('./pages/admin/ApiDocs'));
+const ApiDocumentation = lazy(() => import('./pages/admin/ApiDocumentation'));
 const Tags = lazy(() => import('./pages/admin/Tags'));
 const Settings = lazy(() => import('./pages/admin/Settings'));
 const EmailTemplates = lazy(() => import('./pages/admin/EmailTemplates'));
@@ -107,6 +108,7 @@ function App() {
               <Route path="/admin/user-groups" element={<ProtectedRoute requireAdmin><UserGroups /></ProtectedRoute>} />
               <Route path="/admin/api-tokens" element={<ProtectedRoute requireAdmin><ApiTokens /></ProtectedRoute>} />
               <Route path="/admin/api-docs" element={<ProtectedRoute requireAdmin><ApiDocs /></ProtectedRoute>} />
+              <Route path="/admin/api-documentation" element={<ProtectedRoute requireAdmin><ApiDocumentation /></ProtectedRoute>} />
               <Route path="/admin/tags" element={<ProtectedRoute requireAdmin><Tags /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute requireAdmin><Settings /></ProtectedRoute>} />
               <Route path="/admin/email-templates" element={<ProtectedRoute requireAdmin><EmailTemplates /></ProtectedRoute>} />

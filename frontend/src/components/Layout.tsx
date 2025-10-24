@@ -126,7 +126,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       { path: '/admin/files', label: 'Files', icon: '📁' },
       { path: '/admin/monitoring', label: 'Monitoring', icon: '🏥' },
       { path: '/admin/push-notifications', label: 'Push Notifications', icon: '🔔' },
-    { path: '/admin/analytics', label: 'Analytics', icon: '📊' },
+      { path: '/admin/analytics', label: 'Analytics', icon: '📊' },
+      { path: '/admin/api-documentation', label: 'API Documentation', icon: '📖' },
     ];
 
     // Settings dropdown menu items (moved from main navigation)
