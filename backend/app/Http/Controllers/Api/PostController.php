@@ -127,6 +127,30 @@ class PostController extends Controller
                 $query->where('updated_at', '>=', now()->subDays($days));
             }
 
+            // Since parameter - get posts created/updated after a specific timestamp
+            if ($request->has('since')) {
+                $since = $request->since;
+                
+                // Validate timestamp format (ISO 8601 or Unix timestamp)
+                if (is_numeric($since)) {
+                    // Unix timestamp
+                    $sinceDate = \Carbon\Carbon::createFromTimestamp($since);
+                } else {
+                    // ISO 8601 format
+                    try {
+                        $sinceDate = \Carbon\Carbon::parse($since);
+                    } catch (\Exception $e) {
+                        return response()->json(['error' => 'Invalid since parameter format. Use ISO 8601 or Unix timestamp.'], 400);
+                    }
+                }
+                
+                // Get posts created or updated after the since timestamp
+                $query->where(function($q) use ($sinceDate) {
+                    $q->where('created_at', '>', $sinceDate)
+                      ->orWhere('updated_at', '>', $sinceDate);
+                });
+            }
+
             // Author filter
             if ($request->has('author_id')) {
                 $query->where('user_id', $request->author_id);
@@ -364,6 +388,60 @@ class PostController extends Controller
         return response()->json([
             'message' => 'Posts cache cleared successfully',
             'cleared_at' => now()
+        ]);
+    }
+
+    /**
+     * Get latest posts since a specific timestamp
+     * This is a convenience method for getting only new posts
+     */
+    public function latest(Request $request)
+    {
+        $request->validate([
+            'since' => 'required|string',
+            'limit' => 'nullable|integer|min:1|max:100',
+            'include_updated' => 'nullable|boolean'
+        ]);
+
+        $since = $request->since;
+        $limit = $request->get('limit', 20);
+        $includeUpdated = $request->get('include_updated', true);
+
+        // Validate timestamp format
+        if (is_numeric($since)) {
+            $sinceDate = \Carbon\Carbon::createFromTimestamp($since);
+        } else {
+            try {
+                $sinceDate = \Carbon\Carbon::parse($since);
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'Invalid since parameter format. Use ISO 8601 or Unix timestamp.'], 400);
+            }
+        }
+
+        $query = Post::with(['category', 'user', 'tags'])
+            ->where('is_published', true)
+            ->where('approval_status', 'approved');
+
+        if ($includeUpdated) {
+            // Get posts created OR updated after the since timestamp
+            $query->where(function($q) use ($sinceDate) {
+                $q->where('created_at', '>', $sinceDate)
+                  ->orWhere('updated_at', '>', $sinceDate);
+            });
+        } else {
+            // Get only posts created after the since timestamp
+            $query->where('created_at', '>', $sinceDate);
+        }
+
+        $posts = $query->orderBy('created_at', 'desc')
+                      ->limit($limit)
+                      ->get();
+
+        return response()->json([
+            'posts' => $posts,
+            'count' => $posts->count(),
+            'since' => $sinceDate->toISOString(),
+            'fetched_at' => now()->toISOString()
         ]);
     }
 }

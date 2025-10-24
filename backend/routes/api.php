@@ -520,6 +520,7 @@ Route::middleware('api.auth')->group(function () {
 });
 
 Route::get('posts', [PostController::class, 'index']);
+Route::get('posts/latest', [PostController::class, 'latest']);
 Route::get('posts/{idOrSlug}', [PostController::class, 'show']);
 Route::post('posts/clear-cache', [PostController::class, 'clearCache'])->middleware('api.auth');
 Route::get('admin/posts', [PostController::class, 'allPosts'])->middleware('api.auth');
