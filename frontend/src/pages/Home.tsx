@@ -327,12 +327,6 @@ export default function Home() {
               >
                 Get In Touch
               </Link>
-              <Link
-                to="/workflows"
-                className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-blue-600 transform hover:scale-105 transition-all duration-300"
-              >
-                View My Work
-              </Link>
             </div>
 
             {/* Social Media Links */}
