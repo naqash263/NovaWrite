@@ -49,6 +49,42 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, 'admin'])->prefix('admin
     Route::get('/retention', [App\Http\Controllers\Api\AppAnalyticsController::class, 'getRetention']);
 });
 
+// Email template routes (admin only)
+Route::middleware([\App\Http\Middleware\ApiAuth::class, 'admin'])->prefix('admin/email-templates')->group(function () {
+    Route::get('/', [App\Http\Controllers\Api\EmailTemplateController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\Api\EmailTemplateController::class, 'store']);
+    Route::get('/statistics', [App\Http\Controllers\Api\EmailTemplateController::class, 'statistics']);
+    Route::get('/{emailTemplate}', [App\Http\Controllers\Api\EmailTemplateController::class, 'show']);
+    Route::put('/{emailTemplate}', [App\Http\Controllers\Api\EmailTemplateController::class, 'update']);
+    Route::delete('/{emailTemplate}', [App\Http\Controllers\Api\EmailTemplateController::class, 'destroy']);
+    Route::get('/{emailTemplate}/preview', [App\Http\Controllers\Api\EmailTemplateController::class, 'preview']);
+    Route::post('/{emailTemplate}/test', [App\Http\Controllers\Api\EmailTemplateController::class, 'test']);
+    Route::post('/{emailTemplate}/duplicate', [App\Http\Controllers\Api\EmailTemplateController::class, 'duplicate']);
+    Route::patch('/{emailTemplate}/toggle-active', [App\Http\Controllers\Api\EmailTemplateController::class, 'toggleActive']);
+});
+
+// Public email template routes (for rendering)
+Route::prefix('email-templates')->group(function () {
+    Route::get('/by-name', [App\Http\Controllers\Api\EmailTemplateController::class, 'getByName']);
+    Route::post('/render', [App\Http\Controllers\Api\EmailTemplateController::class, 'render']);
+});
+
+// Email sending routes
+Route::prefix('email')->group(function () {
+    Route::post('/send-template', [App\Http\Controllers\Api\EmailController::class, 'sendTemplateEmail']);
+    Route::get('/templates', [App\Http\Controllers\Api\EmailController::class, 'getAvailableTemplates']);
+    Route::post('/preview', [App\Http\Controllers\Api\EmailController::class, 'previewTemplate']);
+    Route::post('/send-welcome', [App\Http\Controllers\Api\EmailController::class, 'sendWelcomeEmail']);
+});
+
+// Email service routes (admin only)
+Route::middleware([\App\Http\Middleware\ApiAuth::class, 'admin'])->prefix('email-service')->group(function () {
+    Route::post('/send-real-data', [App\Http\Controllers\Api\EmailServiceController::class, 'sendEmailWithRealData']);
+    Route::post('/preview-real-data', [App\Http\Controllers\Api\EmailServiceController::class, 'previewEmailWithRealData']);
+    Route::get('/available-data', [App\Http\Controllers\Api\EmailServiceController::class, 'getAvailableData']);
+    Route::get('/template-variables', [App\Http\Controllers\Api\EmailServiceController::class, 'getTemplateVariables']);
+});
+
     // Test authentication endpoint
     Route::get('/test-auth', function () {
         $user = Auth::user();
@@ -462,7 +498,6 @@ use App\Http\Controllers\Api\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\Admin\UserGroupController;
 use App\Http\Controllers\Api\Admin\UserAccessController;
 use App\Http\Controllers\EmailController;
-use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\SmtpConfigurationController;
 use Illuminate\Support\Facades\Route;
 
@@ -471,6 +506,8 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('verify-email', [AuthController::class, 'verifyEmail']);
     Route::post('resend-verification', [AuthController::class, 'resendVerification']);
+    Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('reset-password', [AuthController::class, 'resetPassword']);
     
     // Google OAuth routes
     Route::get('google', [\App\Http\Controllers\Api\GoogleAuthController::class, 'redirectToGoogle']);
@@ -741,27 +778,24 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::post('emails/test-configuration', [EmailController::class, 'testEmailConfiguration']);
     Route::get('emails/stats', [EmailController::class, 'getEmailStats']);
     
-    // Email template management
-    Route::apiResource('email-templates', EmailTemplateController::class);
-    Route::get('email-templates/{id}/preview', [EmailTemplateController::class, 'preview']);
-    Route::post('email-templates/{id}/test', [EmailTemplateController::class, 'test']);
-    Route::post('email-templates/{id}/duplicate', [EmailTemplateController::class, 'duplicate']);
-    Route::post('email-templates/{id}/toggle-status', [EmailTemplateController::class, 'toggleStatus']);
-    Route::get('email-templates/categories', [EmailTemplateController::class, 'categories']);
-    Route::get('email-templates/types', [EmailTemplateController::class, 'types']);
-    Route::get('email-templates/by-name/{name}', [EmailTemplateController::class, 'getByName']);
     
-    // SMTP configuration management
-    Route::apiResource('smtp-configurations', SmtpConfigurationController::class);
-    Route::post('smtp-configurations/{id}/test', [SmtpConfigurationController::class, 'test']);
-    Route::post('smtp-configurations/{id}/set-active', [SmtpConfigurationController::class, 'setActive']);
-    Route::post('smtp-configurations/{id}/set-default', [SmtpConfigurationController::class, 'setDefault']);
-    Route::post('smtp-configurations/{id}/duplicate', [SmtpConfigurationController::class, 'duplicate']);
-    Route::get('smtp-configurations/mailer-types', [SmtpConfigurationController::class, 'getMailerTypes']);
-    Route::get('smtp-configurations/encryption-types', [SmtpConfigurationController::class, 'getEncryptionTypes']);
-    Route::get('smtp-configurations/common-ports', [SmtpConfigurationController::class, 'getCommonPorts']);
-    Route::get('smtp-configurations/active', [SmtpConfigurationController::class, 'getActive']);
-    Route::get('smtp-configurations/default', [SmtpConfigurationController::class, 'getDefault']);
+        // SMTP configuration management
+        Route::apiResource('smtp-configurations', SmtpConfigurationController::class);
+        Route::post('smtp-configurations/{id}/test', [SmtpConfigurationController::class, 'test']);
+        Route::post('smtp-configurations/{id}/set-active', [SmtpConfigurationController::class, 'setActive']);
+        Route::post('smtp-configurations/{id}/set-default', [SmtpConfigurationController::class, 'setDefault']);
+        Route::post('smtp-configurations/{id}/duplicate', [SmtpConfigurationController::class, 'duplicate']);
+        Route::get('smtp-configurations/mailer-types', [SmtpConfigurationController::class, 'getMailerTypes']);
+        Route::get('smtp-configurations/encryption-types', [SmtpConfigurationController::class, 'getEncryptionTypes']);
+        Route::get('smtp-configurations/common-ports', [SmtpConfigurationController::class, 'getCommonPorts']);
+        Route::get('smtp-configurations/active', [SmtpConfigurationController::class, 'getActive']);
+        Route::get('smtp-configurations/default', [SmtpConfigurationController::class, 'getDefault']);
+
+        // System email settings
+        Route::get('system-email-settings', [App\Http\Controllers\Api\SystemEmailSettingsController::class, 'index']);
+        Route::post('system-email-settings', [App\Http\Controllers\Api\SystemEmailSettingsController::class, 'store']);
+        Route::post('system-email-settings/test', [App\Http\Controllers\Api\SystemEmailSettingsController::class, 'testEmail']);
+        Route::get('system-email-settings/health', [App\Http\Controllers\Api\SystemEmailSettingsController::class, 'health']);
     
     // Gemini API Management
     // Specific routes must come BEFORE parameterized routes (apiResource)

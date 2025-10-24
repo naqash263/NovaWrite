@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Mail\EmailVerificationMail;
 use App\Services\EmailService;
+use App\Events\UserRegistered;
+use App\Events\UserLoggedIn;
+use App\Events\PasswordResetRequested;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -43,6 +46,9 @@ class AuthController extends Controller
             \Log::error('Failed to send verification email: ' . $e->getMessage());
         }
 
+        // Fire UserRegistered event to send welcome email
+        event(new UserRegistered($user, $verificationUrl));
+
         return response()->json([
             'message' => 'Registration successful! Please check your email to verify your account.',
             'user' => $user,
@@ -78,6 +84,9 @@ class AuthController extends Controller
                 'email_verification_required' => true,
             ], 403);
         }
+
+        // Fire UserLoggedIn event (optional - for analytics or notifications)
+        event(new UserLoggedIn($user, $request->ip()));
 
         return response()->json([
             'user' => $user,
@@ -183,5 +192,68 @@ class AuthController extends Controller
                 'message' => 'Please try again later.',
             ], 500);
         }
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        
+        // Generate password reset token
+        $token = \Str::random(60);
+        $user->password_reset_token = $token;
+        $user->password_reset_expires_at = now()->addHours(24);
+        $user->save();
+
+        $resetUrl = config('app.url') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
+
+        // Fire PasswordResetRequested event to send email
+        event(new PasswordResetRequested($user, $resetUrl, $token));
+
+        return response()->json([
+            'message' => 'Password reset email sent successfully!',
+        ], 200);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required|string',
+            'email' => 'required|email',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $user = User::where('email', $request->email)
+            ->where('password_reset_token', $request->token)
+            ->where('password_reset_expires_at', '>', now())
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'error' => 'Invalid or expired reset token',
+                'message' => 'The password reset link is invalid or has expired.',
+            ], 400);
+        }
+
+        // Update password
+        $user->password = Hash::make($request->password);
+        $user->password_reset_token = null;
+        $user->password_reset_expires_at = null;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Password reset successfully! You can now log in with your new password.',
+        ], 200);
     }
 }

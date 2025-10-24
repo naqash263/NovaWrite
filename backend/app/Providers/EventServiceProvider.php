@@ -12,12 +12,17 @@ use App\Events\NewBlogPost;
 use App\Events\NewCourse;
 use App\Events\NewWorkflow;
 use App\Events\CareerToolUpdate;
+use App\Events\UserRegistered;
+use App\Events\UserLoggedIn;
+use App\Events\PasswordResetRequested;
 
 // Import listeners
 use App\Listeners\SendBlogPostNotification;
 use App\Listeners\SendCourseNotification;
 use App\Listeners\SendWorkflowNotification;
 use App\Listeners\SendCareerToolNotification;
+use App\Listeners\SendWelcomeEmail;
+use App\Listeners\SendPasswordResetEmail;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -46,6 +51,15 @@ class EventServiceProvider extends ServiceProvider
 
         CareerToolUpdate::class => [
             SendCareerToolNotification::class,
+        ],
+
+        // Email template events
+        UserRegistered::class => [
+            SendWelcomeEmail::class,
+        ],
+
+        PasswordResetRequested::class => [
+            SendPasswordResetEmail::class,
         ],
     ];
 

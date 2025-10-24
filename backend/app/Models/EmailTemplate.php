@@ -14,11 +14,11 @@ class EmailTemplate extends Model
         'subject',
         'body',
         'type',
+        'category',
         'variables',
         'description',
-        'is_active',
-        'category',
         'metadata',
+        'is_active',
     ];
 
     protected $casts = [
@@ -69,6 +69,7 @@ class EmailTemplate extends Model
             'subject' => $subject,
             'body' => $body,
             'type' => $this->type,
+            'category' => $this->category,
         ];
     }
 
@@ -115,13 +116,72 @@ class EmailTemplate extends Model
         return $errors;
     }
 
+
     /**
-     * Get template preview with sample data
+     * Scope to filter by type
+     */
+    public function scopeByType($query, $type)
+    {
+        return $query->where('type', $type);
+    }
+
+    /**
+     * Scope to filter by language
+     */
+    public function scopeByLanguage($query, $language)
+    {
+        return $query->where('language', $language);
+    }
+
+    /**
+     * Scope to get system templates
+     */
+    public function scopeSystem($query)
+    {
+        return $query->where('is_system', true);
+    }
+
+    /**
+     * Scope to get non-system templates
+     */
+    public function scopeCustom($query)
+    {
+        return $query->where('is_system', false);
+    }
+
+    /**
+     * Automatically detect variables from template content
+     */
+    public function detectVariables(): array
+    {
+        $content = $this->subject . ' ' . $this->body;
+        $variables = [];
+        
+        // Find all {{variable_name}} patterns
+        preg_match_all('/\{\{([^}]+)\}\}/', $content, $matches);
+        
+        if (!empty($matches[1])) {
+            $variables = array_unique($matches[1]);
+            sort($variables);
+        }
+        
+        return $variables;
+    }
+
+    /**
+     * Get preview of template with sample data
      */
     public function getPreview(): array
     {
         $sampleData = $this->getSampleData();
-        return $this->render($sampleData);
+        $rendered = $this->render($sampleData);
+        
+        return [
+            'template' => $this->toArray(),
+            'preview' => $rendered,
+            'sample_data' => $sampleData,
+            'variables' => $this->detectVariables(),
+        ];
     }
 
     /**
@@ -136,6 +196,11 @@ class EmailTemplate extends Model
             'app_url' => config('app.url'),
             'login_url' => config('app.url') . '/login',
             'support_email' => config('mail.from.address'),
+            // Add your custom variables here
+            'Hoioyo' => 'Sample Custom Value',
+            'customer_name' => 'Jane Smith',
+            'order_number' => 'ORD-12345',
+            'product_name' => 'Premium Package',
         ];
 
         // Add category-specific sample data
@@ -153,6 +218,20 @@ class EmailTemplate extends Model
                     'workflow_description' => 'A comprehensive workflow for content creation.',
                     'workflow_url' => config('app.url') . '/workflows/1',
                     'workflow_type' => 'new',
+                ]);
+                break;
+            case 'marketing':
+                $sampleData = array_merge($sampleData, [
+                    'promo_code' => 'SAVE20',
+                    'discount_percent' => '20',
+                    'expiry_date' => '2025-12-31',
+                ]);
+                break;
+            case 'system':
+                $sampleData = array_merge($sampleData, [
+                    'maintenance_date' => '2025-01-15',
+                    'downtime_duration' => '2 hours',
+                    'affected_services' => 'Email, File Upload',
                 ]);
                 break;
         }

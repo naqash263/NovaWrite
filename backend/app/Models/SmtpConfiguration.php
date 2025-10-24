@@ -111,6 +111,7 @@ class SmtpConfiguration extends Model
                 'mail.mailers.smtp.username' => $this->username,
                 'mail.mailers.smtp.password' => $this->password,
                 'mail.mailers.smtp.encryption' => $this->encryption,
+                'mail.mailers.smtp.timeout' => 30, // 30 second timeout
                 'mail.from.address' => $this->from_address,
                 'mail.from.name' => $this->from_name,
             ]);
@@ -146,9 +147,21 @@ class SmtpConfiguration extends Model
                 'test_error' => $e->getMessage(),
             ]);
 
+            // Provide user-friendly error messages
+            $errorMessage = $e->getMessage();
+            if (strpos($errorMessage, 'Username and Password not accepted') !== false) {
+                $errorMessage = 'Invalid username or password. Please check your SMTP credentials.';
+            } elseif (strpos($errorMessage, 'Connection timed out') !== false) {
+                $errorMessage = 'Connection timed out. Please check your SMTP host and port settings.';
+            } elseif (strpos($errorMessage, 'Could not connect to host') !== false) {
+                $errorMessage = 'Could not connect to SMTP host. Please check your host and port settings.';
+            } elseif (strpos($errorMessage, 'Expected response code') !== false) {
+                $errorMessage = 'SMTP server rejected the connection. Please check your settings and try again.';
+            }
+
             return [
                 'success' => false,
-                'message' => 'SMTP configuration test failed: ' . $e->getMessage()
+                'message' => 'SMTP configuration test failed: ' . $errorMessage
             ];
         }
     }

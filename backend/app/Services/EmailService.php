@@ -2,27 +2,18 @@
 
 namespace App\Services;
 
-use App\Mail\WelcomeEmail;
-use App\Mail\PasswordResetEmail;
-use App\Mail\CourseEnrollmentEmail;
-use App\Mail\WorkflowNotificationEmail;
-use App\Mail\DynamicEmail;
-use App\Models\User;
-use App\Models\Course;
-use App\Models\Workflow;
+use App\Models\EmailTemplate;
 use App\Models\SmtpConfiguration;
+use App\Models\SystemEmailSetting;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class EmailService
 {
     /**
-     * Apply SMTP configuration from database
+     * Configure mail settings using active SMTP configuration
      */
-    protected function applySmtpConfiguration()
+    private function configureMailSettings(): void
     {
         $smtpConfig = SmtpConfiguration::getActive();
         
@@ -34,255 +25,413 @@ class EmailService
                 'mail.mailers.smtp.username' => $smtpConfig->username,
                 'mail.mailers.smtp.password' => $smtpConfig->password,
                 'mail.mailers.smtp.encryption' => $smtpConfig->encryption,
+                'mail.mailers.smtp.timeout' => 30,
                 'mail.from.address' => $smtpConfig->from_address,
                 'mail.from.name' => $smtpConfig->from_name,
             ]);
+            
+            Log::info("Using SMTP configuration: {$smtpConfig->name} ({$smtpConfig->host})");
+        } else {
+            Log::warning("No active SMTP configuration found, using default mail settings");
+        }
+    }
+
+    /**
+     * Configure mail settings using system email settings for specific email type
+     */
+    private function configureMailSettingsForEmailType(string $emailType): void
+    {
+        $smtpId = SystemEmailSetting::getSmtpForEmailType($emailType);
+        
+        if ($smtpId) {
+            $smtpConfig = SmtpConfiguration::find($smtpId);
+            if ($smtpConfig) {
+                config([
+                    'mail.default' => 'smtp',
+                    'mail.mailers.smtp.host' => $smtpConfig->host,
+                    'mail.mailers.smtp.port' => $smtpConfig->port,
+                    'mail.mailers.smtp.username' => $smtpConfig->username,
+                    'mail.mailers.smtp.password' => $smtpConfig->password,
+                    'mail.mailers.smtp.encryption' => $smtpConfig->encryption,
+                    'mail.mailers.smtp.timeout' => 30,
+                    'mail.from.address' => $smtpConfig->from_address,
+                    'mail.from.name' => $smtpConfig->from_name,
+                ]);
+                
+                Log::info("Using SMTP configuration for {$emailType}: {$smtpConfig->name} ({$smtpConfig->host})");
+                return;
+            }
+        }
+        
+        // Fallback to active SMTP configuration
+        $this->configureMailSettings();
+    }
+
+    /**
+     * Send email using a template
+     */
+    public function sendTemplateEmail(string $templateName, array $variables, string $to, ?string $toName = null): bool
+    {
+        try {
+            // Configure mail settings using active SMTP configuration
+            $this->configureMailSettings();
+            
+            $template = EmailTemplate::getByName($templateName);
+            
+            if (!$template) {
+                Log::error("Email template not found: {$templateName}");
+                return false;
+            }
+
+            if (!$template->is_active) {
+                Log::error("Email template is inactive: {$templateName}");
+                return false;
+            }
+
+            // Render the template with variables
+            $rendered = $template->render($variables);
+            
+            // Send the email
+            Mail::html($rendered['body'], function ($message) use ($to, $toName, $rendered) {
+                $message->to($to, $toName)
+                        ->subject($rendered['subject']);
+            });
+
+            Log::info("Email sent successfully using template: {$templateName} to: {$to}");
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error("Failed to send email using template {$templateName}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send email using a specific SMTP configuration
+     */
+    public function sendTemplateEmailWithSmtp(string $templateName, array $variables, string $to, ?string $toName = null, ?int $smtpConfigId = null): bool
+    {
+        try {
+            // Use specific SMTP configuration if provided
+            if ($smtpConfigId) {
+                $smtpConfig = SmtpConfiguration::find($smtpConfigId);
+                if ($smtpConfig) {
+                    config([
+                        'mail.default' => 'smtp',
+                        'mail.mailers.smtp.host' => $smtpConfig->host,
+                        'mail.mailers.smtp.port' => $smtpConfig->port,
+                        'mail.mailers.smtp.username' => $smtpConfig->username,
+                        'mail.mailers.smtp.password' => $smtpConfig->password,
+                        'mail.mailers.smtp.encryption' => $smtpConfig->encryption,
+                        'mail.mailers.smtp.timeout' => 30,
+                        'mail.from.address' => $smtpConfig->from_address,
+                        'mail.from.name' => $smtpConfig->from_name,
+                    ]);
+                    
+                    Log::info("Using specific SMTP configuration: {$smtpConfig->name} ({$smtpConfig->host})");
+                } else {
+                    Log::error("SMTP configuration not found with ID: {$smtpConfigId}");
+                    return false;
+                }
+            } else {
+                // Use active SMTP configuration
+                $this->configureMailSettings();
+            }
+            
+            $template = EmailTemplate::getByName($templateName);
+            
+            if (!$template) {
+                Log::error("Email template not found: {$templateName}");
+                return false;
+            }
+
+            if (!$template->is_active) {
+                Log::error("Email template is inactive: {$templateName}");
+                return false;
+            }
+
+            // Render the template with variables
+            $rendered = $template->render($variables);
+            
+            // Send the email
+            Mail::html($rendered['body'], function ($message) use ($to, $toName, $rendered) {
+                $message->to($to, $toName)
+                        ->subject($rendered['subject']);
+            });
+
+            Log::info("Email sent successfully using template: {$templateName} to: {$to}");
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error("Failed to send email using template {$templateName}: " . $e->getMessage());
+            return false;
         }
     }
 
     /**
      * Send welcome email to new user
      */
-    public function sendWelcomeEmail(User $user): bool
+    public function sendWelcomeEmail($user): bool
     {
         try {
-            $this->applySmtpConfiguration();
+            // Configure mail settings for welcome emails
+            $this->configureMailSettingsForEmailType('welcome_email');
             
-            // Try to use dynamic template first, fallback to static template
-            $template = \App\Models\EmailTemplate::getByName('welcome');
-            if ($template) {
-                $variables = [
-                    'user_name' => $user->name,
-                    'user_email' => $user->email,
-                    'app_name' => config('app.name'),
-                    'app_url' => config('app.url'),
-                    'login_url' => config('app.url') . '/login',
-                ];
-                Mail::to($user->email)->send(new DynamicEmail('welcome', $variables));
-            } else {
-                Mail::to($user->email)->send(new WelcomeEmail($user));
-            }
-            Log::info("Welcome email sent to user: {$user->email}");
-            return true;
+            $variables = $this->getUserVariables($user);
+            return $this->sendTemplateEmail('welcome_email', $variables, $user->email, $user->name);
         } catch (\Exception $e) {
-            Log::error("Failed to send welcome email to {$user->email}: " . $e->getMessage());
+            Log::error("Failed to send welcome email: " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Get real user data for email templates
+     */
+    public function getUserVariables($user): array
+    {
+        return [
+            'user_name' => $user->name ?? 'User',
+            'user_email' => $user->email,
+            'user_id' => $user->id,
+            'app_name' => config('app.name'),
+            'app_url' => config('app.url'),
+            'login_url' => config('app.url') . '/login',
+            'support_email' => config('mail.from.address'),
+            'current_year' => date('Y'),
+            'registration_date' => $user->created_at ? $user->created_at->format('F j, Y') : 'Recently',
+            'profile_url' => config('app.url') . '/profile',
+        ];
+    }
+
+    /**
+     * Get real course data for email templates
+     */
+    public function getCourseVariables($course, $user = null): array
+    {
+        $baseVariables = $user ? $this->getUserVariables($user) : [];
+        
+        return array_merge($baseVariables, [
+            'course_title' => $course->title,
+            'course_description' => $course->description ?? '',
+            'course_url' => config('app.url') . '/courses/' . $course->id,
+            'course_instructor' => $course->instructor ?? 'Our Team',
+            'course_duration' => $course->duration ?? 'Self-paced',
+            'course_price' => $course->price ?? 'Free',
+            'course_category' => $course->category ?? 'General',
+            'enrollment_date' => now()->format('F j, Y'),
+        ]);
+    }
+
+    /**
+     * Get real workflow data for email templates
+     */
+    public function getWorkflowVariables($workflow, $user = null): array
+    {
+        $baseVariables = $user ? $this->getUserVariables($user) : [];
+        
+        return array_merge($baseVariables, [
+            'workflow_title' => $workflow->title,
+            'workflow_description' => $workflow->description ?? '',
+            'workflow_url' => config('app.url') . '/workflows/' . $workflow->id,
+            'workflow_category' => $workflow->category ?? 'General',
+            'workflow_type' => $workflow->type ?? 'new',
+            'workflow_author' => $workflow->author ?? 'Our Team',
+            'workflow_steps' => $workflow->steps ?? 0,
+            'workflow_difficulty' => $workflow->difficulty ?? 'Beginner',
+        ]);
+    }
+
+    /**
+     * Get real post data for email templates
+     */
+    public function getPostVariables($post, $user = null): array
+    {
+        $baseVariables = $user ? $this->getUserVariables($user) : [];
+        
+        return array_merge($baseVariables, [
+            'post_title' => $post->title,
+            'post_excerpt' => $post->excerpt ?? substr(strip_tags($post->content), 0, 150) . '...',
+            'post_url' => config('app.url') . '/blog/' . $post->slug,
+            'post_author' => $post->author ?? 'Our Team',
+            'post_category' => $post->category ?? 'General',
+            'post_published_date' => $post->published_at ? $post->published_at->format('F j, Y') : 'Recently',
+            'post_read_time' => $post->read_time ?? '5 min read',
+        ]);
     }
 
     /**
      * Send password reset email
      */
-    public function sendPasswordResetEmail(User $user): bool
+    public function sendPasswordResetEmail($user, $resetUrl): bool
     {
         try {
-            $this->applySmtpConfiguration();
+            // Configure mail settings for password reset emails
+            $this->configureMailSettingsForEmailType('password_reset');
             
-            // Generate a temporary token for password reset
-            $token = Str::random(64);
+            $variables = $this->getUserVariables($user);
+            $variables['reset_url'] = $resetUrl;
+            $variables['expires_in'] = '24 hours';
             
-            // Store the token in the user's remember_token field temporarily
-            $user->remember_token = Hash::make($token);
-            $user->save();
-
-            // Create reset URL
-            $resetUrl = config('app.url') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
-
-            // Try to use dynamic template first, fallback to static template
-            $template = \App\Models\EmailTemplate::getByName('password_reset');
-            if ($template) {
-                $variables = [
-                    'user_name' => $user->name,
-                    'user_email' => $user->email,
-                    'reset_url' => $resetUrl,
-                    'expires_in' => '60 minutes',
-                    'app_name' => config('app.name'),
-                ];
-                Mail::to($user->email)->send(new DynamicEmail('password_reset', $variables));
-            } else {
-                Mail::to($user->email)->send(new PasswordResetEmail($user, $resetUrl));
-            }
-            Log::info("Password reset email sent to user: {$user->email}");
-            return true;
+            return $this->sendTemplateEmail('password_reset', $variables, $user->email, $user->name);
         } catch (\Exception $e) {
-            Log::error("Failed to send password reset email to {$user->email}: " . $e->getMessage());
+            Log::error("Failed to send password reset email: " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Send email verification email
+     */
+    public function sendEmailVerificationEmail($user, $verificationUrl): bool
+    {
+        return $this->sendTemplateEmail('email_verification', [
+            'user_name' => $user->name,
+            'user_email' => $user->email,
+            'verification_url' => $verificationUrl,
+            'app_name' => config('app.name'),
+            'app_url' => config('app.url'),
+            'support_email' => config('mail.from.address'),
+            'current_year' => date('Y'),
+        ], $user->email, $user->name);
     }
 
     /**
      * Send course enrollment email
      */
-    public function sendCourseEnrollmentEmail(User $user, Course $course): bool
+    public function sendCourseEnrollmentEmail($user, $course): bool
     {
-        try {
-            $this->applySmtpConfiguration();
-            Mail::to($user->email)->send(new CourseEnrollmentEmail($user, $course));
-            Log::info("Course enrollment email sent to user: {$user->email} for course: {$course->title}");
-            return true;
-        } catch (\Exception $e) {
-            Log::error("Failed to send course enrollment email to {$user->email}: " . $e->getMessage());
-            return false;
-        }
+        return $this->sendTemplateEmail('course_enrollment', [
+            'user_name' => $user->name,
+            'user_email' => $user->email,
+            'course_title' => $course->title,
+            'course_description' => $course->description,
+            'course_url' => config('app.url') . '/courses/' . $course->id,
+            'app_name' => config('app.name'),
+            'app_url' => config('app.url'),
+            'support_email' => config('mail.from.address'),
+            'current_year' => date('Y'),
+        ], $user->email, $user->name);
     }
 
     /**
      * Send workflow notification email
      */
-    public function sendWorkflowNotificationEmail(User $user, Workflow $workflow, string $type = 'new'): bool
+    public function sendWorkflowNotificationEmail($user, $workflow): bool
     {
-        try {
-            $this->applySmtpConfiguration();
-            Mail::to($user->email)->send(new WorkflowNotificationEmail($user, $workflow, $type));
-            Log::info("Workflow notification email sent to user: {$user->email} for workflow: {$workflow->title} (type: {$type})");
-            return true;
-        } catch (\Exception $e) {
-            Log::error("Failed to send workflow notification email to {$user->email}: " . $e->getMessage());
-            return false;
-        }
+        return $this->sendTemplateEmail('workflow_notification', [
+            'user_name' => $user->name,
+            'user_email' => $user->email,
+            'workflow_title' => $workflow->title,
+            'workflow_description' => $workflow->description,
+            'workflow_url' => config('app.url') . '/workflows/' . $workflow->id,
+            'workflow_type' => 'new',
+            'app_name' => config('app.name'),
+            'app_url' => config('app.url'),
+            'support_email' => config('mail.from.address'),
+            'current_year' => date('Y'),
+        ], $user->email, $user->name);
     }
 
     /**
-     * Send bulk emails to multiple users
+     * Send newsletter email
      */
-    public function sendBulkEmails(array $users, string $emailType, array $data = []): array
+    public function sendNewsletterEmail($user, $newsletterData): bool
     {
-        $results = [
-            'success' => 0,
-            'failed' => 0,
-            'errors' => []
-        ];
-
-        foreach ($users as $user) {
-            try {
-                $success = match($emailType) {
-                    'welcome' => $this->sendWelcomeEmail($user),
-                    'course_enrollment' => $this->sendCourseEnrollmentEmail($user, $data['course']),
-                    'workflow_notification' => $this->sendWorkflowNotificationEmail($user, $data['workflow'], $data['type'] ?? 'new'),
-                    default => false
-                };
-
-                if ($success) {
-                    $results['success']++;
-                } else {
-                    $results['failed']++;
-                    $results['errors'][] = "Failed to send {$emailType} email to {$user->email}";
-                }
-            } catch (\Exception $e) {
-                $results['failed']++;
-                $results['errors'][] = "Error sending {$emailType} email to {$user->email}: " . $e->getMessage();
-            }
-        }
-
-        return $results;
+        return $this->sendTemplateEmail('newsletter', [
+            'user_name' => $user->name,
+            'user_email' => $user->email,
+            'app_name' => config('app.name'),
+            'app_url' => config('app.url'),
+            'date' => date('F Y'),
+            'newsletter_title' => $newsletterData['title'] ?? 'Monthly Newsletter',
+            'newsletter_content' => $newsletterData['content'] ?? '',
+            'featured_articles' => $newsletterData['articles'] ?? '',
+            'upcoming_events' => $newsletterData['events'] ?? '',
+            'support_email' => config('mail.from.address'),
+            'unsubscribe_url' => config('app.url') . '/unsubscribe?token=' . $user->id,
+            'current_year' => date('Y'),
+        ], $user->email, $user->name);
     }
 
     /**
-     * Test email configuration
+     * Send system maintenance notification
      */
-    public function testEmailConfiguration(): array
+    public function sendMaintenanceNotificationEmail($user, $maintenanceData): bool
     {
-        try {
-            $testUser = new User([
-                'name' => 'Test User',
-                'email' => config('mail.from.address')
-            ]);
-
-            Mail::to($testUser->email)->send(new WelcomeEmail($testUser));
-            
-            return [
-                'success' => true,
-                'message' => 'Test email sent successfully'
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Test email failed: ' . $e->getMessage()
-            ];
-        }
+        return $this->sendTemplateEmail('system_maintenance', [
+            'user_name' => $user->name,
+            'user_email' => $user->email,
+            'app_name' => config('app.name'),
+            'maintenance_date' => $maintenanceData['date'],
+            'maintenance_duration' => $maintenanceData['duration'],
+            'maintenance_reason' => $maintenanceData['reason'],
+            'app_url' => config('app.url'),
+            'support_email' => config('mail.from.address'),
+            'current_year' => date('Y'),
+        ], $user->email, $user->name);
     }
 
     /**
-     * Send email using dynamic template
+     * Get available templates for selection
      */
-    public function sendDynamicEmail(string $templateName, string $toEmail, array $variables = []): bool
+    public function getAvailableTemplates(): array
     {
-        try {
-            $this->applySmtpConfiguration();
-            Mail::to($toEmail)->send(new DynamicEmail($templateName, $variables));
-            Log::info("Dynamic email sent to {$toEmail} using template: {$templateName}");
-            return true;
-        } catch (\Exception $e) {
-            Log::error("Failed to send dynamic email to {$toEmail} using template {$templateName}: " . $e->getMessage());
-            return false;
-        }
+        return EmailTemplate::where('is_active', true)
+            ->select('id', 'name', 'subject', 'description', 'category', 'type')
+            ->get()
+            ->toArray();
     }
 
     /**
-     * Send email using dynamic template to multiple recipients
+     * Preview template with sample data
      */
-    public function sendBulkDynamicEmail(string $templateName, array $recipients, array $variables = []): array
+    public function previewTemplate(string $templateName): ?array
     {
-        $results = [
-            'success' => 0,
-            'failed' => 0,
-            'errors' => []
-        ];
-
-        foreach ($recipients as $email) {
-            try {
-                $success = $this->sendDynamicEmail($templateName, $email, $variables);
-                if ($success) {
-                    $results['success']++;
-                } else {
-                    $results['failed']++;
-                    $results['errors'][] = "Failed to send email to {$email}";
-                }
-            } catch (\Exception $e) {
-                $results['failed']++;
-                $results['errors'][] = "Error sending email to {$email}: " . $e->getMessage();
-            }
+        $template = EmailTemplate::getByName($templateName);
+        
+        if (!$template) {
+            return null;
         }
 
-        return $results;
+        return $template->getPreview();
     }
 
     /**
-     * Send test email using a template
+     * Send course enrollment email with real data
      */
-    public function sendTestEmail($template, string $testEmail, array $variables = []): bool
+    public function sendCourseEnrollmentEmailWithRealData($user, $course): bool
     {
-        try {
-            $this->applySmtpConfiguration();
-            
-            // Render the template with the provided variables
-            $rendered = $template->render($variables);
-            
-            // Send the email using the rendered content
-            Mail::raw($rendered['body'], function ($message) use ($testEmail, $rendered) {
-                $message->to($testEmail)
-                       ->subject($rendered['subject']);
-            });
-            
-            Log::info("Test email sent to {$testEmail} using template: {$template->name}");
-            return true;
-        } catch (\Exception $e) {
-            Log::error("Failed to send test email to {$testEmail} using template {$template->name}: " . $e->getMessage());
-            return false;
-        }
+        $variables = $this->getCourseVariables($course, $user);
+        return $this->sendTemplateEmail('course_enrollment', $variables, $user->email, $user->name);
     }
 
     /**
-     * Get email statistics
+     * Send workflow notification email with real data
      */
-    public function getEmailStats(): array
+    public function sendWorkflowNotificationEmailWithRealData($user, $workflow): bool
     {
-        // This would typically query a database table that logs email sends
-        // For now, we'll return basic stats from logs
-        return [
-            'total_sent' => 0, // Would be calculated from email logs
-            'success_rate' => 0, // Would be calculated from email logs
-            'last_sent' => null, // Would be from email logs
-        ];
+        $variables = $this->getWorkflowVariables($workflow, $user);
+        return $this->sendTemplateEmail('workflow_notification', $variables, $user->email, $user->name);
+    }
+
+    /**
+     * Send blog post notification email with real data
+     */
+    public function sendBlogPostNotificationEmailWithRealData($user, $post): bool
+    {
+        $variables = $this->getPostVariables($post, $user);
+        return $this->sendTemplateEmail('newsletter', $variables, $user->email, $user->name);
+    }
+
+    /**
+     * Send custom email with real data
+     */
+    public function sendCustomEmailWithRealData($user, $templateName, $additionalData = []): bool
+    {
+        $variables = $this->getUserVariables($user);
+        $variables = array_merge($variables, $additionalData);
+        
+        return $this->sendTemplateEmail($templateName, $variables, $user->email, $user->name);
     }
 }

@@ -19,6 +19,15 @@ alwaysApply: true
 
 # CRITICAL RULES - ALWAYS FOLLOW
 
+## 0. Implementation Check (MOST IMPORTANT)
+- ❌ NEVER create new files without checking if similar functionality already exists
+- ✅ ALWAYS search the codebase first: `grep -r "keyword" .` or use codebase_search
+- ✅ ALWAYS check for existing controllers, models, components, and services
+- ✅ ALWAYS read existing implementations before creating new ones
+- ✅ ALWAYS update existing code instead of creating duplicates
+- ✅ ALWAYS ask user which implementation to keep if duplicates are found
+- ⚠️ CRITICAL: This prevents code duplication and maintains consistency
+
 ## 1. Environment Variables
 - ❌ NEVER hardcode localhost URLs in source code
 - ✅ ALWAYS use environment variables: import.meta.env.VITE_API_URL

@@ -18,6 +18,8 @@ const BlogPost = lazy(() => import('./pages/BlogPost'));
 const Workflows = lazy(() => import('./pages/Workflows'));
 const UserLogin = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
+const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
 const EmailVerification = lazy(() => import('./pages/EmailVerification'));
 const Courses = lazy(() => import('./pages/courses/Courses'));
 const CourseDetail = lazy(() => import('./pages/courses/CourseDetail'));
@@ -38,10 +40,12 @@ const UserGroups = lazy(() => import('./pages/admin/UserGroups'));
 const ApiTokens = lazy(() => import('./pages/admin/ApiTokens'));
 const ApiDocs = lazy(() => import('./pages/admin/ApiDocs'));
 const ApiDocumentation = lazy(() => import('./pages/admin/ApiDocumentation'));
+const EmailTemplates = lazy(() => import('./pages/admin/EmailTemplates'));
+const EmailService = lazy(() => import('./pages/admin/EmailService'));
 const Tags = lazy(() => import('./pages/admin/Tags'));
 const Settings = lazy(() => import('./pages/admin/Settings'));
-const EmailTemplates = lazy(() => import('./pages/admin/EmailTemplates'));
 const SmtpConfigurations = lazy(() => import('./pages/admin/SmtpConfigurations'));
+const SystemEmailSettings = lazy(() => import('./pages/admin/SystemEmailSettings'));
 const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
 const UserActivities = lazy(() => import('./pages/admin/UserActivities'));
 const HomeSettings = lazy(() => import('./pages/admin/HomeSettings'));
@@ -86,6 +90,8 @@ function App() {
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/login" element={<UserLogin />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<EmailVerification />} />
               <Route path="/auth/google/callback" element={<GoogleCallback />} />
               <Route path="/auth/google/success" element={<GoogleSuccess />} />
@@ -109,10 +115,12 @@ function App() {
               <Route path="/admin/api-tokens" element={<ProtectedRoute requireAdmin><ApiTokens /></ProtectedRoute>} />
               <Route path="/admin/api-docs" element={<ProtectedRoute requireAdmin><ApiDocs /></ProtectedRoute>} />
               <Route path="/admin/api-documentation" element={<ProtectedRoute requireAdmin><ApiDocumentation /></ProtectedRoute>} />
+            <Route path="/admin/email-templates" element={<ProtectedRoute requireAdmin><EmailTemplates /></ProtectedRoute>} />
+              <Route path="/admin/email-service" element={<ProtectedRoute requireAdmin><EmailService /></ProtectedRoute>} />
               <Route path="/admin/tags" element={<ProtectedRoute requireAdmin><Tags /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute requireAdmin><Settings /></ProtectedRoute>} />
-              <Route path="/admin/email-templates" element={<ProtectedRoute requireAdmin><EmailTemplates /></ProtectedRoute>} />
               <Route path="/admin/smtp-configurations" element={<ProtectedRoute requireAdmin><SmtpConfigurations /></ProtectedRoute>} />
+              <Route path="/admin/system-email-settings" element={<ProtectedRoute requireAdmin><SystemEmailSettings /></ProtectedRoute>} />
               <Route path="/admin/user-management" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
               <Route path="/admin/user-activities" element={<ProtectedRoute requireAdmin><UserActivities /></ProtectedRoute>} />
               <Route path="/admin/home-settings" element={<ProtectedRoute requireAdmin><HomeSettings /></ProtectedRoute>} />
