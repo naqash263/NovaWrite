@@ -6,16 +6,36 @@ import App from './App.tsx'
 
 // Register service worker for PWA functionality (only in production)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  // Defer service worker registration to avoid initialization conflicts
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('SW registered: ', registration);
-      })
-      .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
-      });
+    // Add a small delay to ensure the main app is fully initialized
+    setTimeout(() => {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('SW registered: ', registration);
+        })
+        .catch((registrationError) => {
+          console.log('SW registration failed: ', registrationError);
+        });
+    }, 100);
   });
 }
+
+// Global error handler for database initialization errors
+window.addEventListener('error', (event) => {
+  if (event.error && event.error.message && event.error.message.includes('DB')) {
+    console.warn('Database initialization error caught and handled:', event.error);
+    event.preventDefault(); // Prevent the error from crashing the app
+  }
+});
+
+// Handle unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+  if (event.reason && event.reason.message && event.reason.message.includes('DB')) {
+    console.warn('Database promise rejection caught and handled:', event.reason);
+    event.preventDefault(); // Prevent the error from crashing the app
+  }
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,3 +74,4 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 )
+

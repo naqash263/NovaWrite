@@ -9,7 +9,6 @@ interface AccordionContextValue {
 }
 
 const AccordionContext = createContext<AccordionContextValue | null>(null);
-const AccordionItemContext = createContext<string>('');
 
 // Accordion Component
 interface AccordionProps {
@@ -57,13 +56,11 @@ interface AccordionItemProps {
   className?: string;
 }
 
-export const AccordionItem = ({ children, value, className = '' }: AccordionItemProps) => {
+export const AccordionItem = ({ children, className = '' }: AccordionItemProps) => {
   return (
-    <AccordionItemContext.Provider value={value}>
-      <div className={`border border-gray-200 rounded-lg ${className}`}>
-        {children}
-      </div>
-    </AccordionItemContext.Provider>
+    <div className={`border border-gray-200 rounded-lg ${className}`}>
+      {children}
+    </div>
   );
 };
 
@@ -81,14 +78,10 @@ export const AccordionTrigger = ({ children, className = '', disabled = false }:
   }
 
   const { openItems, toggleItem } = context;
-  
-  // Get the value from the parent AccordionItem
-  const parentValue = React.useContext(AccordionItemContext);
-  const isOpen = openItems.includes(parentValue);
+  const isOpen = openItems.includes(children?.toString() || '');
 
   return (
     <button
-      type="button"
       className={`
         w-full flex items-center justify-between p-4 text-left font-medium
         hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500
@@ -96,13 +89,7 @@ export const AccordionTrigger = ({ children, className = '', disabled = false }:
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         ${className}
       `}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!disabled) {
-          toggleItem(parentValue);
-        }
-      }}
+      onClick={() => !disabled && toggleItem(children?.toString() || '')}
       disabled={disabled}
     >
       <span>{children}</span>
@@ -132,8 +119,7 @@ export const AccordionContent = ({ children, className = '' }: AccordionContentP
   }
 
   const { openItems } = context;
-  const parentValue = useContext(AccordionItemContext);
-  const isOpen = openItems.includes(parentValue);
+  const isOpen = openItems.includes(children?.toString() || '');
 
   useEffect(() => {
     if (contentRef.current) {

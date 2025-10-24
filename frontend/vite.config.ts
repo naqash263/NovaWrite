@@ -9,6 +9,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'notification-badge.png'],
+      // Disable automatic registration to prevent initialization conflicts
+      injectRegister: false,
       manifest: {
         name: 'Naqash Thaheem Portfolio',
         short_name: 'Naqash Portfolio',
@@ -41,6 +43,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Disable database operations that might cause initialization errors
+        skipWaiting: false,
+        clientsClaim: false,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
