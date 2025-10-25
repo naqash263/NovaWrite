@@ -7,48 +7,6 @@ import InstallBanner from './InstallBanner';
 import NotificationSettings from './NotificationSettings';
 import analyticsService from '../services/analyticsService';
 
-// Admin Navigation Items
-const adminNavItems = [
-  { path: '/admin', label: 'Dashboard', icon: '📊' },
-  { path: '/admin/posts', label: 'Posts', icon: '📝' },
-  { path: '/admin/courses', label: 'Courses', icon: '🎓' },
-  { path: '/admin/workflows', label: 'Workflows', icon: '⚡' },
-  { path: '/admin/users', label: 'Users', icon: '👥' },
-  { path: '/admin/files', label: 'Files', icon: '📁' },
-  { path: '/admin/categories', label: 'Categories', icon: '🏷️' },
-  { path: '/admin/tags', label: 'Tags', icon: '🔖' },
-  { path: '/admin/cv-templates', label: 'CV Templates', icon: '📄' },
-  { path: '/admin/email-templates', label: 'Email Templates', icon: '📧' },
-  { path: '/admin/email-service', label: 'Email Service', icon: '📤' },
-  { path: '/admin/system-email-settings', label: 'System Email Settings', icon: '⚙️' },
-];
-
-const analyticsNavItems = [
-  { path: '/admin/analytics', label: 'Analytics', icon: '📈' },
-  { path: '/admin/monitoring', label: 'Monitoring', icon: '🔍' },
-  { path: '/admin/user-activities', label: 'User Activities', icon: '👤' },
-];
-
-const emailNavItems = [
-  { path: '/admin/email-templates', label: 'Email Templates', icon: '📧' },
-  { path: '/admin/email-service', label: 'Email Service', icon: '📤' },
-  { path: '/admin/smtp-configurations', label: 'SMTP Configurations', icon: '🔧' },
-  { path: '/admin/system-email-settings', label: 'System Email Settings', icon: '⚙️' },
-];
-
-const settingsMenuItems = [
-  { path: '/admin/settings', label: 'General Settings', icon: '⚙️', category: 'System' },
-  { path: '/admin/home-settings', label: 'Home Settings', icon: '🏠', category: 'Content' },
-  { path: '/admin/api-tokens', label: 'API Tokens', icon: '🔑', category: 'System' },
-  { path: '/admin/gemini-api', label: 'Gemini API', icon: '🤖', category: 'System' },
-  { path: '/admin/push-notifications', label: 'Push Notifications', icon: '🔔', category: 'System' },
-  { path: '/admin/user-groups', label: 'User Groups', icon: '👥', category: 'Users' },
-  { path: '/admin/email-templates', label: 'Email Templates', icon: '📧', category: 'Email' },
-  { path: '/admin/email-service', label: 'Email Service', icon: '📤', category: 'Email' },
-  { path: '/admin/smtp-configurations', label: 'SMTP Configurations', icon: '🔧', category: 'Email' },
-  { path: '/admin/system-email-settings', label: 'System Email Settings', icon: '⚙️', category: 'Email' },
-];
-
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, logout, loading } = useAuth();
@@ -159,9 +117,48 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   // Show admin layout if user is on admin route and is authenticated
   if (isAdmin && user && user.role === 'admin') {
+    // Main content management navigation
+    const adminNavItems = [
+      { path: '/admin', label: 'Dashboard', icon: '📊' },
+      { path: '/admin/posts', label: 'Posts', icon: '📝' },
+      { path: '/admin/workflows', label: 'Workflows', icon: '⚡' },
+      { path: '/admin/courses', label: 'Courses', icon: '📚' },
+      { path: '/admin/files', label: 'Files', icon: '📁' },
+      { path: '/admin/monitoring', label: 'Monitoring', icon: '🏥' },
+      { path: '/admin/push-notifications', label: 'Push Notifications', icon: '🔔' },
+      { path: '/admin/analytics', label: 'Analytics', icon: '📊' },
+        { path: '/admin/api-documentation', label: 'API Documentation', icon: '📖' },
+        { path: '/admin/email-templates', label: 'Email Templates', icon: '📧' },
+        { path: '/admin/email-service', label: 'Email Service', icon: '📤' },
+        { path: '/admin/system-email-settings', label: 'System Email Settings', icon: '⚙️' },
+    ];
+
+    // Settings dropdown menu items (moved from main navigation)
+    const settingsMenuItems = [
+      // Content Settings
+      { path: '/admin/categories', label: 'Categories', icon: '🏷️', category: 'Content' },
+      { path: '/admin/tags', label: 'Tags', icon: '🔖', category: 'Content' },
+      { path: '/admin/home-settings', label: 'Home Settings', icon: '🏠', category: 'Content' },
+      
+      // Email Settings
+      { path: '/admin/email-templates', label: 'Email Templates', icon: '📧', category: 'Email' },
+      { path: '/admin/smtp-configurations', label: 'SMTP Settings', icon: '⚙️', category: 'Email' },
+      
+      // User Management
+      { path: '/admin/user-management', label: 'User Management', icon: '👥', category: 'Users' },
+      { path: '/admin/user-activities', label: 'User Activities', icon: '📊', category: 'Users' },
+      { path: '/admin/user-groups', label: 'User Groups', icon: '👨‍👩‍👧‍👦', category: 'Users' },
+      
+      // System Settings
+      { path: '/admin/api-tokens', label: 'API Tokens', icon: '🔑', category: 'System' },
+      { path: '/admin/api-docs', label: 'API Documentation', icon: '📖', category: 'System' },
+      { path: '/admin/gemini-api', label: 'Gemini API', icon: '🤖', category: 'System' },
+      { path: '/admin/cv-templates', label: 'CV Templates', icon: '📄', category: 'System' },
+    ];
+
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Admin Navigation */}
+      <div key={`admin-${user?.id || 'no-user'}`} className="min-h-screen bg-gray-50">
+        {/* Top Navigation */}
         <nav className="bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
@@ -169,7 +166,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Link to="/admin" className="flex items-center">
                   <div className="flex-shrink-0">
                     <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      Admin
+                      Admin Dashboard
                     </span>
                   </div>
                 </Link>
@@ -182,8 +179,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         to={item.path}
                         className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                           isActive
-                            ? 'bg-blue-100 text-blue-700 shadow-sm'
-                            : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                            ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                            : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50 hover:shadow-sm'
                         }`}
                       >
                         <span className="mr-2 text-base">{item.icon}</span>
@@ -230,11 +227,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         <div className="px-4 py-2 border-b border-gray-100">
                           <p className="text-sm font-medium text-gray-900">{user.name}</p>
                           <p className="text-xs text-gray-500">{user.email}</p>
-                    </div>
+                        </div>
                         
                         {/* Settings Dropdown */}
                         <div className="relative" data-settings-dropdown>
-                    <button
+                          <button
                             onClick={() => setSettingsDropdownOpen(!settingsDropdownOpen)}
                             className={`flex items-center w-full px-4 py-2 text-sm transition-colors ${
                               settingsMenuItems.some(item => location.pathname === item.path)
@@ -289,10 +286,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                               })}
                             </div>
                           )}
-                        </div>
+                    </div>
                         
                         <div className="border-t border-gray-100 mt-1 pt-1">
-                          <button
+                    <button
                             onClick={() => {
                               setUserDropdownOpen(false);
                               logout('/');
@@ -300,10 +297,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                           >
                             <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Logout
-                          </button>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Logout
+                    </button>
                         </div>
                       </div>
                     )}
@@ -330,72 +327,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             
             {/* Mobile navigation menu */}
             {mobileMenuOpen && (
-              <div className="lg:hidden border-t border-gray-200 py-4 max-h-screen overflow-y-auto">
+              <div className="lg:hidden border-t border-gray-200 py-4">
                 <div className="space-y-4">
                   {/* Main Navigation */}
                   <div>
                     <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Content Management
                     </div>
-                    <div className="space-y-1">
-                      {adminNavItems.map((item) => {
-                        const isActive = location.pathname === item.path;
-                        return (
-                          <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
-                              isActive
-                                ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                                : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span className="mr-3 text-lg">{item.icon}</span>
-                            {item.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Analytics & Monitoring */}
-                  <div>
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Analytics & Monitoring
-                    </div>
-                    <div className="space-y-1">
-                      {analyticsNavItems.map((item) => {
-                        const isActive = location.pathname === item.path;
-                        return (
-                          <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
-                              isActive
-                                ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                                : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span className="mr-3 text-lg">{item.icon}</span>
-                            {item.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Email Management */}
-                  <div>
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Email Management
-                    </div>
-                    <div className="space-y-1">
-                      {emailNavItems.map((item) => {
-                        const isActive = location.pathname === item.path;
-                        return (
-                          <Link
-                            key={item.path}
-                            to={item.path}
+                <div className="space-y-1">
+                  {adminNavItems.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
                             className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
                               isActive
                                 ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -413,7 +358,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   {/* Settings */}
                   <div>
                     <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      System Settings
+                      Settings
                     </div>
                     <div className="space-y-1">
                       {settingsMenuItems.map((item) => {
@@ -423,16 +368,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             key={item.path}
                             to={item.path}
                             className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
-                              isActive
-                                ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                                : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                            }`}
-                          >
+                          isActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                        }`}
+                      >
                             <span className="mr-3 text-lg">{item.icon}</span>
-                            {item.label}
-                          </Link>
-                        );
-                      })}
+                        {item.label}
+                      </Link>
+                    );
+                  })}
                     </div>
                   </div>
                 </div>
@@ -474,7 +419,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center text-xl font-bold text-gray-900">
-                Naqash Thaheem
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Naqash Thaheem
+                </span>
               </Link>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-1">
                 {/* Primary Navigation - Most Important Items */}
@@ -482,8 +429,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   to="/"
                   className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                     location.pathname === '/'
-                      ? 'bg-blue-100 text-blue-700 shadow-sm'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                      ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50 hover:shadow-sm'
                   }`}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -496,8 +443,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   to="/courses"
                   className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                     location.pathname.startsWith('/courses')
-                      ? 'bg-blue-100 text-blue-700 shadow-sm'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                      ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50 hover:shadow-sm'
                   }`}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -510,8 +457,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   to="/workflows"
                   className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                     location.pathname.startsWith('/workflows')
-                      ? 'bg-blue-100 text-blue-700 shadow-sm'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                      ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50 hover:shadow-sm'
                   }`}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -545,7 +492,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Tools & Resources
                       </div>
-                <Link
+                      <Link
                         to="/resources"
                         onClick={() => setMoreDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -725,7 +672,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     My Courses
                   </Link>
                         
-                  <button
+                        <button
                           onClick={() => {
                             setUserDropdownOpen(false);
                             // Open notification settings modal
@@ -838,7 +785,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       </svg>
                   Courses
                 </Link>
-                <Link
+                    <Link
                       to="/workflows"
                       className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
                         location.pathname.startsWith('/workflows')
@@ -850,7 +797,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                       Workflows
-                </Link>
+                    </Link>
                   </div>
                 </div>
 
@@ -875,7 +822,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     Tools & Resources
                   </div>
                   <div className="space-y-1">
-                <Link
+                    <Link
                       to="/resources"
                       className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
                         location.pathname.startsWith('/resources')

@@ -115,7 +115,7 @@ const EmailTemplates: React.FC = () => {
   const handleToggleActive = async (id: number) => {
     try {
       await apiClient.patch(`/admin/email-templates/${id}/toggle-active`);
-      fetchTemplates();
+        fetchTemplates();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to toggle template status');
     }
@@ -301,12 +301,12 @@ const EmailTemplates: React.FC = () => {
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-          </div>
         </div>
+      </div>
 
         {/* Templates Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates.map((template) => (
+            {templates.map((template) => (
             <div key={template.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
@@ -317,9 +317,9 @@ const EmailTemplates: React.FC = () => {
                   <div className="flex space-x-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(template.category)}`}>
                       {template.category}
-                    </span>
+                  </span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(template.type)}`}>
-                      {template.type}
+                  {template.type}
                     </span>
                   </div>
                 </div>
@@ -345,7 +345,7 @@ const EmailTemplates: React.FC = () => {
                             </span>
                           )}
                         </div>
-                      </div>
+                  </div>
                     )}
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs ${
@@ -411,24 +411,24 @@ const EmailTemplates: React.FC = () => {
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900">No templates found</h3>
             <p className="mt-1 text-sm text-gray-500">Get started by creating a new email template.</p>
-          </div>
-        )}
+        </div>
+      )}
 
-        {/* Preview Modal */}
+      {/* Preview Modal */}
         {previewTemplate && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
-              <div className="mt-3">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-gray-900">Template Preview: {previewTemplate.name}</h3>
-                  <button
+                <button
                     onClick={() => setPreviewTemplate(null)}
                     className="text-gray-400 hover:text-gray-600"
-                  >
+                >
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                  </button>
+                </button>
                 </div>
                 <div className="border rounded-lg p-4 bg-gray-50">
                   <div className="mb-4">
@@ -441,12 +441,12 @@ const EmailTemplates: React.FC = () => {
                       className="text-sm text-gray-700 max-h-96 overflow-y-auto"
                       dangerouslySetInnerHTML={{ __html: previewTemplate.body }}
                     />
-                  </div>
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
         {/* Edit/Create Modal */}
         {editingTemplate && (
@@ -480,8 +480,8 @@ const EmailTemplates: React.FC = () => {
                     {editingTemplate.id && (
                       <p className="text-xs text-gray-500 mt-1">Template name cannot be changed</p>
                     )}
-                  </div>
-                  
+              </div>
+              
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
                     <input
@@ -491,7 +491,7 @@ const EmailTemplates: React.FC = () => {
                       onChange={(e) => setEditingTemplate({...editingTemplate, subject: e.target.value})}
                       placeholder="e.g., Welcome to {{app_name}}!"
                     />
-                  </div>
+              </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -507,7 +507,7 @@ const EmailTemplates: React.FC = () => {
                         <option value="marketing">Marketing</option>
                         <option value="system">System Notifications</option>
                       </select>
-                    </div>
+                              </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
                       <select
@@ -518,7 +518,7 @@ const EmailTemplates: React.FC = () => {
                         <option value="html">HTML</option>
                         <option value="markdown">Markdown</option>
                       </select>
-                    </div>
+                            </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
                       <select
@@ -530,8 +530,8 @@ const EmailTemplates: React.FC = () => {
                         <option value="es">Spanish</option>
                         <option value="fr">French</option>
                       </select>
-                    </div>
-                  </div>
+                          </div>
+                        </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
@@ -570,7 +570,7 @@ const EmailTemplates: React.FC = () => {
                       </div>
                       <p className="text-xs text-gray-500 mt-2">Variables are automatically detected from the template content</p>
                     </div>
-                  </div>
+              </div>
 
                   <div className="flex justify-end space-x-3 pt-4">
                     <button
@@ -579,19 +579,19 @@ const EmailTemplates: React.FC = () => {
                     >
                       Cancel
                     </button>
-                    <button
+                <button
                       onClick={handleSave}
                       className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       {editingTemplate.id ? 'Save Changes' : 'Create Template'}
-                    </button>
+                </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         )}
-      </div>
+        </div>
     </div>
   );
 };
