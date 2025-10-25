@@ -9,6 +9,7 @@ import CVExportOptions from '../../components/cv-builder/CVExportOptions';
 import { API_CONFIG } from '../../config/api';
 import apiClient from '../../api/axios';
 import jsPDF from 'jspdf';
+import ApiKeyManager from '../../components/ApiKeyManager';
 
 // Add custom CSS for mobile optimizations
 const MobileOptimizationStyles = () => (
@@ -4481,6 +4482,11 @@ export default function CVBuilder() {
             <div className="text-center sm:text-left">
               <h1 className="text-2xl font-bold text-gray-900">CV Builder</h1>
               <p className="text-sm text-gray-600">Create professional CVs with our step-by-step guide</p>
+            </div>
+            
+            {/* API Key Manager */}
+            <div className="w-full sm:w-auto">
+              <ApiKeyManager />
             </div>
             <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
               <button

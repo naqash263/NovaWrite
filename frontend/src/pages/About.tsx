@@ -6,7 +6,7 @@ export default function About() {
   
   useSEO({
     title: 'About | Naqash Thaheem',
-    description: 'Systems Analyst and Automation Specialist with 8+ years of experience in building AI-powered automation workflows, CRM integrations, and scalable web platforms.',
+    description: 'AI Automation Specialist | CRM Integrations | Power BI | OpenAI | Make.com | n8n with 8+ years of experience in building AI-powered automation workflows, CRM integrations, and scalable web platforms.',
   });
 
   return (

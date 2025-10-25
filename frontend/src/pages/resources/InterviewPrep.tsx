@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
+import ApiKeyManager from '../../components/ApiKeyManager';
 
 interface InterviewData {
   jobTitle: string;
@@ -532,10 +533,15 @@ const InterviewPrep: React.FC = () => {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Interview Preparation Tool
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
             Ace your next interview with AI-powered preparation. Get practice questions, 
             STAR method guidance, company research, and personalized feedback.
           </p>
+          
+          {/* API Key Manager */}
+          <div className="max-w-2xl mx-auto">
+            <ApiKeyManager />
+          </div>
         </div>
 
         {/* Progress Steps */}

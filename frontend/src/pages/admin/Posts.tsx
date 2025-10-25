@@ -516,12 +516,12 @@ export default function Posts() {
               </div>
               <div className="w-full">
                 <RichTextEditor
-                  value={formData.content}
+                value={formData.content}
                   onChange={(value) => setFormData({ ...formData, content: value })}
                   placeholder="Write your content here... You can use Markdown or HTML"
                   height={window.innerWidth < 640 ? 300 : 400}
-                />
-              </div>
+              />
+            </div>
             </div>
             <EnhancedImageUpload
               onImageUploaded={(imageUrl) => setFormData({ ...formData, featured_image: imageUrl })}
@@ -567,12 +567,12 @@ export default function Posts() {
               </label>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <button
-                type="submit"
+            <button
+              type="submit"
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-              >
-                {editingId ? 'Update' : 'Create'}
-              </button>
+            >
+              {editingId ? 'Update' : 'Create'}
+            </button>
               <button
                 type="button"
                 onClick={resetForm}
@@ -662,19 +662,19 @@ export default function Posts() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured Image</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
                 {filteredPosts.map((post) => (
-                <tr key={post.id}>
+              <tr key={post.id}>
                   <td className="px-6 py-4 font-medium text-gray-900 max-w-xs truncate" title={post.title}>
                     {post.title}
                   </td>
@@ -691,11 +691,11 @@ export default function Posts() {
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {post.is_published ? 'Published' : 'Draft'}
-                    </span>
-                  </td>
+                <td className="px-6 py-4">
+                  <span className={`px-2 py-1 text-xs rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {post.is_published ? 'Published' : 'Draft'}
+                  </span>
+                </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
                       <span className={`px-2 py-1 text-xs rounded-full ${
@@ -726,24 +726,24 @@ export default function Posts() {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <button
-                      onClick={() => handleEdit(post)}
+                <td className="px-6 py-4 text-right space-x-2">
+                  <button
+                    onClick={() => handleEdit(post)}
                       className="text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(post.id)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(post.id)}
                       className="text-red-600 hover:text-red-800 text-sm"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-                ))}
-              </tbody>
-            </table>
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
           </div>
         )}
       </div>
@@ -874,14 +874,14 @@ export default function Posts() {
       </div>
 
       {/* Pagination */}
-      <Pagination
-        currentPage={pagination.currentPage}
-        lastPage={pagination.lastPage}
-        total={pagination.total}
-        perPage={pagination.perPage}
-        onPageChange={fetchPosts}
-        loading={loading}
-      />
+        <Pagination
+          currentPage={pagination.currentPage}
+          lastPage={pagination.lastPage}
+          total={pagination.total}
+          perPage={pagination.perPage}
+          onPageChange={fetchPosts}
+          loading={loading}
+        />
 
       {/* Floating Action Button - Mobile Only */}
       {!showForm && (
@@ -895,7 +895,7 @@ export default function Posts() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
           </button>
-        </div>
+      </div>
       )}
     </div>
   );

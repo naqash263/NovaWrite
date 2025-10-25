@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
+import ApiKeyManager from '../../components/ApiKeyManager';
 
 interface CoverLetterData {
   jobTitle: string;
@@ -557,10 +558,15 @@ ${formData.yourName}`,
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             AI Cover Letter Generator
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
             Create personalized, ATS-friendly cover letters tailored to specific job postings. 
             Increase your chances of landing interviews with AI-powered content generation.
           </p>
+          
+          {/* API Key Manager */}
+          <div className="max-w-2xl mx-auto">
+            <ApiKeyManager />
+          </div>
         </div>
 
         {/* Progress Steps */}

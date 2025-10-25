@@ -402,7 +402,7 @@ const EmailTemplates: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
+          </div>
 
         {templates.length === 0 && !loading && (
           <div className="text-center py-12">
@@ -542,7 +542,7 @@ const EmailTemplates: React.FC = () => {
                       onChange={(e) => setEditingTemplate({...editingTemplate, description: e.target.value})}
                       placeholder="Brief description of this template's purpose"
                     />
-                  </div>
+                    </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Email Body</label>

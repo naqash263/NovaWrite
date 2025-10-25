@@ -409,9 +409,15 @@ export const injectAISearchOptimizations = () => {
   const aiMetaTags = [
     { name: 'ai:content-type', content: 'professional-services' },
     { name: 'ai:expertise', content: 'automation,ai,crm,power-bi,business-intelligence' },
-    { name: 'ai:location', content: 'ajman,uae' },
+    { name: 'ai:location', content: 'dubai,sharjah,ajman,uae,us,uk,canada,australia,germany,netherlands,singapore,global' },
     { name: 'ai:experience', content: '8-years' },
-    { name: 'ai:specialization', content: 'systems-analysis,workflow-automation' }
+    { name: 'ai:specialization', content: 'systems-analysis,workflow-automation' },
+    { name: 'ai:services', content: 'ai-automation,crm-integration,power-bi,business-intelligence' },
+    { name: 'ai:tools', content: 'n8n,make-com,zapier,openai,zoho-crm,hubspot' },
+    { name: 'ai:target-audience', content: 'businesses,enterprises,startups,consultants' },
+    { name: 'ai:service-area', content: 'global,remote,worldwide' },
+    { name: 'ai:response-time', content: '24-hours' },
+    { name: 'ai:availability', content: 'remote,online,consultation' }
   ];
 
   aiMetaTags.forEach(tag => {
@@ -443,4 +449,25 @@ export const injectAISearchOptimizations = () => {
     }
   });
   document.head.appendChild(contentStructure);
+
+  // Add AI search specific content markers
+  const aiContentMarkers = document.createElement('div');
+  aiContentMarkers.style.display = 'none';
+  aiContentMarkers.innerHTML = `
+    <!-- AI Search Optimization Markers -->
+    <div data-ai-content="professional-services">
+      <span data-ai-keyword="ai automation expert">AI Automation Expert</span>
+      <span data-ai-keyword="crm integration specialist">CRM Integration Specialist</span>
+      <span data-ai-keyword="power bi consultant">Power BI Consultant</span>
+      <span data-ai-keyword="business intelligence expert">Business Intelligence Expert</span>
+      <span data-ai-keyword="workflow automation specialist">Workflow Automation Specialist</span>
+      <span data-ai-keyword="n8n expert">n8n Expert</span>
+      <span data-ai-keyword="make.com specialist">Make.com Specialist</span>
+      <span data-ai-keyword="zoho crm expert">Zoho CRM Expert</span>
+      <span data-ai-keyword="openai integration">OpenAI Integration</span>
+      <span data-ai-keyword="global automation services">Global Automation Services</span>
+      <span data-ai-keyword="remote automation consultant">Remote Automation Consultant</span>
+    </div>
+  `;
+  document.body.appendChild(aiContentMarkers);
 };

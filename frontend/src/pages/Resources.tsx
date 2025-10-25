@@ -4,6 +4,7 @@ import { useSEO } from '../utils/seo';
 import { generateBreadcrumbSchema, generateFAQSchema, injectStructuredData } from '../utils/structuredData';
 import { useEffect } from 'react';
 import ComingSoon from '../components/ComingSoon';
+import ApiKeyManager from '../components/ApiKeyManager';
 
 export default function Resources() {
   const navigate = useNavigate();
@@ -297,6 +298,11 @@ export default function Resources() {
           <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-8">
             Boost your career and productivity with 7 comprehensive AI-powered tools designed for professionals. Create stunning CVs, optimize your LinkedIn profile, negotiate better salaries, prepare for interviews, plan your career path, find better jobs, and assess your skills - all with our free, easy-to-use automation tools.
           </p>
+          
+          {/* API Key Manager */}
+          <div className="max-w-2xl mx-auto mb-8">
+            <ApiKeyManager />
+          </div>
           <div className="bg-blue-50 rounded-2xl p-8 mb-8 max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Choose Our Tools?</h2>
             <div className="grid md:grid-cols-3 gap-6 text-left">

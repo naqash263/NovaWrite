@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
+import ApiKeyManager from '../../components/ApiKeyManager';
 
 interface LinkedInProfile {
   headline: string;
@@ -433,10 +434,15 @@ const LinkedInOptimizer: React.FC = () => {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             LinkedIn Profile Optimizer
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
             Boost your LinkedIn visibility with AI-powered analysis and optimization recommendations.
             Get more profile views, connection requests, and job opportunities.
           </p>
+          
+          {/* API Key Manager */}
+          <div className="max-w-2xl mx-auto">
+            <ApiKeyManager />
+          </div>
         </div>
 
         {/* Progress Steps */}

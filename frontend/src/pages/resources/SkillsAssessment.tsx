@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
+import ApiKeyManager from '../../components/ApiKeyManager';
 
 interface Skill {
   name: string;
@@ -721,10 +722,15 @@ const SkillsAssessment: React.FC = () => {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Skills Assessment Tool
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
             Assess your professional skills with AI-powered analysis. Get personalized skill recommendations, 
             learning paths, and career development insights.
           </p>
+          
+          {/* API Key Manager */}
+          <div className="max-w-2xl mx-auto">
+            <ApiKeyManager />
+          </div>
         </div>
 
         {/* Progress Steps */}
