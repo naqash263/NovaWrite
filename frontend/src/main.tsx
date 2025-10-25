@@ -21,20 +21,14 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   });
 }
 
-// Global error handler for database initialization errors
+// Global error handler for unhandled errors
 window.addEventListener('error', (event) => {
-  if (event.error && event.error.message && event.error.message.includes('DB')) {
-    console.warn('Database initialization error caught and handled:', event.error);
-    event.preventDefault(); // Prevent the error from crashing the app
-  }
+  console.error('Unhandled error:', event.error);
 });
 
 // Handle unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {
-  if (event.reason && event.reason.message && event.reason.message.includes('DB')) {
-    console.warn('Database promise rejection caught and handled:', event.reason);
-    event.preventDefault(); // Prevent the error from crashing the app
-  }
+  console.error('Unhandled promise rejection:', event.reason);
 });
 
 const queryClient = new QueryClient({
