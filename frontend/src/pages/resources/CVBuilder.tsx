@@ -2380,6 +2380,53 @@ export default function CVBuilder() {
 
 
   // Sanitize CV data to prevent JSON encoding issues
+  // Function to replace emoji icons with PDF-compatible alternatives
+  const replaceIconsForPDF = (html: string): string => {
+    return html
+      .replace(/📧/g, '✉') // Email icon
+      .replace(/📱/g, '☎') // Phone icon  
+      .replace(/⭐/g, '★') // Star icon
+      .replace(/✏️/g, '✏') // Pencil icon
+      .replace(/💡/g, '💡') // Lightbulb icon (keep as is)
+      .replace(/🚀/g, '🚀') // Rocket icon (keep as is)
+      .replace(/⚡/g, '⚡') // Lightning icon (keep as is)
+      .replace(/🔧/g, '🔧') // Wrench icon (keep as is)
+      .replace(/📊/g, '📊') // Chart icon (keep as is)
+      .replace(/🎯/g, '🎯') // Target icon (keep as is)
+      .replace(/🏆/g, '🏆') // Trophy icon (keep as is)
+      .replace(/📄/g, '📄') // Document icon (keep as is)
+      .replace(/🔗/g, '🔗') // Link icon (keep as is)
+      .replace(/💼/g, '💼') // Briefcase icon (keep as is)
+      .replace(/🎓/g, '🎓') // Graduation cap (keep as is)
+      .replace(/📝/g, '📝') // Memo icon (keep as is)
+      .replace(/📚/g, '📚') // Books icon (keep as is)
+      .replace(/🔍/g, '🔍') // Magnifying glass icon (keep as is)
+      .replace(/📌/g, '📌') // Pushpin icon (keep as is)
+      .replace(/📋/g, '📋') // Clipboard icon (keep as is)
+      .replace(/📅/g, '📅') // Calendar icon (keep as is)
+      .replace(/⏰/g, '⏰') // Clock icon (keep as is)
+      .replace(/🌐/g, '🌐') // Globe icon (keep as is)
+      .replace(/📈/g, '📈') // Trending up icon (keep as is)
+      .replace(/📉/g, '📉') // Trending down icon (keep as is)
+      .replace(/💰/g, '💰') // Money icon (keep as is)
+      .replace(/🎨/g, '🎨') // Palette icon (keep as is)
+      .replace(/🎵/g, '🎵') // Musical note icon (keep as is)
+      .replace(/🎬/g, '🎬') // Movie camera icon (keep as is)
+      .replace(/🎭/g, '🎭') // Theater masks icon (keep as is)
+      .replace(/🎪/g, '🎪') // Circus tent icon (keep as is)
+      .replace(/🔬/g, '🔬') // Microscope icon (keep as is)
+      .replace(/🧪/g, '🧪') // Test tube icon (keep as is)
+      .replace(/🏢/g, '🏢') // Office building icon (keep as is)
+      .replace(/🏭/g, '🏭') // Factory icon (keep as is)
+      .replace(/🏫/g, '🏫') // School icon (keep as is)
+      .replace(/🏦/g, '🏦') // Bank icon (keep as is)
+      .replace(/🏥/g, '🏥') // Hospital icon (keep as is)
+      .replace(/🏠/g, '🏠') // House icon (keep as is)
+      .replace(/🌍/g, '🌍') // Earth icon (keep as is)
+      .replace(/🌎/g, '🌎') // Earth Americas icon (keep as is)
+      .replace(/🌏/g, '🌏') // Earth Asia icon (keep as is);
+  };
+
   const sanitizeCvData = (data: any): any => {
     // Create a deep copy to avoid modifying the original
     const sanitized = JSON.parse(JSON.stringify({ ...data }));
@@ -2458,6 +2505,9 @@ export default function CVBuilder() {
       // Get the already-processed template HTML from the preview element
       // This HTML is already fully processed with the selected template and CV data
       let templateHTML = previewElement.innerHTML;
+      
+      // Replace emoji icons with PDF-compatible alternatives
+      templateHTML = replaceIconsForPDF(templateHTML);
       
       console.log('Using already-processed template HTML from preview');
       console.log('Template HTML length:', templateHTML.length);
@@ -2617,6 +2667,9 @@ export default function CVBuilder() {
       // Get the rendered template HTML from the preview element
       let templateHTML = previewElement.innerHTML;
       
+      // Replace emoji icons with PDF-compatible alternatives
+      templateHTML = replaceIconsForPDF(templateHTML);
+      
       // Convert HTML to plain text while preserving structure
       // Create a temporary div to parse the HTML
       const tempDiv = document.createElement('div');
@@ -2715,6 +2768,9 @@ export default function CVBuilder() {
       
       // Get the already-processed template HTML from the preview element
       let templateHTML = previewElement.innerHTML;
+      
+      // Replace emoji icons with PDF-compatible alternatives
+      templateHTML = replaceIconsForPDF(templateHTML);
       
       // Create HTML document with the template HTML
       const htmlContent = `
