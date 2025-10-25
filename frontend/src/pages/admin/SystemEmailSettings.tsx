@@ -140,7 +140,7 @@ const SystemEmailSettings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <style jsx="true">{`
+      <style>{`
         .react-select-container .react-select__control {
           border: 1px solid #d1d5db;
           border-radius: 0.375rem;
@@ -352,7 +352,7 @@ const SystemEmailSettings: React.FC = () => {
                     const response = await apiClient.get('/admin/system-email-settings/health');
                     console.log('Health check response:', response.data);
                     setSuccess('Health check successful!');
-                  } catch (err) {
+                  } catch (err: any) {
                     console.error('Health check failed:', err);
                     setError('Health check failed: ' + (err.response?.data?.message || err.message));
                   }

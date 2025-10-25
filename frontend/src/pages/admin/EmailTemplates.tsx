@@ -136,9 +136,9 @@ const EmailTemplates: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      if (editingTemplate.id) {
+      if (editingTemplate?.id) {
         // Update existing template
-        await apiClient.put(`/admin/email-templates/${editingTemplate.id}`, editingTemplate);
+        await apiClient.put(`/admin/email-templates/${editingTemplate?.id}`, editingTemplate);
         await fetchTemplates();
       } else {
         // Create new template
@@ -197,6 +197,7 @@ const EmailTemplates: React.FC = () => {
           </div>
           <button
             onClick={() => setEditingTemplate({
+              id: 0,
               name: '',
               subject: '',
               body: '',
@@ -206,7 +207,10 @@ const EmailTemplates: React.FC = () => {
               language: 'en',
               is_active: true,
               is_system: false,
-              variables: []
+              variables: [],
+              metadata: {},
+              created_at: '',
+              updated_at: ''
             } as EmailTemplate)}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center space-x-2"
           >
