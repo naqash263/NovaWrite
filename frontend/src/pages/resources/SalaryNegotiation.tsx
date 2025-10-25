@@ -434,6 +434,22 @@ const SalaryNegotiation: React.FC = () => {
             negotiation scripts, and industry-specific strategies to maximize your earning potential.
           </p>
           
+          {/* Under Progress Banner */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8 max-w-4xl mx-auto">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
+                <span className="text-2xl">🚧</span>
+              </div>
+              <h2 className="text-2xl font-bold text-yellow-800">Under Progress</h2>
+            </div>
+            <p className="text-yellow-700 text-lg mb-4 text-center">
+              We're currently enhancing this tool with more advanced features and better AI integration.
+            </p>
+            <p className="text-yellow-600 text-center">
+              Check back soon for the complete salary negotiation experience!
+            </p>
+          </div>
+          
           {/* API Key Manager */}
           <div className="max-w-2xl mx-auto px-4">
             <ApiKeyManager />
