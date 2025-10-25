@@ -113,9 +113,9 @@ const SkillsAssessment: React.FC = () => {
         body: JSON.stringify({
           technical_skills: assessmentData.skills.filter(s => s.category === 'Technical Skills').map(s => s.name),
           soft_skills: assessmentData.skills.filter(s => s.category === 'Soft Skills').map(s => s.name),
-          experience_years: assessmentData.experienceYears,
-          current_role: assessmentData.currentRole,
-          career_goals: assessmentData.careerGoals,
+          experience_years: assessmentData.experience,
+          current_role: 'Software Developer', // Default value since not in interface
+          career_goals: assessmentData.goals,
           industry: assessmentData.industry
         })
       });

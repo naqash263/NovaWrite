@@ -60,13 +60,13 @@ const JobSearchOptimizer: React.FC = () => {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          job_title: formData.jobTitle,
-          location: formData.location,
-          experience_years: formData.experienceYears,
-          skills: formData.skills,
-          salary_expectation: formData.salaryExpectation,
-          job_type: formData.jobType,
-          industry: formData.industry
+          job_title: jobSearchData.jobTitle,
+          location: jobSearchData.location,
+          experience_years: jobSearchData.experience,
+          skills: jobSearchData.skills,
+          salary_expectation: jobSearchData.salaryRange,
+          job_type: 'Full-time', // Default value since not in interface
+          industry: 'Technology' // Default value since not in interface
         })
       });
 

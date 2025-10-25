@@ -59,13 +59,13 @@ const InterviewPrep: React.FC = () => {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          job_title: formData.jobTitle,
-          company_name: formData.companyName,
-          industry: formData.industry,
-          experience_level: formData.experienceLevel,
-          interview_type: formData.interviewType,
-          technical_skills: formData.technicalSkills,
-          soft_skills: formData.softSkills
+          job_title: interviewData.jobTitle,
+          company_name: interviewData.company,
+          industry: interviewData.industry,
+          experience_level: interviewData.experience,
+          interview_type: interviewData.interviewType,
+          technical_skills: interviewData.skills,
+          soft_skills: [] // Default empty array since not in interface
         })
       });
 

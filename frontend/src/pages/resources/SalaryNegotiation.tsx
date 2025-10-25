@@ -64,9 +64,9 @@ const SalaryNegotiation: React.FC = () => {
           desired_salary: salaryData.desiredSalary,
           job_title: salaryData.jobTitle,
           location: salaryData.location,
-          experience_years: salaryData.experienceYears,
-          education_level: salaryData.educationLevel,
-          skills: salaryData.skills,
+          experience_years: salaryData.experience,
+          education_level: 'Bachelor', // Default value since not in interface
+          skills: [], // Default empty array since not in interface
           company_size: salaryData.companySize
         })
       });

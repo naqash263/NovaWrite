@@ -60,13 +60,13 @@ const CareerPathPlanner: React.FC = () => {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          current_role: formData.currentRole,
-          experience_years: formData.experienceYears,
-          skills: formData.skills,
-          interests: formData.interests,
-          career_goals: formData.careerGoals,
-          industry: formData.industry,
-          education_level: formData.educationLevel
+          current_role: careerData.currentRole,
+          experience_years: careerData.experience,
+          skills: careerData.skills,
+          interests: careerData.interests,
+          career_goals: careerData.goals,
+          industry: careerData.industry,
+          education_level: 'Bachelor' // Default value since not in interface
         })
       });
 
