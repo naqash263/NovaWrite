@@ -277,6 +277,7 @@ const hideEmptySections = (html: string) => {
 export const CvPreview = ({ data, style, template }: CvPreviewProps) => {
   // Debug logging
   console.log('CvPreview received template:', template);
+  console.log('CvPreview received style:', style);
   console.log('Template html_content:', template?.html_content);
   
   // If no template provided, render a basic template
@@ -299,10 +300,17 @@ export const CvPreview = ({ data, style, template }: CvPreviewProps) => {
   console.log('Template HTML preview:', templateHTML.substring(0, 200));
   
   // Replace customization placeholders
+  console.log('Before style replacement - primaryColor:', style.primaryColor);
+  console.log('Before style replacement - secondaryColor:', style.secondaryColor);
+  console.log('Before style replacement - fontFamily:', style.fontFamily);
+  console.log('Before style replacement - fontSize:', style.fontSize);
+  
   templateHTML = templateHTML.replace(/\{\{primaryColor\}\}/g, style.primaryColor);
   templateHTML = templateHTML.replace(/\{\{secondaryColor\}\}/g, style.secondaryColor);
   templateHTML = templateHTML.replace(/\{\{fontFamily\}\}/g, style.fontFamily);
   templateHTML = templateHTML.replace(/\{\{fontSize\}\}/g, style.fontSize.toString());
+  
+  console.log('After style replacement - templateHTML preview:', templateHTML.substring(0, 500));
 
   // Replace CV data placeholders
   templateHTML = templateHTML.replace(/\{\{fullName\}\}/g, (data.fullName || ''));

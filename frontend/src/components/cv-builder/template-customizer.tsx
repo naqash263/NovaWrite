@@ -33,7 +33,7 @@ export const TemplateCustomizer = ({ style, onStyleChange }: TemplateCustomizerP
 
   return (
     <div className="space-y-4">
-      <Accordion type="multiple" className="w-full">
+      <Accordion type="multiple" className="w-full" defaultValue={["colors"]}>
         <AccordionItem value="colors">
           <AccordionTrigger className="text-sm font-medium">
             Colors & Typography

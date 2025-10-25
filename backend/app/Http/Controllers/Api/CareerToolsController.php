@@ -233,13 +233,27 @@ class CareerToolsController extends Controller
     public function generateSkillsAssessment(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'technical_skills' => 'required|array',
-            'soft_skills' => 'required|array',
+            'technical_skills' => 'array',
+            'soft_skills' => 'array',
             'experience_years' => 'required|integer|min:0|max:50',
             'current_role' => 'required|string|max:255',
             'career_goals' => 'required|string|max:1000',
             'industry' => 'required|string|max:100',
         ]);
+
+        // Check if at least one skill is provided
+        $technicalSkills = $request->input('technical_skills', []);
+        $softSkills = $request->input('soft_skills', []);
+        
+        if (empty($technicalSkills) && empty($softSkills)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => [
+                    'skills' => ['At least one skill (technical or soft) must be provided.']
+                ]
+            ], 422);
+        }
 
         if ($validator->fails()) {
             return response()->json([

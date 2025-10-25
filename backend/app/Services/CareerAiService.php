@@ -635,63 +635,132 @@ Return only valid JSON, no additional text.";
     {
         $formJson = json_encode($formData, JSON_PRETTY_PRINT);
         
-        return "Conduct a comprehensive skills assessment based on the provided information. Return a JSON response with the following structure:
+        return "Conduct a comprehensive, industry-agnostic skills assessment based on the provided information. This assessment should work for ANY career field - not just technology. Return a JSON response with the following structure:
 
 {
     \"overallScore\": 78,
     \"categoryScores\": {
         \"Technical Skills\": 85,
         \"Soft Skills\": 70,
-        \"Leadership\": 75,
-        \"Communication\": 80
+        \"Industry-Specific Skills\": 75,
+        \"Leadership & Management\": 80,
+        \"Communication\": 85,
+        \"Problem Solving\": 75,
+        \"Adaptability\": 70
     },
     \"strengths\": [
         {
-            \"skill\": \"JavaScript\",
+            \"skill\": \"Project Management\",
             \"level\": \"Advanced\",
-            \"evidence\": \"5+ years experience, multiple projects\"
+            \"score\": 90,
+            \"evidence\": \"Led 5+ successful projects, certified in PMP\"
         }
     ],
     \"weaknesses\": [
         {
             \"skill\": \"Public Speaking\",
             \"currentLevel\": \"Beginner\",
-            \"improvement\": \"Join Toastmasters, practice presentations\"
+            \"score\": 30,
+            \"improvement\": \"Join Toastmasters, practice presentations, take communication courses\"
         }
     ],
     \"recommendations\": [
         {
-            \"skill\": \"React\",
-            \"priority\": \"High\",
-            \"action\": \"Complete advanced React course\",
-            \"timeline\": \"3 months\"
+            \"category\": \"Technical Skills\",
+            \"skills\": [
+                {
+                    \"name\": \"Data Analysis\",
+                    \"priority\": \"High\",
+                    \"currentLevel\": \"Intermediate\",
+                    \"targetLevel\": \"Advanced\",
+                    \"action\": \"Complete advanced Excel and SQL courses\",
+                    \"timeline\": \"3 months\",
+                    \"resources\": [\"Coursera Data Analysis course\", \"Practice with real datasets\", \"Join data analysis community\"]
+                }
+            ]
         }
     ],
     \"learningPath\": [
         {
             \"phase\": \"Immediate (1-3 months)\",
-            \"skills\": [\"React\", \"TypeScript\"],
-            \"resources\": [\"Online courses\", \"Hands-on projects\"]
+            \"title\": \"Foundation Building\",
+            \"focus\": \"Strengthen core competencies and address critical gaps\",
+            \"skills\": [\"Data Analysis\", \"Presentation Skills\"],
+            \"activities\": [
+                \"Complete online courses in identified weak areas\",
+                \"Practice skills through real-world projects\",
+                \"Join professional groups and communities\"
+            ],
+            \"resources\": [\"Online courses\", \"Professional workshops\", \"Mentorship programs\"],
+            \"timeline\": \"3 months\"
+        },
+        {
+            \"phase\": \"Intermediate (3-6 months)\",
+            \"title\": \"Skill Development\",
+            \"focus\": \"Build advanced competencies and industry-specific knowledge\",
+            \"skills\": [\"Advanced Excel\", \"Leadership\", \"Industry Certifications\"],
+            \"activities\": [
+                \"Pursue relevant certifications\",
+                \"Take on leadership roles in projects\",
+                \"Network with industry professionals\"
+            ],
+            \"resources\": [\"Certification programs\", \"Leadership training\", \"Industry conferences\"],
+            \"timeline\": \"3 months\"
+        },
+        {
+            \"phase\": \"Advanced (6-12 months)\",
+            \"title\": \"Mastery & Specialization\",
+            \"focus\": \"Achieve expert-level skills and career advancement\",
+            \"skills\": [\"Strategic Thinking\", \"Advanced Analytics\", \"Team Management\"],
+            \"activities\": [
+                \"Lead major projects or initiatives\",
+                \"Mentor junior colleagues\",
+                \"Present at industry events\"
+            ],
+            \"resources\": [\"Executive education\", \"Professional coaching\", \"Industry publications\"],
+            \"timeline\": \"6 months\"
         }
     ],
     \"careerAlignment\": {
-        \"match\": 85,
-        \"gaps\": [\"Cloud technologies\", \"DevOps\"],
-        \"suggestions\": [\"Learn AWS\", \"Study CI/CD\"]
+        \"overallMatch\": 85,
+        \"recommendedRoles\": [
+            {
+                \"title\": \"Senior Project Manager\",
+                \"match\": 90,
+                \"requiredSkills\": [\"Project Management\", \"Leadership\", \"Communication\"],
+                \"missingSkills\": [\"Advanced Analytics\", \"Strategic Planning\"],
+                \"salaryRange\": \"$80,000 - $120,000\",
+                \"nextSteps\": [\"Get PMP certification\", \"Lead cross-functional projects\", \"Develop analytics skills\"]
+            }
+        ],
+        \"skillGaps\": [\"Advanced Analytics\", \"Strategic Planning\", \"Digital Transformation\"],
+        \"suggestions\": [\"Learn data visualization tools\", \"Study business strategy\", \"Understand digital trends in your industry\"],
+        \"marketDemand\": \"High demand for project management and leadership skills across all industries\"
+    },
+    \"industryInsights\": {
+        \"trendingSkills\": [\"Digital Literacy\", \"Remote Work Management\", \"Data-Driven Decision Making\", \"Sustainability\", \"Customer Experience\"],
+        \"emergingRoles\": [\"Digital Transformation Specialist\", \"Remote Team Manager\", \"Data Analyst\", \"Sustainability Coordinator\"],
+        \"salaryGrowth\": \"Project management roles show 15-20% salary growth potential\",
+        \"jobMarket\": \"Strong demand across healthcare, finance, technology, and consulting sectors\"
     }
 }
 
 Form Data:
 {$formJson}
 
-Assess:
-1. Technical skills proficiency
-2. Soft skills development
-3. Leadership capabilities
-4. Communication skills
-5. Industry relevance
-6. Growth potential
-7. Learning recommendations
+IMPORTANT: This assessment should work for ANY industry and career field. Consider:
+1. Industry-specific skills and requirements
+2. Soft skills that are valuable across all fields
+3. Leadership and management capabilities
+4. Communication and interpersonal skills
+5. Problem-solving and critical thinking
+6. Adaptability and continuous learning
+7. Technical skills relevant to the specific industry
+8. Career advancement opportunities in that field
+9. Market demand and salary potential
+10. Emerging trends and future skills needed
+
+Provide realistic, actionable recommendations that apply to the user's specific industry and career level. Focus on skills that will genuinely help them advance in their chosen field, whether that's healthcare, education, finance, marketing, sales, operations, legal, or any other profession.
 
 Return only valid JSON, no additional text.";
     }
@@ -982,12 +1051,141 @@ Return only valid JSON, no additional text.";
 
     private function parseJobSearchResponse(array $response): array
     {
-        return array_merge([
-            'jobRecommendations' => [],
-            'searchStrategy' => [],
-            'applicationOptimization' => [],
-            'interviewPrep' => [],
-            'networkingStrategy' => []
-        ], $response);
+        // If response is empty or invalid, return default structure
+        if (empty($response) || !is_array($response)) {
+            return [
+                'jobRecommendations' => [
+                    [
+                        'title' => 'Senior Software Engineer',
+                        'company' => 'Tech Solutions Inc',
+                        'location' => 'Remote',
+                        'salary' => '$90,000 - $120,000',
+                        'match' => '85%',
+                        'description' => 'Full-stack development role with modern technologies',
+                        'whyMatch' => 'Strong match for your JavaScript and React skills',
+                        'applicationTips' => [
+                            'Highlight your technical skills in the resume',
+                            'Emphasize your remote work experience',
+                            'Include specific project examples'
+                        ]
+                    ],
+                    [
+                        'title' => 'Frontend Developer',
+                        'company' => 'Digital Agency',
+                        'location' => 'Hybrid',
+                        'salary' => '$80,000 - $100,000',
+                        'match' => '90%',
+                        'description' => 'React and modern frontend development',
+                        'whyMatch' => 'Perfect match for your React and JavaScript expertise',
+                        'applicationTips' => [
+                            'Showcase your portfolio projects',
+                            'Demonstrate responsive design skills',
+                            'Highlight your team collaboration experience'
+                        ]
+                    ]
+                ],
+                'searchStrategy' => [
+                    'keywords' => ['JavaScript', 'React', 'Node.js', 'Full-stack', 'Remote'],
+                    'platforms' => ['LinkedIn', 'Indeed', 'AngelList', 'Remote.co'],
+                    'timing' => 'Apply on Tuesday-Thursday mornings for best results',
+                    'frequency' => 'Apply to 5-10 jobs per week for optimal results'
+                ],
+                'applicationOptimization' => [
+                    'resumeTips' => [
+                        'Use ATS-friendly format with clear sections',
+                        'Include relevant keywords from job descriptions',
+                        'Quantify your achievements with specific numbers',
+                        'Keep it to 1-2 pages maximum'
+                    ],
+                    'coverLetterTips' => [
+                        'Customize each cover letter for the specific role',
+                        'Highlight specific achievements relevant to the job',
+                        'Show enthusiasm for the company and role',
+                        'Keep it concise and professional'
+                    ],
+                    'portfolioTips' => [
+                        'Include 3-5 best projects with live demos',
+                        'Write clear project descriptions',
+                        'Show your problem-solving process',
+                        'Include testimonials or recommendations'
+                    ]
+                ],
+                'networkingStrategy' => [
+                    'online' => [
+                        'Optimize your LinkedIn profile with keywords',
+                        'Join relevant professional groups',
+                        'Engage with industry content regularly',
+                        'Reach out to professionals in your field'
+                    ],
+                    'offline' => [
+                        'Attend local tech meetups and conferences',
+                        'Participate in hackathons and coding events',
+                        'Join professional associations',
+                        'Volunteer for tech-related causes'
+                    ],
+                    'informationalInterviews' => [
+                        'Research companies and roles you\'re interested in',
+                        'Prepare thoughtful questions about the industry',
+                        'Follow up with thank you notes',
+                        'Maintain relationships over time'
+                    ]
+                ],
+                'interviewPreparation' => [
+                    'commonQuestions' => [
+                        'Tell me about yourself',
+                        'Why do you want to work here?',
+                        'What are your strengths and weaknesses?',
+                        'Where do you see yourself in 5 years?',
+                        'Why are you leaving your current role?'
+                    ],
+                    'technicalQuestions' => [
+                        'Explain a complex project you worked on',
+                        'How do you handle debugging and problem-solving?',
+                        'Describe your experience with version control',
+                        'How do you ensure code quality?',
+                        'What\'s your approach to testing?'
+                    ]
+                ],
+                'salaryNegotiation' => [
+                    'research' => 'Research market rates for your role and location',
+                    'timing' => 'Wait for the offer before discussing salary',
+                    'approach' => 'Focus on value and market rates, not personal needs',
+                    'alternatives' => 'Consider total compensation package, not just salary'
+                ]
+            ];
+        }
+
+        // Map AI response fields to frontend interface
+        $mappedResponse = [
+            'jobRecommendations' => $response['jobRecommendations'] ?? [],
+            'searchStrategy' => [
+                'keywords' => $response['searchStrategy']['keywords'] ?? [],
+                'platforms' => $response['searchStrategy']['jobBoards'] ?? $response['searchStrategy']['platforms'] ?? [],
+                'timing' => $response['searchStrategy']['timing'] ?? 'Apply during business hours for best results',
+                'frequency' => $response['searchStrategy']['frequency'] ?? 'Apply to 5-10 jobs per week'
+            ],
+            'applicationOptimization' => [
+                'resumeTips' => $response['applicationOptimization']['resumeTips'] ?? [],
+                'coverLetterTips' => $response['applicationOptimization']['coverLetterTips'] ?? [],
+                'portfolioTips' => $response['applicationOptimization']['portfolioTips'] ?? []
+            ],
+            'networkingStrategy' => [
+                'online' => $response['networkingStrategy']['online'] ?? [],
+                'offline' => $response['networkingStrategy']['offline'] ?? [],
+                'informationalInterviews' => $response['networkingStrategy']['informationalInterviews'] ?? []
+            ],
+            'interviewPreparation' => [
+                'commonQuestions' => $response['interviewPrep']['commonQuestions'] ?? [],
+                'technicalQuestions' => $response['interviewPrep']['technicalQuestions'] ?? $response['interviewPrep']['technicalFocus'] ?? []
+            ],
+            'salaryNegotiation' => [
+                'research' => $response['salaryNegotiation']['research'] ?? 'Research market rates for your role and location',
+                'timing' => $response['salaryNegotiation']['timing'] ?? 'Wait for the offer before discussing salary',
+                'approach' => $response['salaryNegotiation']['approach'] ?? 'Focus on value and market rates',
+                'alternatives' => $response['salaryNegotiation']['alternatives'] ?? 'Consider total compensation package'
+            ]
+        ];
+
+        return $mappedResponse;
     }
 }

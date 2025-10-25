@@ -3,27 +3,13 @@ import { useSEO } from '../../utils/seo';
 import { defaultCVData, type CVData } from '../../components/cv-builder/cv-form';
 import { CvPreview } from '../../components/cv-builder/cv-preview';
 import { TemplateCustomizer, type CVStyle } from '../../components/cv-builder/template-customizer';
-import { ToastContainer, useToast } from '../../hooks/use-toast';
-import { uploadFileForProcessing, validateFile } from '../../utils/fileProcessor';
+import { useToast } from '../../hooks/use-toast';
 import CVExportOptions from '../../components/cv-builder/CVExportOptions';
 import { API_CONFIG } from '../../config/api';
 import apiClient from '../../api/axios';
 import jsPDF from 'jspdf';
 import ApiKeyManager from '../../components/ApiKeyManager';
 
-// Add custom CSS for mobile optimizations
-const MobileOptimizationStyles = () => (
-  <style dangerouslySetInnerHTML={{ __html: `
-    /* Hide scrollbars but maintain functionality */
-    .no-scrollbar {
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
-    }
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;  /* Chrome, Safari and Opera */
-    }
-  `}} />
-);
 
 // Custom File Input Component
 const FileInput = ({ onFileSelect, isProcessing, buttonText, accept = ".pdf,.doc,.docx,.txt" }: {
@@ -39,14 +25,6 @@ const FileInput = ({ onFileSelect, isProcessing, buttonText, accept = ".pdf,.doc
     e.stopPropagation();
     
     if (fileInputRef.current) {
-      // Clear any existing file choosers
-      const existingInputs = document.querySelectorAll('input[type="file"]');
-      existingInputs.forEach(input => {
-        if (input !== fileInputRef.current) {
-          (input as HTMLInputElement).value = '';
-        }
-      });
-      
       fileInputRef.current.value = ''; // Clear previous selection
       fileInputRef.current.click();
     }
@@ -90,6 +68,292 @@ const FileInput = ({ onFileSelect, isProcessing, buttonText, accept = ".pdf,.doc
   );
 };
 
+// CV Upload Step Component
+const CVUploadStep = ({ onExtractionComplete }: { onExtractionComplete: (extractedData: any) => void }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [extractionResult, setExtractionResult] = useState<any>(null);
+
+  const handleFileUpload = async (file: File) => {
+    setIsProcessing(true);
+    
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Call real AI extraction API
+      const response = await fetch('/api/cv-ai/extract', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'CV extraction failed');
+      }
+      
+      if (!result.success) {
+        throw new Error(result.message || 'CV extraction failed');
+      }
+      
+      // Transform API response to match our CV data structure
+      const extractedData = {
+        fullName: result.data.fullName || '',
+        jobTitle: result.data.jobTitle || '',
+        email: result.data.email || '',
+        phoneNumber: result.data.phoneNumber || '',
+        address: result.data.address || '',
+        professionalSummary: result.data.professionalSummary || '',
+        workExperience: result.data.workExperience || [],
+        education: result.data.education || [],
+        skills: result.data.skills || [],
+        projects: result.data.projects || [],
+        languages: result.data.languages || [],
+        interests: result.data.interests || [],
+        references: result.data.references || [],
+        certificates: result.data.certifications || [],
+        achievements: result.data.achievements || []
+      };
+      
+      setExtractionResult(extractedData);
+      onExtractionComplete(extractedData);
+    } catch (error) {
+      console.error('CV extraction failed:', error);
+      // Show error message to user
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`CV extraction failed: ${errorMessage}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">Upload Your CV</h2>
+        <p className="text-base sm:text-lg text-gray-600">Upload your existing CV and we'll extract the information automatically using AI</p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
+        {!extractionResult ? (
+          <div className="text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">📄</span>
+        </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Your CV File</h3>
+              <p className="text-gray-600 mb-6">Supports PDF, DOC, DOCX, and TXT files up to 10MB</p>
+          </div>
+          
+            <FileInput
+              onFileSelect={handleFileUpload}
+              isProcessing={isProcessing}
+              buttonText="Choose CV File"
+              accept=".pdf,.doc,.docx,.txt"
+            />
+
+            {isProcessing && (
+              <div className="mt-6">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="text-gray-600">AI is analyzing your CV...</span>
+        </div>
+                <p className="text-sm text-gray-500 mt-2">This may take a few moments</p>
+          </div>
+        )}
+        </div>
+        ) : (
+        <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">✅</span>
+          </div>
+            <h3 className="text-xl font-semibold text-green-900 mb-2">CV Successfully Analyzed!</h3>
+            <p className="text-gray-600 mb-6">We've extracted your information. Click "Next" to review and edit your CV.</p>
+            
+            <div className="bg-gray-50 rounded-lg p-4 text-left">
+              <h4 className="font-semibold text-gray-900 mb-2">Extracted Information:</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Name: {extractionResult.fullName}</li>
+                <li>• Job Title: {extractionResult.jobTitle}</li>
+                <li>• Email: {extractionResult.email}</li>
+                <li>• Experience: {extractionResult.workExperience?.length || 0} positions</li>
+                <li>• Education: {extractionResult.education?.length || 0} entries</li>
+                <li>• Skills: {extractionResult.skills?.length || 0} skills</li>
+            </ul>
+          </div>
+        </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Job Tailoring Step Component
+const JobTailoringStep = ({ onTailoringComplete }: { onTailoringComplete: (tailoredData: any) => void }) => {
+  const [jobDescription, setJobDescription] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [tailoringResult, setTailoringResult] = useState<any>(null);
+
+  const handleJobTailoring = async () => {
+    if (!jobDescription.trim()) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      // Create base CV data for tailoring
+      const baseCvData = {
+        fullName: "",
+        jobTitle: "",
+        email: "",
+        phoneNumber: "",
+        address: "",
+        professionalSummary: "",
+        workExperience: [],
+        education: [],
+        skills: "",
+        projects: [],
+        languages: [],
+        interests: [],
+        references: [],
+        certificates: [],
+        achievements: []
+      };
+      
+      // Call real AI tailoring API
+      const response = await fetch('/api/cv-ai/tailor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          cv_data: baseCvData,
+          job_description: jobDescription
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'CV tailoring failed');
+      }
+      
+      if (!result.success) {
+        throw new Error(result.message || 'CV tailoring failed');
+      }
+      
+      // Transform API response to match our CV data structure
+      const tailoredData = {
+        fullName: result.data.fullName || '',
+        jobTitle: result.data.jobTitle || '',
+        email: result.data.email || '',
+        phoneNumber: result.data.phoneNumber || '',
+        address: result.data.address || '',
+        professionalSummary: result.data.professionalSummary || '',
+        workExperience: result.data.workExperience || [],
+        education: result.data.education || [],
+        skills: result.data.skills || [],
+        projects: result.data.projects || [],
+        languages: result.data.languages || [],
+        interests: result.data.interests || [],
+        references: result.data.references || [],
+        certificates: result.data.certifications || [],
+        achievements: result.data.achievements || []
+      };
+      
+      setTailoringResult(tailoredData);
+      onTailoringComplete(tailoredData);
+    } catch (error) {
+      console.error('Job tailoring failed:', error);
+      // Show error message to user
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`CV tailoring failed: ${errorMessage}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">Tailor Your CV to Job</h2>
+        <p className="text-base sm:text-lg text-gray-600">Paste the job description and we'll optimize your CV for that specific role</p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
+        {!tailoringResult ? (
+            <div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Job Description *
+              </label>
+              <textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Paste the complete job description here..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                rows={8}
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                Include the full job description with requirements, responsibilities, and qualifications
+              </p>
+            </div>
+
+              <div className="text-center">
+              <button
+                onClick={handleJobTailoring}
+                disabled={!jobDescription.trim() || isProcessing}
+                className="inline-flex items-center px-8 py-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isProcessing ? (
+                  <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    AI is tailoring your CV...
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-2">🎯</span>
+                    Tailor My CV
+                  </>
+                )}
+              </button>
+            </div>
+
+            {isProcessing && (
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-500">Analyzing job requirements and optimizing your CV...</p>
+                </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">✅</span>
+            </div>
+            <h3 className="text-xl font-semibold text-green-900 mb-2">CV Successfully Tailored!</h3>
+            <p className="text-gray-600 mb-6">We've optimized your CV for this specific job. Click "Next" to review and edit your tailored CV.</p>
+            
+            <div className="bg-gray-50 rounded-lg p-4 text-left">
+              <h4 className="font-semibold text-gray-900 mb-2">Tailoring Results:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Optimized professional summary for the role</li>
+                <li>• Highlighted relevant skills and experience</li>
+                <li>• Adjusted job descriptions to match requirements</li>
+                <li>• Enhanced keywords for ATS compatibility</li>
+                <li>• Structured content for maximum impact</li>
+              </ul>
+            </div>
+          </div>
+          )}
+      </div>
+    </div>
+  );
+};
+
 // AI Features Selection Component
 const AIFeaturesSelection = ({ onSelectMode }: { onSelectMode: (mode: 'ai-upload' | 'ai-tailor' | 'manual') => void }) => {
   return (
@@ -97,7 +361,7 @@ const AIFeaturesSelection = ({ onSelectMode }: { onSelectMode: (mode: 'ai-upload
       <div className="text-center mb-6 sm:mb-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">How would you like to create your CV?</h2>
         <p className="text-base sm:text-lg text-gray-600">Choose the option that works best for you</p>
-      </div>
+          </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         {/* AI Upload Option */}
@@ -106,7 +370,7 @@ const AIFeaturesSelection = ({ onSelectMode }: { onSelectMode: (mode: 'ai-upload
           <div className="text-center">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-blue-200 transition-colors duration-200">
               <span className="text-xl sm:text-2xl">📄</span>
-            </div>
+              </div>
             <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-1 sm:mb-2">Upload Existing CV</h3>
             <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Upload your current CV and we'll extract the information automatically</p>
             <div className="bg-blue-50 rounded-lg p-2 sm:p-3">
@@ -130,7 +394,7 @@ const AIFeaturesSelection = ({ onSelectMode }: { onSelectMode: (mode: 'ai-upload
               <p className="text-xs text-green-600">Perfect match for job requirements</p>
             </div>
           </div>
-        </div>
+            </div>
 
         {/* Manual Option */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8 hover:shadow-md transition-shadow duration-200 cursor-pointer group"
@@ -152,1290 +416,8 @@ const AIFeaturesSelection = ({ onSelectMode }: { onSelectMode: (mode: 'ai-upload
   );
 };
 
-// AI Upload Step
-const AIUploadStep = ({ onDataChange, onNext }: { onDataChange: (data: CVData) => void, onNext: () => void }) => {
-  const [isUploading, setIsUploading] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiStats, setApiStats] = useState({ availableRequests: 0, totalRequests: 0 });
-  const [userApiKey, setUserApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
-  const [extractedData, setExtractedData] = useState<CVData | null>(null);
-  const [showDataPreview, setShowDataPreview] = useState(false);
-  const { addToast } = useToast();
 
-  // Load API stats on mount
-  React.useEffect(() => {
-    loadApiStats();
-  }, []);
 
-  const loadApiStats = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        // User not logged in, use public stats
-        const response = await fetch('/api/cv-ai/stats');
-        const data = await response.json();
-        if (data.success) {
-          setApiStats({
-            availableRequests: data.data.available_requests,
-            totalRequests: data.data.total_requests
-          });
-        }
-        return;
-      }
-
-      // User is logged in, try to get user-specific stats
-      try {
-      const response = await fetch('/api/user-api-keys/stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setApiStats({
-          availableRequests: data.data.available_requests,
-          totalRequests: data.data.total_requests
-        });
-        }
-      } catch (authError) {
-        // If user-specific stats fail, fall back to public stats
-        console.warn('Failed to load user-specific API stats, falling back to public stats:', authError);
-        const response = await fetch('/api/cv-ai/stats');
-        const data = await response.json();
-        if (data.success) {
-          setApiStats({
-            availableRequests: data.data.available_requests,
-            totalRequests: data.data.total_requests
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load API stats:', error);
-    }
-  };
-
-  const handleAddApiKey = async () => {
-    if (!userApiKey.trim()) {
-      addToast({
-        type: 'warning',
-        title: 'API Key Required',
-        description: 'Please enter your Gemini API key.'
-      });
-      return;
-    }
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-      addToast({
-        type: 'info',
-        title: 'Login Required',
-        description: 'Please log in to add your API key and get unlimited CV processing.',
-        duration: 6000
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/user-api-keys', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          api_key: userApiKey,
-          name: 'User API Key'
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setUserApiKey('');
-        setShowApiKeyInput(false);
-        loadApiStats(); // Refresh stats
-        addToast({
-          type: 'success',
-          title: 'API Key Added Successfully!',
-          description: 'Your API key has been added and you now have unlimited CV processing.'
-        });
-      } else {
-        addToast({
-          type: 'error',
-          title: 'Failed to Add API Key',
-          description: result.message || 'Please check your API key and try again.'
-        });
-      }
-    } catch (error) {
-      console.error('Failed to add API key:', error);
-      addToast({
-        type: 'error',
-        title: 'Connection Error',
-        description: 'Failed to add API key. Please check your connection and try again.'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleProceedWithData = () => {
-    console.log('handleProceedWithData called', { extractedData, onNext });
-    if (extractedData) {
-      console.log('Calling onDataChange with:', extractedData);
-      onDataChange(extractedData);
-      console.log('Calling onNext');
-      onNext();
-      console.log('onNext called');
-    }
-  };
-
-  const handleEditData = () => {
-    console.log('handleEditData called', { extractedData, onNext });
-    if (extractedData) {
-      onDataChange(extractedData);
-      onNext();
-    }
-  };
-
-  const handleReupload = () => {
-    console.log('handleReupload called');
-    setExtractedData(null);
-    setShowDataPreview(false);
-    setIsUploading(false);
-    // Reset the file input
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
-  };
-
-  const handleFileUpload = async (file: File) => {
-    if (!file) return;
-
-    // Validate file first
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      addToast({
-        type: 'error',
-        title: 'Invalid File',
-        description: validation.errors.join(', ')
-      });
-      return;
-    }
-
-    // Check file size for AI processing (5MB limit for better processing)
-    if (file.size > 5 * 1024 * 1024) {
-      addToast({
-        type: 'warning',
-        title: 'Large File Detected',
-        description: 'This file is quite large. AI processing may take longer or be limited to the first part of the document.'
-      });
-    }
-
-    setIsUploading(true);
-
-    try {
-      // Use new file processing approach
-      const response = await uploadFileForProcessing(file);
-      const result = await response.json();
-
-      if (result.success) {
-        setExtractedData(result.data);
-        setShowDataPreview(true);
-        addToast({
-          type: 'success',
-          title: 'CV Extracted Successfully!',
-          description: `Your CV information has been extracted from ${result.file_info?.filename || 'the uploaded file'}. Please review the extracted data below.`
-        });
-      } else {
-        addToast({
-          type: 'error',
-          title: 'Extraction Failed',
-          description: result.message || 'Failed to extract CV data. Please try a different file format.'
-        });
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      
-      // Provide more specific error messages based on the error
-      let errorMessage = 'Failed to upload file. Please check your connection and try again.';
-      
-      if (error instanceof Error) {
-        if (error.message.includes('token count') || error.message.includes('too large')) {
-          errorMessage = 'CV file is too large for AI processing. Please try a shorter CV or split it into sections.';
-        } else if (error.message.includes('quota')) {
-          errorMessage = 'API quota exceeded. Please try again later or add your own API key.';
-        } else if (error.message.includes('temporarily unavailable')) {
-          errorMessage = 'AI service is temporarily unavailable. Please try again in a few minutes.';
-        }
-      }
-      
-      addToast({
-        type: 'error',
-        title: 'Upload Failed',
-        description: errorMessage
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-
-
-  return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Upload Your CV</h2>
-        <p className="text-lg text-gray-600">Our AI will extract and organize your information automatically</p>
-      </div>
-
-      {/* API Key Section - Moved to Top */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mb-8">
-        <div className="text-center mb-6">
-          <h3 className="text-xl font-bold text-green-900 mb-2">🚀 Free AI-Powered CV Processing</h3>
-          <p className="text-green-800 mb-4">Get your CV processed instantly using our secure AI system</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg p-4 border border-green-200">
-            <h4 className="font-semibold text-green-900 mb-2">🔒 Your Data is Secure</h4>
-            <ul className="text-sm text-green-800 space-y-1">
-              <li>• All API keys are encrypted and stored securely</li>
-              <li>• Your CV data is processed locally and not stored</li>
-              <li>• We use enterprise-grade security measures</li>
-              <li>• Your information is never shared with third parties</li>
-            </ul>
-          </div>
-          
-          <div className="bg-white rounded-lg p-4 border border-green-200">
-            <h4 className="font-semibold text-green-900 mb-2">💡 Why Add Your API Key?</h4>
-            <ul className="text-sm text-green-800 space-y-1">
-              <li>• Get unlimited CV processing for free</li>
-              <li>• Faster processing with dedicated resources</li>
-              <li>• Support the platform's free tools for everyone</li>
-              <li>• Your key is only used for your account</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => {
-              const token = localStorage.getItem('token');
-              if (!token) {
-                addToast({
-                  type: 'error',
-                  title: 'Authentication Required',
-                  description: 'Please log in to add your API key.',
-                  duration: 5000
-                });
-                return;
-              }
-              setShowApiKeyInput(!showApiKeyInput);
-            }}
-            className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors duration-200"
-          >
-            <span className="mr-2">🔑</span>
-            {showApiKeyInput ? 'Hide API Key Input' : 'Add Your API Key (Optional)'}
-          </button>
-        </div>
-        
-        {showApiKeyInput && (
-          <div className="mt-4 bg-white rounded-lg p-4 border border-green-200">
-            <div className="space-y-3">
-              <input
-                type="password"
-                value={userApiKey}
-                onChange={(e) => setUserApiKey(e.target.value)}
-                placeholder="Enter your Gemini API key"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-              <p className="text-xs text-gray-600">
-                Get your free API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">Google AI Studio</a>
-              </p>
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => setShowApiKeyInput(false)}
-                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddApiKey}
-                  disabled={isLoading || !userApiKey.trim()}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
-                    isLoading || !userApiKey.trim()
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-green-600 text-white hover:bg-green-700'
-                  }`}
-                >
-                  {isLoading ? 'Adding...' : 'Add API Key'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-4 text-center">
-          <p className="text-sm text-green-700">
-            <strong>Available Requests:</strong> {apiStats.availableRequests} out of {apiStats.totalRequests} total
-          </p>
-        </div>
-      </div>
-
-      {/* File Upload Section - Only show when no data preview */}
-      {!showDataPreview && (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <div className="text-center">
-          <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-4xl">📄</span>
-          </div>
-          
-          <div className="mb-6">
-              <FileInput
-                onFileSelect={handleFileUpload}
-                isProcessing={isUploading}
-                buttonText="Choose File"
-              />
-          </div>
-
-          <p className="text-sm text-gray-500 mb-4">
-              Supported formats: PDF, DOC, DOCX, TXT (Max 5MB)
-            </p>
-
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-2">What happens next?</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• AI extracts your personal information, experience, and skills</li>
-              <li>• Information is organized into our CV format</li>
-              <li>• You can review and edit before finalizing</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      )}
-
-      {/* Data Preview Section */}
-      {showDataPreview && extractedData && (
-        <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="text-center mb-6">
-            <h3 className="text-2xl font-bold text-green-900 mb-2">✅ CV Data Extracted Successfully!</h3>
-            <p className="text-gray-600">Review the extracted information below and choose your next step</p>
-          </div>
-
-          {/* Extracted Data Preview */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">📋 Extracted Information</h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Personal Information */}
-              <div className="space-y-3">
-                <h5 className="font-medium text-gray-800">Personal Information</h5>
-                {extractedData.fullName && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Name:</span> {extractedData.fullName}
-                  </div>
-                )}
-                {extractedData.email && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Email:</span> {extractedData.email}
-                  </div>
-                )}
-                    {extractedData.phoneNumber && (
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-600">Phone:</span> {extractedData.phoneNumber}
-                      </div>
-                    )}
-                    {extractedData.address && (
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-600">Location:</span> {extractedData.address}
-                      </div>
-                    )}
-              </div>
-
-              {/* Professional Information */}
-              <div className="space-y-3">
-                <h5 className="font-medium text-gray-800">Professional Information</h5>
-                {extractedData.professionalSummary && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Summary:</span> 
-                    <p className="mt-1 text-gray-700">{extractedData.professionalSummary.substring(0, 100)}...</p>
-                  </div>
-                )}
-                {extractedData.workExperience && extractedData.workExperience.length > 0 && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Experience:</span> {extractedData.workExperience.length} position(s) found
-                  </div>
-                )}
-                {extractedData.education && extractedData.education.length > 0 && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Education:</span> {extractedData.education.length} entry(ies) found
-                  </div>
-                )}
-                {extractedData.skills && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Skills:</span> {extractedData.skills.split(',').length} skill(s) found
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={handleProceedWithData}
-              className="px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors duration-200"
-            >
-              ✅ Use This Data & Continue
-            </button>
-            <button
-              onClick={handleEditData}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200"
-            >
-              ✏️ Edit & Customize
-            </button>
-            <button
-              onClick={handleReupload}
-              className="px-8 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors duration-200"
-            >
-              🔄 Upload Different File
-            </button>
-          </div>
-
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-500">
-              💡 <strong>Tip:</strong> You can always edit any information after proceeding to the next step
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// AI Tailor Step
-const AITailorStep = ({ onDataChange, onNext }: { onDataChange: (data: CVData) => void, onNext: () => void }) => {
-  const [jobDescription, setJobDescription] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiStats, setApiStats] = useState({ availableRequests: 0, totalRequests: 0 });
-  const [userApiKey, setUserApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
-  const [hasExistingCV, setHasExistingCV] = useState(false);
-  const [cvFile, setCvFile] = useState<File | null>(null);
-  const [extractedData, setExtractedData] = useState<CVData | null>(null);
-  const [showDataPreview, setShowDataPreview] = useState(false);
-  const { addToast } = useToast();
-
-  // Load API stats on mount
-  React.useEffect(() => {
-    loadApiStats();
-    
-    // Clear any existing CV data from localStorage to prevent false positives
-    localStorage.removeItem('cv-builder-data');
-    setHasExistingCV(false);
-  }, []);
-
-  const loadApiStats = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        // User not logged in, use public stats
-        const response = await fetch('/api/cv-ai/stats');
-        const data = await response.json();
-        if (data.success) {
-          setApiStats({
-            availableRequests: data.data.available_requests,
-            totalRequests: data.data.total_requests
-          });
-        }
-        return;
-      }
-
-      // User is logged in, try to get user-specific stats
-      try {
-      const response = await fetch('/api/user-api-keys/stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setApiStats({
-          availableRequests: data.data.available_requests,
-          totalRequests: data.data.total_requests
-        });
-        }
-      } catch (authError) {
-        // If user-specific stats fail, fall back to public stats
-        console.warn('Failed to load user-specific API stats, falling back to public stats:', authError);
-        const response = await fetch('/api/cv-ai/stats');
-        const data = await response.json();
-        if (data.success) {
-          setApiStats({
-            availableRequests: data.data.available_requests,
-            totalRequests: data.data.total_requests
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load API stats:', error);
-    }
-  };
-
-  const handleAddApiKey = async () => {
-    if (!userApiKey.trim()) {
-      addToast({
-        type: 'warning',
-        title: 'API Key Required',
-        description: 'Please enter your Gemini API key.'
-      });
-      return;
-    }
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-      addToast({
-        type: 'info',
-        title: 'Login Required',
-        description: 'Please log in to add your API key and get unlimited CV tailoring.',
-        duration: 6000
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/user-api-keys', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          api_key: userApiKey,
-          name: 'User API Key'
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setUserApiKey('');
-        setShowApiKeyInput(false);
-        loadApiStats(); // Refresh stats
-        addToast({
-          type: 'success',
-          title: 'API Key Added Successfully!',
-          description: 'Your API key has been added and you now have unlimited CV tailoring.'
-        });
-      } else {
-        addToast({
-          type: 'error',
-          title: 'Failed to Add API Key',
-          description: result.message || 'Please check your API key and try again.'
-        });
-      }
-    } catch (error) {
-      console.error('Failed to add API key:', error);
-      addToast({
-        type: 'error',
-        title: 'Connection Error',
-        description: 'Failed to add API key. Please check your connection and try again.'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleProceedWithData = () => {
-    if (extractedData) {
-      onDataChange(extractedData);
-      onNext();
-    }
-  };
-
-  const handleEditData = () => {
-    if (extractedData) {
-      onDataChange(extractedData);
-      onNext();
-    }
-  };
-
-  const handleReupload = () => {
-    setExtractedData(null);
-    setShowDataPreview(false);
-    setIsProcessing(false);
-    // Reset the file input
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
-  };
-
-  const handleFileUpload = async (file: File) => {
-    if (!file) return;
-
-    // Validate file first
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      addToast({
-        type: 'error',
-        title: 'Invalid File',
-        description: validation.errors.join(', ')
-      });
-      return;
-    }
-
-    // Check file size for AI processing (5MB limit for better processing)
-    if (file.size > 5 * 1024 * 1024) {
-      addToast({
-        type: 'warning',
-        title: 'Large File Detected',
-        description: 'This file is quite large. AI processing may take longer or be limited to the first part of the document.'
-      });
-    }
-
-    setCvFile(file);
-    setIsProcessing(true);
-
-    try {
-      // Use new file processing approach
-      const response = await uploadFileForProcessing(file);
-      const result = await response.json();
-
-      if (result.success) {
-        setExtractedData(result.data);
-        setShowDataPreview(true);
-        setHasExistingCV(true);
-        addToast({
-          type: 'success',
-          title: 'CV Extracted Successfully!',
-          description: `Your CV information has been extracted from ${result.file_info?.filename || 'the uploaded file'}. Please review the extracted data below.`
-        });
-      } else {
-        addToast({
-          type: 'error',
-          title: 'Extraction Failed',
-          description: result.message || 'Failed to extract CV data. Please try a different file format.'
-        });
-      }
-    } catch (error) {
-      console.error('Processing error:', error);
-      
-      // Provide more specific error messages based on the error
-      let errorMessage = 'Failed to process your CV. Please check your connection and try again.';
-      
-      if (error instanceof Error) {
-        if (error.message.includes('token count') || error.message.includes('too large')) {
-          errorMessage = 'CV file is too large for AI processing. Please try a shorter CV or split it into sections.';
-        } else if (error.message.includes('quota')) {
-          errorMessage = 'API quota exceeded. Please try again later or add your own API key.';
-        } else if (error.message.includes('temporarily unavailable')) {
-          errorMessage = 'AI service is temporarily unavailable. Please try again in a few minutes.';
-        }
-      }
-      
-      addToast({
-        type: 'error',
-        title: 'Processing Error',
-        description: errorMessage
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-
-  const handleTailor = async () => {
-    if (!jobDescription.trim()) {
-      addToast({
-        type: 'warning',
-        title: 'Job Description Required',
-        description: 'Please enter a job description to tailor your CV.'
-      });
-      return;
-    }
-
-    if (!hasExistingCV && !cvFile) {
-      addToast({
-        type: 'warning',
-        title: 'CV Required',
-        description: 'Please upload a CV file first or switch to manual creation.'
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      // If user provided their own API key, add it first
-      if (userApiKey.trim()) {
-        const keyResponse = await fetch('/api/cv-ai/add-user-key', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            api_key: userApiKey,
-            name: 'User API Key'
-          })
-        });
-
-        if (!keyResponse.ok) {
-          const keyResult = await keyResponse.json();
-          addToast({
-            type: 'error',
-            title: 'Invalid API Key',
-            description: keyResult.message || 'Please check your API key and try again.'
-          });
-          return;
-        }
-      }
-
-      // Get current CV data from localStorage
-      const savedData = localStorage.getItem('cv-builder-data');
-      const cvData = savedData ? JSON.parse(savedData) : {};
-
-      // Call AI API
-      const response = await fetch('/api/cv-ai/tailor', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          cv_data: cvData,
-          job_description: jobDescription
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        onDataChange(result.data);
-        addToast({
-          type: 'success',
-          title: 'CV Tailored Successfully!',
-          description: 'Your CV has been optimized for the job description. You can now proceed to the next step.'
-        });
-        onNext();
-      } else {
-        addToast({
-          type: 'error',
-          title: 'Tailoring Failed',
-          description: result.message || 'Failed to tailor CV. Please try again.'
-        });
-      }
-    } catch (error) {
-      addToast({
-        type: 'error',
-        title: 'Processing Error',
-        description: 'Failed to tailor CV. Please check your connection and try again.'
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Tailor Your CV to a Job</h2>
-        <p className="text-lg text-gray-600">Upload your CV and paste the job description to optimize it for that specific role</p>
-      </div>
-
-      {/* API Key Section - Moved to Top */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mb-8">
-        <div className="text-center mb-6">
-          <h3 className="text-xl font-bold text-green-900 mb-2">🚀 Free AI-Powered CV Tailoring</h3>
-          <p className="text-green-800 mb-4">Get your CV optimized for any job using our secure AI system</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg p-4 border border-green-200">
-            <h4 className="font-semibold text-green-900 mb-2">🔒 Your Data is Secure</h4>
-            <ul className="text-sm text-green-800 space-y-1">
-              <li>• All API keys are encrypted and stored securely</li>
-              <li>• Your CV data is processed locally and not stored</li>
-              <li>• We use enterprise-grade security measures</li>
-              <li>• Your information is never shared with third parties</li>
-            </ul>
-          </div>
-          
-          <div className="bg-white rounded-lg p-4 border border-green-200">
-            <h4 className="font-semibold text-green-900 mb-2">💡 Why Add Your API Key?</h4>
-            <ul className="text-sm text-green-800 space-y-1">
-              <li>• Get unlimited CV tailoring for free</li>
-              <li>• Faster processing with dedicated resources</li>
-              <li>• Support the platform's free tools for everyone</li>
-              <li>• Your key is only used for your account</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => {
-              const token = localStorage.getItem('token');
-              if (!token) {
-                addToast({
-                  type: 'error',
-                  title: 'Authentication Required',
-                  description: 'Please log in to add your API key.',
-                  duration: 5000
-                });
-                return;
-              }
-              setShowApiKeyInput(!showApiKeyInput);
-            }}
-            className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors duration-200"
-          >
-            <span className="mr-2">🔑</span>
-            {showApiKeyInput ? 'Hide API Key Input' : 'Add Your API Key (Optional)'}
-          </button>
-        </div>
-        
-        {showApiKeyInput && (
-          <div className="mt-4 bg-white rounded-lg p-4 border border-green-200">
-            <div className="space-y-3">
-              <input
-                type="password"
-                value={userApiKey}
-                onChange={(e) => setUserApiKey(e.target.value)}
-                placeholder="Enter your Gemini API key"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-              <p className="text-xs text-gray-600">
-                Get your free API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">Google AI Studio</a>
-              </p>
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => setShowApiKeyInput(false)}
-                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddApiKey}
-                  disabled={isLoading || !userApiKey.trim()}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
-                    isLoading || !userApiKey.trim()
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-green-600 text-white hover:bg-green-700'
-                  }`}
-                >
-                  {isLoading ? 'Adding...' : 'Add API Key'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-4 text-center">
-          <p className="text-sm text-green-700">
-            <strong>Available Requests:</strong> {apiStats.availableRequests} out of {apiStats.totalRequests} total
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        {/* CV Upload Section - Only show when no data preview */}
-        {!showDataPreview && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Step 1: Upload Your CV</h3>
-          
-          {hasExistingCV ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center">
-                <span className="text-green-600 mr-2">✅</span>
-                <span className="text-green-800 font-medium">CV data found! You can proceed to tailor your CV.</span>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="text-center">
-                <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-4xl">📄</span>
-                </div>
-                
-                <div className="mb-4">
-                    <FileInput
-                      onFileSelect={handleFileUpload}
-                      isProcessing={isProcessing}
-                      buttonText="Choose CV File"
-                    />
-                </div>
-
-                <p className="text-sm text-gray-500 mb-4">
-                    Supported formats: PDF, DOC, DOCX, TXT (Max 5MB)
-                </p>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-yellow-900 mb-2">No CV to upload?</h4>
-                  <p className="text-sm text-yellow-800 mb-3">
-                    If you don't have a CV file, you can create one manually by switching to "Create Manually" mode.
-                  </p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    Switch to Manual Creation →
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        )}
-
-        {/* Job Description Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Step 2: Job Description</h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Job Description</label>
-              <textarea
-                value={jobDescription}
-                onChange={(e) => setJobDescription(e.target.value)}
-                placeholder="Paste the complete job description here..."
-                rows={8}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                {jobDescription.length} characters
-              </p>
-            </div>
-
-
-
-            <div className="flex justify-center">
-              <button
-                onClick={handleTailor}
-                disabled={isProcessing || !jobDescription.trim() || (!hasExistingCV && !cvFile)}
-                className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
-                  isProcessing || !jobDescription.trim() || (!hasExistingCV && !cvFile)
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>AI Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>🎯</span>
-                    <span>Tailor My CV</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-semibold text-gray-900 mb-2">How AI tailoring works:</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Analyzes job requirements and keywords</li>
-                <li>• Optimizes your summary and experience descriptions</li>
-                <li>• Highlights relevant skills and achievements</li>
-                <li>• Ensures ATS compatibility</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Data Preview Section */}
-      {showDataPreview && extractedData && (
-        <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="text-center mb-6">
-            <h3 className="text-2xl font-bold text-green-900 mb-2">✅ CV Data Extracted Successfully!</h3>
-            <p className="text-gray-600">Review the extracted information below and choose your next step</p>
-          </div>
-
-          {/* Extracted Data Preview */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">📋 Extracted Information</h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Personal Information */}
-              <div className="space-y-3">
-                <h5 className="font-medium text-gray-800">Personal Information</h5>
-                {extractedData.fullName && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Name:</span> {extractedData.fullName}
-                  </div>
-                )}
-                {extractedData.email && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Email:</span> {extractedData.email}
-                  </div>
-                )}
-                    {extractedData.phoneNumber && (
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-600">Phone:</span> {extractedData.phoneNumber}
-                      </div>
-                    )}
-                    {extractedData.address && (
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-600">Location:</span> {extractedData.address}
-                      </div>
-                    )}
-              </div>
-
-              {/* Professional Information */}
-              <div className="space-y-3">
-                <h5 className="font-medium text-gray-800">Professional Information</h5>
-                {extractedData.professionalSummary && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Summary:</span> 
-                    <p className="mt-1 text-gray-700">{extractedData.professionalSummary.substring(0, 100)}...</p>
-                  </div>
-                )}
-                {extractedData.workExperience && extractedData.workExperience.length > 0 && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Experience:</span> {extractedData.workExperience.length} position(s) found
-                  </div>
-                )}
-                {extractedData.education && extractedData.education.length > 0 && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Education:</span> {extractedData.education.length} entry(ies) found
-                  </div>
-                )}
-                {extractedData.skills && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-600">Skills:</span> {extractedData.skills.split(',').length} skill(s) found
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={handleProceedWithData}
-              className="px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors duration-200"
-            >
-              ✅ Use This Data & Continue
-            </button>
-            <button
-              onClick={handleEditData}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200"
-            >
-              ✏️ Edit & Customize
-            </button>
-            <button
-              onClick={handleReupload}
-              className="px-8 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors duration-200"
-            >
-              🔄 Upload Different File
-            </button>
-          </div>
-
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-500">
-              💡 <strong>Tip:</strong> You can always edit any information after proceeding to the next step
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Enhanced Step-by-step wizard component
-const StepIndicator = ({ currentStep, totalSteps, onStepClick, completedSteps }: { currentStep: number, totalSteps: number, onStepClick: (step: number) => void, completedSteps: Set<number> }) => {
-  const steps = [
-    { id: 1, name: 'Personal Info', icon: '👤', description: 'Basic information', shortName: 'Personal' },
-    { id: 2, name: 'Summary', icon: '📝', description: 'Professional summary', shortName: 'Summary' },
-    { id: 3, name: 'Experience', icon: '💼', description: 'Work history', shortName: 'Experience' },
-    { id: 4, name: 'Education', icon: '🎓', description: 'Academic background', shortName: 'Education' },
-    { id: 5, name: 'Skills & Projects', icon: '🛠️', description: 'Skills and portfolio', shortName: 'Skills' },
-    { id: 6, name: 'Certifications & Achievements', icon: '🏆', description: 'Certificates and achievements', shortName: 'Certifications' },
-    { id: 7, name: 'Languages & Interests', icon: '🌍', description: 'Languages and hobbies', shortName: 'Languages' },
-    { id: 8, name: 'References', icon: '👥', description: 'Professional references', shortName: 'References' },
-    { id: 9, name: 'Template', icon: '🎨', description: 'Design & style', shortName: 'Template' },
-    { id: 10, name: 'Preview', icon: '👁️', description: 'Final review', shortName: 'Preview' }
-  ];
-
-  const currentStepData = steps.find(step => step.id === currentStep);
-  const completedStepsCount = completedSteps.size;
-  const remainingSteps = totalSteps - currentStep;
-  // const progressPercentage = (currentStep / totalSteps) * 100;
-
-  return (
-    <div className="bg-white border-b border-gray-200 px-4 py-4 sm:py-6 sticky top-0 z-10 shadow-sm">
-      <div className="max-w-6xl mx-auto">
-        {/* Progress Header */}
-        <div className="mb-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
-            <div className="flex items-center space-x-3 w-full sm:w-auto">
-              <div className="flex items-center space-x-2">
-                <span className="text-xl sm:text-2xl">{currentStepData?.icon}</span>
-                <div>
-                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-                    {currentStepData?.name || `Step ${currentStep}`}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">
-                    {currentStepData?.description || 'Complete this step to continue'}
-                  </p>
-          </div>
-              </div>
-            </div>
-            <div className="text-left sm:text-right w-full sm:w-auto mt-2 sm:mt-0 hidden sm:block">
-              <div className="text-sm font-medium text-gray-900">
-                Step {currentStep} of {totalSteps}
-              </div>
-              <div className="text-xs text-gray-500">
-                {completedStepsCount} completed • {remainingSteps} remaining
-              </div>
-            </div>
-          </div>
-          
-        {/* Compact Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2 mb-1">
-          <div 
-            className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 sm:h-2 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-            />
-          </div>
-        <div className="text-center text-xs text-gray-500">
-          <span className="font-medium text-blue-600">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
-          </div>
-        </div>
-
-        {/* Desktop Step Indicator - Compact Layout - Only visible on large screens */}
-        <div className="hidden lg:block">
-          {/* Current Step Focus - DESKTOP ONLY */}
-          <div className="mb-3">
-            <div className="flex items-center justify-center space-x-3">
-              <div className="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
-                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-base font-bold">
-                  {currentStep}
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold text-blue-900 text-sm">{currentStepData?.name}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Step Dots Indicator - Compact */}
-          <div className="flex items-center justify-center space-x-1">
-            {steps.map((step, index) => {
-              const isActive = currentStep === step.id;
-              const isCompleted = completedSteps.has(step.id);
-              
-              return (
-            <div key={step.id} className="flex items-center">
-              <button
-                onClick={() => onStepClick(step.id)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
-                      isActive 
-                        ? 'bg-blue-600 text-white shadow-md transform scale-110' 
-                        : isCompleted 
-                        ? 'bg-green-500 text-white hover:bg-green-600' 
-                        : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
-                    }`}
-                    title={`${step.name}: ${step.description}`}
-                  >
-                    {isCompleted ? '✓' : step.id}
-              </button>
-                  
-              {index < steps.length - 1 && (
-                    <div className={`w-5 h-0.5 mx-1 rounded-full ${
-                      isCompleted ? 'bg-green-400' : 'bg-gray-300'
-                }`} />
-              )}
-            </div>
-              );
-            })}
-        </div>
-
-      </div>
-
-        {/* Mobile Step Navigation - Ultra Compact */}
-        <div className="lg:hidden">
-          {/* Minimal Step Display - Just step name */}
-          <div className="text-center mb-2">
-            <div className="inline-flex items-center bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
-              <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold mr-1.5">
-                {currentStep}
-              </div>
-              <div className="font-medium text-blue-900 text-xs">{currentStepData?.name}</div>
-            </div>
-          </div>
-
-          {/* Minimal Step Indicator - Dots Only */}
-          <div className="flex justify-center items-center mb-2">
-            {steps.map((step) => {
-              const isActive = currentStep === step.id;
-              const isCompleted = completedSteps.has(step.id);
-              
-              return (
-                <div 
-                  key={step.id} 
-                  className={`w-2 h-2 mx-0.5 rounded-full transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-blue-600 transform scale-125' 
-                      : isCompleted 
-                      ? 'bg-green-500' 
-                      : 'bg-gray-300'
-                  }`}
-                  role="button"
-                  onClick={() => onStepClick(step.id)}
-                  aria-label={`Go to step ${step.id}: ${step.name}`}
-                />
-              );
-            })}
-          </div>
-
-          {/* Minimal Navigation Buttons */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => onStepClick(Math.max(1, currentStep - 1))}
-              disabled={currentStep === 1}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
-                currentStep === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400'
-              }`}
-              aria-label="Previous step"
-            >
-              <span className="text-sm">←</span>
-            </button>
-            
-            <div className="text-center">
-              <div className="text-xs text-gray-500">
-                {currentStep}/{totalSteps}
-              </div>
-            </div>
-            
-            <button
-              onClick={() => onStepClick(Math.min(totalSteps, currentStep + 1))}
-              disabled={currentStep === totalSteps}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
-                currentStep === totalSteps
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
-              }`}
-              aria-label="Next step"
-            >
-              <span className="text-sm">→</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Step Navigation Component
 const StepNavigation = ({ 
@@ -2518,16 +1500,16 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
       credentialId: "",
       url: ""
     };
-    onDataChange({ ...data, certificates: [...data.certificates, newCertificate] });
+    onDataChange({ ...data, certificates: [...(data.certificates || []), newCertificate] });
   };
 
   const removeCertificate = (index: number) => {
-    const updatedCertificates = data.certificates.filter((_, i) => i !== index);
+    const updatedCertificates = (data.certificates || []).filter((_, i) => i !== index);
     onDataChange({ ...data, certificates: updatedCertificates });
   };
 
   const updateCertificate = (index: number, field: string, value: string) => {
-    const updatedCertificates = data.certificates.map((cert, i) => 
+    const updatedCertificates = (data.certificates || []).map((cert, i) => 
       i === index ? { ...cert, [field]: value } : cert
     );
     onDataChange({ ...data, certificates: updatedCertificates });
@@ -2541,12 +1523,12 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
     };
     onDataChange({
       ...data,
-      achievements: [...data.achievements, newAchievement],
+      achievements: [...(data.achievements || []), newAchievement],
     });
   };
 
   const removeAchievement = (index: number) => {
-    const updatedAchievements = data.achievements.filter((_, i) => i !== index);
+    const updatedAchievements = (data.achievements || []).filter((_, i) => i !== index);
     onDataChange({
       ...data,
       achievements: updatedAchievements,
@@ -2554,7 +1536,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
   };
 
   const updateAchievement = (index: number, field: keyof typeof data.achievements[0], value: string) => {
-    const updatedAchievements = data.achievements.map((achievement, i) =>
+    const updatedAchievements = (data.achievements || []).map((achievement, i) =>
       i === index ? { ...achievement, [field]: value } : achievement
     );
     onDataChange({
@@ -2575,11 +1557,11 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">🏆 Professional Certifications</h3>
           <div className="space-y-6">
-            {data.certificates.map((certificate, index) => (
+            {(data.certificates || []).map((certificate, index) => (
               <div key={index} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="text-lg font-medium text-gray-900">Certificate {index + 1}</h4>
-                  {data.certificates.length > 1 && (
+                  {(data.certificates || []).length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeCertificate(index)}
@@ -2673,11 +1655,11 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">🎯 Professional Achievements</h3>
           <div className="space-y-6">
-            {data.achievements.map((achievement, index) => (
+            {(data.achievements || []).map((achievement, index) => (
               <div key={index} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="text-lg font-medium text-gray-900">Achievement {index + 1}</h4>
-                  {data.achievements.length > 1 && (
+                  {(data.achievements || []).length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeAchievement(index)}
@@ -2774,13 +1756,11 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
       console.log('Selected template HTML content length:', template.html_content?.length || 0);
       console.log('Selected template HTML preview:', template.html_content?.substring(0, 200) || 'No HTML content');
       onStyleChange({
-        templateName: templateId,
-        primaryColor: '#2563eb',
-        secondaryColor: '#64748b',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: 11,
+        ...style,
+        templateName: template.name || templateId,
       });
       onTemplateSelect(template);
+      // Automatically switch to preview mode to show live preview
       setPreviewMode('preview');
     }
   };
@@ -2881,7 +1861,7 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
                 <div 
                   key={template.id}
                   className={`relative rounded-lg border-2 overflow-hidden cursor-pointer transition-all hover:shadow-xl ${
-                    style.templateName === template.id.toString() 
+                    selectedTemplate?.id === template.id 
                       ? 'border-blue-600 ring-2 ring-blue-300' 
                       : 'border-gray-200 hover:border-blue-400'
                   }`}
@@ -2948,7 +1928,10 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
                       </div>
                     </div>
                     
-                    <button className="mt-2 w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                    <button 
+                      onClick={() => handleTemplateSelect(template.id.toString())}
+                      className="mt-2 w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    >
                       Select Template
                     </button>
                   </div>
@@ -3005,15 +1988,10 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Customize Style</h3>
-              <TemplateCustomizer
-                style={style}
-                onStyleChange={handleStyleChange}
-                showTemplates={false}
-              />
+             
             </div>
           </div>
           
@@ -3021,8 +1999,18 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Live Preview</h3>
-                <div className="text-sm text-gray-500">
-                  Template: <span className="font-medium">{style.templateName}</span>
+                <div className="flex items-center space-x-4">
+                  <div className="text-sm text-gray-500">
+                    Template: <span className="font-medium">{selectedTemplate ? style.templateName : 'Select a template'}</span>
+                  </div>
+                  {selectedTemplate && (
+                    <button
+                      onClick={() => setPreviewMode('grid')}
+                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                    >
+                      Change Template
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
@@ -3044,9 +2032,7 @@ const PreviewStep = ({ data, style, onDownload, selectedTemplate }: { data: CVDa
   const handleExport = async (format: string, options?: any) => {
     setIsExporting(true);
     try {
-      // Simulate export process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      onDownload(format, options);
+      await onDownload(format, options);
     } finally {
       setIsExporting(false);
     }
@@ -3080,13 +2066,12 @@ export default function CVBuilder() {
     fontSize: 11,
   });
   const [currentStep, setCurrentStep] = useState(0); // 0 = AI selection, 1-7 = manual steps
-  const [isLoading, setIsLoading] = useState(true);
   const [creationMode, setCreationMode] = useState<'ai-upload' | 'ai-tailor' | 'manual' | null>(null);
+  const [hasProcessedData, setHasProcessedData] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [templates, setTemplates] = useState<any[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const { addToast } = useToast();
 
   const totalSteps = 10;
@@ -3184,36 +2169,6 @@ export default function CVBuilder() {
     }
   };
 
-  // Handle reset function
-  const handleReset = () => {
-    // Clear all saved data
-    localStorage.removeItem('cv-builder-data');
-    localStorage.removeItem('cv-builder-style');
-    localStorage.removeItem('cv-builder-step');
-    localStorage.removeItem('cv-builder-completed-steps');
-    localStorage.setItem('cv-builder-load-saved', 'false');
-    
-    // Reset state
-    setCvData(defaultCVData);
-    setCvStyle({
-      templateName: 'jobscan-executive',
-      primaryColor: '#000000',
-      secondaryColor: '#FFFFFF',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: 11,
-    });
-    setCurrentStep(0);
-    setCompletedSteps(new Set());
-    setCreationMode(null);
-    setSelectedTemplate(null);
-    setShowResetConfirm(false);
-    
-    addToast({
-      type: 'success',
-      description: 'CV Builder reset! You can now start fresh.',
-      duration: 3000,
-    });
-  };
 
   // Load templates from API
   useEffect(() => {
@@ -3232,7 +2187,7 @@ export default function CVBuilder() {
             console.log('Default template HTML content length:', defaultTemplate.html_content?.length || 0);
             setSelectedTemplate(defaultTemplate);
             setCvStyle({
-              templateName: defaultTemplate.id.toString(),
+              templateName: defaultTemplate.name || defaultTemplate.id.toString(),
               primaryColor: '#2563eb',
               secondaryColor: '#64748b',
               fontFamily: 'Arial, sans-serif',
@@ -3327,13 +2282,91 @@ export default function CVBuilder() {
       }
     }
 
-    setIsLoading(false);
   }, []);
 
   // Save current step
   useEffect(() => {
     localStorage.setItem('cv-builder-step', currentStep.toString());
   }, [currentStep]);
+
+  // Auto-advance to step 1 when creation mode is selected
+  useEffect(() => {
+    if (creationMode && currentStep === 0) {
+      setCurrentStep(1);
+    }
+  }, [creationMode, currentStep]);
+
+  // Reset processed data flag and clear CV data when creation mode changes
+  useEffect(() => {
+    setHasProcessedData(false);
+    // Clear CV data when switching to upload or tailor modes
+    if (creationMode === 'ai-upload' || creationMode === 'ai-tailor') {
+      setCvData({
+        fullName: '',
+        jobTitle: '',
+        email: '',
+        phoneNumber: '',
+        address: '',
+        profilePictureUrl: '',
+        professionalSummary: '',
+        workExperience: [],
+        education: [],
+        skills: "",
+        projects: [],
+        languages: [],
+        interests: [],
+        references: [],
+        certificates: [],
+        achievements: []
+      });
+    }
+  }, [creationMode]);
+
+  // Handle CV extraction completion
+  const handleCVExtractionComplete = (extractedData: any) => {
+    // Update CV data with extracted information
+    setCvData(prevData => ({
+      ...prevData,
+      ...extractedData
+    }));
+    
+    // Mark that data has been processed
+    setHasProcessedData(true);
+    
+    // Mark step as completed and advance to Personal Info step (step 1)
+    markStepCompleted(1);
+    setCurrentStep(1);
+    
+    addToast({
+      type: 'success',
+      title: 'CV Extracted Successfully',
+      description: 'Your CV information has been extracted and populated. Please review and edit the details in the Personal Info step.',
+      duration: 5000
+    });
+  };
+
+  // Handle job tailoring completion
+  const handleJobTailoringComplete = (tailoredData: any) => {
+    // Update CV data with tailored information
+    setCvData(prevData => ({
+      ...prevData,
+      ...tailoredData
+    }));
+    
+    // Mark that data has been processed
+    setHasProcessedData(true);
+    
+    // Mark step as completed and advance to Personal Info step (step 1)
+    markStepCompleted(1);
+    setCurrentStep(1);
+    
+    addToast({
+      type: 'success',
+      title: 'CV Tailored Successfully',
+      description: 'Your CV has been optimized for the job. Please review and edit the tailored content in the Personal Info step.',
+      duration: 5000
+    });
+  };
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -3349,9 +2382,6 @@ export default function CVBuilder() {
     }
   };
 
-  const handleStepClick = (step: number) => {
-    setCurrentStep(step);
-  };
 
   // Sanitize CV data to prevent JSON encoding issues
   const sanitizeCvData = (data: any): any => {
@@ -3403,7 +2433,7 @@ export default function CVBuilder() {
         case 'txt':
           await exportAsTXT(options);
           break;
-        default:
+      default:
           await exportAsPDF(options);
       }
     } catch (error) {
@@ -3418,169 +2448,42 @@ export default function CVBuilder() {
   };
 
 
-  const exportAsPDF = async (_options: any) => {
+  const exportAsPDF = async (_options: any): Promise<void> => {
     try {
       console.log('Starting ATS-friendly PDF generation...');
       console.log('CV Data:', cvData);
 
       // Get the preview element that contains the rendered template
-      const previewElement = document.getElementById('cv-preview');
+      const previewElement = document.querySelector('[data-cv-preview]');
       if (!previewElement) {
         throw new Error('CV preview element not found');
       }
       
-      // Get the rendered template HTML from the preview element
+      // Get the already-processed template HTML from the preview element
+      // This HTML is already fully processed with the selected template and CV data
       let templateHTML = previewElement.innerHTML;
       
-      // Get the template's CSS from the preview element's computed styles
-      const templateElement = previewElement.querySelector('.cv-template');
-      const templateCSS = templateElement ? templateElement.getAttribute('style') || '' : '';
-      
-      // Debug: Log the template HTML to see if colors are properly replaced
-      console.log('Template HTML with colors:', templateHTML.substring(0, 500));
-      console.log('CV Style:', cvStyle);
+      console.log('Using already-processed template HTML from preview');
+      console.log('Template HTML length:', templateHTML.length);
+      console.log('Template HTML preview:', templateHTML.substring(0, 500));
       console.log('Selected Template:', selectedTemplate);
-      console.log('Template CSS:', templateCSS);
       
-      // Extract colors from the selected template's HTML content
-      // Look for color definitions in the template's CSS
-      let templatePrimaryColor = '#2563eb'; // Default blue
-      let templateSecondaryColor = '#64748b'; // Default gray
-      let templateFontFamily = 'Arial, sans-serif'; // Default font
-      let templateFontSize = 12; // Default font size
-      
-      if (selectedTemplate && selectedTemplate.html_content) {
-        const templateContent = selectedTemplate.html_content;
-        
-        // Extract primary color from template CSS
-        const primaryColorMatch = templateContent.match(/primaryColor[^:]*:\s*([^;]+)/i) || 
-                                 templateContent.match(/color:\s*([^;]+)/i);
-        if (primaryColorMatch) {
-          templatePrimaryColor = primaryColorMatch[1].trim();
-        }
-        
-        // Extract secondary color from template CSS
-        const secondaryColorMatch = templateContent.match(/secondaryColor[^:]*:\s*([^;]+)/i) ||
-                                   templateContent.match(/color:\s*([^;]+)/i);
-        if (secondaryColorMatch) {
-          templateSecondaryColor = secondaryColorMatch[1].trim();
-        }
-        
-        // Extract font family from template CSS
-        const fontFamilyMatch = templateContent.match(/font-family[^:]*:\s*([^;]+)/i);
-        if (fontFamilyMatch) {
-          templateFontFamily = fontFamilyMatch[1].trim();
-        }
-        
-        // Extract font size from template CSS
-        const fontSizeMatch = templateContent.match(/font-size[^:]*:\s*([^;]+)/i);
-        if (fontSizeMatch) {
-          const size = parseInt(fontSizeMatch[1].trim());
-          if (!isNaN(size)) {
-            templateFontSize = size;
-          }
-        }
-      }
-      
-      console.log('Extracted template colors:', {
-        primary: templatePrimaryColor,
-        secondary: templateSecondaryColor,
-        fontFamily: templateFontFamily,
-        fontSize: templateFontSize
+      // Create PDF using jsPDF's HTML method with the template HTML directly
+      let pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        putOnlyUsedFonts: true,
+        compress: true
       });
-      
-      // Ensure all placeholders are replaced in the template HTML
-      // This is a safety measure in case the preview element still has unprocessed placeholders
-      templateHTML = templateHTML.replace(/\{\{primaryColor\}\}/g, templatePrimaryColor);
-      templateHTML = templateHTML.replace(/\{\{secondaryColor\}\}/g, templateSecondaryColor);
-      templateHTML = templateHTML.replace(/\{\{fontFamily\}\}/g, templateFontFamily);
-      templateHTML = templateHTML.replace(/\{\{fontSize\}\}/g, templateFontSize.toString());
-      
-      // Replace CV data placeholders
-      templateHTML = templateHTML.replace(/\{\{fullName\}\}/g, (cvData.fullName || ''));
-      templateHTML = templateHTML.replace(/\{\{jobTitle\}\}/g, (cvData.jobTitle || ''));
-      templateHTML = templateHTML.replace(/\{\{email\}\}/g, (cvData.email || ''));
-      templateHTML = templateHTML.replace(/\{\{phoneNumber\}\}/g, (cvData.phoneNumber || ''));
-      templateHTML = templateHTML.replace(/\{\{address\}\}/g, (cvData.address || ''));
-      templateHTML = templateHTML.replace(/\{\{professionalSummary\}\}/g, (cvData.professionalSummary || ''));
-      
-      // Handle array data types
-      if (cvData.workExperience && cvData.workExperience.length > 0) {
-        const workExpHTML = cvData.workExperience.map(exp => `
-          <div class="experience-card">
-            <div class="experience-header">
-              <h4 class="item-title">${exp.jobTitle || 'Position Title'}</h4>
-              <span class="item-date">${exp.startDate || 'Start Date'} - ${exp.endDate || 'Present'}</span>
-            </div>
-            <div class="item-subtitle">${exp.company || 'Company Name'}</div>
-            <p class="item-description">${exp.description || ''}</p>
-          </div>
-        `).join('');
-        templateHTML = templateHTML.replace(/\{\{workExperience\}\}/g, workExpHTML);
-      } else {
-        templateHTML = templateHTML.replace(/\{\{workExperience\}\}/g, '');
-      }
-      
-      if (cvData.education && cvData.education.length > 0) {
-        const educationHTML = cvData.education.map(edu => `
-          <div class="education-item">
-            <div class="education-header">
-              <h4 class="item-title">${edu.degree || 'Degree'}</h4>
-              <span class="item-date">${edu.graduationYear || 'Year'}</span>
-            </div>
-            <div class="item-subtitle">${edu.institution || 'Institution'}</div>
-          </div>
-        `).join('');
-        templateHTML = templateHTML.replace(/\{\{education\}\}/g, educationHTML);
-      } else {
-        templateHTML = templateHTML.replace(/\{\{education\}\}/g, '');
-      }
-      
-      if (cvData.skills) {
-        templateHTML = templateHTML.replace(/\{\{skills\}\}/g, (cvData.skills || ''));
-      } else {
-        templateHTML = templateHTML.replace(/\{\{skills\}\}/g, '');
-      }
-      
-      // Process Handlebars conditionals
-      templateHTML = templateHTML.replace(/\{\{#if profileImage\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, content) => {
-        if (cvData.profilePictureUrl && cvData.profilePictureUrl.trim()) {
-          return content.replace(/\{\{profileImage\}\}/g, cvData.profilePictureUrl);
-        }
-        return '';
-      });
-      
-      // Preserve icons in the template HTML
-      templateHTML = templateHTML.replace(/<i[^>]*class="[^"]*icon[^"]*"[^>]*>.*?<\/i>/gi, (match) => {
-        // Ensure icons are properly formatted for PDF generation
-        return match.replace(/style="[^"]*"/gi, 'style="display: inline-block !important; visibility: visible !important; vertical-align: middle !important; margin-right: 4px !important;"');
-      });
-      
-      // Also preserve SVG icons
-      templateHTML = templateHTML.replace(/<svg[^>]*>.*?<\/svg>/gi, (match) => {
-        return match.replace(/style="[^"]*"/gi, 'style="display: inline-block !important; visibility: visible !important; vertical-align: middle !important; margin-right: 4px !important;"');
-      });
-      
-      console.log('Processed template HTML length:', templateHTML.length);
-      console.log('Processed template HTML preview:', templateHTML.substring(0, 500));
-      
-      // Create ATS-friendly PDF using jsPDF's HTML method with template design
-        let pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4',
-          putOnlyUsedFonts: true,
-          compress: true
-        });
 
-      // Create ATS-friendly HTML document with proper text structure
-      const templateWithATS = `
+      // Create HTML document with the template HTML and minimal styling for PDF
+      const htmlForPDF = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <style>
-            /* ATS-friendly styles with template design */
             body {
               margin: 0;
               padding: 10mm;
@@ -3589,384 +2492,107 @@ export default function CVBuilder() {
               font-size: 10px;
               line-height: 1.3;
               color: #333;
-              min-height: auto;
-              height: auto;
             }
             
-            /* Template styles with ATS-friendly structure */
+            /* Preserve template styling */
             .cv-template {
               width: 100%;
               max-width: none;
               margin: 0;
               padding: 0;
               background: white;
-              min-height: auto;
-              height: auto;
             }
             
-            /* Header styles */
-            .header {
-              text-align: center;
-              margin-bottom: 20px;
-              color: ${cvStyle.primaryColor} !important;
-              border-bottom: 2px solid ${templatePrimaryColor};
-              padding-bottom: 15px;
-              background-color: ${cvStyle.primaryColor} !important;
-              color: white !important;
+            /* Ensure all template styles are preserved */
+            * {
+              box-sizing: border-box;
             }
             
-            .name {
-              font-size: 18px;
-              font-weight: bold;
-              color: white !important;
-              margin-bottom: 3px;
+            /* Make sure text is visible */
+            h1, h2, h3, h4, h5, h6, p, div, span {
+              color: inherit !important;
             }
             
-            .title {
-              font-size: 12px;
-              color: white !important;
-              margin-bottom: 8px;
+            /* Preserve template colors and styling */
+            .cv-template * {
+              color: inherit !important;
+              background-color: inherit !important;
             }
-            
-            .contact {
-              font-size: 9px;
-              color: white !important;
-            }
-            
-            /* Section styles */
-            .section {
-              margin-bottom: 20px;
-              color: ${templatePrimaryColor} !important;
-              background-color: ${cvStyle.secondaryColor} !important;
-              padding: 15px;
-              border-radius: 8px;
-            }
-            
-            .section-title {
-              font-size: 12px;
-              font-weight: bold;
-              color: ${templatePrimaryColor} !important;
-              border-bottom: 1px solid ${templatePrimaryColor} !important;
-              padding-bottom: 3px;
-              margin-bottom: 8px;
-            }
-            
-            /* Experience and Education styles */
-            .experience-card, .education-item, .project-card {
-              margin-bottom: 15px;
-              padding: 10px;
-              border-left: 3px solid ${templatePrimaryColor} !important;
-              background-color: ${cvStyle.secondaryColor} !important;
-              border-radius: 6px;
-            }
-            
-            .item-title {
-              font-weight: bold;
-              font-size: 11px;
-              color: #2c3e50;
-              margin-bottom: 2px;
-            }
-            
-            .item-subtitle {
-              color: ${templateSecondaryColor} !important;
-              font-size: 10px;
-              margin-bottom: 2px;
-            }
-            
-            .item-date {
-              color: #666;
-              font-size: 9px;
-              font-style: italic;
-            }
-            
-            .item-description {
-              margin-top: 5px;
-              font-size: 9px;
-              line-height: 1.2;
-              color: #555;
-            }
-            
-            /* Skills styles */
-            .skills-container {
-              display: block;
-            }
-            
-            .skill-category {
-              margin-bottom: 10px;
-              padding: 8px;
-              background-color: ${cvStyle.secondaryColor} !important;
-              border-left: 3px solid ${templatePrimaryColor} !important;
-              border-radius: 4px;
-            }
-            
-            /* Icon support */
-            i, svg, .icon, [class*="icon"] {
-              display: inline-block !important;
-              visibility: visible !important;
-              vertical-align: middle !important;
-              margin-right: 4px !important;
-            }
-            
-            /* Font Awesome and other icon fonts */
-            .fa, .fas, .far, .fab, .fal, .fad {
-              font-family: "Font Awesome 5 Free", "Font Awesome 5 Pro", "Font Awesome 5 Brands" !important;
-              font-weight: 900 !important;
-              display: inline-block !important;
-            }
-            
-            /* Material Icons */
-            .material-icons {
-              font-family: 'Material Icons' !important;
-              font-weight: normal !important;
-              font-style: normal !important;
-              display: inline-block !important;
-            }
-            
-            /* Hide empty sections */
-            .section:empty, 
-            [class*="section"]:empty {
-              display: none !important;
-            }
-            
-            /* Print styles for better PDF output */
-            @media print {
-              body {
-                font-size: 9px;
-                line-height: 1.2;
-                padding: 8mm;
-              }
-              
-              .cv-template {
-                width: 100% !important;
-                max-width: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-              }
-              
-              .header {
-                background-color: ${cvStyle.primaryColor} !important;
-                color: white !important;
-              }
-              
-              .name {
-                font-size: 16px !important;
-                color: white !important;
-              }
-              
-              .title {
-                font-size: 11px !important;
-                color: white !important;
-              }
-              
-              .contact {
-                color: white !important;
-              }
-              
-              .section {
-                background-color: ${cvStyle.secondaryColor} !important;
-              }
-              
-              .experience-card, .education-item, .project-card {
-                background-color: ${cvStyle.secondaryColor} !important;
-              }
-              
-              .skill-category {
-                background-color: ${cvStyle.secondaryColor} !important;
-              }
-              
-              /* Icon support in print */
-              i, svg, .icon, [class*="icon"] {
-                display: inline-block !important;
-                visibility: visible !important;
-                vertical-align: middle !important;
-                margin-right: 3px !important;
-              }
-              
-              .fa, .fas, .far, .fab, .fal, .fad {
-                font-family: "Font Awesome 5 Free", "Font Awesome 5 Pro", "Font Awesome 5 Brands" !important;
-                font-weight: 900 !important;
-                display: inline-block !important;
-              }
-              
-              .material-icons {
-                font-family: 'Material Icons' !important;
-                font-weight: normal !important;
-                font-style: normal !important;
-                display: inline-block !important;
-              }
-              
-              .section-title {
-                font-size: 11px !important;
-                color: ${templatePrimaryColor} !important;
-                border-bottom-color: ${templatePrimaryColor} !important;
-              }
-              
-              .item-title {
-                font-size: 10px !important;
-              }
-              
-              .item-subtitle {
-                font-size: 9px !important;
-                color: ${templateSecondaryColor} !important;
-              }
-              
-              .item-description {
-                font-size: 8px !important;
-              }
-              
-              .experience-card, .education-item, .project-card {
-                border-left-color: ${templatePrimaryColor} !important;
-              }
-              
-              .skill-category {
-                border-left-color: ${templatePrimaryColor} !important;
-              }
-              
-              * {
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
-              }
-            }
-            
           </style>
         </head>
         <body>
-          <div class="cv-template">
-            ${templateHTML}
-          </div>
+          ${templateHTML}
         </body>
         </html>
       `;
 
-      // Generate ATS-friendly PDF using jsPDF's HTML method
-      console.log('Generating ATS-friendly PDF...');
+      // Generate PDF using jsPDF's HTML method
+      console.log('Generating PDF with template...');
       
       try {
-        // Use jsPDF's HTML method for ATS-friendly text-based PDF
-        await pdf.html(templateWithATS, {
+        // Use jsPDF's HTML method with the template HTML
+        await pdf.html(htmlForPDF, {
           callback: function (_doc) {
-            console.log('ATS-friendly PDF generation completed');
+            console.log('PDF generation completed');
           },
           x: -30,
           y: 0,
           width: 210, // A4 width in mm
-          windowWidth: 1025, // Window width for better scaling
-          margin: [1, 1, 1, 1], // Reasonable margins
-            html2canvas: {
-              scale: 0.26, // Better scale for single page
-              useCORS: true,
-              backgroundColor: '#ffffff',
-              logging: false,
-              allowTaint: true,
-              width: 1025, // Width for better scaling
-              scrollX: 0,
-              scrollY: 0,
-              windowWidth: 1025,
-              foreignObjectRendering: true, // Enable foreign object rendering for icons
-              imageTimeout: 0, // No timeout for images/icons
-              removeContainer: false, // Keep container for proper icon rendering
-              onclone: function(clonedDoc: Document) {
-                // Ensure icons are properly rendered in the cloned document
-                const icons = clonedDoc.querySelectorAll('i, svg, img[src*="icon"], [class*="icon"]');
-                icons.forEach(icon => {
-                  const htmlIcon = icon as HTMLElement;
-                  htmlIcon.style.display = 'inline-block';
-                  htmlIcon.style.visibility = 'visible';
-                });
-              }
-            }
+          windowWidth: 1024,
+          html2canvas: {
+            scale: 0.264,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            letterRendering: true
+          }
         });
         
-        console.log('ATS-friendly PDF generation completed successfully');
+        // Clean up html2canvas overlay that might be blocking interactions
+        const overlay = document.querySelector('.html2pdf__overlay');
+        if (overlay) {
+          overlay.remove();
+          console.log('Removed html2canvas overlay');
+        }
+        
+        // Clean up any other html2canvas related elements
+        const html2canvasElements = document.querySelectorAll('[class*="html2pdf"]');
+        html2canvasElements.forEach(element => {
+          if (element.classList.contains('html2pdf__overlay')) {
+            element.remove();
+          }
+        });
+        
+        // Save the PDF
+        const fileName = `${cvData.fullName || 'CV'}_Resume.pdf`;
+        pdf.save(fileName);
+        
+        console.log('PDF generated successfully with template');
         
       } catch (htmlError) {
-        console.error('jsPDF HTML method failed:', htmlError);
-        
-        // Final fallback: Create a simple text-based PDF
-        console.log('Using text-based fallback...');
-        
-        // Clear the PDF
-        pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4'
-        });
-        
-        // Add text content
-        let yPosition = 20;
-        const pageHeight = 280;
-        const lineHeight = 7;
-        
-        const addText = (text: string, fontSize: number = 12, isBold: boolean = false) => {
-          if (yPosition > pageHeight) {
-            pdf.addPage();
-            yPosition = 20;
-          }
+        console.error('Error in PDF HTML generation:', htmlError);
+        // Fallback to text-based PDF generation
+        const textContent = `
+          ${cvData.fullName || 'CV'}
+          ${cvData.jobTitle || ''}
+          ${cvData.email || ''}
+          ${cvData.phoneNumber || ''}
+          ${cvData.address || ''}
           
-          pdf.setFontSize(fontSize);
-          if (isBold) {
-            pdf.setFont('helvetica', 'bold');
-          } else {
-            pdf.setFont('helvetica', 'normal');
-          }
+          ${cvData.professionalSummary || ''}
           
-          pdf.text(text, 20, yPosition);
-          yPosition += lineHeight;
-        };
+          Experience:
+          ${cvData.workExperience.map(exp => `${exp.jobTitle} at ${exp.company} (${exp.startDate} - ${exp.endDate})`).join('\n')}
+          
+          Education:
+          ${cvData.education.map(edu => `${edu.degree} from ${edu.institution} (${edu.graduationYear})`).join('\n')}
+        `;
         
-        // Add CV content
-        addText(cvData.fullName || 'CV', 20, true);
-        addText(cvData.jobTitle || '', 14);
-        addText(`${cvData.email || ''} | ${cvData.phoneNumber || ''} | ${cvData.address || ''}`, 10);
-        addText('', 5); // Empty line
-        
-        if (cvData.professionalSummary) {
-          addText('PROFESSIONAL SUMMARY', 14, true);
-          addText(cvData.professionalSummary, 10);
-          addText('', 5);
-        }
-        
-        if (cvData.workExperience && cvData.workExperience.length > 0) {
-          addText('WORK EXPERIENCE', 14, true);
-          cvData.workExperience.forEach(job => {
-            addText(`${job.jobTitle} | ${job.company}`, 12, true);
-            addText(`${job.startDate} - ${job.endDate}`, 10);
-            if (job.description) {
-              addText(job.description, 10);
-            }
-            addText('', 3);
-          });
-        }
-        
-        if (cvData.education && cvData.education.length > 0) {
-          addText('EDUCATION', 14, true);
-          cvData.education.forEach(edu => {
-            addText(`${edu.degree} | ${edu.institution}`, 12, true);
-            addText(edu.graduationYear || '', 10);
-            addText('', 3);
-          });
-        }
-        
-        if (cvData.skills) {
-          addText('SKILLS', 14, true);
-          addText(cvData.skills, 10);
-        }
-        
-        console.log('Text-based PDF fallback completed');
-        
-      } finally {
-        // Clean up completed
-        console.log('PDF generation cleanup completed');
+        pdf.text(textContent, 10, 10);
+        pdf.save(`${cvData.fullName || 'CV'}_Resume.pdf`);
+        console.log('PDF generated with fallback text content');
       }
-      
-      // Download the PDF
-      const fileName = `${cvData.fullName?.replace(/[^a-zA-Z0-9]/g, '_') || 'CV'}_Resume.pdf`;
-      pdf.save(fileName);
-      
-      console.log('Single-page PDF generated successfully');
-      
-      console.log('ATS-friendly PDF generation process started');
 
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -3978,10 +2604,102 @@ export default function CVBuilder() {
         description: 'Failed to export as PDF. Please try again.',
         duration: 5000
       });
+      throw error; // Re-throw to ensure the Promise is rejected
     }
   };
 
-  const exportAsDOCX = async (_options: any) => {
+
+
+  const exportAsTXT = async (_options: any): Promise<void> => {
+    try {
+      // Get the preview element that contains the rendered template
+      const previewElement = document.querySelector('[data-cv-preview]');
+      if (!previewElement) {
+        throw new Error('CV preview element not found');
+      }
+      
+      // Get the rendered template HTML from the preview element
+      let templateHTML = previewElement.innerHTML;
+      
+      // Convert HTML to plain text while preserving structure
+      // Create a temporary div to parse the HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = templateHTML;
+      
+      // Function to convert HTML to plain text with proper formatting
+      const htmlToText = (element: Element): string => {
+        let text = '';
+        
+        // Handle different element types
+        if (element.nodeType === Node.TEXT_NODE) {
+          return element.textContent || '';
+        }
+        
+        if (element.nodeType === Node.ELEMENT_NODE) {
+          const tagName = element.tagName.toLowerCase();
+          
+          // Add line breaks for block elements
+          if (['div', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'section', 'article'].includes(tagName)) {
+            text += '\n';
+          }
+          
+          // Add extra line breaks for headings
+          if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
+            text += '\n';
+          }
+          
+          // Process child nodes
+          for (const child of element.childNodes) {
+            text += htmlToText(child as Element);
+          }
+          
+          // Add line breaks after block elements
+          if (['div', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'section', 'article'].includes(tagName)) {
+            text += '\n';
+          }
+        }
+        
+        return text;
+      };
+      
+      // Convert the template HTML to plain text
+      let txtContent = htmlToText(tempDiv);
+      
+      // Clean up the text
+      txtContent = txtContent
+        .replace(/\n\s*\n\s*\n/g, '\n\n') // Remove excessive line breaks
+        .replace(/^\s+|\s+$/g, '') // Trim whitespace
+        .replace(/\n\s+/g, '\n') // Remove leading spaces from lines
+        .replace(/\s+\n/g, '\n'); // Remove trailing spaces from lines
+      
+      // Add a header to indicate this is a CV
+      txtContent = `CURRICULUM VITAE\n${'='.repeat(50)}\n\n${txtContent}`;
+      
+      // Create and download the file
+      const blob = new Blob([txtContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${cvData.fullName || 'CV'}_Resume.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      console.log('TXT export completed with template structure preserved');
+    } catch (error) {
+      console.error('Error generating TXT:', error);
+      addToast({
+        type: 'error',
+        title: 'Export Failed',
+        description: 'Failed to export as TXT. Please try again.',
+        duration: 5000
+      });
+      throw error; // Re-throw to ensure the Promise is rejected
+    }
+  };
+
+  const exportAsDOCX = async (_options: any): Promise<void> => {
     // For now, show a message that DOCX export is coming soon
     addToast({
       type: 'info',
@@ -3991,303 +2709,44 @@ export default function CVBuilder() {
     });
   };
 
-  const exportAsHTML = async (_options: any) => {
+  const exportAsHTML = async (_options: any): Promise<void> => {
     try {
-      console.log('Starting ATS-friendly HTML export...');
-      
-      // Get the CV preview HTML
-      const previewElement = document.getElementById('cv-preview');
+      // Get the preview element that contains the rendered template
+      const previewElement = document.querySelector('[data-cv-preview]');
       if (!previewElement) {
-        throw new Error('CV preview not found');
+        throw new Error('CV preview element not found');
       }
       
-      // Create a text-based version of the CV content for ATS compatibility
-      const fullName = cvData.fullName || 'Candidate';
-      const jobTitle = cvData.jobTitle || '';
-      const email = cvData.email || '';
-      const phone = cvData.phoneNumber || '';
-      const address = cvData.address || '';
-      const summary = cvData.professionalSummary || '';
+      // Get the already-processed template HTML from the preview element
+      let templateHTML = previewElement.innerHTML;
       
-      // Build ATS-friendly content
-      let atsContent = `${fullName}\n${jobTitle}\n${email} | ${phone}\n${address}\n\n`;
-      
-      // Professional Summary
-      if (summary) {
-        atsContent += `PROFESSIONAL SUMMARY\n${summary}\n\n`;
-      }
-      
-      // Work Experience
-      if (cvData.workExperience && cvData.workExperience.length > 0) {
-        atsContent += `WORK EXPERIENCE\n`;
-        cvData.workExperience.forEach(job => {
-          atsContent += `${job.jobTitle} | ${job.company}\n`;
-          atsContent += `${job.startDate} - ${job.endDate}\n`;
-          atsContent += `${job.description}\n\n`;
-        });
-      }
-      
-      // Education
-      if (cvData.education && cvData.education.length > 0) {
-        atsContent += `EDUCATION\n`;
-        cvData.education.forEach(edu => {
-          atsContent += `${edu.degree} | ${edu.institution}\n`;
-          atsContent += `${edu.graduationYear}\n`;
-          atsContent += `\n`;
-        });
-      }
-      
-      // Skills
-      if (cvData.skills) {
-        atsContent += `SKILLS\n${cvData.skills}\n\n`;
-      }
-      
-      // Projects
-      if (cvData.projects && cvData.projects.length > 0) {
-        atsContent += `PROJECTS\n`;
-        cvData.projects.forEach(project => {
-          atsContent += `${project.name}\n`;
-          if (project.startDate || project.endDate) {
-            atsContent += `${project.startDate || ''} - ${project.endDate || ''}\n`;
-          }
-          atsContent += `${project.description}\n`;
-          if (project.url) atsContent += `URL: ${project.url}\n`;
-          atsContent += `\n`;
-        });
-      }
-
-      // First, let's make sure we're removing empty sections
-      const parser = new DOMParser();
-      const previewDoc = parser.parseFromString(previewElement.innerHTML, 'text/html');
-      
-      // Find and remove empty sections more aggressively
-      const sections = previewDoc.querySelectorAll('section, .section, [class*="section"], div[id*="section"], div[id*="projects"], div[id*="certificates"], div[id*="languages"], div[id*="achievements"], div[id*="interests"], div[id*="references"], div[id*="skills"]');
-      
-      sections.forEach(section => {
-        // Get the section title
-        const sectionTitle = section.querySelector('.section-title, h2, h3, h4, [class*="title"], [class*="heading"]');
-        const sectionTitleText = sectionTitle?.textContent?.trim() || '';
-        
-        // Get content without title
-        const sectionContent = section.cloneNode(true) as Element;
-        if (sectionTitle && sectionContent.contains(sectionTitle)) {
-          sectionContent.removeChild(sectionTitle);
-        }
-        const contentText = sectionContent.textContent?.trim() || '';
-        
-        // Check if this is an empty section
-        const hasContent = contentText && contentText.length > 5 && !contentText.match(/^\s*$/);
-        
-        // Check for specific section types
-        const sectionId = section.id?.toLowerCase() || '';
-        const sectionClass = section.className?.toLowerCase() || '';
-        const sectionHTML = section.innerHTML?.toLowerCase() || '';
-        
-        // Identify section type
-        const isProjectsSection = 
-          sectionId.includes('project') || 
-          sectionClass.includes('project') || 
-          sectionTitleText.toLowerCase().includes('project');
-          
-        const isCertificatesSection = 
-          sectionId.includes('certif') || 
-          sectionClass.includes('certif') || 
-          sectionTitleText.toLowerCase().includes('certif');
-          
-        const isLanguagesSection = 
-          sectionId.includes('lang') || 
-          sectionClass.includes('lang') || 
-          sectionTitleText.toLowerCase().includes('lang');
-          
-        const isAchievementsSection = 
-          sectionId.includes('achiev') || 
-          sectionClass.includes('achiev') || 
-          sectionTitleText.toLowerCase().includes('achiev');
-          
-        const isInterestsSection = 
-          sectionId.includes('interest') || 
-          sectionClass.includes('interest') || 
-          sectionTitleText.toLowerCase().includes('interest');
-          
-        const isReferencesSection = 
-          sectionId.includes('refer') || 
-          sectionClass.includes('refer') || 
-          sectionTitleText.toLowerCase().includes('refer');
-          
-        // Check if this section should be removed
-        const shouldRemove = 
-          !hasContent || 
-          sectionHTML.includes('<!-- no-') || 
-          (isProjectsSection && (!cvData.projects || cvData.projects.length === 0)) ||
-          (isCertificatesSection && (!cvData.certificates || cvData.certificates.length === 0)) ||
-          (isLanguagesSection && (!cvData.languages || cvData.languages.length === 0)) ||
-          (isAchievementsSection && (!cvData.achievements || cvData.achievements.length === 0)) ||
-          (isInterestsSection && (!cvData.interests || cvData.interests.length === 0)) ||
-          (isReferencesSection && (!cvData.references || cvData.references.length === 0));
-          
-        if (shouldRemove) {
-          console.log('HTML Export: Removing empty section:', sectionTitleText || sectionId || sectionClass);
-          section.remove();
-        }
-      });
-      
-      // Second pass: Look for any divs with headings that might be sections
-      const potentialSections = previewDoc.querySelectorAll('div:not([class]):not([id])');
-      potentialSections.forEach(div => {
-        const heading = div.querySelector('h2, h3, h4, h5, h6');
-        if (heading) {
-          const headingText = heading.textContent?.trim() || '';
-          
-          // Check if this is likely a section for optional content
-          const isOptionalSection = 
-            headingText.toLowerCase().includes('project') ||
-            headingText.toLowerCase().includes('certif') ||
-            headingText.toLowerCase().includes('lang') ||
-            headingText.toLowerCase().includes('achiev') ||
-            headingText.toLowerCase().includes('interest') ||
-            headingText.toLowerCase().includes('refer');
-          
-          if (isOptionalSection) {
-            // Get content excluding heading
-            const divContent = div.cloneNode(true) as Element;
-            if (divContent.contains(heading)) {
-              divContent.removeChild(heading);
-            }
-            const contentText = divContent.textContent?.trim() || '';
-            
-            // Check if there's meaningful content
-            const hasContent = contentText && 
-              contentText.length > 5 && 
-              !contentText.match(/^\s*$/);
-            
-            if (!hasContent) {
-              console.log('HTML Export: Removing unmarked empty section:', headingText);
-              div.remove();
-            }
-          }
-        }
-      });
-      
-      // Third pass: Remove any leftover empty containers that might create space
-      const emptyContainers = previewDoc.querySelectorAll('div:empty, p:empty, section:empty, .section:empty, br + br');
-      emptyContainers.forEach(container => {
-        container.remove();
-      });
-      
-      // Get the cleaned HTML
-      const cleanedHTML = previewDoc.body.innerHTML;
-
-      // Create HTML content using the cleaned preview HTML with added ATS content
+      // Create HTML document with the template HTML
       const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${cvData.fullName || 'CV'} - Resume</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background: white; 
-        }
-        
-        /* Hidden but parseable ATS content */
-        .ats-content {
-            position: absolute;
-            left: -9999px;
-            top: 0;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-            opacity: 0.01;
-            /* This content is invisible but accessible to ATS parsers */
-        }
-        
-        /* Prevent page breaks inside important sections */
-        .section {
-            page-break-inside: avoid;
-        }
-        .item {
-            page-break-inside: avoid;
-        }
-        
-        /* Hide any remaining empty sections */
-        .section:empty, 
-        [class*="section"]:empty, 
-        div[id*="projects"]:empty,
-        div[id*="certificates"]:empty,
-        div[id*="languages"]:empty,
-        div[id*="achievements"]:empty,
-        div[id*="interests"]:empty,
-        div[id*="references"]:empty,
-        div:empty,
-        p:empty,
-        section:empty {
-          display: none !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          height: 0 !important;
-          min-height: 0 !important;
-          max-height: 0 !important;
-          overflow: hidden !important;
-        }
-        
-        /* Target sections by title text */
-        h2:contains("Projects"), h3:contains("Projects"), h4:contains("Projects"),
-        h2:contains("Certificates"), h3:contains("Certificates"), h4:contains("Certificates"),
-        h2:contains("Languages"), h3:contains("Languages"), h4:contains("Languages"),
-        h2:contains("Achievements"), h3:contains("Achievements"), h4:contains("Achievements"),
-        h2:contains("Interests"), h3:contains("Interests"), h4:contains("Interests"),
-        h2:contains("References"), h3:contains("References"), h4:contains("References") {
-          display: none !important;
-        }
-        
-        /* Remove excessive spacing */
-        .cv-template br + br,
-        .cv-template div > br:first-child,
-        .cv-template div > br:last-child {
-          display: none !important;
-        }
-        
-        @media print {
-            body { 
-                padding: 0; 
-                background: white; 
-                margin: 0;
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${cvData.fullName || 'CV'} - Resume</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              font-family: Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
             }
-            @page {
-                margin: 0;
-                size: A4 portrait;
+            .cv-template {
+              max-width: 800px;
+              margin: 0 auto;
             }
-        }
-    </style>
-</head>
-<body>
-    <!-- Hidden ATS-friendly content -->
-    <div class="ats-content" aria-hidden="true">
-        <pre>${atsContent}</pre>
-    </div>
-    
-    <!-- Visible styled content -->
-    ${cleanedHTML}
-    
-    <!-- Machine-readable metadata for ATS -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org/",
-        "@type": "Person",
-        "name": "${cvData.fullName || ''}",
-        "jobTitle": "${cvData.jobTitle || ''}",
-        "email": "${cvData.email || ''}",
-        "telephone": "${cvData.phoneNumber || ''}",
-        "address": "${cvData.address || ''}"
-    }
-    </script>
-</body>
-</html>`;
-
+          </style>
+        </head>
+        <body>
+          ${templateHTML}
+        </body>
+        </html>
+      `;
+      
       // Create and download the HTML file
       const blob = new Blob([htmlContent], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
@@ -4299,12 +2758,7 @@ export default function CVBuilder() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      addToast({
-        type: 'success',
-        title: 'HTML Export Successful',
-        description: 'Your CV has been exported as an ATS-friendly HTML file.',
-        duration: 5000
-      });
+      console.log('HTML export completed');
     } catch (error) {
       console.error('Error generating HTML:', error);
       addToast({
@@ -4313,140 +2767,54 @@ export default function CVBuilder() {
         description: 'Failed to export as HTML. Please try again.',
         duration: 5000
       });
+      throw error; // Re-throw to ensure the Promise is rejected
     }
   };
 
-  const exportAsTXT = async (_options: any) => {
+  const handleDownload = async (format?: string, options?: any) => {
+    if (!format) return;
+    
     try {
-      let txtContent = '';
-      
-      // Header
-      txtContent += `${cvData.fullName || 'CV'}\n`;
-      txtContent += `${cvData.jobTitle || ''}\n`;
-      txtContent += `${cvData.email || ''} | ${cvData.phoneNumber || ''}\n`;
-      txtContent += `${cvData.address || ''}\n\n`;
-      
-      // Professional Summary
-      if (cvData.professionalSummary) {
-        txtContent += `PROFESSIONAL SUMMARY\n`;
-        txtContent += `${cvData.professionalSummary}\n\n`;
+      switch (format) {
+        case 'pdf':
+          await exportAsPDF(options);
+          break;
+        case 'docx':
+          await exportAsDOCX(options);
+          break;
+        case 'html':
+          await exportAsHTML(options);
+          break;
+        case 'txt':
+          await exportAsTXT(options);
+          break;
+        default:
+          console.warn('Unknown export format:', format);
       }
-      
-      // Work Experience
-      if (cvData.workExperience && cvData.workExperience.length > 0) {
-        txtContent += `WORK EXPERIENCE\n`;
-        cvData.workExperience.forEach(exp => {
-          txtContent += `${exp.jobTitle} - ${exp.company}\n`;
-          txtContent += `${exp.startDate} - ${exp.endDate}\n`;
-          txtContent += `${exp.description}\n\n`;
-        });
-      }
-      
-      // Education
-      if (cvData.education && cvData.education.length > 0) {
-        txtContent += `EDUCATION\n`;
-        cvData.education.forEach(edu => {
-          txtContent += `${edu.degree}\n`;
-          txtContent += `${edu.institution}\n`;
-          if (edu.graduationYear) {
-            txtContent += `Graduated: ${edu.graduationYear}\n`;
-          }
-          txtContent += '\n';
-        });
-      }
-      
-      // Skills
-      if (cvData.skills) {
-        txtContent += `SKILLS\n`;
-        txtContent += `${cvData.skills}\n\n`;
-      }
-      
-      // Create and download the TXT file
-      const blob = new Blob([txtContent], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${cvData.fullName || 'CV'}_Resume.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error generating TXT:', error);
+      console.error('Export failed:', error);
       addToast({
         type: 'error',
         title: 'Export Failed',
-        description: 'Failed to export as TXT. Please try again.',
+        description: 'Failed to export CV. Please try again.',
         duration: 5000
       });
     }
   };
 
-  const isNextDisabled = () => {
+  const renderStepContent = () => {
     switch (currentStep) {
+      case 0:
+        return <AIFeaturesSelection onSelectMode={setCreationMode} />;
       case 1:
-        return !cvData.fullName || !cvData.email;
-      case 2:
-        return !cvData.professionalSummary;
-      case 3:
-        return cvData.workExperience.length === 0 || !cvData.workExperience[0].jobTitle || !cvData.workExperience[0].company;
-      case 4:
-        return cvData.education.length === 0 || !cvData.education[0].degree || !cvData.education[0].institution;
-      case 5:
-        return !cvData.skills;
-      default:
-        return false;
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading CV Builder...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const handleModeSelection = (mode: 'ai-upload' | 'ai-tailor' | 'manual') => {
-    setCreationMode(mode);
-    if (mode === 'manual') {
-      setCurrentStep(1);
-    } else {
-      // For AI modes, stay at step 0 but set the creation mode
-      setCurrentStep(0);
-    }
-  };
-
-  const handleAIComplete = () => {
-    console.log('handleAIComplete called, switching to manual mode for template selection');
-    setCreationMode('manual'); // Switch to manual mode for template selection
-    setCurrentStep(8); // Go to template selection after AI processing
-    console.log('Switched to manual mode, currentStep set to 8');
-  };
-
-  const renderStep = () => {
-    // AI Selection Screen - only show when no mode is selected
-    if (currentStep === 0 && !creationMode) {
-      return <AIFeaturesSelection onSelectMode={handleModeSelection} />;
-    }
-
-    // AI Upload Step
-    if (creationMode === 'ai-upload') {
-      return <AIUploadStep onDataChange={setCvData} onNext={handleAIComplete} />;
-    }
-
-    // AI Tailor Step
-    if (creationMode === 'ai-tailor') {
-      return <AITailorStep onDataChange={setCvData} onNext={handleAIComplete} />;
-    }
-
-    // Manual Steps
-    switch (currentStep) {
-      case 1:
-        return <PersonalInfoStep data={cvData} onDataChange={setCvData} onProfilePictureUpload={handleProfilePictureUpload} />;
+        // Show different content based on creation mode and whether data has been processed
+        if (creationMode === 'ai-upload' && !hasProcessedData) {
+          return <CVUploadStep onExtractionComplete={handleCVExtractionComplete} />;
+        } else if (creationMode === 'ai-tailor' && !hasProcessedData) {
+          return <JobTailoringStep onTailoringComplete={handleJobTailoringComplete} />;
+        } else {
+          return <PersonalInfoStep data={cvData} onDataChange={setCvData} onProfilePictureUpload={handleProfilePictureUpload} />;
+        }
       case 2:
         return <SummaryStep data={cvData} onDataChange={setCvData} />;
       case 3:
@@ -4456,126 +2824,67 @@ export default function CVBuilder() {
       case 5:
         return <SkillsAndProjectsStep data={cvData} onDataChange={setCvData} />;
       case 6:
-        return <CertificationsAndAchievementsStep data={cvData} onDataChange={setCvData} />;
-      case 7:
         return <LanguagesAndInterestsStep data={cvData} onDataChange={setCvData} />;
-      case 8:
+      case 7:
         return <ReferencesStep data={cvData} onDataChange={setCvData} />;
+      case 8:
+        return <CertificationsAndAchievementsStep data={cvData} onDataChange={setCvData} />;
       case 9:
-        return <TemplateStep style={cvStyle} onStyleChange={setCvStyle} data={cvData} templates={templates} templatesLoading={templatesLoading} onTemplateSelect={setSelectedTemplate} selectedTemplate={selectedTemplate} />;
+        return <TemplateStep 
+          style={cvStyle} 
+          onStyleChange={setCvStyle} 
+          data={cvData} 
+          templates={templates} 
+          templatesLoading={templatesLoading} 
+          onTemplateSelect={setSelectedTemplate} 
+          selectedTemplate={selectedTemplate} 
+        />;
       case 10:
-        return <PreviewStep data={cvData} style={cvStyle} onDownload={handleFinish} selectedTemplate={selectedTemplate} />;
+        return <PreviewStep 
+          data={cvData} 
+          style={cvStyle} 
+          onDownload={handleDownload} 
+          selectedTemplate={selectedTemplate} 
+        />;
       default:
-        return <PersonalInfoStep data={cvData} onDataChange={setCvData} onProfilePictureUpload={handleProfilePictureUpload} />;
+        return <div>Step not found</div>;
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <MobileOptimizationStyles />
-      <ToastContainer />
-      
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl font-bold text-gray-900">CV Builder</h1>
-              <p className="text-sm text-gray-600">Create professional CVs with our step-by-step guide</p>
-            </div>
-            
-            {/* API Key Manager */}
-            <div className="w-full sm:w-auto">
-              <ApiKeyManager />
-            </div>
-            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
-              <button
-                onClick={() => {
-                  const hasExistingData = localStorage.getItem('cv-builder-data') || 
-                                        localStorage.getItem('cv-builder-style') || 
-                                        localStorage.getItem('cv-builder-step');
-                  
-                  if (hasExistingData) {
-                    setShowResetConfirm(true);
-                  } else {
-                    handleReset();
-                  }
-                }}
-                className="text-blue-600 hover:text-blue-900 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors duration-200 border border-blue-200 flex-1 sm:flex-none text-center"
-              >
-                🔄 Start Fresh
-              </button>
-              
-              <button
-                onClick={() => window.history.back()}
-                className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 flex-1 sm:flex-none text-center"
-              >
-                ← Back
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            AI-Powered CV Builder
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Create professional, ATS-optimized resumes with our intelligent CV builder. 
+            Get AI-powered suggestions and templates tailored to your industry.
+          </p>
       </div>
 
-      {/* Step Indicator - Only show for manual mode */}
-      {creationMode === 'manual' && currentStep > 0 && (
-        <StepIndicator 
-          currentStep={currentStep} 
-          totalSteps={totalSteps} 
-          onStepClick={handleStepClick} 
-          completedSteps={completedSteps}
-        />
-      )}
-
-      {/* Main Content */}
-      <div className="pb-20">
-        {renderStep()}
+        {/* API Key Manager */}
+        <div className="mb-6">
+          <ApiKeyManager />
       </div>
 
-      {/* Step Navigation - Only show for manual mode */}
-      {creationMode === 'manual' && currentStep > 0 && (
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="p-6">
         <StepNavigation
           currentStep={currentStep}
           totalSteps={totalSteps}
           onNext={handleNext}
           onPrevious={handlePrevious}
           onFinish={handleFinish}
-          isNextDisabled={isNextDisabled()}
-        />
-      )}
-
-      {/* Reset Confirmation Dialog */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
-                <span className="text-2xl">⚠️</span>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Reset CV Builder?
-              </h3>
-              <p className="text-sm text-gray-600 mb-6">
-                This will clear all your current CV data and start fresh. This action cannot be undone.
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
-                >
-                  Reset & Start Fresh
-                </button>
-              </div>
+            />
+            
+            <div className="mt-8">
+              {renderStepContent()}
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
