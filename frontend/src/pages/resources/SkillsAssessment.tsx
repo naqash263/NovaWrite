@@ -30,7 +30,7 @@ const SkillsAssessment: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useSEO({
-    title: 'Skills Assessment Tool - AI-Powered Skill Analysis | Naqash Thaheem',
+    title: 'Free Skills Assessment Tool - AI-Powered Skill Analysis',
     description: 'Assess your professional skills with AI-powered analysis. Get personalized skill recommendations, learning paths, and career development insights.',
     url: '/resources/skills-assessment',
     keywords: ['skills assessment', 'career tools', 'skill analysis', 'professional development', 'learning paths', 'AI guidance']
@@ -39,29 +39,60 @@ const SkillsAssessment: React.FC = () => {
   const skillCategories = [
     {
       name: 'Technical Skills',
-      skills: ['JavaScript', 'Python', 'React', 'Node.js', 'AWS', 'Docker', 'Kubernetes', 'Machine Learning', 'Data Analysis', 'SQL']
+      skills: ['JavaScript', 'Python', 'React', 'Node.js', 'AWS', 'Docker', 'Kubernetes', 'Machine Learning', 'Data Analysis', 'SQL', 'Java', 'C++', 'C#', 'PHP', 'Ruby', 'Go', 'Swift', 'Kotlin', 'Rust', 'TypeScript']
     },
     {
       name: 'Soft Skills',
-      skills: ['Leadership', 'Communication', 'Problem Solving', 'Teamwork', 'Time Management', 'Adaptability', 'Critical Thinking', 'Emotional Intelligence']
+      skills: ['Leadership', 'Communication', 'Problem Solving', 'Teamwork', 'Time Management', 'Adaptability', 'Critical Thinking', 'Emotional Intelligence', 'Active Listening', 'Conflict Resolution', 'Empathy', 'Patience', 'Creativity', 'Innovation', 'Resilience']
     },
     {
       name: 'Business Skills',
-      skills: ['Project Management', 'Strategic Planning', 'Financial Analysis', 'Marketing', 'Sales', 'Customer Service', 'Negotiation', 'Business Development']
+      skills: ['Project Management', 'Strategic Planning', 'Financial Analysis', 'Marketing', 'Sales', 'Customer Service', 'Negotiation', 'Business Development', 'Budget Management', 'Risk Assessment', 'Process Improvement', 'Change Management', 'Stakeholder Management', 'Vendor Management', 'Contract Management']
     },
     {
       name: 'Design Skills',
-      skills: ['UI/UX Design', 'Graphic Design', 'Web Design', 'Prototyping', 'User Research', 'Figma', 'Adobe Creative Suite', 'Wireframing']
+      skills: ['UI/UX Design', 'Graphic Design', 'Web Design', 'Prototyping', 'User Research', 'Figma', 'Adobe Creative Suite', 'Wireframing', 'Brand Design', 'Print Design', 'Motion Graphics', 'Video Editing', 'Photography', 'Illustration', 'Color Theory']
+    },
+    {
+      name: 'Healthcare Skills',
+      skills: ['Patient Care', 'Medical Terminology', 'Clinical Assessment', 'Treatment Planning', 'Medical Records', 'HIPAA Compliance', 'Emergency Response', 'Medication Management', 'Diagnostic Testing', 'Patient Education', 'Care Coordination', 'Quality Assurance', 'Infection Control', 'Vital Signs', 'Medical Equipment']
+    },
+    {
+      name: 'Education Skills',
+      skills: ['Curriculum Development', 'Lesson Planning', 'Classroom Management', 'Student Assessment', 'Educational Technology', 'Differentiated Instruction', 'Special Education', 'Parent Communication', 'Professional Development', 'Educational Research', 'Learning Analytics', 'Student Engagement', 'Behavioral Management', 'Educational Psychology', 'Teaching Methods']
+    },
+    {
+      name: 'Finance Skills',
+      skills: ['Financial Modeling', 'Risk Management', 'Investment Analysis', 'Portfolio Management', 'Financial Reporting', 'Auditing', 'Tax Planning', 'Compliance', 'Budgeting', 'Forecasting', 'Mergers & Acquisitions', 'Derivatives', 'Credit Analysis', 'Insurance', 'Regulatory Reporting']
+    },
+    {
+      name: 'Marketing Skills',
+      skills: ['Digital Marketing', 'Content Marketing', 'Social Media Marketing', 'SEO/SEM', 'Email Marketing', 'Brand Management', 'Market Research', 'Analytics', 'Campaign Management', 'Public Relations', 'Event Planning', 'Influencer Marketing', 'Marketing Automation', 'Customer Segmentation', 'Conversion Optimization']
+    },
+    {
+      name: 'Sales Skills',
+      skills: ['Lead Generation', 'Prospecting', 'Cold Calling', 'Sales Presentations', 'Negotiation', 'Relationship Building', 'CRM Management', 'Sales Forecasting', 'Pipeline Management', 'Account Management', 'Territory Management', 'Sales Training', 'Customer Retention', 'Upselling', 'Cross-selling']
+    },
+    {
+      name: 'Operations Skills',
+      skills: ['Process Optimization', 'Supply Chain Management', 'Quality Control', 'Inventory Management', 'Logistics', 'Vendor Management', 'Cost Reduction', 'Efficiency Improvement', 'Lean Manufacturing', 'Six Sigma', 'Project Management', 'Resource Planning', 'Performance Metrics', 'Continuous Improvement', 'Risk Management']
+    },
+    {
+      name: 'Human Resources Skills',
+      skills: ['Recruitment', 'Talent Acquisition', 'Employee Relations', 'Performance Management', 'Training & Development', 'Compensation & Benefits', 'HR Analytics', 'Workplace Diversity', 'Employee Engagement', 'Labor Relations', 'HR Compliance', 'Succession Planning', 'Organizational Development', 'Change Management', 'HR Technology']
+    },
+    {
+      name: 'Legal Skills',
+      skills: ['Legal Research', 'Contract Law', 'Litigation', 'Regulatory Compliance', 'Intellectual Property', 'Corporate Law', 'Employment Law', 'Real Estate Law', 'Criminal Law', 'Family Law', 'Tax Law', 'Immigration Law', 'Environmental Law', 'Healthcare Law', 'International Law']
     }
   ];
 
   const steps = [
-    { title: 'Experience & Goals', description: 'Tell us about your experience and career goals' },
-    { title: 'Skill Selection', description: 'Select and rate your skills' },
-    { title: 'Skill Assessment', description: 'Complete the skill assessment' },
-    { title: 'Analysis', description: 'Get AI-powered skill analysis' },
-    { title: 'Recommendations', description: 'Receive personalized recommendations' },
-    { title: 'Learning Path', description: 'Get your personalized learning plan' }
+    { title: 'Your Skills', description: 'Select and rate your professional skills' },
+    { title: 'AI Analysis', description: 'Get AI-powered skill analysis and recommendations' },
+    { title: 'Results', description: 'View your personalized skill assessment results' },
+    { title: 'Learning Plan', description: 'Receive your personalized development plan' },
+    { title: 'Recommendations', description: 'Get personalized skill development recommendations' }
   ];
 
   const addSkill = (skillName: string, category: string) => {
@@ -95,6 +126,16 @@ const SkillsAssessment: React.FC = () => {
     });
   };
 
+  const getExperienceYears = (experienceLevel: string): number => {
+    switch (experienceLevel) {
+      case 'entry': return 1;
+      case 'mid': return 4;
+      case 'senior': return 8;
+      case 'lead': return 12;
+      default: return 5;
+    }
+  };
+
   const generateAssessment = async () => {
     setIsGenerating(true);
     try {
@@ -113,9 +154,9 @@ const SkillsAssessment: React.FC = () => {
         body: JSON.stringify({
           technical_skills: assessmentData.skills.filter(s => s.category === 'Technical Skills').map(s => s.name),
           soft_skills: assessmentData.skills.filter(s => s.category === 'Soft Skills').map(s => s.name),
-          experience_years: assessmentData.experience,
+          experience_years: getExperienceYears(assessmentData.experience),
           current_role: 'Software Developer', // Default value since not in interface
-          career_goals: assessmentData.goals,
+          career_goals: 'Professional development and career growth', // Default value since we removed this field
           industry: assessmentData.industry
         })
       });
@@ -124,7 +165,7 @@ const SkillsAssessment: React.FC = () => {
 
       if (result.success) {
         setAssessmentResults(result.data);
-        setCurrentStep(3);
+        setCurrentStep(3); // Go to results step (step 3)
         addToast({
           type: 'success',
           title: 'Assessment Complete',
@@ -150,16 +191,16 @@ const SkillsAssessment: React.FC = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Experience & Goals</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Skills</h2>
               <p className="text-gray-600 mb-8">
-                Tell us about your experience and career goals to personalize your assessment.
+                Select and rate your professional skills. We'll keep it simple and focused on what matters most.
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Years of Experience
+                  Experience Level *
                 </label>
                 <select
                   value={assessmentData.experience}
@@ -172,11 +213,12 @@ const SkillsAssessment: React.FC = () => {
                   <option value="senior">Senior Level (6-10 years)</option>
                   <option value="lead">Lead/Principal (10+ years)</option>
                 </select>
+                <p className="text-sm text-gray-500 mt-1">This helps us personalize your skill recommendations</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Industry
+                  Industry *
                 </label>
                 <select
                   value={assessmentData.industry}
@@ -184,34 +226,37 @@ const SkillsAssessment: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select industry</option>
-                  <option value="technology">Technology</option>
-                  <option value="finance">Finance</option>
-                  <option value="healthcare">Healthcare</option>
-                  <option value="education">Education</option>
-                  <option value="consulting">Consulting</option>
+                  <option value="technology">Technology & Software</option>
+                  <option value="healthcare">Healthcare & Medical</option>
+                  <option value="finance">Finance & Banking</option>
+                  <option value="education">Education & Training</option>
+                  <option value="marketing">Marketing & Advertising</option>
+                  <option value="sales">Sales & Business Development</option>
+                  <option value="consulting">Consulting & Professional Services</option>
+                  <option value="manufacturing">Manufacturing & Production</option>
+                  <option value="retail">Retail & E-commerce</option>
+                  <option value="hospitality">Hospitality & Tourism</option>
+                  <option value="real-estate">Real Estate & Construction</option>
+                  <option value="legal">Legal & Compliance</option>
+                  <option value="human-resources">Human Resources</option>
+                  <option value="operations">Operations & Supply Chain</option>
+                  <option value="non-profit">Non-profit & Government</option>
+                  <option value="media">Media & Entertainment</option>
+                  <option value="transportation">Transportation & Logistics</option>
+                  <option value="energy">Energy & Utilities</option>
+                  <option value="agriculture">Agriculture & Food</option>
                   <option value="other">Other</option>
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Career Goals
-                </label>
-                <textarea
-                  value={assessmentData.goals}
-                  onChange={(e) => setAssessmentData({...assessmentData, goals: e.target.value})}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Describe your career goals and aspirations..."
-                />
+                <p className="text-sm text-gray-500 mt-1">Industry-specific skills will be prioritized</p>
               </div>
             </div>
 
             <button
               onClick={() => setCurrentStep(1)}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
+              disabled={!assessmentData.experience || !assessmentData.industry}
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
-              Continue
+              Next: Select Skills
             </button>
           </div>
         );
@@ -262,7 +307,7 @@ const SkillsAssessment: React.FC = () => {
                 disabled={assessmentData.skills.length === 0}
                 className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
-                Continue
+                Next: Rate Skills
               </button>
             </div>
           </div>
@@ -391,18 +436,121 @@ const SkillsAssessment: React.FC = () => {
               <div className="bg-white border rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Strengths</h3>
                 <div className="space-y-3">
-                  {assessmentResults?.strengths.slice(0, 3).map((strength: any, index: number) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div>
-                        <span className="font-medium text-gray-900">{strength.skill}</span>
-                        <span className="text-sm text-gray-600 ml-2">({strength.level})</span>
+                  {assessmentResults?.strengths && assessmentResults.strengths.length > 0 ? (
+                    assessmentResults.strengths.slice(0, 3).map((strength: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium text-gray-900">{strength.skill || strength.name || 'Skill'}</span>
+                          <span className="text-sm text-gray-600 ml-2">({strength.level || 'Level'})</span>
+                        </div>
+                        <span className="text-green-600 font-semibold">{strength.score || strength.percentage || 'N/A'}%</span>
                       </div>
-                      <span className="text-green-600 font-semibold">{strength.score}%</span>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 italic">No strengths identified</p>
+                  )}
                 </div>
               </div>
             </div>
+
+            {/* Industry Insights */}
+            {assessmentResults?.industryInsights && (
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Industry Insights</h3>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Trending Skills</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {assessmentResults.industryInsights.trendingSkills && assessmentResults.industryInsights.trendingSkills.map((skill: string, index: number) => (
+                        <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Emerging Roles</h4>
+                    <div className="space-y-2">
+                      {assessmentResults.industryInsights.emergingRoles && assessmentResults.industryInsights.emergingRoles.map((role: string, index: number) => (
+                        <div key={index} className="text-sm text-gray-700">
+                          • {role}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {assessmentResults.industryInsights.salaryGrowth && (
+                  <div className="mt-4 p-3 bg-white rounded-lg border border-purple-200">
+                    <p className="text-sm text-gray-700">
+                      <strong>Salary Growth:</strong> {assessmentResults.industryInsights.salaryGrowth}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Career Alignment */}
+            {assessmentResults?.careerAlignment && (
+              <div className="bg-white border rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Career Alignment</h3>
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-700">Overall Career Match</span>
+                    <span className="text-2xl font-bold text-blue-600">
+                      {assessmentResults.careerAlignment.overallMatch || assessmentResults.careerAlignment.match || 0}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      className="bg-blue-600 h-3 rounded-full"
+                      style={{ width: `${assessmentResults.careerAlignment.overallMatch || assessmentResults.careerAlignment.match || 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {assessmentResults.careerAlignment.recommendedRoles && assessmentResults.careerAlignment.recommendedRoles.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-900">Recommended Roles</h4>
+                    {assessmentResults.careerAlignment.recommendedRoles.map((role: any, index: number) => (
+                      <div key={index} className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="font-medium text-gray-900">{role.title || 'Role'}</h5>
+                          <span className="text-green-600 font-semibold">{role.match || 0}% Match</span>
+                        </div>
+                        {role.salaryRange && (
+                          <p className="text-sm text-gray-600 mb-2">Salary: {role.salaryRange}</p>
+                        )}
+                        {role.requiredSkills && role.requiredSkills.length > 0 && (
+                          <div className="mb-2">
+                            <p className="text-sm font-medium text-gray-700 mb-1">Required Skills:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {role.requiredSkills.map((skill: string, skillIndex: number) => (
+                                <span key={skillIndex} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {role.nextSteps && role.nextSteps.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-1">Next Steps:</p>
+                            <ul className="text-sm text-gray-600 space-y-1">
+                              {role.nextSteps.map((step: string, stepIndex: number) => (
+                                <li key={stepIndex} className="flex items-start gap-2">
+                                  <span className="text-blue-500 mt-1">•</span>
+                                  <span>{step}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-4">
               <button
@@ -432,41 +580,65 @@ const SkillsAssessment: React.FC = () => {
             </div>
 
             <div className="space-y-6">
-              {assessmentResults?.recommendations.map((rec: any, index: number) => (
-                <div key={index} className="bg-white border rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">{rec.category}</h3>
-                  <div className="space-y-4">
-                    {rec.skills.map((skill: any, skillIndex: number) => (
-                      <div key={skillIndex} className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">{skill.name}</h4>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            skill.priority === 'High' ? 'bg-red-100 text-red-800' :
-                            skill.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {skill.priority} Priority
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-600 mb-2">
-                          {skill.currentLevel} → {skill.targetLevel}
-                        </div>
-                        <div>
-                          <h5 className="font-medium text-gray-900 mb-1">Resources:</h5>
-                          <ul className="text-sm text-gray-600 space-y-1">
-                            {skill.resources.map((resource: string, resIndex: number) => (
-                              <li key={resIndex} className="flex items-start gap-2">
-                                <span className="text-blue-500 mt-1">•</span>
-                                <span>{resource}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    ))}
+              {assessmentResults?.recommendations && assessmentResults.recommendations.length > 0 ? (
+                assessmentResults.recommendations.map((rec: any, index: number) => (
+                  <div key={index} className="bg-white border rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">{rec.category || 'Recommendations'}</h3>
+                    <div className="space-y-4">
+                      {rec.skills && rec.skills.length > 0 ? (
+                        rec.skills.map((skill: any, skillIndex: number) => (
+                          <div key={skillIndex} className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-gray-900">{skill.name || skill.skill || 'Skill'}</h4>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                skill.priority === 'High' ? 'bg-red-100 text-red-800' :
+                                skill.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-green-100 text-green-800'
+                              }`}>
+                                {skill.priority || 'Medium'} Priority
+                              </span>
+                            </div>
+                            {(skill.currentLevel || skill.targetLevel) && (
+                              <div className="text-sm text-gray-600 mb-2">
+                                {skill.currentLevel || 'Current'} → {skill.targetLevel || 'Target'}
+                              </div>
+                            )}
+                            {skill.action && (
+                              <div className="text-sm text-gray-700 mb-2">
+                                <strong>Action:</strong> {skill.action}
+                              </div>
+                            )}
+                            {skill.timeline && (
+                              <div className="text-sm text-gray-600 mb-2">
+                                <strong>Timeline:</strong> {skill.timeline}
+                              </div>
+                            )}
+                            {skill.resources && skill.resources.length > 0 && (
+                              <div>
+                                <h5 className="font-medium text-gray-900 mb-1">Resources:</h5>
+                                <ul className="text-sm text-gray-600 space-y-1">
+                                  {skill.resources.map((resource: string, resIndex: number) => (
+                                    <li key={resIndex} className="flex items-start gap-2">
+                                      <span className="text-blue-500 mt-1">•</span>
+                                      <span>{resource}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 italic">No specific skills recommended for this category</p>
+                      )}
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-6 text-center">
+                  <p className="text-gray-500 italic">No recommendations available at the moment. Please try again later.</p>
                 </div>
-              ))}
+              )}
             </div>
 
             <div className="flex gap-4">
@@ -497,60 +669,136 @@ const SkillsAssessment: React.FC = () => {
             </div>
 
             <div className="space-y-6">
-              {Object.entries(assessmentResults?.learningPath || {}).map(([phase, data]: [string, any]) => (
-                <div key={phase} className="bg-white border rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{data.title}</h3>
-                  <p className="text-gray-600 mb-4">{data.focus}</p>
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Activities:</h4>
-                    <ul className="space-y-1">
-                      {data.activities.map((activity: string, index: number) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                          <span className="text-blue-500 mt-1">•</span>
-                          <span>{activity}</span>
-                        </li>
-                      ))}
-                    </ul>
+              {assessmentResults?.learningPath && assessmentResults.learningPath.length > 0 ? (
+                assessmentResults.learningPath.map((phase: any, index: number) => (
+                  <div key={index} className="bg-white border rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{phase.title || phase.phase || 'Learning Phase'}</h3>
+                        {phase.timeline && (
+                          <p className="text-sm text-gray-500">{phase.timeline}</p>
+                        )}
+                      </div>
+                    </div>
+                    {phase.focus && (
+                      <p className="text-gray-600 mb-4">{phase.focus}</p>
+                    )}
+                    
+                    {phase.skills && phase.skills.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-medium text-gray-900 mb-2">Skills to Develop:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {phase.skills.map((skill: string, skillIndex: number) => (
+                            <span key={skillIndex} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {phase.activities && phase.activities.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-medium text-gray-900 mb-2">Activities:</h4>
+                        <ul className="space-y-1">
+                          {phase.activities.map((activity: string, activityIndex: number) => (
+                            <li key={activityIndex} className="flex items-start gap-2 text-sm text-gray-600">
+                              <span className="text-blue-500 mt-1">•</span>
+                              <span>{activity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {phase.resources && phase.resources.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Resources:</h4>
+                        <ul className="space-y-1">
+                          {phase.resources.map((resource: string, resourceIndex: number) => (
+                            <li key={resourceIndex} className="flex items-start gap-2 text-sm text-gray-600">
+                              <span className="text-green-500 mt-1">•</span>
+                              <span>{resource}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
+                ))
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-6 text-center">
+                  <p className="text-gray-500 italic">No learning path available at the moment. Please try again later.</p>
                 </div>
-              ))}
+              )}
             </div>
 
-            <div className="bg-green-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Career Alignment</h3>
-              <div className="space-y-4">
-                {assessmentResults?.careerAlignment.recommendedRoles.map((role: any, index: number) => (
-                  <div key={index} className="bg-white rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">{role.title}</h4>
-                      <span className="text-green-600 font-semibold">{role.match}% Match</span>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <h5 className="font-medium text-gray-900 mb-1">Required Skills:</h5>
-                        <div className="flex flex-wrap gap-1">
-                          {role.requiredSkills.map((skill: string, skillIndex: number) => (
-                            <span key={skillIndex} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                              {skill}
-                            </span>
-                          ))}
+            {assessmentResults?.careerAlignment && (
+              <div className="bg-green-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Career Alignment Summary</h3>
+                <div className="space-y-4">
+                  {assessmentResults.careerAlignment.recommendedRoles && assessmentResults.careerAlignment.recommendedRoles.length > 0 ? (
+                    assessmentResults.careerAlignment.recommendedRoles.map((role: any, index: number) => (
+                      <div key={index} className="bg-white rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-gray-900">{role.title || 'Role'}</h4>
+                          <span className="text-green-600 font-semibold">{role.match || 0}% Match</span>
                         </div>
-                      </div>
-                      <div>
-                        <h5 className="font-medium text-gray-900 mb-1">Missing Skills:</h5>
-                        <div className="flex flex-wrap gap-1">
-                          {role.missingSkills.map((skill: string, skillIndex: number) => (
-                            <span key={skillIndex} className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
-                              {skill}
-                            </span>
-                          ))}
+                        {role.salaryRange && (
+                          <p className="text-sm text-gray-600 mb-3">Salary: {role.salaryRange}</p>
+                        )}
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {role.requiredSkills && role.requiredSkills.length > 0 && (
+                            <div>
+                              <h5 className="font-medium text-gray-900 mb-1">Required Skills:</h5>
+                              <div className="flex flex-wrap gap-1">
+                                {role.requiredSkills.map((skill: string, skillIndex: number) => (
+                                  <span key={skillIndex} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {role.missingSkills && role.missingSkills.length > 0 && (
+                            <div>
+                              <h5 className="font-medium text-gray-900 mb-1">Missing Skills:</h5>
+                              <div className="flex flex-wrap gap-1">
+                                {role.missingSkills.map((skill: string, skillIndex: number) => (
+                                  <span key={skillIndex} className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
+                        {role.nextSteps && role.nextSteps.length > 0 && (
+                          <div className="mt-3">
+                            <h5 className="font-medium text-gray-900 mb-1">Next Steps:</h5>
+                            <ul className="text-sm text-gray-600 space-y-1">
+                              {role.nextSteps.map((step: string, stepIndex: number) => (
+                                <li key={stepIndex} className="flex items-start gap-2">
+                                  <span className="text-blue-500 mt-1">•</span>
+                                  <span>{step}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
+                    ))
+                  ) : (
+                    <div className="bg-white rounded-lg p-4 text-center">
+                      <p className="text-gray-500 italic">No specific role recommendations available</p>
                     </div>
-                  </div>
-                ))}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex gap-4">
               <button
@@ -590,8 +838,7 @@ const SkillsAssessment: React.FC = () => {
             Skills Assessment Tool
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Assess your professional skills with AI-powered analysis. Get personalized skill recommendations, 
-            learning paths, and career development insights.
+            Assess your professional skills across ALL industries with AI-powered analysis. Whether you're in healthcare, finance, education, marketing, or any other field - get personalized skill recommendations and career insights. We only ask for essential skill information - no personal details required!
           </p>
           
           {/* API Key Manager */}
@@ -619,8 +866,8 @@ const SkillsAssessment: React.FC = () => {
             ))}
           </div>
           <div className="mt-4 text-center px-4">
-            <h3 className="font-medium text-gray-900 text-sm sm:text-base">{steps[currentStep].title}</h3>
-            <p className="text-xs sm:text-sm text-gray-600">{steps[currentStep].description}</p>
+            <h3 className="font-medium text-gray-900 text-sm sm:text-base">{steps[currentStep]?.title || 'Skills Assessment'}</h3>
+            <p className="text-xs sm:text-sm text-gray-600">{steps[currentStep]?.description || 'Professional skill analysis'}</p>
           </div>
         </div>
 
@@ -633,24 +880,24 @@ const SkillsAssessment: React.FC = () => {
         <div className="mt-12 grid md:grid-cols-3 gap-6">
           <div className="text-center">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">📊</span>
+              <span className="text-2xl">🌍</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Skill Analysis</h3>
-            <p className="text-gray-600">Get comprehensive analysis of your current skill levels</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">All Industries</h3>
+            <p className="text-gray-600">Works for healthcare, finance, education, marketing, legal, and any career field</p>
           </div>
           <div className="text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🎯</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Personalized Recommendations</h3>
-            <p className="text-gray-600">Receive targeted suggestions for skill development</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Industry-Specific Insights</h3>
+            <p className="text-gray-600">Get recommendations tailored to your specific industry and career level</p>
           </div>
           <div className="text-center">
             <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">📚</span>
+              <span className="text-2xl">📈</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Learning Paths</h3>
-            <p className="text-gray-600">Get structured learning plans with timelines and resources</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Career Advancement</h3>
+            <p className="text-gray-600">Discover trending skills, emerging roles, and salary growth opportunities</p>
           </div>
         </div>
       </div>
