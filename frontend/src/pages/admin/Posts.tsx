@@ -411,9 +411,10 @@ export default function Posts() {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Blog Posts Management</h1>
+    <div className="space-y-6">
+      {/* Header Section - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Blog Posts Management</h1>
         <button
           onClick={() => {
             if (showForm) {
@@ -422,15 +423,15 @@ export default function Posts() {
               setShowForm(true);
             }
           }}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
         >
           {showForm ? 'Cancel' : 'Add Post'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-8">
+          <div className="space-y-4 sm:space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
               <input
@@ -458,9 +459,9 @@ export default function Posts() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
               <div className="space-y-2">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                   {(tags || []).map(tag => (
-                    <label key={tag.id} className="flex items-center space-x-2 cursor-pointer">
+                    <label key={tag.id} className="flex items-center space-x-2 cursor-pointer p-1">
                       <input
                         type="checkbox"
                         checked={formData.tags.includes(tag.id)}
@@ -480,7 +481,7 @@ export default function Posts() {
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <span 
-                        className="px-2 py-1 text-xs rounded-full text-white"
+                        className="px-2 py-1 text-xs rounded-full text-white whitespace-nowrap"
                         style={{ backgroundColor: tag.color }}
                       >
                         {tag.name}
@@ -504,7 +505,7 @@ export default function Posts() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Content (Markdown/HTML)</label>
-              <p className="text-xs text-gray-500 mb-2">
+              <p className="text-xs text-gray-500 mb-2 hidden sm:block">
                 💡 Supports Markdown and HTML. Use <code className="bg-gray-100 px-1 rounded">![alt text](image-url)</code> for images or <code className="bg-gray-100 px-1 rounded">&lt;img src="URL" alt="description" class="w-full rounded-lg my-4" /&gt;</code>
               </p>
               <div className="text-xs text-gray-400 mb-2">
@@ -513,12 +514,14 @@ export default function Posts() {
                   <span className="text-yellow-600 ml-2">⚠️ Large content - consider breaking into smaller sections</span>
                 )}
               </div>
-              <RichTextEditor
-                value={formData.content}
-                onChange={(value) => setFormData({ ...formData, content: value })}
-                placeholder="Write your content here... You can use Markdown or HTML"
-                height={400}
-              />
+              <div className="w-full">
+                <RichTextEditor
+                  value={formData.content}
+                  onChange={(value) => setFormData({ ...formData, content: value })}
+                  placeholder="Write your content here... You can use Markdown or HTML"
+                  height={window.innerWidth < 640 ? 300 : 400}
+                />
+              </div>
             </div>
             <EnhancedImageUpload
               onImageUploaded={(imageUrl) => setFormData({ ...formData, featured_image: imageUrl })}
@@ -563,15 +566,42 @@ export default function Posts() {
                 Published
               </label>
             </div>
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-            >
-              {editingId ? 'Update' : 'Create'}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
+              >
+                {editingId ? 'Update' : 'Create'}
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors w-full sm:w-auto"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </form>
       )}
+
+      {/* Search Bar - Mobile Optimized */}
+      <div className="lg:hidden mb-4">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search posts..."
+            value={filters.search}
+            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-base"
+          />
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
 
       {/* Advanced Filters */}
       <AdvancedFilters
@@ -593,97 +623,280 @@ export default function Posts() {
         resultsCount={filteredPosts.length}
       />
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured Image</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredPosts.map((post) => (
-              <tr key={post.id}>
-                <td className="px-6 py-4 font-medium text-gray-900">{post.title}</td>
-                <td className="px-6 py-4">
-                  {post.featured_image ? (
-                    <img
-                      src={post.featured_image}
-                      alt={post.title}
-                      className="w-16 h-16 object-cover rounded-lg border border-gray-300"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-400 text-xs">
-                      No Image
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {post.is_published ? 'Published' : 'Draft'}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      post.approval_status === 'approved' ? 'bg-green-100 text-green-800' :
-                      post.approval_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      post.approval_status === 'rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {post.approval_status}
-                    </span>
-                    {post.approval_status === 'pending' && (
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => handleApprove(post.id)}
-                          className="text-green-600 hover:text-green-800 text-xs"
-                          title="Approve"
-                        >
-                          ✓
-                        </button>
-                        <button
-                          onClick={() => handleReject(post.id)}
-                          className="text-red-600 hover:text-red-800 text-xs"
-                          title="Reject"
-                        >
-                          ✗
-                        </button>
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-white rounded-lg shadow-md overflow-hidden">
+        {loading ? (
+          <div className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              <div className="space-y-3">
+                {[...Array(5)].map((_, index) => (
+                  <div key={index} className="flex items-center space-x-4">
+                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                    <div className="h-12 w-12 bg-gray-200 rounded"></div>
+                    <div className="h-6 bg-gray-200 rounded w-20"></div>
+                    <div className="h-6 bg-gray-200 rounded w-24"></div>
+                    <div className="h-6 bg-gray-200 rounded w-16 ml-auto"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-6xl mb-4">📝</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
+            <p className="text-gray-500 mb-4">
+              {filters.search || filters.category || filters.status || filters.approval_status || filters.tags.length > 0 || filters.dateFrom || filters.dateTo
+                ? 'Try adjusting your filters to see more posts.'
+                : 'Get started by creating your first blog post.'}
+            </p>
+            {!showForm && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Create First Post
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured Image</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredPosts.map((post) => (
+                <tr key={post.id}>
+                  <td className="px-6 py-4 font-medium text-gray-900 max-w-xs truncate" title={post.title}>
+                    {post.title}
+                  </td>
+                  <td className="px-6 py-4">
+                    {post.featured_image ? (
+                      <img
+                        src={post.featured_image}
+                        alt={post.title}
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-300"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-400 text-xs">
+                        No Image
                       </div>
                     )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right space-x-2">
-                  <button
-                    onClick={() => handleEdit(post)}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(post.id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        <Pagination
-          currentPage={pagination.currentPage}
-          lastPage={pagination.lastPage}
-          total={pagination.total}
-          perPage={pagination.perPage}
-          onPageChange={fetchPosts}
-          loading={loading}
-        />
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {post.is_published ? 'Published' : 'Draft'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        post.approval_status === 'approved' ? 'bg-green-100 text-green-800' :
+                        post.approval_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        post.approval_status === 'rejected' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {post.approval_status}
+                      </span>
+                      {post.approval_status === 'pending' && (
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => handleApprove(post.id)}
+                            className="text-green-600 hover:text-green-800 text-xs"
+                            title="Approve"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            onClick={() => handleReject(post.id)}
+                            className="text-red-600 hover:text-red-800 text-xs"
+                            title="Reject"
+                          >
+                            ✗
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right space-x-2">
+                    <button
+                      onClick={() => handleEdit(post)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(post.id)}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        {loading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-md p-4 animate-pulse">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                  <div className="h-6 bg-gray-200 rounded w-16"></div>
+                </div>
+                <div className="h-32 bg-gray-200 rounded-lg mb-3"></div>
+                <div className="flex justify-between items-center">
+                  <div className="h-6 bg-gray-200 rounded w-20"></div>
+                  <div className="flex space-x-2">
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-6xl mb-4">📝</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
+            <p className="text-gray-500 mb-4">
+              {filters.search || filters.category || filters.status || filters.approval_status || filters.tags.length > 0 || filters.dateFrom || filters.dateTo
+                ? 'Try adjusting your filters to see more posts.'
+                : 'Get started by creating your first blog post.'}
+            </p>
+            {!showForm && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Create First Post
+              </button>
+            )}
+          </div>
+        ) : (
+          filteredPosts.map((post) => (
+          <div key={post.id} className="bg-white rounded-lg shadow-md p-4 space-y-3">
+            {/* Post Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-medium text-gray-900 truncate" title={post.title}>
+                  {post.title}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {new Date(post.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex items-center space-x-2 ml-2">
+                <span className={`px-2 py-1 text-xs rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                  {post.is_published ? 'Published' : 'Draft'}
+                </span>
+              </div>
+            </div>
+
+            {/* Featured Image */}
+            {post.featured_image && (
+              <div className="w-full">
+                <img
+                  src={post.featured_image}
+                  alt={post.title}
+                  className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                />
+              </div>
+            )}
+
+            {/* Approval Status */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  post.approval_status === 'approved' ? 'bg-green-100 text-green-800' :
+                  post.approval_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                  post.approval_status === 'rejected' ? 'bg-red-100 text-red-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {post.approval_status}
+                </span>
+                {post.approval_status === 'pending' && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleApprove(post.id)}
+                      className="text-green-600 hover:text-green-800 text-sm px-2 py-1 rounded border border-green-300"
+                      title="Approve"
+                    >
+                      ✓ Approve
+                    </button>
+                    <button
+                      onClick={() => handleReject(post.id)}
+                      className="text-red-600 hover:text-red-800 text-sm px-2 py-1 rounded border border-red-300"
+                      title="Reject"
+                    >
+                      ✗ Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex space-x-2 pt-2 border-t border-gray-200">
+              <button
+                onClick={() => handleEdit(post)}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDelete(post.id)}
+                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+          ))
+        )}
+      </div>
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={pagination.currentPage}
+        lastPage={pagination.lastPage}
+        total={pagination.total}
+        perPage={pagination.perPage}
+        onPageChange={fetchPosts}
+        loading={loading}
+      />
+
+      {/* Floating Action Button - Mobile Only */}
+      {!showForm && (
+        <div className="lg:hidden fixed bottom-6 right-6 z-50">
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300"
+            title="Add New Post"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

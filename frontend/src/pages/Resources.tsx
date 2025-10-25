@@ -289,7 +289,7 @@ export default function Resources() {
       }
     }
 
-    return (
+  return (
       <div>
         {/* Hero Section */}
         <div className="text-center mb-16">

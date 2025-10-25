@@ -27,6 +27,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [notificationSettingsOpen, setNotificationSettingsOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const isAdmin = location.pathname.startsWith('/admin');
   const isLoginPage = location.pathname === '/admin/login';
   
@@ -47,6 +48,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Close mobile menu when location changes
   useEffect(() => {
     setMobileMenuOpen(false);
+    setSidebarOpen(false);
   }, [location.pathname]);
 
   // Listen for notification settings modal events
@@ -66,6 +68,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setUserDropdownOpen(false);
     setSettingsDropdownOpen(false);
     setMoreDropdownOpen(false);
+    setSidebarOpen(false);
   }, [user]);
 
   // Close dropdowns when clicking outside
@@ -117,279 +120,189 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   // Show admin layout if user is on admin route and is authenticated
   if (isAdmin && user && user.role === 'admin') {
-    // Main content management navigation
-    const adminNavItems = [
-      { path: '/admin', label: 'Dashboard', icon: '📊' },
-      { path: '/admin/posts', label: 'Posts', icon: '📝' },
-      { path: '/admin/workflows', label: 'Workflows', icon: '⚡' },
-      { path: '/admin/courses', label: 'Courses', icon: '📚' },
-      { path: '/admin/files', label: 'Files', icon: '📁' },
-      { path: '/admin/monitoring', label: 'Monitoring', icon: '🏥' },
-      { path: '/admin/push-notifications', label: 'Push Notifications', icon: '🔔' },
-      { path: '/admin/analytics', label: 'Analytics', icon: '📊' },
-        { path: '/admin/api-documentation', label: 'API Documentation', icon: '📖' },
-        { path: '/admin/email-templates', label: 'Email Templates', icon: '📧' },
-        { path: '/admin/email-service', label: 'Email Service', icon: '📤' },
-        { path: '/admin/system-email-settings', label: 'System Email Settings', icon: '⚙️' },
-    ];
 
-    // Settings dropdown menu items (moved from main navigation)
-    const settingsMenuItems = [
-      // Content Settings
-      { path: '/admin/categories', label: 'Categories', icon: '🏷️', category: 'Content' },
-      { path: '/admin/tags', label: 'Tags', icon: '🔖', category: 'Content' },
-      { path: '/admin/home-settings', label: 'Home Settings', icon: '🏠', category: 'Content' },
-      
-      // Email Settings
-      { path: '/admin/email-templates', label: 'Email Templates', icon: '📧', category: 'Email' },
-      { path: '/admin/smtp-configurations', label: 'SMTP Settings', icon: '⚙️', category: 'Email' },
-      
-      // User Management
-      { path: '/admin/user-management', label: 'User Management', icon: '👥', category: 'Users' },
-      { path: '/admin/user-activities', label: 'User Activities', icon: '📊', category: 'Users' },
-      { path: '/admin/user-groups', label: 'User Groups', icon: '👨‍👩‍👧‍👦', category: 'Users' },
-      
-      // System Settings
-      { path: '/admin/api-tokens', label: 'API Tokens', icon: '🔑', category: 'System' },
-      { path: '/admin/api-docs', label: 'API Documentation', icon: '📖', category: 'System' },
-      { path: '/admin/gemini-api', label: 'Gemini API', icon: '🤖', category: 'System' },
-      { path: '/admin/cv-templates', label: 'CV Templates', icon: '📄', category: 'System' },
+    // Sidebar navigation items organized by sections
+    const sidebarSections = [
+      {
+        title: 'Overview',
+        items: [
+          { path: '/admin', label: 'Dashboard', icon: '📊' },
+          { path: '/admin/analytics', label: 'Analytics', icon: '📈' },
+          { path: '/admin/monitoring', label: 'System Monitoring', icon: '🏥' },
+        ]
+      },
+      {
+        title: 'Content Management',
+        items: [
+          { path: '/admin/posts', label: 'Posts', icon: '📝' },
+          { path: '/admin/workflows', label: 'Workflows', icon: '⚡' },
+          { path: '/admin/courses', label: 'Courses', icon: '📚' },
+          { path: '/admin/files', label: 'Files', icon: '📁' },
+          { path: '/admin/cv-templates', label: 'CV Templates', icon: '📄' },
+          { path: '/admin/categories', label: 'Categories', icon: '🏷️' },
+          { path: '/admin/tags', label: 'Tags', icon: '🔖' },
+        ]
+      },
+      {
+        title: 'User Management',
+        items: [
+          { path: '/admin/user-management', label: 'User Management', icon: '👥' },
+          { path: '/admin/user-activities', label: 'User Activities', icon: '👤' },
+          { path: '/admin/user-groups', label: 'User Groups', icon: '👨‍👩‍👧‍👦' },
+        ]
+      },
+      {
+        title: 'Communication',
+        items: [
+          { path: '/admin/push-notifications', label: 'Push Notifications', icon: '🔔' },
+          { path: '/admin/email-templates', label: 'Email Templates', icon: '📧' },
+          { path: '/admin/email-service', label: 'Email Service', icon: '📤' },
+          { path: '/admin/smtp-configurations', label: 'SMTP Settings', icon: '⚙️' },
+        ]
+      },
+      {
+        title: 'System & API',
+        items: [
+          { path: '/admin/api-tokens', label: 'API Tokens', icon: '🔑' },
+          { path: '/admin/gemini-api', label: 'Gemini API', icon: '🤖' },
+          { path: '/admin/api-documentation', label: 'API Documentation', icon: '📖' },
+          { path: '/admin/home-settings', label: 'Home Settings', icon: '🏠' },
+        ]
+      }
     ];
 
     return (
-      <div key={`admin-${user?.id || 'no-user'}`} className="min-h-screen bg-gray-50">
-        {/* Top Navigation */}
-        <nav className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex items-center">
-                <Link to="/admin" className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      Admin Dashboard
-                    </span>
-                  </div>
-                </Link>
-                <div className="hidden lg:ml-8 lg:flex lg:space-x-1">
-                  {adminNavItems.map((item) => {
+      <div key={`admin-${user?.id || 'no-user'}`} className="min-h-screen bg-gray-50 flex">
+        {/* Sidebar */}
+        <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+            <Link to="/admin" className="flex items-center">
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Admin Dashboard
+              </span>
+            </Link>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Sidebar Navigation */}
+          <nav className="flex-1 px-4 py-4 space-y-6 overflow-y-auto">
+            {sidebarSections.map((section, sectionIndex) => (
+              <div key={sectionIndex}>
+                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  {section.title}
+                </h3>
+                <div className="space-y-1">
+                  {section.items.map((item) => {
                     const isActive = location.pathname === item.path;
                     return (
                       <Link
                         key={item.path}
                         to={item.path}
-                        className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                        onClick={() => setSidebarOpen(false)}
+                        className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                           isActive
-                            ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                            : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50 hover:shadow-sm'
+                            ? 'bg-blue-100 text-blue-700 shadow-sm border-r-2 border-blue-600'
+                            : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                         }`}
                       >
-                        <span className="mr-2 text-base">{item.icon}</span>
+                        <span className="mr-3 text-base">{item.icon}</span>
                         {item.label}
                       </Link>
                     );
                   })}
                 </div>
               </div>
-              
-              {/* Right side of nav */}
-              <div className="flex items-center space-x-4">
-                <Link
-                  to="/"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 rounded-md transition-colors"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-                  View Site
-                </Link>
-                
-                {/* User Dropdown Menu */}
-                {user && (
-                  <div className="relative" data-user-dropdown>
-                    <button
-                      onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                      className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">
-                          {user.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <span className="hidden sm:block">{user.name}</span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
+            ))}
+          </nav>
 
-                    {/* Dropdown Menu */}
-                    {userDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                        <div className="px-4 py-2 border-b border-gray-100">
-                          <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
-                        </div>
-                        
-                        {/* Settings Dropdown */}
-                        <div className="relative" data-settings-dropdown>
-                          <button
-                            onClick={() => setSettingsDropdownOpen(!settingsDropdownOpen)}
-                            className={`flex items-center w-full px-4 py-2 text-sm transition-colors ${
-                              settingsMenuItems.some(item => location.pathname === item.path)
-                                ? 'bg-blue-50 text-blue-700'
-                                : 'text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span className="mr-3 text-base">⚙️</span>
-                            Settings
-                            <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-
-                          {/* Settings Submenu */}
-                          {settingsDropdownOpen && (
-                            <div className="absolute left-full top-0 ml-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                              {/* Group settings by category */}
-                              {['Content', 'Email', 'Users', 'System'].map((category) => {
-                                const categoryItems = settingsMenuItems.filter(item => item.category === category);
-                                if (categoryItems.length === 0) return null;
-                                
-                                return (
-                                  <div key={category}>
-                                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                      {category}
-                                    </div>
-                                    {categoryItems.map((item) => {
-                                      const isActive = location.pathname === item.path;
-                                      return (
-                                        <Link
-                                          key={item.path}
-                                          to={item.path}
-                                          onClick={() => {
-                                            setUserDropdownOpen(false);
-                                            setSettingsDropdownOpen(false);
-                                          }}
-                                          className={`flex items-center px-4 py-2 text-sm transition-colors ${
-                                            isActive
-                                              ? 'bg-blue-50 text-blue-700'
-                                              : 'text-gray-700 hover:bg-gray-50'
-                                          }`}
-                                        >
-                                          <span className="mr-3 text-base">{item.icon}</span>
-                                          {item.label}
-                                        </Link>
-                                      );
-                                    })}
-                                    {category !== 'System' && <div className="border-t border-gray-100 my-1"></div>}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                    </div>
-                        
-                        <div className="border-t border-gray-100 mt-1 pt-1">
-                    <button
-                            onClick={() => {
-                              setUserDropdownOpen(false);
-                              logout('/');
-                            }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                          >
-                            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      Logout
-                    </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {/* Mobile menu button */}
-                <div className="lg:hidden">
-                  <button
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-                  >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      {mobileMenuOpen ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                      )}
-                    </svg>
-                  </button>
-                </div>
+          {/* Sidebar Footer */}
+          <div className="border-t border-gray-200 p-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
             </div>
-            
-            {/* Mobile navigation menu */}
-            {mobileMenuOpen && (
-              <div className="lg:hidden border-t border-gray-200 py-4">
-                <div className="space-y-4">
-                  {/* Main Navigation */}
-                  <div>
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Content Management
-                    </div>
-                <div className="space-y-1">
-                  {adminNavItems.map((item) => {
-                    const isActive = location.pathname === item.path;
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                            className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
-                              isActive
-                                ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                                : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span className="mr-3 text-lg">{item.icon}</span>
-                            {item.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Settings */}
-                  <div>
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Settings
-                    </div>
-                    <div className="space-y-1">
-                      {settingsMenuItems.map((item) => {
-                        const isActive = location.pathname === item.path;
-                        return (
-                          <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
-                          isActive
-                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                            : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                        }`}
-                      >
-                            <span className="mr-3 text-lg">{item.icon}</span>
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="mt-3 space-y-1">
+              <Link
+                to="/"
+                className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                View Site
+              </Link>
+              <button
+                onClick={() => logout('/')}
+                className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
+            </div>
           </div>
-        </nav>
-        
+        </div>
+
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          {children}
-        </main>
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top Bar */}
+          <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            
+            <div className="flex items-center space-x-4">
+              <h1 className="text-lg font-semibold text-gray-900">
+                {sidebarSections
+                  .flatMap(section => section.items)
+                  .find(item => item.path === location.pathname)?.label || 'Admin Dashboard'}
+              </h1>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              {/* API Key Status - Only show on Gemini API pages */}
+              {shouldShowApiStats && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
+                  <ApiKeyManager />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Page Content */}
+          <main className="flex-1 p-6">
+            {children}
+          </main>
+        </div>
       </div>
     );
   }
