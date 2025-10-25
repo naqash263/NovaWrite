@@ -7,8 +7,9 @@ import ApiKeyManager from './ApiKeyManager';
 import InstallBanner from './InstallBanner';
 import NotificationSettings from './NotificationSettings';
 import AdminLayout from './AdminLayout';
+import SafeHookWrapper from './SafeHookWrapper';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+function LayoutContent({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, logout, loading } = useAuth();
   const { canInstall } = useInstallPrompt();
@@ -543,5 +544,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         />
       )}
     </div>
+  );
+}
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <SafeHookWrapper>
+      <LayoutContent>{children}</LayoutContent>
+    </SafeHookWrapper>
   );
 }

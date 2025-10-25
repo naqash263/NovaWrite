@@ -6,12 +6,13 @@ import { useApiStats } from '../hooks/useApiStats';
 import ApiKeyManager from './ApiKeyManager';
 import InstallBanner from './InstallBanner';
 import NotificationSettings from './NotificationSettings';
+import SafeHookWrapper from './SafeHookWrapper';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+function AdminLayoutContent({ children }: AdminLayoutProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
   const { canInstall } = useInstallPrompt();
@@ -487,5 +488,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         />
       )}
     </div>
+  );
+}
+
+export default function AdminLayout({ children }: AdminLayoutProps) {
+  return (
+    <SafeHookWrapper>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </SafeHookWrapper>
   );
 }

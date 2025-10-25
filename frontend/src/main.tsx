@@ -23,11 +23,23 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 
 // Global error handler for unhandled errors
 window.addEventListener('error', (event) => {
+  // Specifically handle DB initialization errors
+  if (event.error && event.error.message && event.error.message.includes('Cannot access \'DB\' before initialization')) {
+    console.warn('DB initialization error caught and handled:', event.error);
+    event.preventDefault(); // Prevent the error from crashing the app
+    return;
+  }
   console.error('Unhandled error:', event.error);
 });
 
 // Handle unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {
+  // Specifically handle DB initialization errors
+  if (event.reason && event.reason.message && event.reason.message.includes('Cannot access \'DB\' before initialization')) {
+    console.warn('DB initialization promise rejection caught and handled:', event.reason);
+    event.preventDefault(); // Prevent the error from crashing the app
+    return;
+  }
   console.error('Unhandled promise rejection:', event.reason);
 });
 
