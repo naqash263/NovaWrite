@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSEO } from '../../utils/seo';
 import { defaultCVData, type CVData } from '../../components/cv-builder/cv-form';
 import { CvPreview } from '../../components/cv-builder/cv-preview';
-import { TemplateCustomizer, type CVStyle } from '../../components/cv-builder/template-customizer';
+import { type CVStyle } from '../../components/cv-builder/template-customizer';
 import { useToast } from '../../hooks/use-toast';
 import CVExportOptions from '../../components/cv-builder/CVExportOptions';
 import { API_CONFIG } from '../../config/api';
@@ -1765,10 +1765,6 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
     }
   };
 
-  const handleStyleChange = (newStyle: Partial<CVStyle>) => {
-    console.log('Style changed:', newStyle);
-    onStyleChange({ ...style, ...newStyle });
-  };
 
   if (templatesLoading) {
     return (
