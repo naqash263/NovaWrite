@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import analyticsService from '../services/analyticsService';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -109,13 +110,8 @@ export const useInstallPrompt = (): InstallPromptState => {
         setShowBanner(false);
         localStorage.removeItem('pwa_install_dismissed');
         
-        // Track install event (with error handling)
-        try {
-          const { default: analyticsService } = await import('../services/analyticsService');
-          await analyticsService.trackInstall('banner');
-        } catch (error) {
-          console.warn('Failed to track install event:', error);
-        }
+        // Track install event
+        await analyticsService.trackInstall('banner');
       } else {
         console.log('User dismissed the install prompt');
       }

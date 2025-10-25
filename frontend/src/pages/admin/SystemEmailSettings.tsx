@@ -46,7 +46,6 @@ const SystemEmailSettings: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
       const [smtpRes, settingsRes] = await Promise.all([
         apiClient.get('/admin/smtp-configurations'),
         apiClient.get('/admin/system-email-settings'),
@@ -72,20 +71,26 @@ const SystemEmailSettings: React.FC = () => {
       setError(null);
       setSuccess(null);
 
+      console.log('Saving system email settings:', settings);
+
       // Add timeout to prevent hanging
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
+        console.log('Request timed out after 10 seconds');
         controller.abort();
       }, 10000); // 10 second timeout
 
-      await apiClient.post('/admin/system-email-settings', settings, {
+      console.log('Sending request to /admin/system-email-settings');
+      const response = await apiClient.post('/admin/system-email-settings', settings, {
         signal: controller.signal,
         timeout: 10000
       });
 
       clearTimeout(timeoutId);
+      console.log('Response received:', response.data);
       setSuccess('System email settings saved successfully!');
     } catch (err: any) {
+      console.error('Error saving settings:', err);
       if (err.name === 'AbortError') {
         setError('Request timed out. Please try again.');
       } else if (err.code === 'ECONNABORTED') {
@@ -116,13 +121,17 @@ const SystemEmailSettings: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+              <div className="space-y-4">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -130,8 +139,8 @@ const SystemEmailSettings: React.FC = () => {
   }
 
   return (
-    <>
-      <style>{`
+    <div className="min-h-screen bg-gray-50 py-8">
+      <style jsx="true">{`
         .react-select-container .react-select__control {
           border: 1px solid #d1d5db;
           border-radius: 0.375rem;
@@ -170,16 +179,16 @@ const SystemEmailSettings: React.FC = () => {
         }
       `}</style>
       
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-sm">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">System Email Settings</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Configure which SMTP configuration to use for different types of system emails
-          </p>
-        </div>
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h1 className="text-2xl font-bold text-gray-900">System Email Settings</h1>
+            <p className="mt-1 text-sm text-gray-600">
+              Configure which SMTP configuration to use for different types of system emails
+            </p>
+          </div>
 
-        <div className="p-4 sm:p-6">
+          <div className="p-6">
             {error && (
               <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
                 {error}
@@ -335,7 +344,7 @@ const SystemEmailSettings: React.FC = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row gap-4 sm:justify-between">
+            <div className="mt-8 flex justify-between">
               <button
                 onClick={async () => {
                   try {
@@ -343,12 +352,12 @@ const SystemEmailSettings: React.FC = () => {
                     const response = await apiClient.get('/admin/system-email-settings/health');
                     console.log('Health check response:', response.data);
                     setSuccess('Health check successful!');
-                  } catch (err: any) {
+                  } catch (err) {
                     console.error('Health check failed:', err);
                     setError('Health check failed: ' + (err.response?.data?.message || err.message));
                   }
                 }}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center space-x-2"
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center space-x-2"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -359,7 +368,7 @@ const SystemEmailSettings: React.FC = () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {saving ? (
                   <>
@@ -379,7 +388,7 @@ const SystemEmailSettings: React.FC = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

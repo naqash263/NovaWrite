@@ -4,7 +4,7 @@ import Pagination from '../../components/Pagination';
 import EnhancedImageUpload from '../../components/EnhancedImageUpload';
 import AdvancedFilters from '../../components/AdvancedFilters';
 import RichTextEditor from '../../components/RichTextEditor';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthContext } from '../../contexts/AuthContext';
 import { useSEO } from '../../utils/seo';
 
 interface Post {
@@ -41,7 +41,7 @@ interface Tag {
 }
 
 export default function Posts() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [posts, setPosts] = useState<Post[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

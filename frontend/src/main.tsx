@@ -6,42 +6,16 @@ import App from './App.tsx'
 
 // Register service worker for PWA functionality (only in production)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  // Defer service worker registration to avoid initialization conflicts
   window.addEventListener('load', () => {
-    // Add a small delay to ensure the main app is fully initialized
-    setTimeout(() => {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          console.log('SW registered: ', registration);
-        })
-        .catch((registrationError) => {
-          console.log('SW registration failed: ', registrationError);
-        });
-    }, 100);
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW registration failed: ', registrationError);
+      });
   });
 }
-
-// Global error handler for unhandled errors
-window.addEventListener('error', (event) => {
-  // Specifically handle DB initialization errors
-  if (event.error && event.error.message && event.error.message.includes('Cannot access \'DB\' before initialization')) {
-    console.warn('DB initialization error caught and handled:', event.error);
-    event.preventDefault(); // Prevent the error from crashing the app
-    return;
-  }
-  console.error('Unhandled error:', event.error);
-});
-
-// Handle unhandled promise rejections
-window.addEventListener('unhandledrejection', (event) => {
-  // Specifically handle DB initialization errors
-  if (event.reason && event.reason.message && event.reason.message.includes('Cannot access \'DB\' before initialization')) {
-    console.warn('DB initialization promise rejection caught and handled:', event.reason);
-    event.preventDefault(); // Prevent the error from crashing the app
-    return;
-  }
-  console.error('Unhandled promise rejection:', event.reason);
-});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -80,4 +54,3 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 )
-

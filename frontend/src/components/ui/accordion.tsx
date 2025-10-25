@@ -56,7 +56,7 @@ interface AccordionItemProps {
   className?: string;
 }
 
-export const AccordionItem = ({ children, className = '' }: AccordionItemProps) => {
+export const AccordionItem = ({ children, value, className = '' }: AccordionItemProps) => {
   return (
     <div className={`border border-gray-200 rounded-lg ${className}`}>
       {children}
