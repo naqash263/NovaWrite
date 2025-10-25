@@ -1,0 +1,55 @@
+name: Check Production Database Tables
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-tables:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+
+    - name: Install Composer dependencies
+      run: composer install --no-dev --prefer-dist
+      working-directory: ./backend
+
+    - name: Check Production Database Tables
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        timeout: 300s
+        command_timeout: 300s
+        script: |
+          # Colors for output
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          YELLOW='\033[1;33m'
+          NC='\033[0m' # No Color
+
+          echo -e "${BLUE}🔍 Checking Production Database Tables${NC}"
+          echo "====================================="
+
+          # Navigate to project directory
+          cd ~/naqashthaheem.com/backend
+
+          # Load environment variables
+          if [ -f ".env" ]; then
+            export $(grep -v '^#' .env | xargs)
+          fi
+
+          echo -e "${YELLOW}📊 Running database table check...${NC}"
+          php check-production-tables.php
+
+          echo -e "${GREEN}✅ Database table check completed!${NC}"
