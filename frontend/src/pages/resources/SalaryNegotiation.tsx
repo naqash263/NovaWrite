@@ -444,16 +444,16 @@ const SalaryNegotiation: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
             Salary Negotiation Tool
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
             Master salary negotiations with AI-powered guidance. Get market research, 
             negotiation scripts, and industry-specific strategies to maximize your earning potential.
           </p>
           
           {/* API Key Manager */}
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto px-4">
             <ApiKeyManager />
           </div>
         </div>
