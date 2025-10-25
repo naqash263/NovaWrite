@@ -34,6 +34,23 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, 'admin'])->prefix('admin
     Route::post('/trigger-update', [App\Http\Controllers\Api\CareerToolController::class, 'triggerUpdate']);
 });
 
+// LinkedIn profile extraction routes (public access)
+Route::prefix('linkedin')->group(function () {
+    Route::post('/extract-profile', [App\Http\Controllers\Api\LinkedInProfileController::class, 'extractProfile']);
+    Route::post('/validate-url', [App\Http\Controllers\Api\LinkedInProfileController::class, 'validateUrl']);
+});
+
+// Career tools AI routes (public access - authentication optional)
+Route::prefix('career-tools')->group(function () {
+    Route::post('/linkedin/analyze', [App\Http\Controllers\Api\CareerToolsController::class, 'analyzeLinkedIn']);
+    Route::post('/cover-letter/generate', [App\Http\Controllers\Api\CareerToolsController::class, 'generateCoverLetter']);
+    Route::post('/interview-prep/generate', [App\Http\Controllers\Api\CareerToolsController::class, 'generateInterviewPrep']);
+    Route::post('/salary-negotiation/generate', [App\Http\Controllers\Api\CareerToolsController::class, 'generateSalaryNegotiation']);
+    Route::post('/skills-assessment/generate', [App\Http\Controllers\Api\CareerToolsController::class, 'generateSkillsAssessment']);
+    Route::post('/career-path/generate', [App\Http\Controllers\Api\CareerToolsController::class, 'generateCareerPath']);
+    Route::post('/job-search/generate', [App\Http\Controllers\Api\CareerToolsController::class, 'generateJobSearchStrategy']);
+});
+
 // App analytics routes
 Route::middleware(\App\Http\Middleware\ApiAuth::class)->prefix('analytics')->group(function () {
     Route::post('/track/install', [App\Http\Controllers\Api\AppAnalyticsController::class, 'trackInstall']);

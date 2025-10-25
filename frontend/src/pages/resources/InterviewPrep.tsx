@@ -46,70 +46,42 @@ const InterviewPrep: React.FC = () => {
   const generatePrepPlan = async () => {
     setIsGenerating(true);
     try {
-      // Simulate AI analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockPlan = {
-        practiceQuestions: [
-          {
-            category: 'Behavioral',
-            question: 'Tell me about a time when you had to work with a difficult team member.',
-            difficulty: 'Medium',
-            tips: 'Use the STAR method. Focus on how you resolved the conflict professionally.',
-            sampleAnswer: 'Situation: I was working on a project with a colleague who had different working styles...'
-          },
-          {
-            category: 'Technical',
-            question: 'Explain how you would optimize a slow-performing database query.',
-            difficulty: 'Hard',
-            tips: 'Start with identifying bottlenecks, then discuss indexing, query optimization, and monitoring.',
-            sampleAnswer: 'First, I would analyze the query execution plan to identify bottlenecks...'
-          },
-          {
-            category: 'Situational',
-            question: 'How would you handle a situation where you disagree with your manager\'s decision?',
-            difficulty: 'Medium',
-            tips: 'Show respect for authority while demonstrating your analytical thinking.',
-            sampleAnswer: 'I would first seek to understand the reasoning behind the decision...'
-          }
-        ],
-        starMethod: {
-          situation: 'Set the context and background of your story',
-          task: 'Describe your specific responsibility or challenge',
-          action: 'Explain the steps you took to address the situation',
-          result: 'Share the outcomes and what you learned'
-        },
-        companyInsights: {
-          culture: 'Innovation-focused, collaborative environment with emphasis on work-life balance',
-          values: ['Integrity', 'Innovation', 'Customer Focus', 'Teamwork'],
-          recentNews: 'Recently raised $50M in Series B funding, expanding to European markets',
-          interviewTips: [
-            'Emphasize your experience with agile methodologies',
-            'Prepare examples of successful cross-functional collaboration',
-            'Research their recent product launches and be ready to discuss'
-          ]
-        },
-        commonMistakes: [
-          'Not preparing specific examples for behavioral questions',
-          'Speaking negatively about previous employers',
-          'Not asking thoughtful questions about the role',
-          'Being too vague in technical explanations'
-        ],
-        successTips: [
-          'Practice your elevator pitch',
-          'Prepare 3-5 thoughtful questions about the role',
-          'Research the interviewer on LinkedIn',
-          'Prepare examples that demonstrate growth and learning'
-        ]
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
       };
       
-      setPrepPlan(mockPlan);
-      setCurrentStep(3);
-      addToast({
-        type: 'success',
-        title: 'Prep Plan Ready',
-        description: 'Your personalized interview preparation plan has been generated.'
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/interview-prep/generate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          job_title: formData.jobTitle,
+          company_name: formData.companyName,
+          industry: formData.industry,
+          experience_level: formData.experienceLevel,
+          interview_type: formData.interviewType,
+          technical_skills: formData.technicalSkills,
+          soft_skills: formData.softSkills
+        })
       });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setPrepPlan(result.data);
+        setCurrentStep(3);
+        addToast({
+          type: 'success',
+          title: 'Prep Plan Ready',
+          description: 'Your personalized interview preparation plan has been generated using AI.'
+        });
+      } else {
+        throw new Error(result.message || 'Generation failed');
+      }
     } catch (error) {
       addToast({
         type: 'error',

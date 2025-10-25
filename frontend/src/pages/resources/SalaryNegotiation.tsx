@@ -47,61 +47,43 @@ const SalaryNegotiation: React.FC = () => {
   const generateNegotiationPlan = async () => {
     setIsGenerating(true);
     try {
-      // Simulate AI analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockPlan = {
-        marketSalary: {
-          min: 75000,
-          max: 95000,
-          median: 85000,
-          percentiles: {
-            '25th': 78000,
-            '75th': 92000,
-            '90th': 98000
-          }
-        },
-        negotiationStrategy: {
-          targetSalary: 90000,
-          anchorPoint: 95000,
-          walkAwayPoint: 82000,
-          confidence: 'High'
-        },
-        talkingPoints: [
-          'Highlight your 5+ years of experience in software development',
-          'Mention your track record of delivering projects on time and under budget',
-          'Reference your expertise in React, Node.js, and cloud technologies',
-          'Discuss your leadership experience and team collaboration skills'
-        ],
-        scripts: {
-          opening: "Thank you for the offer. I'm excited about this opportunity and the value I can bring to the team. Based on my research and experience, I was hoping we could discuss the compensation package.",
-          counterOffer: "I appreciate the offer of $X. Given my experience with [specific skills] and the market rate for this position in [location], I was hoping we could explore a salary in the range of $Y to $Z.",
-          benefits: "I'd also like to discuss the benefits package, particularly [health insurance, retirement, professional development, flexible work arrangements].",
-          closing: "I'm confident that my skills and experience will add significant value to the team. I'd love to move forward with this opportunity at $X."
-        },
-        redFlags: [
-          'Avoid mentioning personal financial needs',
-          'Don\'t accept the first offer immediately',
-          'Don\'t compare yourself negatively to others',
-          'Avoid being too aggressive or confrontational'
-        ],
-        alternatives: [
-          'Additional vacation days',
-          'Flexible work arrangements',
-          'Professional development budget',
-          'Performance bonus structure',
-          'Equity or stock options',
-          'Earlier performance review'
-        ]
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
       };
       
-      setNegotiationPlan(mockPlan);
-      setCurrentStep(5);
-      addToast({
-        type: 'success',
-        title: 'Negotiation Plan Ready',
-        description: 'Your personalized salary negotiation strategy has been generated.'
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/salary-negotiation/generate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          current_salary: salaryData.currentSalary,
+          desired_salary: salaryData.desiredSalary,
+          job_title: salaryData.jobTitle,
+          location: salaryData.location,
+          experience_years: salaryData.experienceYears,
+          education_level: salaryData.educationLevel,
+          skills: salaryData.skills,
+          company_size: salaryData.companySize
+        })
       });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setNegotiationPlan(result.data);
+        setCurrentStep(5);
+        addToast({
+          type: 'success',
+          title: 'Negotiation Plan Ready',
+          description: 'Your personalized salary negotiation strategy has been generated using AI.'
+        });
+      } else {
+        throw new Error(result.message || 'Generation failed');
+      }
     } catch (error) {
       addToast({
         type: 'error',

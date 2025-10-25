@@ -98,174 +98,41 @@ const SkillsAssessment: React.FC = () => {
   const generateAssessment = async () => {
     setIsGenerating(true);
     try {
-      // Simulate AI analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockResults = {
-        overallScore: 72,
-        categoryScores: {
-          'Technical Skills': 85,
-          'Soft Skills': 65,
-          'Business Skills': 45,
-          'Design Skills': 30
-        },
-        strengths: [
-          {
-            skill: 'JavaScript',
-            level: 'Advanced',
-            score: 90,
-            description: 'Strong foundation in JavaScript with good understanding of modern frameworks'
-          },
-          {
-            skill: 'Problem Solving',
-            level: 'Advanced',
-            score: 88,
-            description: 'Excellent analytical thinking and problem-solving abilities'
-          },
-          {
-            skill: 'React',
-            level: 'Intermediate',
-            score: 82,
-            description: 'Good understanding of React concepts and component-based architecture'
-          }
-        ],
-        weaknesses: [
-          {
-            skill: 'Machine Learning',
-            level: 'Beginner',
-            score: 25,
-            description: 'Limited experience with ML algorithms and data science concepts'
-          },
-          {
-            skill: 'Project Management',
-            level: 'Beginner',
-            score: 30,
-            description: 'Need to develop project planning and team coordination skills'
-          },
-          {
-            skill: 'UI/UX Design',
-            level: 'Beginner',
-            score: 20,
-            description: 'Limited experience with design principles and user experience'
-          }
-        ],
-        recommendations: [
-          {
-            category: 'Immediate Focus (0-3 months)',
-            skills: [
-              {
-                name: 'React',
-                currentLevel: 'Intermediate',
-                targetLevel: 'Advanced',
-                priority: 'High',
-                resources: [
-                  'Advanced React Patterns course',
-                  'Build a complex React application',
-                  'Learn React performance optimization'
-                ]
-              },
-              {
-                name: 'Project Management',
-                currentLevel: 'Beginner',
-                targetLevel: 'Intermediate',
-                priority: 'High',
-                resources: [
-                  'PMP certification preparation',
-                  'Agile methodology training',
-                  'Lead a small project team'
-                ]
-              }
-            ]
-          },
-          {
-            category: 'Medium-term Goals (3-12 months)',
-            skills: [
-              {
-                name: 'Machine Learning',
-                currentLevel: 'Beginner',
-                targetLevel: 'Intermediate',
-                priority: 'Medium',
-                resources: [
-                  'Machine Learning course (Coursera/edX)',
-                  'Python for Data Science',
-                  'Work on ML projects'
-                ]
-              },
-              {
-                name: 'UI/UX Design',
-                currentLevel: 'Beginner',
-                targetLevel: 'Intermediate',
-                priority: 'Medium',
-                resources: [
-                  'Design thinking workshop',
-                  'Figma mastery course',
-                  'User research methodologies'
-                ]
-              }
-            ]
-          }
-        ],
-        careerAlignment: {
-          currentRole: 'Software Engineer',
-          recommendedRoles: [
-            {
-              title: 'Senior Software Engineer',
-              match: 85,
-              requiredSkills: ['JavaScript', 'React', 'Node.js', 'Leadership'],
-              missingSkills: ['System Architecture', 'Team Management']
-            },
-            {
-              title: 'Full Stack Developer',
-              match: 78,
-              requiredSkills: ['JavaScript', 'React', 'Node.js', 'Database Design'],
-              missingSkills: ['Backend Architecture', 'DevOps']
-            },
-            {
-              title: 'Tech Lead',
-              match: 65,
-              requiredSkills: ['Leadership', 'System Architecture', 'Project Management'],
-              missingSkills: ['Strategic Planning', 'Team Management']
-            }
-          ]
-        },
-        learningPath: {
-          phase1: {
-            title: 'Foundation Building (Months 1-3)',
-            focus: 'Strengthen core technical skills',
-            activities: [
-              'Complete advanced React course',
-              'Build 2-3 portfolio projects',
-              'Start project management certification'
-            ]
-          },
-          phase2: {
-            title: 'Skill Expansion (Months 4-8)',
-            focus: 'Add complementary skills',
-            activities: [
-              'Learn machine learning basics',
-              'Develop UI/UX design skills',
-              'Practice leadership scenarios'
-            ]
-          },
-          phase3: {
-            title: 'Specialization (Months 9-12)',
-            focus: 'Become expert in chosen domain',
-            activities: [
-              'Choose specialization track',
-              'Complete advanced certifications',
-              'Build thought leadership'
-            ]
-          }
-        }
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
       };
       
-      setAssessmentResults(mockResults);
-      setCurrentStep(3);
-      addToast({
-        type: 'success',
-        title: 'Assessment Complete',
-        description: 'Your skills assessment has been completed. Check the results below.'
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/skills-assessment/generate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          technical_skills: assessmentData.skills.filter(s => s.category === 'Technical Skills').map(s => s.name),
+          soft_skills: assessmentData.skills.filter(s => s.category === 'Soft Skills').map(s => s.name),
+          experience_years: assessmentData.experienceYears,
+          current_role: assessmentData.currentRole,
+          career_goals: assessmentData.careerGoals,
+          industry: assessmentData.industry
+        })
       });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setAssessmentResults(result.data);
+        setCurrentStep(3);
+        addToast({
+          type: 'success',
+          title: 'Assessment Complete',
+          description: 'Your skills assessment has been completed using AI. Check the results below.'
+        });
+      } else {
+        throw new Error(result.message || 'Assessment failed');
+      }
     } catch (error) {
       addToast({
         type: 'error',

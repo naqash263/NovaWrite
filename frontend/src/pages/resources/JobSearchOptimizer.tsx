@@ -47,136 +47,42 @@ const JobSearchOptimizer: React.FC = () => {
   const generateSearchStrategy = async () => {
     setIsGenerating(true);
     try {
-      // Simulate AI analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockStrategy = {
-        jobRecommendations: [
-          {
-            title: 'Senior Software Engineer',
-            company: 'TechCorp Inc.',
-            location: 'San Francisco, CA',
-            salary: '$120,000 - $150,000',
-            match: '95%',
-            description: 'Full-stack development role with React and Node.js',
-            whyMatch: 'Strong match for your React and JavaScript skills',
-            applicationTips: [
-              'Highlight your 5+ years of experience',
-              'Emphasize your leadership experience',
-              'Mention your experience with cloud technologies'
-            ]
-          },
-          {
-            title: 'Lead Developer',
-            company: 'StartupXYZ',
-            location: 'Remote',
-            salary: '$110,000 - $140,000',
-            match: '88%',
-            description: 'Technical leadership role in a fast-growing startup',
-            whyMatch: 'Good fit for your leadership aspirations and technical skills',
-            applicationTips: [
-              'Show your startup experience',
-              'Highlight your team leadership skills',
-              'Demonstrate your ability to work in fast-paced environments'
-            ]
-          },
-          {
-            title: 'Full Stack Developer',
-            company: 'Enterprise Corp',
-            location: 'New York, NY',
-            salary: '$100,000 - $130,000',
-            match: '82%',
-            description: 'Enterprise software development with modern tech stack',
-            whyMatch: 'Matches your full-stack experience and enterprise background',
-            applicationTips: [
-              'Emphasize your enterprise experience',
-              'Highlight your problem-solving skills',
-              'Show your ability to work with large codebases'
-            ]
-          }
-        ],
-        searchStrategy: {
-          keywords: ['Senior Software Engineer', 'Full Stack Developer', 'React', 'Node.js', 'JavaScript'],
-          platforms: ['LinkedIn', 'Indeed', 'Glassdoor', 'AngelList', 'Company Websites'],
-          timing: 'Best times to apply: Tuesday-Thursday, 9-11 AM',
-          frequency: 'Apply to 3-5 jobs per day for optimal results'
-        },
-        applicationOptimization: {
-          resumeTips: [
-            'Use ATS-friendly keywords from job descriptions',
-            'Quantify your achievements with specific numbers',
-            'Tailor your resume for each application',
-            'Include a strong professional summary'
-          ],
-          coverLetterTips: [
-            'Address the hiring manager by name when possible',
-            'Explain why you\'re interested in this specific role',
-            'Highlight relevant experience and achievements',
-            'Show enthusiasm for the company and role'
-          ],
-          portfolioTips: [
-            'Showcase your best projects prominently',
-            'Include live demos and GitHub links',
-            'Write detailed project descriptions',
-            'Keep your portfolio updated and professional'
-          ]
-        },
-        networkingStrategy: {
-          online: [
-            'Optimize your LinkedIn profile with relevant keywords',
-            'Join industry-specific groups and participate in discussions',
-            'Connect with employees at target companies',
-            'Share relevant content and insights regularly'
-          ],
-          offline: [
-            'Attend local tech meetups and conferences',
-            'Join professional associations in your field',
-            'Participate in hackathons and coding competitions',
-            'Volunteer for tech-related community events'
-          ],
-          informationalInterviews: [
-            'Reach out to professionals in your target roles',
-            'Prepare thoughtful questions about their career path',
-            'Ask for advice on breaking into the industry',
-            'Follow up with a thank you note'
-          ]
-        },
-        interviewPreparation: {
-          commonQuestions: [
-            'Tell me about yourself',
-            'Why are you interested in this role?',
-            'What are your greatest strengths and weaknesses?',
-            'Where do you see yourself in 5 years?',
-            'Why should we hire you?'
-          ],
-          technicalQuestions: [
-            'Explain a complex project you worked on',
-            'How do you approach debugging a difficult problem?',
-            'Describe your experience with version control',
-            'How do you stay updated with new technologies?'
-          ],
-          behavioralQuestions: [
-            'Tell me about a time you had to work with a difficult team member',
-            'Describe a situation where you had to learn something new quickly',
-            'Give me an example of a project that didn\'t go as planned',
-            'Tell me about a time you had to meet a tight deadline'
-          ]
-        },
-        salaryNegotiation: {
-          research: 'Research salary ranges for similar roles in your location',
-          timing: 'Wait for the job offer before discussing salary',
-          approach: 'Focus on your value and contributions to the company',
-          alternatives: 'Consider other benefits like flexible hours, remote work, or professional development'
-        }
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
       };
       
-      setSearchStrategy(mockStrategy);
-      setCurrentStep(3);
-      addToast({
-        type: 'success',
-        title: 'Search Strategy Ready',
-        description: 'Your personalized job search strategy has been generated.'
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/job-search/generate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          job_title: formData.jobTitle,
+          location: formData.location,
+          experience_years: formData.experienceYears,
+          skills: formData.skills,
+          salary_expectation: formData.salaryExpectation,
+          job_type: formData.jobType,
+          industry: formData.industry
+        })
       });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSearchStrategy(result.data);
+        setCurrentStep(3);
+        addToast({
+          type: 'success',
+          title: 'Search Strategy Ready',
+          description: 'Your personalized job search strategy has been generated using AI.'
+        });
+      } else {
+        throw new Error(result.message || 'Generation failed');
+      }
     } catch (error) {
       addToast({
         type: 'error',

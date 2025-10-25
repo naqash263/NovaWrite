@@ -79,51 +79,42 @@ const CoverLetterGenerator: React.FC = () => {
   const generateCoverLetter = async () => {
     setIsGenerating(true);
     try {
-      // Simulate AI generation
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      const mockCoverLetter: GeneratedCoverLetter = {
-        content: `Dear Hiring Manager,
-
-I am writing to express my strong interest in the ${formData.jobTitle} position at ${formData.companyName}. With ${formData.yearsExperience} years of experience in ${formData.currentPosition} and a proven track record of ${formData.achievements}, I am confident that I would be a valuable addition to your team.
-
-In my current role, I have successfully ${formData.relevantExperience}, which directly aligns with the requirements outlined in your job posting. My expertise in ${formData.keySkills.join(', ')} has enabled me to ${formData.achievements}, and I am excited about the opportunity to bring these skills to ${formData.companyName}.
-
-What particularly attracts me to this position is ${formData.motivation}. I am impressed by ${formData.companyName}'s commitment to innovation and excellence, and I am eager to contribute to your continued success.
-
-I would welcome the opportunity to discuss how my experience and passion for ${formData.jobTitle} can contribute to your team's goals. Thank you for considering my application.
-
-Best regards,
-${formData.yourName}`,
-        suggestions: [
-          'Add specific metrics or quantifiable achievements',
-          'Include a call-to-action in the closing paragraph',
-          'Mention any mutual connections or company research',
-          'Highlight relevant certifications or education'
-        ],
-        keywords: [
-          formData.jobTitle,
-          formData.companyName,
-          ...formData.keySkills,
-          'experience',
-          'skills',
-          'achievements'
-        ],
-        score: 85,
-        improvements: [
-          'Consider adding more specific examples of your work',
-          'Include industry-specific terminology',
-          'Add a personal touch that shows company research'
-        ]
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
       };
-
-      setGeneratedLetter(mockCoverLetter);
-      setCurrentStep(5);
-      addToast({
-        type: 'success',
-        title: 'Cover Letter Generated',
-        description: 'Your personalized cover letter has been created successfully!'
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/cover-letter/generate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          job_title: formData.jobTitle,
+          company_name: formData.companyName,
+          job_description: formData.jobDescription,
+          years_experience: formData.yearsExperience,
+          current_position: formData.currentPosition,
+          achievements: formData.achievements,
+          skills: formData.keySkills.join(', ')
+        })
       });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setGeneratedLetter(result.data);
+        setCurrentStep(5);
+        addToast({
+          type: 'success',
+          title: 'Cover Letter Generated',
+          description: 'Your personalized cover letter has been created using AI!'
+        });
+      } else {
+        throw new Error(result.message || 'Generation failed');
+      }
     } catch (error) {
       addToast({
         type: 'error',

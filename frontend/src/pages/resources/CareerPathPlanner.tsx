@@ -47,145 +47,42 @@ const CareerPathPlanner: React.FC = () => {
   const generateCareerPlan = async () => {
     setIsGenerating(true);
     try {
-      // Simulate AI analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockPlan = {
-        careerPaths: [
-          {
-            title: 'Technical Leadership Track',
-            description: 'Progress from Senior Developer to Tech Lead, Engineering Manager, and CTO',
-            timeline: '3-5 years',
-            probability: 'High',
-            skills: ['Leadership', 'System Architecture', 'Team Management', 'Strategic Planning'],
-            nextSteps: [
-              'Take on team lead responsibilities in current projects',
-              'Complete leadership training or certification',
-              'Mentor junior developers',
-              'Get involved in technical decision-making'
-            ],
-            salary: {
-              current: 95000,
-              next: 120000,
-              future: 180000
-            }
-          },
-          {
-            title: 'Product Management Track',
-            description: 'Transition to Product Manager, Senior PM, and VP of Product',
-            timeline: '2-4 years',
-            probability: 'Medium',
-            skills: ['Product Strategy', 'User Research', 'Data Analysis', 'Stakeholder Management'],
-            nextSteps: [
-              'Take product management courses',
-              'Get involved in product decisions',
-              'Learn user research methodologies',
-              'Build relationships with product teams'
-            ],
-            salary: {
-              current: 95000,
-              next: 110000,
-              future: 160000
-            }
-          },
-          {
-            title: 'Entrepreneurship Track',
-            description: 'Start your own company or join a startup as a co-founder',
-            timeline: '1-3 years',
-            probability: 'Medium',
-            skills: ['Business Development', 'Fundraising', 'Marketing', 'Operations'],
-            nextSteps: [
-              'Identify market opportunities',
-              'Build a network of potential co-founders',
-              'Learn about startup funding',
-              'Develop business acumen'
-            ],
-            salary: {
-              current: 95000,
-              next: 80000,
-              future: 200000
-            }
-          }
-        ],
-        skillGaps: [
-          {
-            skill: 'Leadership',
-            importance: 'High',
-            currentLevel: 'Beginner',
-            targetLevel: 'Intermediate',
-            resources: [
-              'Leadership training program',
-              'Mentoring junior team members',
-              'Leading cross-functional projects'
-            ]
-          },
-          {
-            skill: 'System Architecture',
-            importance: 'High',
-            currentLevel: 'Intermediate',
-            targetLevel: 'Advanced',
-            resources: [
-              'AWS Solutions Architect certification',
-              'Microservices architecture course',
-              'Design patterns study'
-            ]
-          },
-          {
-            skill: 'Business Acumen',
-            importance: 'Medium',
-            currentLevel: 'Beginner',
-            targetLevel: 'Intermediate',
-            resources: [
-              'Business strategy courses',
-              'Financial analysis training',
-              'Industry trend analysis'
-            ]
-          }
-        ],
-        recommendations: [
-          {
-            category: 'Immediate Actions (0-6 months)',
-            items: [
-              'Complete a leadership training program',
-              'Take on a team lead role in your current project',
-              'Start mentoring junior developers',
-              'Build your professional network'
-            ]
-          },
-          {
-            category: 'Short-term Goals (6-18 months)',
-            items: [
-              'Get promoted to Senior Software Engineer',
-              'Complete AWS Solutions Architect certification',
-              'Lead a major technical project',
-              'Speak at a tech conference'
-            ]
-          },
-          {
-            category: 'Long-term Vision (2-5 years)',
-            items: [
-              'Become a Tech Lead or Engineering Manager',
-              'Build expertise in a specific domain',
-              'Consider starting your own company',
-              'Develop thought leadership in your field'
-            ]
-          }
-        ],
-        marketInsights: {
-          industryGrowth: 'Technology sector growing at 15% annually',
-          inDemandSkills: ['Cloud Computing', 'AI/ML', 'Cybersecurity', 'DevOps'],
-          salaryTrends: 'Senior developers seeing 8-12% annual salary increases',
-          remoteWork: '85% of tech companies offer remote work options'
-        }
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
       };
       
-      setCareerPlan(mockPlan);
-      setCurrentStep(4);
-      addToast({
-        type: 'success',
-        title: 'Career Plan Ready',
-        description: 'Your personalized career development plan has been generated.'
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/career-path/generate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          current_role: formData.currentRole,
+          experience_years: formData.experienceYears,
+          skills: formData.skills,
+          interests: formData.interests,
+          career_goals: formData.careerGoals,
+          industry: formData.industry,
+          education_level: formData.educationLevel
+        })
       });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setCareerPlan(result.data);
+        setCurrentStep(4);
+        addToast({
+          type: 'success',
+          title: 'Career Plan Ready',
+          description: 'Your personalized career development plan has been generated using AI.'
+        });
+      } else {
+        throw new Error(result.message || 'Generation failed');
+      }
     } catch (error) {
       addToast({
         type: 'error',
