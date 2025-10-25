@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="NT monogram logo">
+  <title>NT Monogram</title>
+  <desc>Geometric monogram badge for Naqash Thaheem portfolio, letterforms built from paths (no fonts).</desc>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5B8CFF"/>
+      <stop offset="1" stop-color="#00D1B2"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer rounded hex -->
+  <path d="M128 8c6.6 0 13.1 1.7 18.8 5l72 41.6c11.7 6.8 18.8 19.4 18.8 33v80.8c0 13.6-7.1 26.2-18.8 33l-72 41.6c-5.7 3.3-12.2 5-18.8 5s-13.1-1.7-18.8-5l-72-41.6C25.5 194.6 18.4 182 18.4 168.4V87.6c0-13.6 7.1-26.2 18.8-33l72-41.6c5.7-3.3 12.2-5 18.8-5z" fill="url(#g)"/>
+  <!-- Inner plate -->
+  <circle cx="128" cy="128" r="92" fill="#0B1020" opacity="0.9"/>
+  <!-- Letter N -->
+  <path d="M74 168V88h18l44 52V88h18v80h-18l-44-52v52H74z" fill="#FFFFFF"/>
+  <!-- Letter T -->
+  <path d="M194 104h-44V88h62v16h-23v64h-18v-64z" fill="#00D1B2"/>
+</svg>

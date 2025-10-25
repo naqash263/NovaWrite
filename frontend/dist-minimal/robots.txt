@@ -1,0 +1,29 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://naqashthaheem.com/sitemap.xml
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /api/
+
+# Allow important pages
+Allow: /
+Allow: /about
+Allow: /workflows
+Allow: /blog
+Allow: /contact
+Allow: /courses
+Allow: /resources
+Allow: /resources/cv-builder
+Allow: /resources/watermark-remover
+Allow: /privacy-policy
+Allow: /terms-of-service
+Allow: /cookie-policy
+
+# Crawl delay (optional)
+Crawl-delay: 1
+
+
+
