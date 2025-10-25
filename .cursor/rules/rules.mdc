@@ -42,6 +42,15 @@ alwaysApply: true
 - ✅ ALWAYS include Schema::hasTable() checks
 - ✅ ALWAYS make migrations idempotent (safe to run multiple times)
 - ✅ ALWAYS test migrations locally before deploying
+- ⚠️ **CRITICAL**: ALWAYS check production migration status before deploying new features
+- ✅ **Migration Status Check**: Use `gh workflow run database-management.yml -f action=check-migration-status`
+- ✅ **Migration Troubleshooting**: If migrations fail due to existing columns/tables:
+  1. Check what columns/tables already exist in production
+  2. Manually mark problematic migration as completed in `migrations` table
+  3. Run remaining migrations using `--path` parameter
+  4. Verify all migrations are marked as "Ran" in production
+- ❌ **NEVER** assume migrations will run successfully in production
+- ✅ **ALWAYS** verify migration status after deployment
 
 ## 3. Storage & File URLs
 - ❌ NEVER construct storage URLs manually with hardcoded domains
@@ -137,6 +146,9 @@ alwaysApply: true
 
 ## 12. Production Deployment Checklist
 - [ ] All migrations have safety checks
+- [ ] **Check production migration status before deploying new features**
+- [ ] **Verify all pending migrations can run successfully**
+- [ ] **If migrations fail, fix them before proceeding with deployment**
 - [ ] No localhost URLs in code
 - [ ] Frontend .env has production URLs
 - [ ] Backend APP_URL set correctly
@@ -153,6 +165,7 @@ alwaysApply: true
 - [ ] Wait 2.5 minutes after deployment before testing
 - [ ] Database permissions granted automatically
 - [ ] Encryption key backed up before migration
+- [ ] **All migrations completed successfully in production**
 - [ ] Post-deployment verification completed
 - [ ] **Test encryption key stability after deployment**
 - [ ] **Test PWA install banner shows after 2-3 visits**
@@ -586,6 +599,45 @@ $service->getStatistics();
 # Check manifest.json references correct files
 # Update vite.config.ts to include PNG icons in assets
 # Verify icons exist in dist/ after build
+```
+
+## Mistake 19: Production migrations fail due to existing columns/tables
+**Cause:** Migration tries to add columns/tables that already exist in production database
+**Solution:**
+```bash
+# 1. Check migration status first
+gh workflow run database-management.yml -f action=check-migration-status
+
+# 2. If migration fails with "column already exists" error:
+# - Check what columns already exist in production
+# - Manually mark the migration as completed in migrations table
+PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "
+  INSERT INTO migrations (migration, batch) 
+  VALUES ('2025_XX_XX_XXXXXX_migration_name', 18)
+  WHERE NOT EXISTS (SELECT 1 FROM migrations WHERE migration = '2025_XX_XX_XXXXXX_migration_name');
+"
+
+# 3. Run remaining migrations using specific path
+php artisan migrate --path=database/migrations/2025_XX_XX_XXXXXX_remaining_migration.php --force
+
+# 4. Verify all migrations are completed
+gh workflow run database-management.yml -f action=check-migration-status
+```
+
+## Mistake 20: Laravel migrations stop running after one fails
+**Cause:** Laravel stops processing migrations when one fails, blocking subsequent migrations
+**Solution:**
+```bash
+# 1. Identify the failing migration
+# 2. Fix the migration or mark it as completed manually
+# 3. Run remaining migrations individually using --path parameter
+# 4. Always check migration status after each step
+
+# Example workflow:
+gh workflow run database-management.yml -f action=check-migration-status
+# Fix problematic migration
+gh workflow run run-specific-migration.yml  # Custom workflow for specific migration
+gh workflow run database-management.yml -f action=check-migration-status
 ```
 
 Try to open the browser's developer tools by opening the page when ever request to test on browser
