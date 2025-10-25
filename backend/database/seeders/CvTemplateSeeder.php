@@ -67,7 +67,7 @@ class CvTemplateSeeder extends Seeder
             display: flex;
             width: 100%;
             max-width: 100%;
-            min-height: 842px; /* A4 height */
+            min-height: auto; /* Auto height to avoid multiple pages */
             margin: 0;
             background-color: #fff;
         }
@@ -1613,7 +1613,7 @@ class CvTemplateSeeder extends Seeder
                     background: white;
                     box-shadow: 0 0 20px rgba(0,0,0,0.1);
                     display: flex !important;
-                        min-height: 842px;
+                    min-height: auto; /* Auto height to avoid multiple pages */
                 }
                 
                     #cv-template-left-right .left-sidebar {
