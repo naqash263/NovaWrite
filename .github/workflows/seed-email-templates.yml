@@ -1,0 +1,122 @@
+name: Seed Email Templates to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_seed:
+        description: 'Type "SEED" to confirm seeding email templates to production'
+        required: true
+        type: string
+
+jobs:
+  seed-email-templates:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm_seed == 'SEED'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+
+    - name: Install Composer dependencies
+      run: composer install --no-dev --prefer-dist
+      working-directory: ./backend
+
+    - name: Seed Email Templates to Production
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        timeout: 300s
+        command_timeout: 300s
+        script: |
+          # Colors for output
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          YELLOW='\033[1;33m'
+          NC='\033[0m' # No Color
+
+          echo -e "${BLUE}🌱 Seeding Email Templates to Production${NC}"
+          echo "=============================================="
+
+          # Navigate to project directory
+          cd ~/naqashthaheem.com/backend
+
+          # Load environment variables
+          if [ -f ".env" ]; then
+            export $(grep -v '^#' .env | xargs)
+          fi
+
+          echo -e "${YELLOW}📋 Checking current email templates...${NC}"
+          php artisan tinker --execute="
+            \$count = \App\Models\EmailTemplate::count();
+            echo 'Current email templates: ' . \$count . PHP_EOL;
+          "
+
+          echo -e "${YELLOW}🌱 Running EmailTemplateSeeder...${NC}"
+          php artisan db:seed --class=EmailTemplateSeeder --force
+
+          echo -e "${YELLOW}📊 Checking seeded email templates...${NC}"
+          php artisan tinker --execute="
+            \$count = \App\Models\EmailTemplate::count();
+            echo 'Total email templates after seeding: ' . \$count . PHP_EOL;
+            
+            \$templates = \App\Models\EmailTemplate::select('name', 'subject', 'is_active')->get();
+            echo 'Email Templates:' . PHP_EOL;
+            foreach(\$templates as \$template) {
+              echo '- ' . \$template->name . ' (' . (\$template->is_active ? 'Active' : 'Inactive') . ')' . PHP_EOL;
+            }
+          "
+
+          echo -e "${GREEN}✅ Email templates seeded successfully!${NC}"
+
+    - name: Verify Email Templates
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        timeout: 300s
+        command_timeout: 300s
+        script: |
+          # Colors for output
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          NC='\033[0m' # No Color
+
+          echo -e "${BLUE}🔍 Verifying Email Templates${NC}"
+          echo "=============================="
+
+          cd ~/naqashthaheem.com/backend
+
+          # Load environment variables
+          if [ -f ".env" ]; then
+            export $(grep -v '^#' .env | xargs)
+          fi
+
+          echo -e "${GREEN}📧 Email Templates Summary:${NC}"
+          php artisan tinker --execute="
+            \$templates = \App\Models\EmailTemplate::select('name', 'subject', 'category', 'is_active')->orderBy('category')->get();
+            
+            \$categories = \$templates->groupBy('category');
+            foreach(\$categories as \$category => \$categoryTemplates) {
+              echo PHP_EOL . '📁 ' . ucfirst(\$category) . ' Templates:' . PHP_EOL;
+              foreach(\$categoryTemplates as \$template) {
+                echo '  ✓ ' . \$template->name . ' - ' . \$template->subject . PHP_EOL;
+              }
+            }
+            
+            echo PHP_EOL . 'Total: ' . \$templates->count() . ' email templates' . PHP_EOL;
+          "
+
+          echo -e "${GREEN}✅ Email templates verification completed!${NC}"
