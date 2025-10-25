@@ -122,37 +122,13 @@ export default defineConfig({
     chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
-        // Optimize chunk splitting for better caching
-        manualChunks: (id) => {
-          // Create separate chunks for node_modules
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react-vendor'
-            }
-            if (id.includes('react-router')) {
-              return 'router'
-            }
-            if (id.includes('@tanstack/react-query')) {
-              return 'query'
-            }
-            if (id.includes('axios')) {
-              return 'http'
-            }
-            if (id.includes('@uiw/react-md-editor')) {
-              return 'editor'
-            }
-            return 'vendor'
-          }
-          // Create separate chunks for different page groups
-          if (id.includes('/pages/admin/')) {
-            return 'admin'
-          }
-          if (id.includes('/pages/auth/')) {
-            return 'auth'
-          }
-          if (id.includes('/pages/courses/')) {
-            return 'courses'
-          }
+        // Simplified chunk splitting to avoid circular dependencies
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'query': ['@tanstack/react-query'],
+          'http': ['axios'],
+          'editor': ['@uiw/react-md-editor']
         },
         // Optimize asset naming for better caching
         assetFileNames: (assetInfo) => {
