@@ -55,19 +55,16 @@ const LinkedInOptimizer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useSEO({
-    title: 'LinkedIn Profile Optimizer - Boost Your Professional Visibility | Naqash Thaheem',
+    title: 'Free LinkedIn Profile Optimizer - Boost Your Professional Visibility',
     description: 'Optimize your LinkedIn profile for maximum visibility with AI-powered analysis. Get keyword suggestions, headline improvements, and engagement strategies.',
     url: '/resources/linkedin-optimizer',
     keywords: ['LinkedIn optimization', 'professional profile', 'career tools', 'AI analysis', 'profile optimization']
   });
 
   const steps = [
-    { title: 'Profile Analysis', description: 'Analyze your current LinkedIn profile' },
-    { title: 'Keyword Optimization', description: 'Optimize keywords for better visibility' },
-    { title: 'Headline Enhancement', description: 'Create compelling headlines' },
-    { title: 'Summary Improvement', description: 'Write engaging profile summaries' },
-    { title: 'Skills Optimization', description: 'Select the right skills' },
-    { title: 'Results & Recommendations', description: 'Get personalized recommendations' }
+    { title: 'Profile Information', description: 'Share your current LinkedIn profile details' },
+    { title: 'AI Analysis', description: 'Get AI-powered optimization recommendations' },
+    { title: 'Results & Action Plan', description: 'Review your personalized improvement plan' }
   ];
 
   const analyzeLinkedInUrl = (url: string) => {
@@ -173,7 +170,7 @@ const LinkedInOptimizer: React.FC = () => {
 
       if (result.success) {
         setOptimizations(result.data);
-        setCurrentStep(6); // Changed to step 6 to show extracted data first
+        setCurrentStep(2); // Go directly to results (step 2)
         addToast({
           type: 'success',
           title: 'Analysis Complete',
@@ -199,18 +196,16 @@ const LinkedInOptimizer: React.FC = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">LinkedIn Profile Analysis</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Profile Information</h2>
               <p className="text-gray-600 mb-8">
-                Enter your LinkedIn profile information to get AI-powered optimization recommendations.
+                Share your current LinkedIn profile details. We'll keep it simple and focused on what matters most.
               </p>
             </div>
 
             <div className="space-y-4">
-              {/* LinkedIn Profile URL field hidden as requested - users will fill manually */}
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Headline
+                  Current Headline *
                 </label>
                 <input
                   type="text"
@@ -219,38 +214,41 @@ const LinkedInOptimizer: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Software Engineer at Tech Company"
                 />
+                <p className="text-sm text-gray-500 mt-1">Your current LinkedIn headline</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profile Summary
+                  Profile Summary *
                 </label>
                 <textarea
                   value={profile.summary}
                   onChange={(e) => setProfile({...profile, summary: e.target.value})}
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Tell us about your professional background..."
+                  placeholder="Briefly describe your professional background and key achievements..."
                 />
+                <p className="text-sm text-gray-500 mt-1">Your current LinkedIn summary/about section</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Skills (comma-separated)
+                  Current Skills (comma-separated) *
                 </label>
                 <input
                   type="text"
                   value={profile.skills.join(', ')}
                   onChange={(e) => setProfile({...profile, skills: e.target.value.split(',').map(s => s.trim())})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., JavaScript, React, Node.js, Python"
+                  placeholder="e.g., JavaScript, React, Node.js, Python, Leadership"
                 />
+                <p className="text-sm text-gray-500 mt-1">List your top 5-10 most relevant skills</p>
               </div>
             </div>
 
             <button
               onClick={handleAnalyze}
-              disabled={isAnalyzing}
+              disabled={isAnalyzing || !profile.headline.trim() || !profile.summary.trim() || profile.skills.length === 0}
               className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {isAnalyzing ? 'Analyzing Profile...' : 'Analyze My Profile'}
@@ -258,111 +256,22 @@ const LinkedInOptimizer: React.FC = () => {
           </div>
         );
 
-      case 5:
+      case 1:
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Extracted Profile Data</h2>
-              <p className="text-gray-600 mb-6">Here's the data we extracted from your LinkedIn profile:</p>
-            </div>
-
-            <div className="bg-white rounded-lg border p-6 space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Professional Headline</h3>
-                <p className="text-gray-700">{profile.headline}</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">AI Analysis in Progress</h2>
+              <p className="text-gray-600 mb-8">
+                Our AI is analyzing your LinkedIn profile to provide personalized optimization recommendations...
+              </p>
+              <div className="flex justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Summary</h3>
-                <p className="text-gray-700 whitespace-pre-wrap">{profile.summary}</p>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Skills</h3>
-                <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((skill, index) => (
-                    <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {profile.experience && profile.experience.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Experience</h3>
-                  <div className="space-y-3">
-                    {profile.experience && profile.experience.length > 0 ? (
-                      profile.experience.map((exp, index) => (
-                        <div key={index} className="border-l-4 border-blue-500 pl-4">
-                          <h4 className="font-medium text-gray-900">{exp?.title || 'Position'}</h4>
-                          <p className="text-gray-600">{exp?.company || 'Company'}</p>
-                          {exp?.duration && <p className="text-sm text-gray-500">{exp.duration}</p>}
-                          <p className="text-sm text-gray-700 mt-1">{exp?.description || 'No description available'}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500 italic">No experience data available</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {profile.education && profile.education.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Education</h3>
-                  <div className="space-y-2">
-                    {profile.education && profile.education.length > 0 ? (
-                      profile.education.map((edu, index) => (
-                        <div key={index} className="border-l-4 border-green-500 pl-4">
-                          <h4 className="font-medium text-gray-900">{edu?.degree || 'Degree'}</h4>
-                          <p className="text-gray-600">{edu?.school || 'School'}</p>
-                          <p className="text-sm text-gray-500">{edu?.year || 'Year'}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500 italic">No education data available</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {(profile.location || profile.industry) && (
-                <div className="grid md:grid-cols-2 gap-4">
-                  {profile.location && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Location</h3>
-                      <p className="text-gray-700">{profile.location}</p>
-                    </div>
-                  )}
-                  {profile.industry && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Industry</h3>
-                      <p className="text-gray-700">{profile.industry}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(0)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Start Over
-              </button>
-              <button
-                onClick={() => setCurrentStep(6)}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                View Analysis Results
-              </button>
             </div>
           </div>
         );
 
-      case 6:
+      case 2:
         return (
           <div className="space-y-6">
             <div className="text-center">
@@ -751,7 +660,7 @@ const LinkedInOptimizer: React.FC = () => {
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
             Boost your LinkedIn visibility with AI-powered analysis and optimization recommendations.
-            Get more profile views, connection requests, and job opportunities.
+            We only ask for essential profile information - no personal details required!
           </p>
           
           {/* API Key Manager */}
@@ -788,6 +697,25 @@ const LinkedInOptimizer: React.FC = () => {
         <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
           {renderStepContent()}
         </div>
+
+        {/* Step Navigation */}
+        {currentStep > 0 && currentStep < 2 && (
+          <div className="mt-6 flex gap-4">
+            <button
+              onClick={() => setCurrentStep(currentStep - 1)}
+              className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentStep(currentStep + 1)}
+              disabled={currentStep === 1}
+              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              Next
+            </button>
+          </div>
+        )}
 
         {/* Features */}
         <div className="mt-12 grid md:grid-cols-3 gap-6">
