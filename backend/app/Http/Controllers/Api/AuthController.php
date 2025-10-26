@@ -47,8 +47,14 @@ class AuthController extends Controller
             \Log::error('Failed to send verification email: ' . $e->getMessage());
         }
 
-        // Fire UserRegistered event to send welcome email
-        event(new UserRegistered($user, $verificationUrl));
+        // Send welcome email directly
+        try {
+            $emailService = app(\App\Services\EmailService::class);
+            $emailService->sendWelcomeEmail($user);
+            Log::info("Welcome email sent to new user", ['user_email' => $user->email]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send welcome email: ' . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'Registration successful! Please check your email to verify your account.',
