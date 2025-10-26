@@ -40,29 +40,29 @@ jobs:
           pkill -f "artisan schedule:work" || true
           sleep 2
           
-          # Start queue worker
+          # Start queue worker using screen to keep it running
           echo -e "${BLUE}📬 Starting queue worker...${NC}"
-          nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
-          sleep 2
+          screen -dmS queue-worker bash -c "cd ~/naqashthaheem.com/backend && php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 >> storage/logs/queue-worker.log 2>&1"
+          sleep 3
           
-          # Start scheduler
+          # Start scheduler using screen to keep it running
           echo -e "${BLUE}⏰ Starting scheduler...${NC}"
-          nohup php artisan schedule:work > storage/logs/scheduler.log 2>&1 &
-          sleep 2
+          screen -dmS scheduler bash -c "cd ~/naqashthaheem.com/backend && php artisan schedule:work >> storage/logs/scheduler.log 2>&1"
+          sleep 3
           
           # Verify both are running
           echo -e "${YELLOW}🔍 Verifying services are running...${NC}"
           
-          if ps aux | grep "queue:work" | grep -v grep > /dev/null; then
-            echo -e "${GREEN}✅ Queue worker is running${NC}"
-            ps aux | grep "queue:work" | grep -v grep
+          if screen -ls | grep -q queue-worker; then
+            echo -e "${GREEN}✅ Queue worker is running in screen${NC}"
+            screen -ls | grep queue-worker
           else
             echo -e "${RED}❌ Queue worker failed to start${NC}"
           fi
           
-          if ps aux | grep "schedule:work" | grep -v grep > /dev/null; then
-            echo -e "${GREEN}✅ Scheduler is running${NC}"
-            ps aux | grep "schedule:work" | grep -v grep
+          if screen -ls | grep -q scheduler; then
+            echo -e "${GREEN}✅ Scheduler is running in screen${NC}"
+            screen -ls | grep scheduler
           else
             echo -e "${RED}❌ Scheduler failed to start${NC}"
           fi
