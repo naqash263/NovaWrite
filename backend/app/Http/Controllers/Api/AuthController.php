@@ -233,7 +233,14 @@ class AuthController extends Controller
             
             Log::info("PasswordResetRequested event dispatched", [
                 'user_email' => $user->email,
-                'event_queued' => true
+                'event_queued' => true,
+                'jobs_count' => \DB::table('jobs')->count()
+            ]);
+            
+            // Check if job was queued
+            sleep(1);
+            Log::info("Jobs table count after event", [
+                'jobs_count' => \DB::table('jobs')->count()
             ]);
         } catch (\Exception $e) {
             Log::error("Error firing PasswordResetRequested event: " . $e->getMessage(), [

@@ -20,6 +20,7 @@ class SendPasswordResetEmail implements ShouldQueue
     public function __construct(EmailService $emailService)
     {
         $this->emailService = $emailService;
+        Log::info("SendPasswordResetEmail listener constructor called");
     }
 
     /**
