@@ -1,0 +1,45 @@
+name: Grant Jobs Table Permissions
+
+on:
+  workflow_dispatch:
+
+jobs:
+  grant-permissions:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Grant Permissions to Jobs Tables
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        timeout: 300s
+        command_timeout: 300s
+        script: |
+          # Colors for output
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          YELLOW='\033[1;33m'
+          NC='\033[0m' # No Color
+          
+          echo -e "${BLUE}🔐 Granting Permissions to Jobs Tables${NC}"
+          echo "====================================="
+          
+          echo -e "${BLUE}Granting permissions to jobs table...${NC}"
+          PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "GRANT ALL PRIVILEGES ON TABLE jobs TO timesovh_naqash_thaheem;"
+          
+          echo -e "${BLUE}Granting permissions to job_batches table...${NC}"
+          PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "GRANT ALL PRIVILEGES ON TABLE job_batches TO timesovh_naqash_thaheem;"
+          
+          echo -e "${BLUE}Granting permissions to failed_jobs table...${NC}"
+          PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "GRANT ALL PRIVILEGES ON TABLE failed_jobs TO timesovh_naqash_thaheem;"
+          
+          echo -e "${GREEN}✅ Permissions granted successfully!${NC}"
+          
+          echo -e "${BLUE}Verifying permissions...${NC}"
+          PGPASSWORD='mg08.Rcrld}N' psql -h localhost -U timesovh_naqash_thaheem -d timesovh_naqashthaheem -c "SELECT has_table_privilege('timesovh_naqash_thaheem', 'jobs', 'INSERT');"
+
