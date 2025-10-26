@@ -55,7 +55,10 @@ class EmailQueue extends Model
     public function scopeReadyForRetry($query)
     {
         return $query->where('status', 'pending')
-                    ->where('next_retry_at', '<=', now());
+                    ->where(function($q) {
+                        $q->whereNull('next_retry_at')
+                          ->orWhere('next_retry_at', '<=', now());
+                    });
     }
 
     /**
