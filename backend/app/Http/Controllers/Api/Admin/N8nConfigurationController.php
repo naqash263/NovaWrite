@@ -115,8 +115,10 @@ class N8nConfigurationController extends Controller
     /**
      * Activate the specified N8n configuration.
      */
-    public function activate(N8nConfiguration $n8nConfiguration): JsonResponse
+    public function activate($id): JsonResponse
     {
+        $n8nConfiguration = N8nConfiguration::findOrFail($id);
+        
         $n8nConfiguration->activate();
 
         return response()->json([
@@ -129,8 +131,10 @@ class N8nConfigurationController extends Controller
     /**
      * Deactivate the specified N8n configuration.
      */
-    public function deactivate(N8nConfiguration $n8nConfiguration): JsonResponse
+    public function deactivate($id): JsonResponse
     {
+        $n8nConfiguration = N8nConfiguration::findOrFail($id);
+        
         $n8nConfiguration->deactivate();
 
         return response()->json([
@@ -143,8 +147,10 @@ class N8nConfigurationController extends Controller
     /**
      * Test the N8n webhook connection.
      */
-    public function test(N8nConfiguration $n8nConfiguration): JsonResponse
+    public function test($id): JsonResponse
     {
+        $n8nConfiguration = N8nConfiguration::findOrFail($id);
+        
         $result = $this->n8nService->testConnection($n8nConfiguration);
 
         return response()->json([
