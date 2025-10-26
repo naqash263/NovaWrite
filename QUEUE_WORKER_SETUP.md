@@ -245,25 +245,59 @@ crontab -e
 0 * * * * cd ~/naqashthaheem.com/backend && pkill -f "artisan queue:work" && nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
 ```
 
+## Automatic Queue Processing
+
+The email queue is automatically processed by:
+1. **Queue Worker** (`php artisan queue:work`) - Processes jobs from the `jobs` table
+2. **Schedule Runner** (`php artisan schedule:work`) - Dispatches emails from `email_queue` to `jobs` table every minute
+
+### Setup Local Development
+
+Start both processes:
+
+```bash
+cd ~/NovaWrite/backend
+
+# Terminal 1: Start queue worker
+php artisan queue:work --tries=3 --timeout=120
+
+# Terminal 2: Start scheduler
+php artisan schedule:work
+```
+
+### Setup Production
+
+Both processes should run in background:
+
+```bash
+# Terminal 1: Start queue worker
+nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+
+# Terminal 2: Start scheduler
+nohup php artisan schedule:work > storage/logs/scheduler.log 2>&1 &
+
+# Verify both are running
+ps aux | grep -E "queue:work|schedule:work"
+```
+
 ## Manual Queue Processing
 
 If you need to manually process the queue:
 
 ```bash
 cd ~/naqashthaheem.com/backend
-php artisan queue:work --tries=3 --timeout=120
-```
 
-Or use the scheduled command:
-
-```bash
+# Process email queue (dispatches emails to jobs table)
 php artisan email:process-queue
-php artisan schedule:run
+
+# Process jobs (sends emails via N8n)
+php artisan queue:work --once
 ```
 
 ## Production Checklist
 
 - [ ] Queue worker is running (check with `ps aux | grep queue:work`)
+- [ ] Scheduler is running (check with `ps aux | grep schedule:work`)
 - [ ] N8n configuration is active in admin panel
 - [ ] Test forgot password flow sends email
 - [ ] Check email queue status (should have 0 pending)
