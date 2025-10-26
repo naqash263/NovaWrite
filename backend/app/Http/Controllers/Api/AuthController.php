@@ -224,13 +224,16 @@ class AuthController extends Controller
         try {
             Log::info("About to fire PasswordResetRequested event", [
                 'user_email' => $user->email,
-                'reset_url' => $resetUrl
+                'reset_url' => $resetUrl,
+                'queue_connection' => config('queue.default'),
+                'queue_driver' => config('queue.connections.database.driver')
             ]);
             
             event(new PasswordResetRequested($user, $resetUrl, $token));
             
             Log::info("PasswordResetRequested event dispatched", [
-                'user_email' => $user->email
+                'user_email' => $user->email,
+                'event_queued' => true
             ]);
         } catch (\Exception $e) {
             Log::error("Error firing PasswordResetRequested event: " . $e->getMessage(), [
