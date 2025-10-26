@@ -88,18 +88,38 @@ sudo systemctl start laravel-queue
 sudo systemctl status laravel-queue
 ```
 
-## Option 3: GitHub Actions Workflow (Automated)
+## Option 3: GitHub Actions with Manual Queue Worker (Current Setup)
 
-The production deployment workflow should already include queue worker setup. Check `.github/workflows/deploy-production.yml` for queue worker configuration.
+Since `sudo` is not available, we'll use GitHub Actions to automatically start the queue worker during deployment.
 
-If not present, add this step to the deployment workflow:
+### 1. Update GitHub Actions Workflow
+
+Add this step to your deployment workflow (`.github/workflows/deploy-production.yml`):
 
 ```yaml
 - name: Start Queue Worker
   run: |
-    sudo supervisorctl restart laravel-worker:* || \
-    sudo systemctl restart laravel-queue || \
-    nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 > /tmp/laravel-queue.log 2>&1 &
+    # Kill any existing queue workers
+    pkill -f "artisan queue:work" || true
+    
+    # Start new queue worker in background
+    cd backend
+    nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+    
+    # Verify it's running
+    sleep 2
+    ps aux | grep "queue:work" | grep -v grep
+```
+
+### 2. Add to Deployment Script
+
+Or add to your existing deployment script in GitHub Actions:
+
+```bash
+# Start Laravel Queue Worker
+cd ~/naqashthaheem.com/backend
+nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+echo "Queue worker started in background"
 ```
 
 ## Current Production Status
@@ -166,6 +186,64 @@ If the queue worker keeps dying, increase the resources:
    ```bash
    php artisan tinker --execute='App\Models\EmailLog::orderBy("created_at", "desc")->limit(5)->get();'
    ```
+
+## Option 4: Manual Setup (No Sudo Required - RECOMMENDED)
+
+Since `sudo` is not available, use this manual setup:
+
+### 1. SSH into Production Server
+
+```bash
+ssh -p 21098 timesovh@162.254.39.126
+cd ~/naqashthaheem.com/backend
+```
+
+### 2. Start Queue Worker Manually
+
+```bash
+# Kill any existing queue workers
+pkill -f "artisan queue:work" || true
+
+# Start queue worker in background
+nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+
+# Verify it's running
+ps aux | grep "queue:work" | grep -v grep
+
+# Check logs
+tail -f storage/logs/queue-worker.log
+```
+
+### 3. Create a Shell Script for Easy Management
+
+Create `start-queue-worker.sh`:
+
+```bash
+#!/bin/bash
+cd ~/naqashthaheem.com/backend
+pkill -f "artisan queue:work" || true
+nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+echo "Queue worker started!"
+ps aux | grep "queue:work" | grep -v grep
+```
+
+Make it executable and run:
+
+```bash
+chmod +x start-queue-worker.sh
+./start-queue-worker.sh
+```
+
+### 4. Add to Cron for Auto-Restart (Optional)
+
+Add to your crontab to restart the queue worker every hour (in case it dies):
+
+```bash
+crontab -e
+
+# Add this line (restarts queue worker every hour at minute 0)
+0 * * * * cd ~/naqashthaheem.com/backend && pkill -f "artisan queue:work" && nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+```
 
 ## Manual Queue Processing
 
