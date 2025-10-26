@@ -28,6 +28,11 @@ class SendPasswordResetEmail implements ShouldQueue
     public function handle(PasswordResetRequested $event): void
     {
         try {
+            Log::info("SendPasswordResetEmail listener triggered", [
+                'user_email' => $event->user->email,
+                'reset_url' => $event->resetUrl
+            ]);
+            
             $user = $event->user;
             $resetUrl = $event->resetUrl;
             
@@ -40,7 +45,9 @@ class SendPasswordResetEmail implements ShouldQueue
                 Log::error("Failed to send password reset email to user: {$user->email}");
             }
         } catch (\Exception $e) {
-            Log::error("Error sending password reset email: " . $e->getMessage());
+            Log::error("Error sending password reset email: " . $e->getMessage(), [
+                'exception' => $e->getTraceAsString()
+            ]);
         }
     }
 }

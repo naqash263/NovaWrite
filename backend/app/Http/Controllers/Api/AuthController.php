@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -214,8 +215,17 @@ class AuthController extends Controller
 
         $resetUrl = config('app.url') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
 
+        Log::info("Firing PasswordResetRequested event", [
+            'user_email' => $user->email,
+            'reset_url' => $resetUrl
+        ]);
+
         // Fire PasswordResetRequested event to send email
         event(new PasswordResetRequested($user, $resetUrl, $token));
+
+        Log::info("PasswordResetRequested event dispatched", [
+            'user_email' => $user->email
+        ]);
 
         return response()->json([
             'message' => 'Password reset email sent successfully!',
