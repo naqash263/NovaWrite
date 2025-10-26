@@ -209,6 +209,11 @@ class EmailService
     public function sendPasswordResetEmail($user, $resetUrl): bool
     {
         try {
+            Log::info("sendPasswordResetEmail called", [
+                'user_email' => $user->email,
+                'reset_url' => $resetUrl
+            ]);
+            
             // Check if there's already a pending password reset email for this user
             $existingEmail = EmailQueue::where('recipient_email', $user->email)
                 ->where('action', 'password_reset')
@@ -223,6 +228,11 @@ class EmailService
             $variables = $this->getUserVariables($user);
             $variables['reset_url'] = $resetUrl;
             $variables['expires_in'] = '24 hours';
+            
+            Log::info("Calling sendTemplateEmail for password reset", [
+                'user_email' => $user->email,
+                'template' => 'password_reset'
+            ]);
             
             return $this->sendTemplateEmail('password_reset', $variables, $user->email, $user->name);
         } catch (\Exception $e) {
