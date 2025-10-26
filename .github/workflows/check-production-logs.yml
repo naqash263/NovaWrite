@@ -1,0 +1,51 @@
+name: Check Production Logs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-logs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check Production Logs
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        timeout: 300s
+        command_timeout: 300s
+        script: |
+          # Colors for output
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          YELLOW='\033[1;33m'
+          NC='\033[0m' # No Color
+          
+          echo -e "${BLUE}📋 Checking Production Logs${NC}"
+          echo "=================================="
+          
+          # Navigate to project directory
+          cd ~/naqashthaheem.com/backend
+          
+          # Check Laravel log
+          echo -e "${YELLOW}📄 Recent Laravel logs:${NC}"
+          tail -100 storage/logs/laravel.log | grep -i "password\|forgot\|reset\|email" || echo "No password reset logs found"
+          echo ""
+          
+          # Check queue worker log
+          echo -e "${YELLOW}📄 Queue worker log:${NC}"
+          tail -50 storage/logs/queue-worker.log 2>/dev/null || echo "No queue worker log"
+          echo ""
+          
+          # Check scheduler log
+          echo -e "${YELLOW}📄 Scheduler log:${NC}"
+          tail -50 storage/logs/scheduler.log 2>/dev/null || echo "No scheduler log"
+          echo ""
+          
+          echo -e "${GREEN}✅ Log check completed!${NC}"
+
