@@ -127,6 +127,20 @@ class N8nConfigurationController extends Controller
     }
 
     /**
+     * Deactivate the specified N8n configuration.
+     */
+    public function deactivate(N8nConfiguration $n8nConfiguration): JsonResponse
+    {
+        $n8nConfiguration->update(['is_active' => false]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'N8n configuration deactivated successfully',
+            'data' => $n8nConfiguration->fresh()
+        ]);
+    }
+
+    /**
      * Test the N8n webhook connection.
      */
     public function test(N8nConfiguration $n8nConfiguration): JsonResponse

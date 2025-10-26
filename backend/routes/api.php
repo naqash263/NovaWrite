@@ -843,6 +843,7 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::put('n8n-configurations/{id}', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'update']);
     Route::delete('n8n-configurations/{id}', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'destroy']);
     Route::post('n8n-configurations/{id}/activate', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'activate']);
+    Route::post('n8n-configurations/{id}/deactivate', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'deactivate']);
     Route::post('n8n-configurations/{id}/test', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'test']);
     
     // Email Queue Management

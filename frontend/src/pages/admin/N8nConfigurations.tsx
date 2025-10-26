@@ -134,6 +134,31 @@ const N8nConfigurations: React.FC = () => {
     }
   };
 
+  const handleDeactivate = async (id: number) => {
+    if (!confirm('Are you sure you want to deactivate this configuration? This will disable all email sending.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/admin/n8n-configurations/${id}/deactivate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        fetchConfigurations();
+      } else {
+        alert(data.message || 'Error deactivating configuration');
+      }
+    } catch (error) {
+      console.error('Error deactivating configuration:', error);
+      alert('Error deactivating configuration');
+    }
+  };
+
   const handleTest = async (id: number) => {
     try {
       const response = await fetch(`/api/admin/n8n-configurations/${id}/test`, {
@@ -230,7 +255,15 @@ const N8nConfigurations: React.FC = () => {
                   >
                     <TestTube className="w-4 h-4" />
                   </button>
-                  {!config.is_active && (
+                  {config.is_active ? (
+                    <button
+                      onClick={() => handleDeactivate(config.id)}
+                      className="text-orange-600 hover:text-orange-900"
+                      title="Deactivate"
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  ) : (
                     <button
                       onClick={() => handleActivate(config.id)}
                       className="text-green-600 hover:text-green-900"
