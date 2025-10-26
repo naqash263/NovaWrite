@@ -44,7 +44,8 @@ class N8nEmailService
             Log::info("Sending to N8n webhook", [
                 'url' => $config->webhook_url,
                 'action' => $action,
-                'recipient' => $recipient['email']
+                'recipient' => $recipient['email'],
+                'payload' => json_encode($payload)
             ]);
 
             $response = $this->client->post($config->webhook_url, [
