@@ -30,6 +30,7 @@ const EmailQueue: React.FC = () => {
   const [queueItems, setQueueItems] = useState<EmailQueueItem[]>([]);
   const [stats, setStats] = useState<QueueStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [filters, setFilters] = useState({
     status: 'all',
     action: 'all',
@@ -127,6 +128,57 @@ const EmailQueue: React.FC = () => {
     }
   };
 
+  const handleBulkRetry = async () => {
+    if (selectedItems.length === 0) {
+      alert('Please select at least one item to retry');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to retry ${selectedItems.length} selected item(s)?`)) return;
+    
+    try {
+      const promises = selectedItems.map(id => 
+        fetch(`/api/admin/email-queue/${id}/retry`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
+      );
+      
+      const results = await Promise.all(promises);
+      const successCount = results.filter(r => r.ok).length;
+      
+      alert(`Retried ${successCount} of ${selectedItems.length} emails`);
+      setSelectedItems([]);
+      fetchQueueItems();
+      fetchStats();
+    } catch (error) {
+      console.error('Error retrying emails:', error);
+      alert('Error retrying emails');
+    }
+  };
+
+  const toggleSelectItem = (id: number) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    const selectableItems = queueItems.filter(item => 
+      item.status === 'failed' || item.status === 'pending'
+    ).map(item => item.id);
+    
+    setSelectedItems(prev => 
+      prev.length === selectableItems.length 
+        ? []
+        : selectableItems
+    );
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
@@ -184,6 +236,15 @@ const EmailQueue: React.FC = () => {
             <RotateCcw className="w-4 h-4" />
             Retry All Failed
           </button>
+          {selectedItems.length > 0 && (
+            <button
+              onClick={handleBulkRetry}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Retry Selected ({selectedItems.length})
+            </button>
+          )}
         </div>
       </div>
 
@@ -287,6 +348,14 @@ const EmailQueue: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <input
+                  type="checkbox"
+                  checked={selectedItems.length > 0 && selectedItems.length === queueItems?.filter(item => item.status === 'failed' || item.status === 'pending').length}
+                  onChange={toggleSelectAll}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -297,7 +366,16 @@ const EmailQueue: React.FC = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {queueItems?.map((item) => (
-              <tr key={item.id}>
+              <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-blue-50' : ''}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.includes(item.id)}
+                    onChange={() => toggleSelectItem(item.id)}
+                    disabled={item.status !== 'failed' && item.status !== 'pending'}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {item.action}
                 </td>
