@@ -137,14 +137,19 @@ const N8nConfigurations: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         showNotification('success', 'Configuration activated successfully');
-        await fetchConfigurations(); // Force refresh
+        // Force refresh and wait for it to complete
+        await fetchConfigurations();
+        // Reset loading state after UI updates
+        setTimeout(() => {
+          setLoadingStates(prev => ({ ...prev, [`activate-${id}`]: false }));
+        }, 100);
       } else {
         showNotification('error', data.message || 'Error activating configuration');
+        setLoadingStates(prev => ({ ...prev, [`activate-${id}`]: false }));
       }
     } catch (error) {
       console.error('Error activating configuration:', error);
       showNotification('error', 'Error activating configuration');
-    } finally {
       setLoadingStates(prev => ({ ...prev, [`activate-${id}`]: false }));
     }
   };
@@ -168,14 +173,19 @@ const N8nConfigurations: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         showNotification('success', 'Configuration deactivated successfully');
-        await fetchConfigurations(); // Force refresh
+        // Force refresh and wait for it to complete
+        await fetchConfigurations();
+        // Reset loading state after UI updates
+        setTimeout(() => {
+          setLoadingStates(prev => ({ ...prev, [`deactivate-${id}`]: false }));
+        }, 100);
       } else {
         showNotification('error', data.message || 'Error deactivating configuration');
+        setLoadingStates(prev => ({ ...prev, [`deactivate-${id}`]: false }));
       }
     } catch (error) {
       console.error('Error deactivating configuration:', error);
       showNotification('error', 'Error deactivating configuration');
-    } finally {
       setLoadingStates(prev => ({ ...prev, [`deactivate-${id}`]: false }));
     }
   };
@@ -193,7 +203,7 @@ const N8nConfigurations: React.FC = () => {
       
       const data = await response.json();
       if (data.success) {
-        showNotification('success', 'Connection test successful');
+        showNotification('success', data.message || 'Connection test successful');
       } else {
         showNotification('error', data.message || 'Connection test failed');
       }
@@ -201,7 +211,10 @@ const N8nConfigurations: React.FC = () => {
       console.error('Error testing configuration:', error);
       showNotification('error', 'Error testing configuration');
     } finally {
-      setLoadingStates(prev => ({ ...prev, [`test-${id}`]: false }));
+      // Reset loading state after a delay
+      setTimeout(() => {
+        setLoadingStates(prev => ({ ...prev, [`test-${id}`]: false }));
+      }, 500);
     }
   };
 
