@@ -95,8 +95,10 @@ class N8nConfigurationController extends Controller
     /**
      * Remove the specified N8n configuration.
      */
-    public function destroy(N8nConfiguration $n8nConfiguration): JsonResponse
+    public function destroy($id): JsonResponse
     {
+        $n8nConfiguration = N8nConfiguration::findOrFail($id);
+        
         if ($n8nConfiguration->is_active) {
             return response()->json([
                 'success' => false,
