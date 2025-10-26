@@ -1,0 +1,78 @@
+name: Start Queue Services in Production
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  start-queue-services:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Start Queue Worker and Scheduler
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        timeout: 300s
+        command_timeout: 300s
+        script: |
+          # Colors for output
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          YELLOW='\033[1;33m'
+          NC='\033[0m' # No Color
+          
+          echo -e "${BLUE}🚀 Starting Queue Services${NC}"
+          echo "============================"
+          
+          # Navigate to project directory
+          cd ~/naqashthaheem.com/backend
+          
+          # Kill any existing queue workers and schedulers
+          echo -e "${YELLOW}🛑 Stopping existing services...${NC}"
+          pkill -f "artisan queue:work" || true
+          pkill -f "artisan schedule:work" || true
+          sleep 2
+          
+          # Start queue worker
+          echo -e "${BLUE}📬 Starting queue worker...${NC}"
+          nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+          sleep 2
+          
+          # Start scheduler
+          echo -e "${BLUE}⏰ Starting scheduler...${NC}"
+          nohup php artisan schedule:work > storage/logs/scheduler.log 2>&1 &
+          sleep 2
+          
+          # Verify both are running
+          echo -e "${YELLOW}🔍 Verifying services are running...${NC}"
+          
+          if ps aux | grep "queue:work" | grep -v grep > /dev/null; then
+            echo -e "${GREEN}✅ Queue worker is running${NC}"
+            ps aux | grep "queue:work" | grep -v grep
+          else
+            echo -e "${RED}❌ Queue worker failed to start${NC}"
+          fi
+          
+          if ps aux | grep "schedule:work" | grep -v grep > /dev/null; then
+            echo -e "${GREEN}✅ Scheduler is running${NC}"
+            ps aux | grep "schedule:work" | grep -v grep
+          else
+            echo -e "${RED}❌ Scheduler failed to start${NC}"
+          fi
+          
+          # Check logs
+          echo -e "${BLUE}📋 Recent queue worker logs:${NC}"
+          tail -5 storage/logs/queue-worker.log 2>/dev/null || echo "No logs yet"
+          
+          echo -e "${BLUE}📋 Recent scheduler logs:${NC}"
+          tail -5 storage/logs/scheduler.log 2>/dev/null || echo "No logs yet"
+          
+          echo -e "${GREEN}✅ Queue services started successfully!${NC}"
+          echo -e "${BLUE}💡 Services will automatically process emails and dispatch jobs${NC}"
