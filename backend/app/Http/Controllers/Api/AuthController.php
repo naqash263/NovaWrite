@@ -229,12 +229,18 @@ class AuthController extends Controller
                 'queue_driver' => config('queue.connections.database.driver')
             ]);
             
+            Log::info("About to dispatch event", [
+                'user_email' => $user->email,
+                'jobs_count_before' => \DB::table('jobs')->count(),
+                'listener_registered' => class_exists('\App\Listeners\SendPasswordResetEmail')
+            ]);
+            
             event(new PasswordResetRequested($user, $resetUrl, $token));
             
             Log::info("PasswordResetRequested event dispatched", [
                 'user_email' => $user->email,
                 'event_queued' => true,
-                'jobs_count' => \DB::table('jobs')->count()
+                'jobs_count_after' => \DB::table('jobs')->count()
             ]);
             
             // Check if job was queued
