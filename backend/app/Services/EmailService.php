@@ -8,6 +8,7 @@ use App\Models\SystemEmailSetting;
 use App\Models\N8nConfiguration;
 use App\Models\EmailQueue;
 use App\Jobs\SendN8nEmail;
+use App\Services\N8nEmailService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -111,7 +112,7 @@ class EmailService
     public function sendTemplateEmailDirect(string $templateName, array $variables, string $to, ?string $toName = null): bool
     {
         try {
-            $n8nService = app(\App\Services\N8nEmailService::class);
+            $n8nService = app(N8nEmailService::class);
             
             $recipient = [
                 'email' => $to,
@@ -129,7 +130,9 @@ class EmailService
             }
 
         } catch (\Exception $e) {
-            Log::error("Failed to send email directly via N8n: " . $e->getMessage());
+            Log::error("Failed to send email directly via N8n: " . $e->getMessage(), [
+                'exception' => $e->getTraceAsString()
+            ]);
             return false;
         }
     }
