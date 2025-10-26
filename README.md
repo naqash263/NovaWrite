@@ -12,10 +12,12 @@ A modern, full-stack web application built with React, TypeScript, Laravel, and 
 - **User Management** - Role-based access control and user groups
 
 ### 📧 Email System
+- **N8n Webhook Integration** - Automated email sending via webhooks
+- **Email Queue System** - Background job processing for reliable email delivery
 - **Dynamic Email Templates** - Database-driven email templates
-- **SMTP Configuration** - Flexible email service configuration
 - **Email Verification** - Secure user registration with email verification
 - **Welcome Emails** - Automated onboarding experience
+- **Password Reset** - Secure password reset flow with email links
 
 ### 🔐 Security & Authentication
 - **JWT Authentication** - Secure API authentication
@@ -42,7 +44,9 @@ A modern, full-stack web application built with React, TypeScript, Laravel, and 
 ### Infrastructure
 - **Namecheap Hosting** - Production hosting
 - **GitHub** - Version control and CI/CD
-- **Docker** - Containerization (optional)
+- **PostgreSQL** - Production database
+- **Queue Workers** - Background job processing for emails
+- **N8n** - Workflow automation for email delivery
 
 ## 🚀 Quick Start
 
@@ -68,7 +72,10 @@ A modern, full-stack web application built with React, TypeScript, Laravel, and 
    cp .env.example .env
    php artisan key:generate
    php artisan migrate
-   php artisan serve --host=0.0.0.0 --port=8000
+   php artisan serve --host=0.0.0.0 --port=8001
+   
+   # Start queue worker for email processing
+   php artisan queue:work --tries=3 --timeout=120 &
    ```
 
 3. **Frontend Setup**
@@ -155,10 +162,40 @@ cd frontend && npm ci && npm run build
 php artisan config:cache
 ```
 
+## 🎯 Queue Worker & Email System
+
+### Local Development
+
+Start the queue worker to process emails:
+```bash
+cd backend
+php artisan queue:work --tries=3 --timeout=120 &
+```
+
+### Production Setup
+
+See [QUEUE_WORKER_SETUP.md](QUEUE_WORKER_SETUP.md) for complete production setup instructions.
+
+**Quick Start for Production:**
+```bash
+ssh -p 21098 timesovh@162.254.39.126
+cd ~/naqashthaheem.com/backend
+
+# Kill existing workers and start new one
+pkill -f "artisan queue:work" || true
+nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+
+# Verify it's running
+ps aux | grep "queue:work" | grep -v grep
+```
+
+**Important:** The email system uses N8n webhooks for sending emails. Configure your N8n webhook URL in the admin panel under "N8n Configuration".
+
 ## 📚 Documentation
 
 - [Deployment Guide](DEPLOYMENT_GUIDE.md) - Complete deployment instructions
 - [Live Update Workflow](LIVE_UPDATE_WORKFLOW.md) - Managing production updates
+- [Queue Worker Setup](QUEUE_WORKER_SETUP.md) - Queue worker and email system setup
 - [Email System Documentation](EMAIL_SYSTEM_DOCUMENTATION.md) - Email functionality
 - [User Access Management](USER_ACCESS_MANAGEMENT.md) - User roles and permissions
 
