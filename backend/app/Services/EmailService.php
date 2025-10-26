@@ -106,6 +106,35 @@ class EmailService
     }
 
     /**
+     * Send email directly to N8n without queueing
+     */
+    public function sendTemplateEmailDirect(string $templateName, array $variables, string $to, ?string $toName = null): bool
+    {
+        try {
+            $n8nService = app(\App\Services\N8nEmailService::class);
+            
+            $recipient = [
+                'email' => $to,
+                'name' => $toName ?? 'User'
+            ];
+
+            $success = $n8nService->sendToN8n($templateName, $recipient, $variables);
+
+            if ($success) {
+                Log::info("Email sent directly via N8n using template: {$templateName} to: {$to}");
+                return true;
+            } else {
+                Log::error("Failed to send email directly via N8n using template: {$templateName} to: {$to}");
+                return false;
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Failed to send email directly via N8n: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Send email using a specific SMTP configuration (deprecated - now uses N8n)
      */
     public function sendTemplateEmailWithSmtp(string $templateName, array $variables, string $to, ?string $toName = null, ?int $smtpConfigId = null): bool

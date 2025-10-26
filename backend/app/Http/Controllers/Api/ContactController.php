@@ -39,7 +39,7 @@ class ContactController extends Controller
                 'app_url' => config('app.url'),
             ];
 
-            $success = $emailService->sendTemplateEmail('contact_form', $variables, 'naqash263@gmail.com', 'Admin');
+            $success = $emailService->sendTemplateEmailDirect('contact_form', $variables, 'naqash263@gmail.com', 'Admin');
 
             if ($success) {
                 \Log::info("Contact form email sent successfully", ['contact_email' => $data['email']]);
