@@ -131,7 +131,7 @@ class N8nConfigurationController extends Controller
      */
     public function deactivate(N8nConfiguration $n8nConfiguration): JsonResponse
     {
-        $n8nConfiguration->update(['is_active' => false]);
+        $n8nConfiguration->deactivate();
 
         return response()->json([
             'success' => true,

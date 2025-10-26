@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Play, TestTube, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Play, TestTube, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 interface N8nConfiguration {
   id: number;
@@ -17,6 +17,8 @@ const N8nConfigurations: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingConfig, setEditingConfig] = useState<N8nConfiguration | null>(null);
+  const [loadingStates, setLoadingStates] = useState<{[key: string]: boolean}>({});
+  const [notification, setNotification] = useState<{type: 'success' | 'error' | 'info', message: string} | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     webhook_url: '',
@@ -28,6 +30,11 @@ const N8nConfigurations: React.FC = () => {
     fetchConfigurations();
   }, []);
 
+  const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
   const fetchConfigurations = async () => {
     try {
       const response = await fetch('/api/admin/n8n-configurations', {
@@ -38,9 +45,12 @@ const N8nConfigurations: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         setConfigurations(data.data);
+      } else {
+        showNotification('error', 'Failed to fetch configurations');
       }
     } catch (error) {
       console.error('Error fetching configurations:', error);
+      showNotification('error', 'Error fetching configurations');
     } finally {
       setLoading(false);
     }
@@ -114,6 +124,8 @@ const N8nConfigurations: React.FC = () => {
   };
 
   const handleActivate = async (id: number) => {
+    setLoadingStates(prev => ({ ...prev, [`activate-${id}`]: true }));
+    
     try {
       const response = await fetch(`/api/admin/n8n-configurations/${id}/activate`, {
         method: 'POST',
@@ -124,20 +136,26 @@ const N8nConfigurations: React.FC = () => {
       
       const data = await response.json();
       if (data.success) {
-        fetchConfigurations();
+        showNotification('success', 'Configuration activated successfully');
+        await fetchConfigurations(); // Force refresh
       } else {
-        alert(data.message || 'Error activating configuration');
+        showNotification('error', data.message || 'Error activating configuration');
       }
     } catch (error) {
       console.error('Error activating configuration:', error);
-      alert('Error activating configuration');
+      showNotification('error', 'Error activating configuration');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [`activate-${id}`]: false }));
     }
   };
 
   const handleDeactivate = async (id: number) => {
-    if (!confirm('Are you sure you want to deactivate this configuration? This will disable all email sending.')) {
+    const confirmed = window.confirm('Are you sure you want to deactivate this configuration? This will disable all email sending.');
+    if (!confirmed) {
       return;
     }
+    
+    setLoadingStates(prev => ({ ...prev, [`deactivate-${id}`]: true }));
     
     try {
       const response = await fetch(`/api/admin/n8n-configurations/${id}/deactivate`, {
@@ -149,17 +167,22 @@ const N8nConfigurations: React.FC = () => {
       
       const data = await response.json();
       if (data.success) {
-        fetchConfigurations();
+        showNotification('success', 'Configuration deactivated successfully');
+        await fetchConfigurations(); // Force refresh
       } else {
-        alert(data.message || 'Error deactivating configuration');
+        showNotification('error', data.message || 'Error deactivating configuration');
       }
     } catch (error) {
       console.error('Error deactivating configuration:', error);
-      alert('Error deactivating configuration');
+      showNotification('error', 'Error deactivating configuration');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [`deactivate-${id}`]: false }));
     }
   };
 
   const handleTest = async (id: number) => {
+    setLoadingStates(prev => ({ ...prev, [`test-${id}`]: true }));
+    
     try {
       const response = await fetch(`/api/admin/n8n-configurations/${id}/test`, {
         method: 'POST',
@@ -169,10 +192,16 @@ const N8nConfigurations: React.FC = () => {
       });
       
       const data = await response.json();
-      alert(data.message || 'Test completed');
+      if (data.success) {
+        showNotification('success', 'Connection test successful');
+      } else {
+        showNotification('error', data.message || 'Connection test failed');
+      }
     } catch (error) {
       console.error('Error testing configuration:', error);
-      alert('Error testing configuration');
+      showNotification('error', 'Error testing configuration');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [`test-${id}`]: false }));
     }
   };
 
@@ -186,6 +215,28 @@ const N8nConfigurations: React.FC = () => {
 
   return (
     <div className="p-6">
+      {/* Notification Display */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+          notification.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
+          notification.type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
+          'bg-blue-100 text-blue-800 border border-blue-200'
+        }`}>
+          <div className="flex items-center">
+            {notification.type === 'success' && <CheckCircle className="w-5 h-5 mr-2" />}
+            {notification.type === 'error' && <XCircle className="w-5 h-5 mr-2" />}
+            {notification.type === 'info' && <TestTube className="w-5 h-5 mr-2" />}
+            <span className="font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-4 text-gray-500 hover:text-gray-700"
+            >
+              <XCircle className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+      
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">N8n Configurations</h1>
         <button
@@ -250,26 +301,41 @@ const N8nConfigurations: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleTest(config.id)}
-                    className="text-yellow-600 hover:text-yellow-900"
+                    disabled={loadingStates[`test-${config.id}`]}
+                    className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50"
                     title="Test Connection"
                   >
-                    <TestTube className="w-4 h-4" />
+                    {loadingStates[`test-${config.id}`] ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <TestTube className="w-4 h-4" />
+                    )}
                   </button>
                   {config.is_active ? (
                     <button
                       onClick={() => handleDeactivate(config.id)}
-                      className="text-orange-600 hover:text-orange-900"
+                      disabled={loadingStates[`deactivate-${config.id}`]}
+                      className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
                       title="Deactivate"
                     >
-                      <XCircle className="w-4 h-4" />
+                      {loadingStates[`deactivate-${config.id}`] ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <XCircle className="w-4 h-4" />
+                      )}
                     </button>
                   ) : (
                     <button
                       onClick={() => handleActivate(config.id)}
-                      className="text-green-600 hover:text-green-900"
+                      disabled={loadingStates[`activate-${config.id}`]}
+                      className="text-green-600 hover:text-green-900 disabled:opacity-50"
                       title="Activate"
                     >
-                      <Play className="w-4 h-4" />
+                      {loadingStates[`activate-${config.id}`] ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Play className="w-4 h-4" />
+                      )}
                     </button>
                   )}
                   {!config.is_active && (

@@ -44,6 +44,14 @@ class N8nConfiguration extends Model
     }
 
     /**
+     * Deactivate this configuration
+     */
+    public function deactivate(): void
+    {
+        $this->update(['is_active' => false]);
+    }
+
+    /**
      * Validation rules
      */
     public static function rules(): array
