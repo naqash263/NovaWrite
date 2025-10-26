@@ -114,6 +114,15 @@ class N8nEmailService
      */
     public function testConnection(N8nConfiguration $config): array
     {
+        // Validate webhook URL
+        if (empty($config->webhook_url)) {
+            return [
+                'success' => false,
+                'message' => 'Webhook URL is not configured',
+                'error' => 'webhook_url_empty'
+            ];
+        }
+
         $testPayload = [
             'action' => 'test_connection',
             'recipient' => [
