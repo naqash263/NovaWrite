@@ -41,6 +41,12 @@ class N8nEmailService
         ];
 
         try {
+            Log::info("Sending to N8n webhook", [
+                'url' => $config->webhook_url,
+                'action' => $action,
+                'recipient' => $recipient['email']
+            ]);
+
             $response = $this->client->post($config->webhook_url, [
                 'json' => $payload,
                 'timeout' => $config->webhook_timeout,
@@ -48,6 +54,11 @@ class N8nEmailService
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json'
                 ]
+            ]);
+
+            Log::info("N8n webhook received response", [
+                'status_code' => $response->getStatusCode(),
+                'url' => $config->webhook_url
             ]);
 
             $statusCode = $response->getStatusCode();
