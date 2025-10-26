@@ -221,11 +221,23 @@ class AuthController extends Controller
         ]);
 
         // Fire PasswordResetRequested event to send email
-        event(new PasswordResetRequested($user, $resetUrl, $token));
-
-        Log::info("PasswordResetRequested event dispatched", [
-            'user_email' => $user->email
-        ]);
+        try {
+            Log::info("About to fire PasswordResetRequested event", [
+                'user_email' => $user->email,
+                'reset_url' => $resetUrl
+            ]);
+            
+            event(new PasswordResetRequested($user, $resetUrl, $token));
+            
+            Log::info("PasswordResetRequested event dispatched", [
+                'user_email' => $user->email
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error firing PasswordResetRequested event: " . $e->getMessage(), [
+                'user_email' => $user->email,
+                'exception' => $e->getTraceAsString()
+            ]);
+        }
 
         return response()->json([
             'message' => 'Password reset email sent successfully!',
