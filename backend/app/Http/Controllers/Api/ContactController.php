@@ -28,27 +28,38 @@ class ContactController extends Controller
         $data = $validator->validated();
 
         try {
-            // Send email to admin
-            Mail::raw(
-                "New contact form submission:\n\n" .
-                "Name: {$data['name']}\n" .
-                "Email: {$data['email']}\n" .
-                "Subject: {$data['subject']}\n\n" .
-                "Message:\n{$data['message']}\n\n" .
-                "Sent from: " . config('app.name'),
-                function ($message) use ($data) {
-                    $message->to('naqash263@gmail.com')
-                           ->replyTo($data['email'], $data['name'])
-                           ->subject('Contact Form: ' . $data['subject']);
-                }
-            );
+            // Send email to admin using N8n EmailService
+            $emailService = app(\App\Services\EmailService::class);
+            $variables = [
+                'contact_name' => $data['name'],
+                'contact_email' => $data['email'],
+                'contact_subject' => $data['subject'],
+                'contact_message' => $data['message'],
+                'app_name' => config('app.name'),
+                'app_url' => config('app.url'),
+            ];
 
-            return response()->json([
-                'message' => 'Thank you for your message! I will get back to you soon.',
-                'success' => true
-            ]);
+            $success = $emailService->sendTemplateEmail('contact_form', $variables, 'naqash263@gmail.com', 'Admin');
+
+            if ($success) {
+                \Log::info("Contact form email sent successfully", ['contact_email' => $data['email']]);
+                
+                return response()->json([
+                    'message' => 'Thank you for your message! I will get back to you soon.',
+                    'success' => true
+                ]);
+            } else {
+                \Log::error("Failed to send contact form email", ['contact_email' => $data['email']]);
+                
+                return response()->json([
+                    'message' => 'Sorry, there was an error sending your message. Please try again or contact me directly.',
+                    'success' => false
+                ], 500);
+            }
 
         } catch (\Exception $e) {
+            \Log::error("Contact form error: " . $e->getMessage());
+            
             return response()->json([
                 'message' => 'Sorry, there was an error sending your message. Please try again or contact me directly.',
                 'success' => false
