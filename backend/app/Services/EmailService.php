@@ -209,6 +209,17 @@ class EmailService
     public function sendPasswordResetEmail($user, $resetUrl): bool
     {
         try {
+            // Check if there's already a pending password reset email for this user
+            $existingEmail = EmailQueue::where('recipient_email', $user->email)
+                ->where('action', 'password_reset')
+                ->whereIn('status', ['pending', 'processing'])
+                ->first();
+            
+            if ($existingEmail) {
+                Log::info("Password reset email already queued for user: {$user->email}");
+                return true; // Return true as email is already queued
+            }
+            
             $variables = $this->getUserVariables($user);
             $variables['reset_url'] = $resetUrl;
             $variables['expires_in'] = '24 hours';
