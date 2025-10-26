@@ -12,6 +12,9 @@ class SendPasswordResetEmail implements ShouldQueue
 {
     use InteractsWithQueue;
 
+    // Specify queue connection explicitly
+    public $connection = 'database';
+
     protected $emailService;
 
     /**
