@@ -254,7 +254,7 @@ jobs:
             echo 'BROADCAST_DRIVER=log' >> .env
             echo 'CACHE_DRIVER=file' >> .env
             echo 'FILESYSTEM_DISK=local' >> .env
-            echo 'QUEUE_CONNECTION=sync' >> .env
+            echo 'QUEUE_CONNECTION=database' >> .env
             echo 'SESSION_DRIVER=file' >> .env
             echo 'SESSION_LIFETIME=120' >> .env
             echo '' >> .env
@@ -530,7 +530,38 @@ jobs:
             echo -e "${YELLOW}⚠️ API health check failed${NC}"
           fi
           
+          # Start queue worker and scheduler
+          echo -e "${BLUE}🚀 Starting queue worker and scheduler...${NC}"
+          
+          # Kill any existing queue workers
+          pkill -f "artisan queue:work" || true
+          pkill -f "artisan schedule:work" || true
+          
+          # Start queue worker in background
+          cd ~/naqashthaheem.com/backend
+          nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+          echo -e "${GREEN}✅ Queue worker started${NC}"
+          
+          # Start scheduler in background
+          nohup php artisan schedule:work > storage/logs/scheduler.log 2>&1 &
+          echo -e "${GREEN}✅ Scheduler started${NC}"
+          
+          # Verify both are running
+          sleep 2
+          if ps aux | grep "queue:work" | grep -v grep > /dev/null; then
+            echo -e "${GREEN}✅ Queue worker is running${NC}"
+          else
+            echo -e "${RED}❌ Queue worker failed to start${NC}"
+          fi
+          
+          if ps aux | grep "schedule:work" | grep -v grep > /dev/null; then
+            echo -e "${GREEN}✅ Scheduler is running${NC}"
+          else
+            echo -e "${RED}❌ Scheduler failed to start${NC}"
+          fi
+          
           echo -e "${GREEN}✅ Deployment completed successfully!${NC}"
           echo -e "${BLUE}🌐 Your site is now live at: https://naqashthaheem.com${NC}"
           echo -e "${BLUE}🔧 API is available at: https://naqashthaheem.com/api${NC}"
           echo -e "${BLUE}🔑 Encryption status: https://naqashthaheem.com/api/cv-ai/check-encryption${NC}"
+          echo -e "${BLUE}📧 Email system with N8n is now active${NC}"
