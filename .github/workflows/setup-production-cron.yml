@@ -1,0 +1,76 @@
+name: Setup Production Cron Job for Queue Services
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-cron:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Setup Cron Job for Queue Services
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        timeout: 300s
+        command_timeout: 300s
+        script: |
+          # Colors for output
+          BLUE='\033[0;34m'
+          GREEN='\033[0;32m'
+          YELLOW='\033[1;33m'
+          NC='\033[0m'
+          
+          echo -e "${BLUE}🔄 Setting up cron job for queue services...${NC}"
+          
+          # Create a script to start queue services
+          cat > ~/start-queue-services.sh << 'SCRIPT'
+#!/bin/bash
+cd ~/naqashthaheem.com/backend
+
+# Kill existing processes
+pkill -f "artisan queue:work" || true
+pkill -f "artisan schedule:work" || true
+sleep 2
+
+# Start queue worker
+nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+
+# Start scheduler
+nohup php artisan schedule:work > storage/logs/scheduler.log 2>&1 &
+SCRIPT
+          
+          chmod +x ~/start-queue-services.sh
+          echo -e "${GREEN}✅ Script created${NC}"
+          
+          # Add to crontab (runs every 5 minutes to ensure services are running)
+          (crontab -l 2>/dev/null | grep -v "start-queue-services.sh"; echo "*/5 * * * * ~/start-queue-services.sh >> ~/cron-queue.log 2>&1") | crontab -
+          
+          echo -e "${GREEN}✅ Cron job added (runs every 5 minutes)${NC}"
+          
+          # Run it immediately once
+          echo -e "${BLUE}🚀 Starting services now...${NC}"
+          ~/start-queue-services.sh
+          
+          sleep 3
+          
+          # Verify they're running
+          if ps aux | grep "[q]ueue:work" > /dev/null; then
+            echo -e "${GREEN}✅ Queue worker is running${NC}"
+            ps aux | grep "[q]ueue:work"
+          else
+            echo -e "${YELLOW}⚠️ Queue worker not running yet (will start within 5 minutes via cron)${NC}"
+          fi
+          
+          if ps aux | grep "[s]chedule:work" > /dev/null; then
+            echo -e "${GREEN}✅ Scheduler is running${NC}"
+            ps aux | grep "[s]chedule:work"
+          else
+            echo -e "${YELLOW}⚠️ Scheduler not running yet (will start within 5 minutes via cron)${NC}"
+          fi
+          
+          echo -e "${GREEN}✅ Setup completed! Services will restart every 5 minutes via cron${NC}"
