@@ -27,6 +27,12 @@ class Kernel extends ConsoleKernel
                  ->timezone('UTC')
                  ->withoutOverlapping()
                  ->runInBackground();
+                 
+        // Process email queue every minute
+        $schedule->command('email:process-queue')
+                 ->everyMinute()
+                 ->withoutOverlapping()
+                 ->runInBackground();
     }
 
     /**

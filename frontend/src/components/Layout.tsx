@@ -146,6 +146,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         ]
       },
       {
+        title: 'Email System',
+        items: [
+          { path: '/admin/n8n-configurations', label: 'N8n Configuration', icon: '🔗' },
+          { path: '/admin/email-queue', label: 'Email Queue', icon: '📬' },
+          { path: '/admin/email-logs', label: 'Email Logs', icon: '📋' },
+        ]
+      },
+      {
         title: 'System & API',
         items: [
           { path: '/admin/api-tokens', label: 'API Tokens', icon: '🔑' },

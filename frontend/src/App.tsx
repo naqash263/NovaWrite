@@ -70,6 +70,9 @@ const CareerPathPlanner = lazy(() => import('./pages/resources/CareerPathPlanner
 const JobSearchOptimizer = lazy(() => import('./pages/resources/JobSearchOptimizer'));
 const SkillsAssessment = lazy(() => import('./pages/resources/SkillsAssessment'));
 const CoverLetterGenerator = lazy(() => import('./pages/resources/CoverLetterGenerator'));
+const N8nConfigurations = lazy(() => import('./pages/admin/N8nConfigurations'));
+const EmailQueue = lazy(() => import('./pages/admin/EmailQueue'));
+const EmailLogs = lazy(() => import('./pages/admin/EmailLogs'));
 
 // Enhanced loading with performance optimizations
 
@@ -129,6 +132,9 @@ function App() {
               <Route path="/admin/cv-templates" element={<ProtectedRoute requireAdmin><CvTemplates /></ProtectedRoute>} />
               <Route path="/admin/cv-templates/create" element={<ProtectedRoute requireAdmin><CvTemplateCreate /></ProtectedRoute>} />
               <Route path="/admin/push-notifications" element={<ProtectedRoute requireAdmin><PushNotifications /></ProtectedRoute>} />
+              <Route path="/admin/n8n-configurations" element={<ProtectedRoute requireAdmin><N8nConfigurations /></ProtectedRoute>} />
+              <Route path="/admin/email-queue" element={<ProtectedRoute requireAdmin><EmailQueue /></ProtectedRoute>} />
+              <Route path="/admin/email-logs" element={<ProtectedRoute requireAdmin><EmailLogs /></ProtectedRoute>} />
             <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><Analytics /></ProtectedRoute>} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />

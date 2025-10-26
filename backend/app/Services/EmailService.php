@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\EmailTemplate;
 use App\Models\SmtpConfiguration;
 use App\Models\SystemEmailSetting;
+use App\Models\N8nConfiguration;
+use App\Models\EmailQueue;
+use App\Jobs\SendN8nEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -68,104 +71,47 @@ class EmailService
     }
 
     /**
-     * Send email using a template
+     * Send email using a template via N8n
      */
     public function sendTemplateEmail(string $templateName, array $variables, string $to, ?string $toName = null): bool
     {
         try {
-            // Configure mail settings using active SMTP configuration
-            $this->configureMailSettings();
+            $config = N8nConfiguration::getActive();
             
-            $template = EmailTemplate::getByName($templateName);
-            
-            if (!$template) {
-                Log::error("Email template not found: {$templateName}");
+            if (!$config) {
+                Log::error("No active N8n configuration found for template: {$templateName}");
                 return false;
             }
 
-            if (!$template->is_active) {
-                Log::error("Email template is inactive: {$templateName}");
-                return false;
-            }
+            // Create email queue entry
+            $emailQueue = EmailQueue::create([
+                'action' => $templateName,
+                'recipient_email' => $to,
+                'recipient_name' => $toName,
+                'details' => $variables,
+                'max_attempts' => $config->max_retry_attempts,
+                'status' => 'pending'
+            ]);
 
-            // Render the template with variables
-            $rendered = $template->render($variables);
-            
-            // Send the email
-            Mail::html($rendered['body'], function ($message) use ($to, $toName, $rendered) {
-                $message->to($to, $toName)
-                        ->subject($rendered['subject']);
-            });
+            // Dispatch job to send email
+            SendN8nEmail::dispatch($emailQueue);
 
-            Log::info("Email sent successfully using template: {$templateName} to: {$to}");
+            Log::info("Email queued successfully using template: {$templateName} to: {$to}");
             return true;
 
         } catch (\Exception $e) {
-            Log::error("Failed to send email using template {$templateName}: " . $e->getMessage());
+            Log::error("Failed to queue email using template {$templateName}: " . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Send email using a specific SMTP configuration
+     * Send email using a specific SMTP configuration (deprecated - now uses N8n)
      */
     public function sendTemplateEmailWithSmtp(string $templateName, array $variables, string $to, ?string $toName = null, ?int $smtpConfigId = null): bool
     {
-        try {
-            // Use specific SMTP configuration if provided
-            if ($smtpConfigId) {
-                $smtpConfig = SmtpConfiguration::find($smtpConfigId);
-                if ($smtpConfig) {
-                    config([
-                        'mail.default' => 'smtp',
-                        'mail.mailers.smtp.host' => $smtpConfig->host,
-                        'mail.mailers.smtp.port' => $smtpConfig->port,
-                        'mail.mailers.smtp.username' => $smtpConfig->username,
-                        'mail.mailers.smtp.password' => $smtpConfig->password,
-                        'mail.mailers.smtp.encryption' => $smtpConfig->encryption,
-                        'mail.mailers.smtp.timeout' => 30,
-                        'mail.from.address' => $smtpConfig->from_address,
-                        'mail.from.name' => $smtpConfig->from_name,
-                    ]);
-                    
-                    Log::info("Using specific SMTP configuration: {$smtpConfig->name} ({$smtpConfig->host})");
-                } else {
-                    Log::error("SMTP configuration not found with ID: {$smtpConfigId}");
-                    return false;
-                }
-            } else {
-                // Use active SMTP configuration
-                $this->configureMailSettings();
-            }
-            
-            $template = EmailTemplate::getByName($templateName);
-            
-            if (!$template) {
-                Log::error("Email template not found: {$templateName}");
-                return false;
-            }
-
-            if (!$template->is_active) {
-                Log::error("Email template is inactive: {$templateName}");
-                return false;
-            }
-
-            // Render the template with variables
-            $rendered = $template->render($variables);
-            
-            // Send the email
-            Mail::html($rendered['body'], function ($message) use ($to, $toName, $rendered) {
-                $message->to($to, $toName)
-                        ->subject($rendered['subject']);
-            });
-
-            Log::info("Email sent successfully using template: {$templateName} to: {$to}");
-            return true;
-
-        } catch (\Exception $e) {
-            Log::error("Failed to send email using template {$templateName}: " . $e->getMessage());
-            return false;
-        }
+        // Redirect to N8n-based method
+        return $this->sendTemplateEmail($templateName, $variables, $to, $toName);
     }
 
     /**
@@ -174,9 +120,6 @@ class EmailService
     public function sendWelcomeEmail($user): bool
     {
         try {
-            // Configure mail settings for welcome emails
-            $this->configureMailSettingsForEmailType('welcome_email');
-            
             $variables = $this->getUserVariables($user);
             return $this->sendTemplateEmail('welcome_email', $variables, $user->email, $user->name);
         } catch (\Exception $e) {
@@ -266,9 +209,6 @@ class EmailService
     public function sendPasswordResetEmail($user, $resetUrl): bool
     {
         try {
-            // Configure mail settings for password reset emails
-            $this->configureMailSettingsForEmailType('password_reset');
-            
             $variables = $this->getUserVariables($user);
             $variables['reset_url'] = $resetUrl;
             $variables['expires_in'] = '24 hours';

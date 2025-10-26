@@ -835,6 +835,27 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::post('cv-templates/{id}/toggle', [\App\Http\Controllers\Api\Admin\CvTemplateController::class, 'toggle']);
     Route::post('cv-templates/{id}/set-default', [\App\Http\Controllers\Api\Admin\CvTemplateController::class, 'setDefault']);
     Route::post('cv-templates/preview', [\App\Http\Controllers\Api\Admin\CvTemplateController::class, 'preview']);
+    
+    // N8n Configuration Management
+    Route::get('n8n-configurations', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'index']);
+    Route::post('n8n-configurations', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'store']);
+    Route::get('n8n-configurations/{id}', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'show']);
+    Route::put('n8n-configurations/{id}', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'update']);
+    Route::delete('n8n-configurations/{id}', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'destroy']);
+    Route::post('n8n-configurations/{id}/activate', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'activate']);
+    Route::post('n8n-configurations/{id}/test', [\App\Http\Controllers\Api\Admin\N8nConfigurationController::class, 'test']);
+    
+    // Email Queue Management
+    Route::get('email-queue', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'index']);
+    Route::get('email-queue/{id}', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'show']);
+    Route::post('email-queue/{id}/retry', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'retry']);
+    Route::post('email-queue/retry-all', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'retryAll']);
+    Route::get('email-queue/stats', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'stats']);
+    
+    // Email Logs Management
+    Route::get('email-logs', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'index']);
+    Route::get('email-logs/{id}', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'show']);
+    Route::get('email-logs/stats', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'stats']);
 });
 
 // User API Key Management (authenticated users only)
