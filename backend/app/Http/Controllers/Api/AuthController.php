@@ -215,41 +215,27 @@ class AuthController extends Controller
 
         $resetUrl = config('app.url') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
 
-        Log::info("Firing PasswordResetRequested event", [
-            'user_email' => $user->email,
-            'reset_url' => $resetUrl
-        ]);
-
-        // Fire PasswordResetRequested event to send email
+        // Send email directly without using queue system
         try {
-            Log::info("About to fire PasswordResetRequested event", [
+            Log::info("Sending password reset email directly", [
                 'user_email' => $user->email,
-                'reset_url' => $resetUrl,
-                'queue_connection' => config('queue.default'),
-                'queue_driver' => config('queue.connections.database.driver')
+                'reset_url' => $resetUrl
             ]);
             
-            Log::info("About to dispatch event", [
-                'user_email' => $user->email,
-                'jobs_count_before' => \DB::table('jobs')->count(),
-                'listener_registered' => class_exists('\App\Listeners\SendPasswordResetEmail')
-            ]);
+            $emailService = app(\App\Services\EmailService::class);
+            $success = $emailService->sendPasswordResetEmail($user, $resetUrl);
             
-            event(new PasswordResetRequested($user, $resetUrl, $token));
-            
-            Log::info("PasswordResetRequested event dispatched", [
-                'user_email' => $user->email,
-                'event_queued' => true,
-                'jobs_count_after' => \DB::table('jobs')->count()
-            ]);
-            
-            // Check if job was queued
-            sleep(1);
-            Log::info("Jobs table count after event", [
-                'jobs_count' => \DB::table('jobs')->count()
-            ]);
+            if ($success) {
+                Log::info("Password reset email sent successfully", [
+                    'user_email' => $user->email
+                ]);
+            } else {
+                Log::error("Failed to send password reset email", [
+                    'user_email' => $user->email
+                ]);
+            }
         } catch (\Exception $e) {
-            Log::error("Error firing PasswordResetRequested event: " . $e->getMessage(), [
+            Log::error("Error sending password reset email: " . $e->getMessage(), [
                 'user_email' => $user->email,
                 'exception' => $e->getTraceAsString()
             ]);
