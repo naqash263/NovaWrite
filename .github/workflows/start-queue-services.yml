@@ -40,29 +40,30 @@ jobs:
           pkill -f "artisan schedule:work" || true
           sleep 2
           
-          # Start queue worker using screen to keep it running
+          # Start queue worker with disown to detach from SSH session
           echo -e "${BLUE}📬 Starting queue worker...${NC}"
-          screen -dmS queue-worker bash -c "cd ~/naqashthaheem.com/backend && php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 >> storage/logs/queue-worker.log 2>&1"
-          sleep 3
+          cd ~/naqashthaheem.com/backend
+          bash -c "php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 >> storage/logs/queue-worker.log 2>&1 &" && sleep 2
+          disown -a
           
-          # Start scheduler using screen to keep it running
+          # Start scheduler with disown to detach from SSH session
           echo -e "${BLUE}⏰ Starting scheduler...${NC}"
-          screen -dmS scheduler bash -c "cd ~/naqashthaheem.com/backend && php artisan schedule:work >> storage/logs/scheduler.log 2>&1"
-          sleep 3
+          bash -c "php artisan schedule:work >> storage/logs/scheduler.log 2>&1 &" && sleep 2
+          disown -a
           
           # Verify both are running
           echo -e "${YELLOW}🔍 Verifying services are running...${NC}"
           
-          if screen -ls | grep -q queue-worker; then
-            echo -e "${GREEN}✅ Queue worker is running in screen${NC}"
-            screen -ls | grep queue-worker
+          if ps aux | grep "[q]ueue:work" > /dev/null; then
+            echo -e "${GREEN}✅ Queue worker is running${NC}"
+            ps aux | grep "[q]ueue:work"
           else
             echo -e "${RED}❌ Queue worker failed to start${NC}"
           fi
           
-          if screen -ls | grep -q scheduler; then
-            echo -e "${GREEN}✅ Scheduler is running in screen${NC}"
-            screen -ls | grep scheduler
+          if ps aux | grep "[s]chedule:work" > /dev/null; then
+            echo -e "${GREEN}✅ Scheduler is running${NC}"
+            ps aux | grep "[s]chedule:work"
           else
             echo -e "${RED}❌ Scheduler failed to start${NC}"
           fi
