@@ -242,7 +242,7 @@ jobs:
             echo '' >> .env
             echo 'LOG_CHANNEL=stack' >> .env
             echo 'LOG_DEPRECATIONS_CHANNEL=null' >> .env
-            echo 'LOG_LEVEL=error' >> .env
+            echo 'LOG_LEVEL=info' >> .env
             echo '' >> .env
             echo 'DB_CONNECTION=pgsql' >> .env
             echo 'DB_HOST=localhost' >> .env
