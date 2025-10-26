@@ -27,6 +27,7 @@ interface ContactFormData {
   email: string;
   subject: string;
   message: string;
+  submit?: string;
 }
 
 interface HomeSetting {
@@ -223,7 +224,7 @@ export default function Home() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate form before submission
@@ -231,13 +232,20 @@ export default function Home() {
       return;
     }
 
-    // For now, just show success message (backend integration can be added later)
-    setContactSubmitted(true);
-    setContactErrors({});
-    setTimeout(() => {
-      setContactForm({ name: '', email: '', subject: '', message: '' });
-      setContactSubmitted(false);
-    }, 3000);
+    try {
+      await apiClient.post('/contact', contactForm);
+      setContactSubmitted(true);
+      setContactErrors({});
+      setTimeout(() => {
+        setContactForm({ name: '', email: '', subject: '', message: '' });
+        setContactSubmitted(false);
+      }, 3000);
+    } catch (error: any) {
+      setContactErrors({
+        ...contactErrors,
+        submit: error.response?.data?.message || 'Failed to send message. Please try again.'
+      });
+    }
   };
 
   const handleContactChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -1401,6 +1409,11 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   <p className="text-red-300 text-sm mt-1">{contactErrors.message}</p>
                 )}
               </div>
+              {contactErrors.submit && (
+                <div className="mb-4 p-4 bg-red-500 bg-opacity-20 border border-red-400 text-red-200 rounded-lg">
+                  {contactErrors.submit}
+                </div>
+              )}
               <button
                 type="submit"
                 className="w-full bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-50 transform hover:scale-105 transition-all duration-300 shadow-lg"
