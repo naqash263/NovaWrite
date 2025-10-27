@@ -96,6 +96,22 @@ class WorkflowCategoryController extends Controller
 
         if ($request->has('paginate') && $request->paginate) {
             $categories = $query->paginate($perPage);
+            
+            // Check if no records found
+            if ($categories->total() === 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No records found',
+                    'data' => [],
+                    'pagination' => [
+                        'current_page' => 1,
+                        'last_page' => 1,
+                        'per_page' => $perPage,
+                        'total' => 0,
+                    ]
+                ]);
+            }
+            
             return response()->json([
                 'success' => true,
                 'data' => $categories->items(),
@@ -109,6 +125,16 @@ class WorkflowCategoryController extends Controller
         }
 
         $categories = $query->get();
+        
+        // Check if no records found
+        if ($categories->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No records found',
+                'data' => []
+            ]);
+        }
+        
         return response()->json([
             'success' => true,
             'data' => $categories
