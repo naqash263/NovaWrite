@@ -28,21 +28,19 @@ jobs:
           echo -e "${BLUE}🔄 Setting up cron job for queue services...${NC}"
           
           # Create a script to start queue services
-          cat > ~/start-queue-services.sh << 'SCRIPT'
-#!/bin/bash
-cd ~/naqashthaheem.com/backend
-
-# Kill existing processes
-pkill -f "artisan queue:work" || true
-pkill -f "artisan schedule:work" || true
-sleep 2
-
-# Start queue worker
-nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
-
-# Start scheduler
-nohup php artisan schedule:work > storage/logs/scheduler.log 2>&1 &
-SCRIPT
+          echo '#!/bin/bash' > ~/start-queue-services.sh
+          echo 'cd ~/naqashthaheem.com/backend' >> ~/start-queue-services.sh
+          echo '' >> ~/start-queue-services.sh
+          echo '# Kill existing processes' >> ~/start-queue-services.sh
+          echo 'pkill -f "artisan queue:work" || true' >> ~/start-queue-services.sh
+          echo 'pkill -f "artisan schedule:work" || true' >> ~/start-queue-services.sh
+          echo 'sleep 2' >> ~/start-queue-services.sh
+          echo '' >> ~/start-queue-services.sh
+          echo '# Start queue worker' >> ~/start-queue-services.sh
+          echo 'nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &' >> ~/start-queue-services.sh
+          echo '' >> ~/start-queue-services.sh
+          echo '# Start scheduler' >> ~/start-queue-services.sh
+          echo 'nohup php artisan schedule:work > storage/logs/scheduler.log 2>&1 &' >> ~/start-queue-services.sh
           
           chmod +x ~/start-queue-services.sh
           echo -e "${GREEN}✅ Script created${NC}"
