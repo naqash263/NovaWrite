@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://naqashthaheem.com/sitemap.xml
+Sitemap: https://naqashthaheem.com/sitemap-ntw2024.xml
 
 # Disallow admin areas and system directories
 Disallow: /admin/
