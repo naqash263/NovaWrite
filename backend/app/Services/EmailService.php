@@ -246,14 +246,15 @@ class EmailService
                 'reset_url' => $resetUrl
             ]);
             
-            // Check if there's already a pending password reset email for this user
+            // Check if there's already a pending password reset email for this user in the last 10 minutes
             $existingEmail = EmailQueue::where('recipient_email', $user->email)
                 ->where('action', 'password_reset')
                 ->whereIn('status', ['pending', 'processing'])
+                ->where('created_at', '>=', now()->subMinutes(10))
                 ->first();
             
             if ($existingEmail) {
-                Log::info("Password reset email already queued for user: {$user->email}");
+                Log::info("Password reset email already queued for user in last 10 minutes: {$user->email}");
                 return true; // Return true as email is already queued
             }
             
