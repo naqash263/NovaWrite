@@ -251,7 +251,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
   "tools": ["Python", "Pandas", "OpenCV", "Email API"],
   "benefits": ["Faster processing", "Better accuracy", "Cost savings"],
   "status": "published",
-  "is_featured": true,
+  "is_premium": false,
   "image_url": "https://naqashthaheem.com/storage/uploads/1234567890_workflow.jpg"
 }
 ```
@@ -269,7 +269,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
     "tools": ["Python", "Pandas", "OpenCV", "Email API"],
     "benefits": ["Faster processing", "Better accuracy", "Cost savings"],
     "status": "published",
-    "is_featured": true,
+    "is_premium": false,
     "image_url": "https://naqashthaheem.com/storage/uploads/1234567890_workflow.jpg",
     "workflow_category_id": 1,
     "created_at": "2025-01-05T10:30:00.000000Z",
@@ -1635,12 +1635,14 @@ Content-Type: application/json
   "description": "<p>Detailed description</p>",
   "slug": "automation-workflow",
   "workflow_category_id": 1,
-  "status": "draft",
-  "is_published": false
+  "status": "published",
+  "is_premium": false
 }
 ```
 
-**Note:** `status` must be one of: `draft`, `published`
+**Note:** 
+- `status` must be one of: `draft`, `published`
+- `is_premium`: If `true`, workflow requires login to download
 
 **Response:**
 ```json
@@ -1854,6 +1856,63 @@ curl "http://localhost:8001/api/workflows/customer-onboarding" \
   ],
   ...
 }
+```
+
+---
+
+### Workflow Downloads API
+
+#### Request Download (Anonymous)
+**POST** `/workflow-downloads`
+
+Request download for a workflow file (public endpoint).
+
+**Body:**
+```json
+{
+  "workflow_file_id": 1,
+  "email": "user@example.com",
+  "marketing_opt_in": true
+}
+```
+
+**Note:** 
+- `email`: Required only if user wants marketing updates
+- `marketing_opt_in`: Only used for anonymous users
+- Logged-in users are auto-opted-in to marketing
+
+**Response (200):**
+```json
+{
+  "message": "Download request recorded successfully",
+  "download_url": "https://naqashthaheem.com/api/workflow-files/1/download?token=uuid-token",
+  "file_name": "workflow-template.json"
+}
+```
+
+**Response (401) - Premium Workflow:**
+```json
+{
+  "message": "This workflow requires login to download. Please login or register to access.",
+  "requires_auth": true
+}
+```
+
+#### Download File
+**GET** `/workflow-files/{id}/download`
+
+Download the workflow file (requires token from request).
+
+**Query Parameters:**
+- `token`: Required - Download token from request response
+
+**Response:**
+- Returns file download with appropriate headers
+- File type determined from file metadata
+
+**Example:**
+```bash
+curl "https://naqashthaheem.com/api/workflow-files/1/download?token=uuid-token"
 ```
 
 ---
