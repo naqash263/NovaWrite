@@ -4,9 +4,10 @@ Allow: /
 # Sitemap
 Sitemap: https://naqashthaheem.com/sitemap.xml
 
-# Disallow admin areas
+# Disallow admin areas and system directories
 Disallow: /admin/
 Disallow: /api/
+Disallow: /cgi-bin/
 
 # Allow important pages
 Allow: /
