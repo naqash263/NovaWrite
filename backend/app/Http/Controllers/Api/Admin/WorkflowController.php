@@ -17,16 +17,6 @@ class WorkflowController extends Controller
         $workflows = Workflow::with(['category', 'files.file'])
             ->orderBy('created_at', 'desc')
             ->get();
-        
-        // Check if no workflows found
-        if ($workflows->isEmpty()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'No workflows found',
-                'data' => []
-            ]);
-        }
-        
         return response()->json($workflows);
     }
 
@@ -53,6 +43,7 @@ class WorkflowController extends Controller
             'benefits' => $request->benefits ?? [],
             'is_featured' => $request->is_featured ?? false,
             'status' => $request->status,
+            'is_published' => $request->status === 'published',
             'published_at' => $request->status === 'published' ? now() : null,
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
@@ -87,19 +78,35 @@ class WorkflowController extends Controller
             'status' => 'required|in:draft,published',
         ]);
 
-        $workflow->update([
+        $updateData = [
             'workflow_category_id' => $request->workflow_category_id,
             'title' => $request->title,
-            'slug' => Str::slug($request->title),
             'summary' => $request->summary,
             'description' => $request->description,
             'tools' => $request->tools ?? [],
             'benefits' => $request->benefits ?? [],
             'is_featured' => $request->is_featured ?? false,
             'status' => $request->status,
-            'published_at' => $request->status === 'published' && !$workflow->published_at ? now() : $workflow->published_at,
             'updated_by' => Auth::id(),
-        ]);
+        ];
+
+        // Only update slug if title changed
+        if ($workflow->title !== $request->title) {
+            $updateData['slug'] = Str::slug($request->title);
+        }
+
+        // Handle published_at based on status
+        if ($request->status === 'published') {
+            if (!$workflow->published_at) {
+                $updateData['published_at'] = now();
+            }
+            $updateData['is_published'] = true;
+        } else {
+            $updateData['published_at'] = null;
+            $updateData['is_published'] = false;
+        }
+
+        $workflow->update($updateData);
 
         return response()->json($workflow->load(['category', 'files']));
     }
