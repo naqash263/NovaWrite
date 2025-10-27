@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/axios';
 
@@ -10,16 +10,25 @@ interface WorkflowDownloadModalProps {
   workflowName: string;
   isOpen: boolean;
   onClose: () => void;
+  isPremium?: boolean;
 }
 
 export default function WorkflowDownloadModal({ 
   workflowFile, 
   workflowName, 
   isOpen, 
-  onClose 
+  onClose,
+  isPremium = false
 }: WorkflowDownloadModalProps) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check if user is logged in
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, [isOpen]);
+  const [wantUpdates, setWantUpdates] = useState<boolean | null>(null);
   const [email, setEmail] = useState('');
-  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [requiresAuth, setRequiresAuth] = useState(false);
@@ -27,17 +36,24 @@ export default function WorkflowDownloadModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const response = await apiClient.post('/workflow-downloads', {
+      // For premium workflows, don't ask for email - user is already logged in
+      const requestData: any = {
         workflow_file_id: workflowFile.id,
-        email,
-        marketing_opt_in: marketingOptIn,
-      });
+      };
+      
+      // Only include email and marketing_opt_in for normal (non-premium) workflows
+      if (!isPremium) {
+        requestData.email = email || undefined;
+        requestData.marketing_opt_in = wantUpdates && email ? true : false;
+      }
+
+      const response = await apiClient.post('/workflow-downloads', requestData);
 
       const downloadUrl = response.data.download_url;
       
@@ -46,13 +62,18 @@ export default function WorkflowDownloadModal({
       setTimeout(() => {
         onClose();
         setEmail('');
-        setMarketingOptIn(false);
+        setWantUpdates(null);
       }, 1000);
     } catch (err: any) {
       const errorData = err.response?.data;
       setError(errorData?.message || 'Failed to process download. Please try again.');
       if (errorData?.requires_auth) {
         setRequiresAuth(true);
+        // Automatically redirect to login after 2 seconds
+        setTimeout(() => {
+          onClose();
+          navigate('/login');
+        }, 2000);
       }
     } finally {
       setLoading(false);
@@ -103,49 +124,73 @@ export default function WorkflowDownloadModal({
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address *
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="your@email.com"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="mb-6">
-            <label className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                checked={marketingOptIn}
-                onChange={(e) => setMarketingOptIn(e.target.checked)}
-                className="mt-1"
-                disabled={loading}
-              />
-              <span className="text-sm text-gray-600">
-                I'd like to receive updates about new workflows and automation tips
-              </span>
-            </label>
-          </div>
+          {/* For premium workflows or logged-in users, skip email opt-in completely */}
+          {!isPremium && !isLoggedIn && (
+            <>
+              {wantUpdates === null ? (
+                <div className="mb-6">
+                  <p className="text-gray-700 mb-4 font-medium">
+                    Would you like to receive updates about new workflows and automation tips?
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setWantUpdates(true)}
+                      className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                      disabled={loading}
+                    >
+                      Yes, I'd like updates
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setWantUpdates(false)}
+                      className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+                      disabled={loading}
+                    >
+                      No, just download
+                    </button>
+                  </div>
+                </div>
+              ) : wantUpdates ? (
+                <div className="mb-4">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="your@email.com"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    We'll send you updates about new workflows and automation tips.
+                  </p>
+                </div>
+              ) : null}
+            </>
+          )}
 
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              disabled={loading}
-            >
-              Cancel
-            </button>
+            {!isPremium && !isLoggedIn && wantUpdates !== null && (
+              <button
+                type="button"
+                onClick={() => {
+                  setWantUpdates(null);
+                  setEmail('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={loading}
+              >
+                Back
+              </button>
+            )}
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className={`${!isPremium && !isLoggedIn && wantUpdates !== null ? 'flex-1' : 'w-full'} px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
               disabled={loading}
             >
               {loading ? (

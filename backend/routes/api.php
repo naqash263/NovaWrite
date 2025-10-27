@@ -608,7 +608,7 @@ Route::get('workflow-categories', [WorkflowController::class, 'categories']);
 Route::get('workflows', [WorkflowController::class, 'index']);
 Route::get('workflows/{slug}', [WorkflowController::class, 'show']);
 
-Route::post('workflow-downloads', [WorkflowDownloadController::class, 'requestDownload'])->middleware('auth:api');
+Route::post('workflow-downloads', [WorkflowDownloadController::class, 'requestDownload']);
 Route::get('workflow-files/{id}/download', [WorkflowDownloadController::class, 'download'])->name('workflow-files.download');
 
 Route::post('contact', [ContactController::class, 'submit']);
@@ -731,13 +731,10 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::post('bulk/workflows/delete', [BulkOperationsController::class, 'bulkDeleteWorkflows']);
     Route::post('bulk/workflows/status', [BulkOperationsController::class, 'bulkUpdateWorkflowStatus']);
     
-    // Content approval routes
+    // Content approval routes (posts only - workflows don't need approval)
     Route::get('approval/posts/pending', [ContentApprovalController::class, 'getPendingPosts']);
-    Route::get('approval/workflows/pending', [ContentApprovalController::class, 'getPendingWorkflows']);
     Route::post('approval/posts/{id}/approve', [ContentApprovalController::class, 'approvePost']);
     Route::post('approval/posts/{id}/reject', [ContentApprovalController::class, 'rejectPost']);
-    Route::post('approval/workflows/{id}/approve', [ContentApprovalController::class, 'approveWorkflow']);
-    Route::post('approval/workflows/{id}/reject', [ContentApprovalController::class, 'rejectWorkflow']);
     Route::get('approval/stats', [ContentApprovalController::class, 'getApprovalStats']);
     Route::post('approval/bulk/approve', [ContentApprovalController::class, 'bulkApprove']);
     Route::post('approval/bulk/reject', [ContentApprovalController::class, 'bulkReject']);

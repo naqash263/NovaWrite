@@ -36,9 +36,9 @@ class WorkflowController extends Controller
             });
         }
 
-        // Featured workflows filter
-        if ($request->has('featured')) {
-            $query->where('is_featured', filter_var($request->featured, FILTER_VALIDATE_BOOLEAN));
+        // Premium workflows filter
+        if ($request->has('premium')) {
+            $query->where('is_premium', filter_var($request->premium, FILTER_VALIDATE_BOOLEAN));
         }
 
         // Date range filters for published date
@@ -121,14 +121,10 @@ class WorkflowController extends Controller
         
         $allowedSortFields = ['published_at', 'created_at', 'updated_at', 'title', 'downloads'];
         if (in_array($sortBy, $allowedSortFields)) {
-            if ($sortBy === 'published_at' && $request->get('sort_by') !== 'published_at') {
-                // Default sorting: featured first, then by published date
-                $query->orderBy('is_featured', 'desc');
-            }
             $query->orderBy($sortBy, $sortOrder);
         } else {
             // Default sorting when no valid sort field specified
-            $query->orderBy('is_featured', 'desc')->orderBy('published_at', 'desc');
+            $query->orderBy('published_at', 'desc');
         }
 
         // Pagination

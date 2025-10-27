@@ -29,7 +29,7 @@ class WorkflowController extends Controller
             'description' => 'required|string',
             'tools' => 'nullable|array',
             'benefits' => 'nullable|array',
-            'is_featured' => 'boolean',
+            'is_premium' => 'boolean',
             'status' => 'required|in:draft,published',
         ]);
 
@@ -41,7 +41,7 @@ class WorkflowController extends Controller
             'description' => $request->description,
             'tools' => $request->tools ?? [],
             'benefits' => $request->benefits ?? [],
-            'is_featured' => $request->is_featured ?? false,
+            'is_premium' => $request->is_premium ?? false,
             'status' => $request->status,
             'is_published' => $request->status === 'published',
             'published_at' => $request->status === 'published' ? now() : null,
@@ -75,7 +75,7 @@ class WorkflowController extends Controller
             'description' => 'required|string',
             'tools' => 'nullable|array',
             'benefits' => 'nullable|array',
-            'is_featured' => 'boolean',
+            'is_premium' => 'boolean',
             'status' => 'required|in:draft,published',
         ]);
 
@@ -86,7 +86,7 @@ class WorkflowController extends Controller
             'description' => $request->description,
             'tools' => $request->tools ?? [],
             'benefits' => $request->benefits ?? [],
-            'is_featured' => $request->is_featured ?? false,
+            'is_premium' => $request->is_premium ?? false,
             'status' => $request->status,
             'image_url' => $request->image_url ?? null,
             'updated_by' => Auth::id(),
@@ -156,13 +156,11 @@ class WorkflowController extends Controller
     public function stats()
     {
         $total = Workflow::count();
-        $featured = Workflow::where('is_featured', true)->count();
         $premium = Workflow::where('is_premium', true)->count();
         $published = Workflow::where('is_published', true)->count();
 
         return response()->json([
             'total' => $total,
-            'featured' => $featured,
             'premium' => $premium,
             'published' => $published
         ]);

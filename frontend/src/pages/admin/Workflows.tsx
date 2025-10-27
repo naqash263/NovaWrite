@@ -14,7 +14,7 @@ interface Workflow {
   tools?: string[];
   benefits?: string[];
   status: string;
-  is_featured: boolean;
+  is_premium: boolean;
   workflow_category_id: number;
   image_url?: string;
   category?: {
@@ -47,7 +47,7 @@ export default function Workflows() {
     tools: [] as string[],
     benefits: [] as string[],
     status: 'draft',
-    is_featured: false,
+    is_premium: false,
     image_url: '',
   });
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -202,7 +202,7 @@ export default function Workflows() {
       tools: [],
       benefits: [],
       status: 'draft',
-      is_featured: false,
+      is_premium: false,
       image_url: '',
     });
     setEditingId(null);
@@ -220,7 +220,7 @@ export default function Workflows() {
       tools: workflow.tools || [],
       benefits: workflow.benefits || [],
       status: workflow.status || 'draft',
-      is_featured: workflow.is_featured,
+      is_premium: workflow.is_premium,
       image_url: workflow.image_url || '',
     });
     setEditingId(workflow.id);
@@ -408,13 +408,13 @@ export default function Workflows() {
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  id="featured"
-                  checked={formData.is_featured}
-                  onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
+                  id="premium"
+                  checked={formData.is_premium}
+                  onChange={(e) => setFormData({ ...formData, is_premium: e.target.checked })}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="featured" className="ml-2 text-sm font-medium text-gray-700">
-                  Featured
+                <label htmlFor="premium" className="ml-2 text-sm font-medium text-gray-700">
+                  Premium
                 </label>
               </div>
             </div>
@@ -504,7 +504,7 @@ export default function Workflows() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Premium</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -535,8 +535,8 @@ export default function Workflows() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${workflow.is_featured ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {workflow.is_featured ? 'Featured' : 'Regular'}
+                    <span className={`px-2 py-1 text-xs rounded-full ${workflow.is_premium ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {workflow.is_premium ? 'Premium' : 'Regular'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-600">

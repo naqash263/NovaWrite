@@ -12,11 +12,13 @@ class WorkflowDownload extends Model
         'workflow_file_id',
         'email',
         'token',
+        'download_token',
         'expires_at',
         'downloaded_at',
         'ip_address',
         'user_agent',
         'marketing_opt_in',
+        'user_id',
     ];
 
     protected $casts = [
@@ -30,11 +32,8 @@ class WorkflowDownload extends Model
         parent::boot();
 
         static::creating(function ($download) {
-            if (empty($download->token)) {
-                $download->token = Str::uuid()->toString();
-            }
-            if (empty($download->expires_at)) {
-                $download->expires_at = now()->addHours(24);
+            if (empty($download->download_token)) {
+                $download->download_token = Str::uuid()->toString();
             }
         });
     }

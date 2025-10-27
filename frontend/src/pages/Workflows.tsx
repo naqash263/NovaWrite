@@ -32,7 +32,6 @@ interface Workflow {
   description: string;
   tools: string[];
   benefits: string[];
-  is_featured: boolean;
   is_premium: boolean;
   category?: WorkflowCategory;
   files: WorkflowFile[];
@@ -48,10 +47,12 @@ export default function Workflows() {
     isOpen: boolean;
     workflowFile: { id: number; name: string } | null;
     workflowName: string;
+    isPremium?: boolean;
   }>({
     isOpen: false,
     workflowFile: null,
     workflowName: '',
+    isPremium: false,
   });
 
   // Debounce search input
@@ -113,40 +114,13 @@ export default function Workflows() {
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const handleDownload = (workflowFile: any, workflowName: string) => {
+  const handleDownload = (workflowFile: any, workflowName: string, isPremium?: boolean) => {
     setDownloadModal({
       isOpen: true,
       workflowFile: { id: workflowFile.id, name: workflowFile.name },
       workflowName,
+      isPremium: isPremium || false,
     });
-  };
-
-  const downloadWorkflowAsJSON = (workflow: Workflow) => {
-    const workflowData = {
-      title: workflow.title,
-      description: workflow.description,
-      summary: workflow.summary,
-      tools: workflow.tools || [],
-      benefits: workflow.benefits || [],
-      category: workflow.category?.name,
-      is_featured: workflow.is_featured,
-      is_premium: workflow.is_premium,
-      created_by: 'Naqash Thaheem - Systems Analyst & Automation Specialist',
-      contact: 'contact@naqashthaheem.com',
-      website: 'Portfolio: Naqash Thaheem'
-    };
-    
-    const blob = new Blob([JSON.stringify(workflowData, null, 2)], {
-      type: 'application/json'
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${workflow.slug}-workflow.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   const toggleExpanded = (workflowId: number) => {
@@ -164,6 +138,7 @@ export default function Workflows() {
       isOpen: false,
       workflowFile: null,
       workflowName: '',
+      isPremium: false,
     });
   };
 
@@ -260,29 +235,12 @@ export default function Workflows() {
               
               return (
               <div key={workflow.id} className="bg-white rounded-lg shadow-md p-8 hover:shadow-xl transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    {workflow.is_featured && (
-                      <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-semibold">
-                        ⭐ Featured
-                      </span>
-                    )}
-                    {workflow.is_premium && (
-                      <span className="inline-block bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded-full font-semibold">
-                        👑 Premium
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => downloadWorkflowAsJSON(workflow)}
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
-                    title="Download workflow as JSON"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    JSON
-                  </button>
+                <div className="flex items-center gap-2 mb-3">
+                  {workflow.is_premium && (
+                    <span className="inline-block bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded-full font-semibold">
+                      👑 Premium
+                    </span>
+                  )}
                 </div>
                 
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">{workflow.title}</h3>
@@ -351,7 +309,7 @@ export default function Workflows() {
                       {workflow.files.map((file) => (
                         <button
                           key={file.id}
-                          onClick={() => handleDownload(file, workflow.title)}
+                          onClick={() => handleDownload(file, workflow.title, workflow.is_premium)}
                           className="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group"
                         >
                           <div className="flex items-center gap-3">
@@ -399,6 +357,7 @@ export default function Workflows() {
           workflowName={downloadModal.workflowName}
           isOpen={downloadModal.isOpen}
           onClose={closeModal}
+          isPremium={downloadModal.isPremium}
         />
       )}
     </div>
