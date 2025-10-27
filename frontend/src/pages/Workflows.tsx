@@ -74,7 +74,15 @@ export default function Workflows() {
     queryKey: ['workflow-categories'],
     queryFn: async () => {
       const response = await apiClient.get('/workflow-categories');
-      return response.data;
+      console.log('Categories API response:', response.data);
+      // Handle both response structures
+      if (response.data.data) {
+        return response.data.data;
+      }
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      return [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -90,7 +98,15 @@ export default function Workflows() {
       if (searchQuery) params.append('search', searchQuery);
       
       const response = await apiClient.get(`/workflows?${params.toString()}`);
-      return response.data;
+      console.log('Workflows API response:', response.data);
+      // Handle both response structures
+      if (response.data.data) {
+        return response.data.data;
+      }
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      return [];
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
