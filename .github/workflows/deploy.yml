@@ -537,13 +537,15 @@ jobs:
           pkill -f "artisan queue:work" || true
           pkill -f "artisan schedule:work" || true
           
-          # Start queue worker in background
+          # Start queue worker in background with disown
           cd ~/naqashthaheem.com/backend
-          nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 > storage/logs/queue-worker.log 2>&1 &
+          bash -c "php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=120 >> storage/logs/queue-worker.log 2>&1 &" && sleep 2
+          disown -a
           echo -e "${GREEN}✅ Queue worker started${NC}"
           
-          # Start scheduler in background
-          nohup php artisan schedule:work > storage/logs/scheduler.log 2>&1 &
+          # Start scheduler in background with disown
+          bash -c "php artisan schedule:work >> storage/logs/scheduler.log 2>&1 &" && sleep 2
+          disown -a
           echo -e "${GREEN}✅ Scheduler started${NC}"
           
           # Verify both are running
