@@ -17,6 +17,16 @@ class WorkflowController extends Controller
         $workflows = Workflow::with(['category', 'files.file'])
             ->orderBy('created_at', 'desc')
             ->get();
+        
+        // Check if no workflows found
+        if ($workflows->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No workflows found',
+                'data' => []
+            ]);
+        }
+        
         return response()->json($workflows);
     }
 

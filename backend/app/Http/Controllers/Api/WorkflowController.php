@@ -136,10 +136,37 @@ class WorkflowController extends Controller
         $perPage = min($perPage, 100); // Limit to 100 per page
 
         if ($request->has('paginate') && $request->paginate) {
-            return $query->paginate($perPage);
+            $result = $query->paginate($perPage);
+            
+            // Check if no workflows found
+            if ($result->total() === 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No workflows found',
+                    'data' => [],
+                    'pagination' => [
+                        'current_page' => 1,
+                        'last_page' => 1,
+                        'per_page' => $perPage,
+                        'total' => 0,
+                    ]
+                ]);
+            }
+            
+            return $result;
         }
 
         $workflows = $query->get();
+        
+        // Check if no workflows found
+        if ($workflows->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No workflows found',
+                'data' => []
+            ]);
+        }
+        
         return response()->json($workflows);
     }
 
