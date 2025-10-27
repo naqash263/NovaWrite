@@ -10,6 +10,7 @@ Route::get('/health', [App\Http\Controllers\Api\HealthController::class, 'basic'
 Route::get('/health/comprehensive', [App\Http\Controllers\Api\HealthController::class, 'comprehensive']);
 Route::get('/health/database', [App\Http\Controllers\Api\HealthController::class, 'database']);
 Route::get('/health/storage', [App\Http\Controllers\Api\HealthController::class, 'storage']);
+Route::get('/health/queue', [App\Http\Controllers\Api\QueueHealthController::class, 'check']);
 
 // Storage file serving (no authentication required)
 Route::get('/storage/{path}', [App\Http\Controllers\Api\FileController::class, 'serve'])->where('path', '.*');
