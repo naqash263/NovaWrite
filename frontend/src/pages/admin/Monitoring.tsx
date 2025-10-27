@@ -18,11 +18,23 @@ interface HealthCheck {
   };
 }
 
+interface QueueHealthData {
+  status: string;
+  queue_worker: { running: boolean; process: string | null };
+  scheduler: { running: boolean; process: string | null };
+  pending_emails: number;
+  jobs_in_queue: number;
+  n8n_config_active: boolean;
+  issues: string[];
+  instructions: Array<{ service: string; command: string; verify: string }>;
+}
+
 interface MonitoringData {
   basic: HealthCheck;
   comprehensive: HealthCheck;
   database: HealthCheck;
   storage: HealthCheck;
+  queue?: QueueHealthData;
   lastChecked: string;
 }
 
@@ -36,11 +48,12 @@ const Monitoring: React.FC = () => {
     try {
       setLoading(true);
       
-      const [basicRes, comprehensiveRes, databaseRes, storageRes] = await Promise.all([
+      const [basicRes, comprehensiveRes, databaseRes, storageRes, queueRes] = await Promise.all([
         apiClient.get('/health'),
         apiClient.get('/health/comprehensive'),
         apiClient.get('/health/database'),
-        apiClient.get('/health/storage')
+        apiClient.get('/health/storage'),
+        apiClient.get('/health/queue').catch(() => ({ data: null }))
       ]);
 
       setMonitoringData({
@@ -48,6 +61,7 @@ const Monitoring: React.FC = () => {
         comprehensive: comprehensiveRes.data,
         database: databaseRes.data,
         storage: storageRes.data,
+        queue: queueRes.data,
         lastChecked: new Date().toISOString()
       });
     } catch (error: any) {
@@ -382,6 +396,106 @@ const Monitoring: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Queue Health */}
+        {monitoringData && monitoringData.queue && (
+          <div className="mt-6 bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold mb-4">Queue & Email System Health</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Queue Worker Status */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Queue Worker:</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    monitoringData.queue.queue_worker.running 
+                      ? 'text-green-600 bg-green-100' 
+                      : 'text-red-600 bg-red-100'
+                  }`}>
+                    {monitoringData.queue.queue_worker.running ? '✅ Running' : '❌ Not Running'}
+                  </span>
+                </div>
+                
+                {/* Scheduler Status */}
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Scheduler:</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    monitoringData.queue.scheduler.running 
+                      ? 'text-green-600 bg-green-100' 
+                      : 'text-red-600 bg-red-100'
+                  }`}>
+                    {monitoringData.queue.scheduler.running ? '✅ Running' : '❌ Not Running'}
+                  </span>
+                </div>
+                
+                {/* N8n Configuration */}
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">N8n Config:</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    monitoringData.queue.n8n_config_active 
+                      ? 'text-green-600 bg-green-100' 
+                      : 'text-yellow-600 bg-yellow-100'
+                  }`}>
+                    {monitoringData.queue.n8n_config_active ? '✅ Active' : '⚠️ Inactive'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Queue Statistics */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Pending Emails:</span>
+                  <span className={`font-bold ${
+                    monitoringData.queue.pending_emails > 0 
+                      ? 'text-yellow-600' 
+                      : 'text-green-600'
+                  }`}>
+                    {monitoringData.queue.pending_emails}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Jobs in Queue:</span>
+                  <span className={`font-bold ${
+                    monitoringData.queue.jobs_in_queue > 0 
+                      ? 'text-blue-600' 
+                      : 'text-gray-600'
+                  }`}>
+                    {monitoringData.queue.jobs_in_queue}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Issues */}
+            {monitoringData.queue.issues && monitoringData.queue.issues.length > 0 && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h4 className="font-semibold text-red-800 mb-2">⚠️ Issues Detected:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  {monitoringData.queue.issues.map((issue, index) => (
+                    <li key={index} className="text-red-700">{issue}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Instructions */}
+            {monitoringData.queue.instructions && monitoringData.queue.instructions.length > 0 && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2">📋 To Fix Issues:</h4>
+                <div className="space-y-2">
+                  {monitoringData.queue.instructions.map((instruction, index) => (
+                    <div key={index} className="bg-white p-3 rounded border border-blue-100">
+                      <div className="font-medium text-blue-900 mb-1">{instruction.service}:</div>
+                      <code className="block text-xs bg-gray-100 p-2 rounded mt-1 break-all">
+                        {instruction.command}
+                      </code>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
