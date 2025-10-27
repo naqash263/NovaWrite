@@ -190,14 +190,26 @@ export function useSEO({
       setMetaTag('twitter:image', `${window.location.origin}${safeImage}`);
     }
     
-    // Canonical URL
-    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
-    if (!canonical) {
-      canonical = document.createElement('link');
-      canonical.rel = 'canonical';
-      document.head.appendChild(canonical);
-    }
-    canonical.href = url ? (url.startsWith('http') ? url : `${window.location.origin}${url}`) : window.location.href;
+    // Canonical URL - Always use current page URL as canonical
+    // Remove any existing canonical tags first to prevent duplicates
+    const existingCanonicals = document.querySelectorAll('link[rel="canonical"]');
+    existingCanonicals.forEach(canonical => canonical.remove());
+    
+    // Create a single canonical tag
+    const canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    
+    // Always use current page URL as canonical to prevent duplicate issues
+    const currentUrl = window.location.href;
+    
+    // Remove trailing slash and query parameters for consistency
+    const cleanUrl = currentUrl.split('?')[0].replace(/\/$/, '');
+    
+    // Only add trailing slash for homepage
+    const finalUrl = cleanUrl === window.location.origin ? `${window.location.origin}/` : cleanUrl;
+    
+    canonical.href = finalUrl;
+    document.head.appendChild(canonical);
     
     // Add structured data
     if (structuredData) {

@@ -512,6 +512,89 @@ class EmailTemplateSeeder extends Seeder
                 'metadata' => ['priority' => 'high', 'tags' => ['maintenance', 'system']],
                 'is_active' => true,
             ],
+            // Contact Form Templates
+            [
+                'name' => 'contact_form',
+                'subject' => 'Thank You for Contacting {{app_name}}',
+                'body' => '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You for Your Message</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .message-box { background: white; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #667eea; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Thank You for Contacting Us! ✉️</h1>
+        </div>
+        <div class="content">
+            <p>Hi <strong>{{contact_name}}</strong>,</p>
+            
+            <p>Thank you for reaching out to <strong>{{app_name}}</strong>! We have received your message and truly appreciate you taking the time to contact us.</p>
+            
+            <div class="message-box">
+                <h3>Your Message</h3>
+                <p><strong>Subject:</strong> {{contact_subject}}</p>
+                <p><strong>Your Query:</strong></p>
+                <p>{{contact_message}}</p>
+            </div>
+            
+            <h2>What Happens Next?</h2>
+            <p>Our team has received your inquiry and will review it carefully. Here\'s what you can expect:</p>
+            <ul>
+                <li>📧 We typically respond within <strong>24-48 hours</strong> during business days</li>
+                <li>🔍 We\'ll review your specific question or request in detail</li>
+                <li>💬 You\'ll receive a personalized response to your inquiry</li>
+                <li>✅ We\'ll do our best to address your needs and provide helpful information</li>
+            </ul>
+            
+            <h2>Need Immediate Assistance?</h2>
+            <p>If your matter is urgent, please don\'t hesitate to reach out again or call us directly.</p>
+            
+            <h2>While You Wait</h2>
+            <p>In the meantime, you might find these resources helpful:</p>
+            <ul>
+                <li>📚 Check out our <a href="{{app_url}}/blog">Blog</a> for tips and insights</li>
+                <li>💼 Explore our <a href="{{app_url}}/resources">Career Tools</a></li>
+                <li>🎓 Browse our <a href="{{app_url}}/courses">Courses</a></li>
+                <li>📖 Review our <a href="{{app_url}}">FAQ</a> section</li>
+            </ul>
+            
+            <h2>We Value Your Feedback</h2>
+            <p>Your thoughts and questions help us improve our services. We truly appreciate your input and look forward to helping you.</p>
+            
+            <p>Thank you for being part of the {{app_name}} community!</p>
+            
+            <p>Best regards,<br><strong>The {{app_name}} Team</strong></p>
+            
+            <p style="margin-top: 20px; font-size: 13px; color: #666;">
+                <strong>Reference:</strong> Your message was received on {{current_date}}<br>
+                <strong>Your Contact Email:</strong> {{contact_email}}
+            </p>
+        </div>
+        <div class="footer">
+            <p>© {{current_year}} {{app_name}}. All rights reserved.</p>
+            <p>You\'re receiving this email because you contacted us through our website.</p>
+        </div>
+    </div>
+</body>
+</html>',
+                'type' => 'html',
+                'category' => 'support',
+                'variables' => ['contact_name', 'contact_email', 'contact_subject', 'contact_message', 'app_name', 'app_url', 'current_year', 'current_date'],
+                'description' => 'Automated response email to contact form submissions',
+                'metadata' => ['priority' => 'high', 'tags' => ['contact', 'support', 'response']],
+                'is_active' => true,
+            ],
         ];
 
         foreach ($templates as $template) {

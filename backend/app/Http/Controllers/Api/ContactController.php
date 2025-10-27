@@ -41,13 +41,25 @@ class ContactController extends Controller
                 'app_url' => config('app.url'),
             ];
 
-            $success = $emailService->sendTemplateEmail('contact_form', $variables, 'naqash263@gmail.com', 'Admin');
+            // Send notification to admin
+            $adminSuccess = $emailService->sendTemplateEmail('contact_form', $variables, 'naqash263@gmail.com', 'Admin');
+            
+            // Send confirmation response to user
+            $userVariables = array_merge($variables, [
+                'current_year' => now()->year,
+                'current_date' => now()->format('F j, Y')
+            ]);
+            $userSuccess = $emailService->sendTemplateEmail('contact_form', $userVariables, $data['email'], $data['name']);
 
-            if ($success) {
+            if ($adminSuccess) {
                 Log::info("Contact form email sent successfully", ['contact_email' => $data['email']]);
                 
+                if ($userSuccess) {
+                    Log::info("Contact form confirmation sent to user", ['contact_email' => $data['email']]);
+                }
+                
                 return response()->json([
-                    'message' => 'Thank you for your message! I will get back to you soon.',
+                    'message' => 'Thank you for your message! You should receive a confirmation email shortly, and I will get back to you soon.',
                     'success' => true
                 ]);
             } else {
