@@ -74,7 +74,6 @@ export default function Workflows() {
     queryKey: ['workflow-categories'],
     queryFn: async () => {
       const response = await apiClient.get('/workflow-categories');
-      console.log('Categories API response:', response.data);
       // Handle both response structures
       if (response.data.data) {
         return response.data.data;
@@ -98,7 +97,6 @@ export default function Workflows() {
       if (searchQuery) params.append('search', searchQuery);
       
       const response = await apiClient.get(`/workflows?${params.toString()}`);
-      console.log('Workflows API response:', response.data);
       // Handle both response structures
       if (response.data.data) {
         return response.data.data;
