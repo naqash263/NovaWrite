@@ -45,6 +45,7 @@ class WorkflowController extends Controller
             'status' => $request->status,
             'is_published' => $request->status === 'published',
             'published_at' => $request->status === 'published' ? now() : null,
+            'image_url' => $request->image_url ?? null,
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
@@ -87,6 +88,7 @@ class WorkflowController extends Controller
             'benefits' => $request->benefits ?? [],
             'is_featured' => $request->is_featured ?? false,
             'status' => $request->status,
+            'image_url' => $request->image_url ?? null,
             'updated_by' => Auth::id(),
         ];
 

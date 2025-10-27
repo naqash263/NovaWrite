@@ -30,6 +30,7 @@ class Workflow extends Model
         'published_at',
         'created_by',
         'updated_by',
+        'image_url',
     ];
 
     protected $casts = [
