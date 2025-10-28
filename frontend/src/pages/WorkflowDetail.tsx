@@ -69,6 +69,38 @@ export default function WorkflowDetail() {
     description: workflow?.summary || '',
     keywords: (workflow?.tags && Array.isArray(workflow.tags) ? workflow.tags : []) || [],
     url: `/workflows/${slug || ''}`,
+    image: workflow?.image_url || '/images/workflows-og.jpg',
+    type: 'article',
+    publishedTime: workflow?.created_at,
+    modifiedTime: workflow?.updated_at,
+    author: 'Naqash Thaheem',
+    structuredData: workflow ? 'custom' as const : undefined,
+    customStructuredData: workflow ? {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      'name': workflow.title,
+      'description': workflow.summary,
+      'url': `https://naqashthaheem.com/workflows/${slug}`,
+      'image': workflow.image_url ? `https://naqashthaheem.com${workflow.image_url}` : 'https://naqashthaheem.com/images/workflows-og.jpg',
+      'applicationCategory': 'Automation Tool',
+      'offers': {
+        '@type': 'Offer',
+        'price': '0',
+        'priceCurrency': 'USD'
+      },
+      'aggregateRating': {
+        '@type': 'AggregateRating',
+        'ratingValue': '5',
+        'ratingCount': '1'
+      },
+      'author': {
+        '@type': 'Person',
+        'name': 'Naqash Thaheem',
+        'url': 'https://naqashthaheem.com/about'
+      },
+      'datePublished': workflow.created_at,
+      'dateModified': workflow.updated_at
+    } : undefined
   });
 
   useEffect(() => {

@@ -72,7 +72,20 @@ export default function Workflows() {
     title: 'AI Automation Workflows & Solutions - Download Free Templates | Naqash Thaheem',
     description: 'Download free AI automation workflows, CRM integration templates, data processing pipelines, and business automation solutions. Includes n8n, Make.com, Zapier workflow examples for businesses. Created by Systems Analyst Naqash Thaheem with 8+ years experience.',
     keywords: ['AI automation workflows', 'workflow templates', 'CRM automation', 'business process automation', 'n8n workflows', 'Make.com workflows', 'Zapier automation', 'Zoho CRM integration', 'data pipelines', 'workflow examples', 'automation solutions', 'download workflow templates', 'free automation tools', 'business intelligence workflows', 'data processing automation', 'workflow library'],
-    url: '/workflows'
+    url: '/workflows',
+    image: '/images/workflows-og.jpg',
+    structuredData: 'website',
+    customStructuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      'name': 'AI Automation Workflows',
+      'description': 'Free AI automation workflow templates and solutions for businesses',
+      'url': 'https://naqashthaheem.com/workflows',
+      'mainEntity': {
+        '@type': 'ItemList',
+        'itemListElement': []
+      }
+    }
   });
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery<WorkflowCategory[]>({
