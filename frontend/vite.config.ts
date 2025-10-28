@@ -150,9 +150,10 @@ export default defineConfig({
     // Optimize CSS
     cssTarget: 'chrome80',
     assetsInlineLimit: 4096,
-    // Preload optimization
+    // Preload optimization - disable preload for better performance
     modulePreload: {
-      polyfill: false
+      polyfill: false,
+      resolveDependencies: () => [] // Disable automatic preload
     }
   },
   // Optimize dependencies

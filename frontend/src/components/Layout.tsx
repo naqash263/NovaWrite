@@ -914,41 +914,192 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
-      <footer className="bg-gray-900 text-white py-8">
+      <footer className="bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
+          {/* Main Footer Content */}
+          <div className="py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Brand Section */}
+            <div className="col-span-1 lg:col-span-1">
+              <Link to="/" className="inline-block mb-4">
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  Naqash Thaheem
+                </span>
+              </Link>
+              <p className="text-gray-400 text-sm mb-4 leading-relaxed">
+                AI Automation Specialist delivering intelligent solutions for businesses worldwide.
+              </p>
+              {/* Social Media Links */}
+              <div className="flex gap-3">
+                <a 
+                  href="https://linkedin.com/in/naqash-thaheem" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors group"
+                  aria-label="LinkedIn"
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                  </svg>
+                </a>
+                <a 
+                  href="https://github.com/naqash-thaheem" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors group"
+                  aria-label="GitHub"
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                  </svg>
+                </a>
+                <a 
+                  href="mailto:contact@naqashthaheem.com"
+                  className="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors group"
+                  aria-label="Email"
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            {/* Quick Links */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <h3 className="text-lg font-semibold mb-4">Navigation</h3>
               <ul className="space-y-2">
-                <li><Link to="/about" className="text-gray-400 hover:text-white transition-colors">About</Link></li>
-                <li><Link to="/workflows" className="text-gray-400 hover:text-white transition-colors">Workflows</Link></li>
-                <li><Link to="/blog" className="text-gray-400 hover:text-white transition-colors">Blog</Link></li>
-                <li><Link to="/resources" className="text-gray-400 hover:text-white transition-colors">Resources</Link></li>
-                <li><Link to="/contact" className="text-gray-400 hover:text-white transition-colors">Contact</Link></li>
+                <li><Link to="/" className="text-gray-400 hover:text-white transition-colors flex items-center group">
+                  <svg className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  Home
+                </Link></li>
+                <li><Link to="/courses" className="text-gray-400 hover:text-white transition-colors flex items-center group">
+                  <svg className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  Courses
+                </Link></li>
+                <li><Link to="/workflows" className="text-gray-400 hover:text-white transition-colors flex items-center group">
+                  <svg className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Workflows
+                </Link></li>
+                <li><Link to="/resources" className="text-gray-400 hover:text-white transition-colors flex items-center group">
+                  <svg className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Resources
+                </Link></li>
+                <li><Link to="/blog" className="text-gray-400 hover:text-white transition-colors flex items-center group">
+                  <svg className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                  </svg>
+                  Blog
+                </Link></li>
+                <li><Link to="/about" className="text-gray-400 hover:text-white transition-colors flex items-center group">
+                  <svg className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  About
+                </Link></li>
+                <li><Link to="/contact" className="text-gray-400 hover:text-white transition-colors flex items-center group">
+                  <svg className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Contact
+                </Link></li>
               </ul>
             </div>
+
+            {/* Services */}
             <div>
               <h3 className="text-lg font-semibold mb-4">Services</h3>
               <ul className="space-y-2">
-                <li><span className="text-gray-400">AI Automation</span></li>
-                <li><span className="text-gray-400">CRM Integration</span></li>
-                <li><span className="text-gray-400">Power BI Dashboards</span></li>
-                <li><span className="text-gray-400">Web Development</span></li>
+                <li className="text-gray-400 hover:text-white transition-colors cursor-pointer flex items-start">
+                  <svg className="w-4 h-4 mr-2 mt-0.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                  AI Automation
+                </li>
+                <li className="text-gray-400 hover:text-white transition-colors cursor-pointer flex items-start">
+                  <svg className="w-4 h-4 mr-2 mt-0.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                  CRM Integration
+                </li>
+                <li className="text-gray-400 hover:text-white transition-colors cursor-pointer flex items-start">
+                  <svg className="w-4 h-4 mr-2 mt-0.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Power BI Dashboards
+                </li>
+                <li className="text-gray-400 hover:text-white transition-colors cursor-pointer flex items-start">
+                  <svg className="w-4 h-4 mr-2 mt-0.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Data Analytics
+                </li>
+                <li className="text-gray-400 hover:text-white transition-colors cursor-pointer flex items-start">
+                  <svg className="w-4 h-4 mr-2 mt-0.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Web Development
+                </li>
+                <li className="text-gray-400 hover:text-white transition-colors cursor-pointer flex items-start">
+                  <svg className="w-4 h-4 mr-2 mt-0.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Business Intelligence
+                </li>
               </ul>
             </div>
+
+            {/* Contact & Legal */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2">
-                <li><Link to="/privacy-policy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms-of-service" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
-                <li><Link to="/cookie-policy" className="text-gray-400 hover:text-white transition-colors">Cookie Policy</Link></li>
-              </ul>
+              <h3 className="text-lg font-semibold mb-4">Get In Touch</h3>
+              <div className="space-y-3 mb-6">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 mr-3 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <div className="text-sm text-gray-400">
+                    <p className="text-white font-medium">Ajman, U.A.E</p>
+                    <p>Remote services worldwide</p>
+                  </div>
+                </div>
+                <a href="mailto:contact@naqashthaheem.com" className="flex items-start text-gray-400 hover:text-white transition-colors">
+                  <svg className="w-5 h-5 mr-3 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <div className="text-sm">
+                    <p className="text-white font-medium">contact@naqashthaheem.com</p>
+                  </div>
+                </a>
+              </div>
+              <div className="border-t border-gray-800 pt-4">
+                <h4 className="text-sm font-semibold mb-3">Legal</h4>
+                <ul className="space-y-2">
+                  <li><Link to="/privacy-policy" className="text-gray-400 hover:text-white transition-colors text-sm">Privacy Policy</Link></li>
+                  <li><Link to="/terms-of-service" className="text-gray-400 hover:text-white transition-colors text-sm">Terms of Service</Link></li>
+                  <li><Link to="/cookie-policy" className="text-gray-400 hover:text-white transition-colors text-sm">Cookie Policy</Link></li>
+                </ul>
+              </div>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-8 text-center">
-            <p className="text-gray-400">
-              © {new Date().getFullYear()} Naqash Thaheem. All rights reserved.
-            </p>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-gray-800 py-6">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-gray-400 text-sm text-center md:text-left">
+                © {new Date().getFullYear()} Naqash Thaheem. All rights reserved.
+              </p>
+              <div className="flex gap-6 text-sm text-gray-400">
+                <span>Made with ❤️ for global automation</span>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

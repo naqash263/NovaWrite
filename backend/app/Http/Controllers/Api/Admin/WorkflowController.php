@@ -130,8 +130,12 @@ class WorkflowController extends Controller
         if ($request->has('is_premium')) {
             $updateData['is_premium'] = $request->boolean('is_premium');
         }
+        // Preserve existing image_url if not provided or empty
         if ($request->has('image_url')) {
-            $updateData['image_url'] = $request->image_url;
+            $updateData['image_url'] = $request->image_url ?: $workflow->image_url;
+        } else {
+            // If image_url is not in request, preserve existing value
+            $updateData['image_url'] = $workflow->image_url;
         }
 
         // Only update slug if title changed
