@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../../api/axios';
 import { useSEO } from '../../utils/seo';
-import LazyImage from '../../components/LazyImage';
+// Removed LazyImage for faster image loading
 import { CourseCardSkeleton } from '../../components/Skeleton';
 
 interface Course {
@@ -114,11 +114,11 @@ export default function Courses() {
                 className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
                 {course.image_url ? (
-                  <LazyImage
+                  <img
                     src={course.image_url}
                     alt={course.title}
                     className="w-full h-48 object-cover"
-                    placeholder="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjE5MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzc4MWY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7wn5OSPC90ZXh0Pjwvc3ZnPg=="
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-48 bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">

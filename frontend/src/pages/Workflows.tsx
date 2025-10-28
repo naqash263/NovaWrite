@@ -4,7 +4,7 @@ import apiClient from '../api/axios';
 import { useSEO } from '../utils/seo';
 import { WorkflowCardSkeleton } from '../components/Skeleton';
 import WorkflowDownloadModal from '../components/WorkflowDownloadModal';
-import LazyImage from '../components/LazyImage';
+// Removed LazyImage for faster image loading
 import { useHomeSettings } from '../hooks/useHomeSettings';
 
 interface WorkflowCategory {
@@ -169,11 +169,11 @@ export default function Workflows() {
           backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9))`
         }}
       >
-        <LazyImage
+        <img
           src={getImageUrl('workflows_image', '/images/ai_artificial_intell_c522e573.jpg')}
           alt="AI Automation Background"
           className="absolute inset-0 w-full h-full object-cover -z-10"
-          placeholder="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSIzMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzI1NjNlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QXV0b21hdGlvbiBXb3JrZmxvd3M8L3RleHQ+PC9zdmc+"
+          loading="lazy"
         />
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="text-5xl font-bold text-white mb-4">Automation Workflows</h1>

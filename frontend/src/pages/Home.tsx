@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/axios';
 import { PostCard } from '../components/PostCard';
-import LazyImage from '../components/LazyImage';
+// Removed LazyImage for faster image loading
 import { useSEO } from '../utils/seo';
 import { generateAISearchSchema, generateKnowledgeGraphSchema, generateFAQSchema, injectAISearchOptimizations } from '../utils/aiSearchOptimization';
 
@@ -289,10 +289,11 @@ export default function Home() {
           <div className="text-center animate-fade-in">
             {/* Profile Image with enhanced animation */}
             <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
-              <LazyImage 
+              <img
                 src={getImageUrl('profile_image', '/images/professional_busines_b4d6588a.jpg')} 
                 alt={getSettingValue('profile_alt_text', 'Naqash Thaheem')}
                 className="w-40 h-40 md:w-48 md:h-48 rounded-full mx-auto border-4 border-white shadow-2xl object-cover ring-4 ring-blue-300 ring-opacity-50"
+                loading="eager"
               />
             </div>
             
@@ -461,11 +462,11 @@ export default function Home() {
             </div>
             <div className="order-1 md:order-2">
               <div className="relative">
-                <LazyImage
+                <img
                   src="/images/business_analytics_d_948bb4c2.jpg"
                   alt="Business Analytics and Automation"
                   className="w-full rounded-2xl shadow-2xl"
-                  placeholder="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkJ1c2luZXNzIEFuYWx5dGljczwvdGV4dD48L3N2Zz4="
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent rounded-2xl"></div>
               </div>
