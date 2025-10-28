@@ -4,7 +4,6 @@ import apiClient from '../api/axios';
 import { useSEO } from '../utils/seo';
 import { PageLoader } from '../components/LoadingComponents';
 import WorkflowDownloadModal from '../components/WorkflowDownloadModal';
-import { useHomeSettings } from '../hooks/useHomeSettings';
 
 interface WorkflowCategory {
   id: number;
@@ -47,7 +46,6 @@ interface Workflow {
 export default function WorkflowDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { getImageUrl } = useHomeSettings();
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
