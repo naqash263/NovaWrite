@@ -27,8 +27,12 @@ class WorkflowController extends Controller
             'title' => 'required|string|max:255',
             'summary' => 'nullable|string',
             'description' => 'required|string',
+            'instructions' => 'nullable|string',
             'tools' => 'nullable|array',
             'benefits' => 'nullable|array',
+            'tags' => 'nullable|array',
+            'estimated_time' => 'nullable|string|max:255',
+            'difficulty' => 'nullable|in:beginner,intermediate,advanced',
             'is_premium' => 'boolean',
             'status' => 'required|in:draft,published',
         ]);
