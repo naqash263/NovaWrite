@@ -18,8 +18,6 @@ class Workflow extends Model
         'instructions',
         'tools',
         'benefits',
-        'tools_used',
-        'key_benefits',
         'is_premium',
         'is_published',
         'status',
