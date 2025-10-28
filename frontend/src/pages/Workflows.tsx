@@ -134,7 +134,10 @@ export default function Workflows() {
   const handleDownload = (workflowFile: any, workflowName: string, isPremium?: boolean) => {
     setDownloadModal({
       isOpen: true,
-      workflowFile: { id: workflowFile.id, name: workflowFile.name },
+      workflowFile: { 
+        id: workflowFile.id, 
+        name: workflowFile.display_name || workflowFile.file?.name || 'Workflow File' 
+      },
       workflowName,
       isPremium: isPremium || false,
     });
