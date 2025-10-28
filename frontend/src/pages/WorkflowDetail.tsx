@@ -314,7 +314,7 @@ export default function WorkflowDetail() {
                 onClick={() => setIsImageModalOpen(true)}
               >
                 <img
-                  src={getImageUrl(workflow.image_url)}
+                  src={workflow.image_url}
                   alt={workflow.title}
                   loading="lazy"
                   className="group-hover:scale-105 transition-transform duration-300"
@@ -338,7 +338,7 @@ export default function WorkflowDetail() {
                 >
                   <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
                     <img
-                      src={getImageUrl(workflow.image_url)}
+                      src={workflow.image_url}
                       alt={workflow.title}
                       className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                       onClick={(e) => e.stopPropagation()}
