@@ -42,22 +42,11 @@ export function generateOrganizationSchema() {
   };
 }
 
-export function generateBreadcrumbSchema(items?: Array<{name: string, url: string}>) {
-  const breadcrumbItems = items || [
-    {
-      name: "Home",
-      url: "https://naqashthaheem.com"
-    },
-    {
-      name: "Resources",
-      url: "https://naqashthaheem.com/resources"
-    }
-  ];
-  
+export function generateBreadcrumbSchema(items: Array<{name: string, url: string}>) {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    "itemListElement": breadcrumbItems.map((item, index) => ({
+    "itemListElement": items.map((item, index) => ({
       "@type": "ListItem",
       "position": index + 1,
       "name": item.name,
@@ -93,5 +82,68 @@ export function injectStructuredData(schema: any) {
   script.type = 'application/ld+json';
   script.textContent = JSON.stringify(schema);
   document.head.appendChild(script);
+}
+
+export function generateBlogPostSchema(post: {
+  title: string;
+  description: string;
+  publishedAt: string;
+  modifiedAt?: string;
+  slug: string;
+  featuredImage?: string;
+  author: string;
+  category?: string;
+}) {
+  const schema: any = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title,
+    "description": post.description,
+    "url": `https://naqashthaheem.com/blog/${post.slug}`,
+    "datePublished": post.publishedAt,
+    "dateModified": post.modifiedAt || post.publishedAt,
+    "author": {
+      "@type": "Person",
+      "name": post.author,
+      "url": "https://naqashthaheem.com/about",
+      "sameAs": [
+        "https://linkedin.com/in/naqash-thaheem",
+        "https://github.com/naqash-thaheem"
+      ]
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Naqash Thaheem",
+      "url": "https://naqashthaheem.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://naqashthaheem.com/images/professional_busines_b4d6588a.jpg"
+      }
+    },
+    "image": post.featuredImage ? {
+      "@type": "ImageObject",
+      "url": post.featuredImage,
+      "width": 1200,
+      "height": 630
+    } : {
+      "@type": "ImageObject",
+      "url": "https://naqashthaheem.com/images/og-default.jpg",
+      "width": 1200,
+      "height": 630
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `https://naqashthaheem.com/blog/${post.slug}`
+    },
+    "inLanguage": "en-US",
+    "isAccessibleForFree": true
+  };
+
+  // Add article section (category) if provided
+  if (post.category) {
+    schema.articleSection = post.category;
+  }
+
+  return schema;
 }
 

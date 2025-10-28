@@ -130,8 +130,9 @@ export const generateBlogPostSchema = (post: {
   slug: string;
   featuredImage?: string;
   author: string;
+  category?: string;
 }) => {
-  return {
+  const schema: any = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     "headline": post.title,
@@ -142,11 +143,16 @@ export const generateBlogPostSchema = (post: {
     "author": {
       "@type": "Person",
       "name": post.author,
-      "url": "https://naqashthaheem.com/about"
+      "url": "https://naqashthaheem.com/about",
+      "sameAs": [
+        "https://linkedin.com/in/naqash-thaheem",
+        "https://github.com/naqash-thaheem"
+      ]
     },
     "publisher": {
       "@type": "Organization",
       "name": "Naqash Thaheem",
+      "url": "https://naqashthaheem.com",
       "logo": {
         "@type": "ImageObject",
         "url": "https://naqashthaheem.com/images/professional_busines_b4d6588a.jpg"
@@ -154,13 +160,29 @@ export const generateBlogPostSchema = (post: {
     },
     "image": post.featuredImage ? {
       "@type": "ImageObject",
-      "url": post.featuredImage
-    } : undefined,
+      "url": post.featuredImage,
+      "width": 1200,
+      "height": 630
+    } : {
+      "@type": "ImageObject",
+      "url": "https://naqashthaheem.com/images/og-default.jpg",
+      "width": 1200,
+      "height": 630
+    },
     "mainEntityOfPage": {
       "@type": "WebPage",
       "@id": `https://naqashthaheem.com/blog/${post.slug}`
-    }
+    },
+    "inLanguage": "en-US",
+    "isAccessibleForFree": true
   };
+
+  // Add article section (category) if provided
+  if (post.category) {
+    schema.articleSection = post.category;
+  }
+
+  return schema;
 };
 
 export const generateCourseSchema = (course: {

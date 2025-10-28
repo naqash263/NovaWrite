@@ -20,7 +20,10 @@ export default function Resources() {
 
   useEffect(() => {
     // Add breadcrumb structured data
-    const breadcrumbSchema = generateBreadcrumbSchema();
+    const breadcrumbSchema = generateBreadcrumbSchema([
+      { name: 'Home', url: 'https://naqashthaheem.com' },
+      { name: 'Resources', url: 'https://naqashthaheem.com/workflows' }
+    ]);
     injectStructuredData(breadcrumbSchema);
 
     // Add FAQ structured data
