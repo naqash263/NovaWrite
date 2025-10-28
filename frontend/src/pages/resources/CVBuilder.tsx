@@ -440,9 +440,25 @@ const StepNavigation = ({
   const isLastStep = currentStep === totalSteps;
 
   return (
-    <div className="bg-white border-t border-gray-200 px-4 py-4 sm:py-6 sticky bottom-0 z-10 shadow-lg">
+    <div className="bg-white border-t border-gray-200 px-3 sm:px-4 py-3 sm:py-4 md:py-6 sticky bottom-0 z-10 shadow-lg">
       <div className="max-w-6xl mx-auto">
-        {/* Progress Summary - Removed for mobile */}
+        {/* Mobile Progress Bar */}
+        <div className="mb-3 sm:mb-2 sm:hidden">
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-xs text-gray-600">
+              <span className="font-medium">Step {currentStep}/{totalSteps}</span>
+            </div>
+            <div className="text-xs text-blue-600 font-medium">
+              {Math.round((currentStep / totalSteps) * 100)}%
+            </div>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            />
+          </div>
+        </div>
         
         {/* Minimal Progress Summary - DESKTOP ONLY */}
         <div className="mb-2 hidden sm:block">
@@ -467,41 +483,43 @@ const StepNavigation = ({
         {/* Navigation Buttons */}
         <div className="flex justify-between items-center gap-2">
           {/* Mobile View: Simplified Navigation */}
-          <div className="sm:hidden flex justify-between w-full">
+          <div className="sm:hidden flex justify-between w-full gap-3">
         <button
           onClick={onPrevious}
               disabled={isFirstStep}
-              className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
+              className={`w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 ${
                 isFirstStep
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400'
+                : 'bg-gray-200 text-gray-700 active:bg-gray-300'
           }`}
               aria-label="Previous step"
         >
-              <span className="text-xl">←</span>
+              <span className="text-lg">←</span>
         </button>
 
             {/* Mobile Next/Download Button */}
             {isLastStep ? (
               <button
                 onClick={onFinish}
-                className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md"
+                className="flex-1 h-11 flex items-center justify-center rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white active:from-green-700 active:to-green-800 transition-all duration-200 shadow-md font-medium"
                 aria-label="Download CV"
               >
-                <span className="text-xl">📄</span>
+                <span className="mr-2">📄</span>
+                <span>Download</span>
               </button>
             ) : (
               <button
                 onClick={onNext}
                 disabled={isNextDisabled}
-                className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
+                className={`flex-1 h-11 flex items-center justify-center rounded-lg transition-all duration-200 ${
                   isNextDisabled
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-md'
+                    : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white active:from-blue-700 active:to-blue-800 shadow-md font-medium'
                 }`}
                 aria-label="Next step"
               >
-                <span className="text-xl">→</span>
+                <span>Next</span>
+                <span className="ml-2">→</span>
               </button>
             )}
           </div>
@@ -2068,6 +2086,7 @@ export default function CVBuilder() {
   const [templates, setTemplates] = useState<any[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const { addToast } = useToast();
 
   const totalSteps = 10;
@@ -2378,6 +2397,38 @@ export default function CVBuilder() {
     }
   };
 
+  const handleClear = () => {
+    setShowClearConfirm(true);
+  };
+
+  const confirmClear = () => {
+    // Reset all state to defaults
+    setCvData(defaultCVData);
+    setCvStyle({
+      templateName: 'jobscan-executive',
+      primaryColor: '#000000',
+      secondaryColor: '#FFFFFF',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: 11,
+    });
+    setCurrentStep(0);
+    setCreationMode(null);
+    setHasProcessedData(false);
+    setCompletedSteps(new Set());
+    
+    // Clear localStorage
+    localStorage.removeItem('cv-builder-data');
+    
+    // Close modal
+    setShowClearConfirm(false);
+    
+    addToast({
+      type: 'success',
+      title: 'Reset Complete',
+      description: 'You can now start creating your CV from the beginning.',
+      duration: 3000
+    });
+  };
 
   // Sanitize CV data to prevent JSON encoding issues
   const sanitizeCvData = (data: any): any => {
@@ -2850,12 +2901,12 @@ export default function CVBuilder() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+        <div className="text-center mb-4 sm:mb-6 md:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4">
             AI-Powered CV Builder
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-2">
             Create professional, ATS-optimized resumes with our intelligent CV builder. 
             Get AI-powered suggestions and templates tailored to your industry.
           </p>
@@ -2867,20 +2918,77 @@ export default function CVBuilder() {
       </div>
 
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="p-6">
-        <StepNavigation
-          currentStep={currentStep}
-          totalSteps={totalSteps}
-          onNext={handleNext}
-          onPrevious={handlePrevious}
-          onFinish={handleFinish}
-            />
-            
-            <div className="mt-8">
+          {/* Clear Button - Top Right */}
+          <div className="flex justify-end items-center p-3 sm:p-4 md:p-6 pb-0">
+            <button
+              onClick={handleClear}
+              className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200 border border-blue-200"
+              aria-label="Start from beginning"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span className="hidden sm:inline">Start from Beginning</span>
+              <span className="sm:hidden">Reset</span>
+            </button>
+          </div>
+          
+          <div className="p-3 sm:p-4 md:p-6 pt-2 sm:pt-3 md:pt-4">
+            <div className="mb-4 sm:mb-6 md:mb-8">
               {renderStepContent()}
             </div>
+            
+            <StepNavigation
+              currentStep={currentStep}
+              totalSteps={totalSteps}
+              onNext={handleNext}
+              onPrevious={handlePrevious}
+              onFinish={handleFinish}
+            />
           </div>
         </div>
+
+        {/* Clear Confirmation Modal */}
+        {showClearConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-3" onClick={() => setShowClearConfirm(false)}>
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="p-4 sm:p-6">
+                {/* Icon */}
+                <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 bg-blue-100 rounded-full">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </div>
+
+                {/* Title */}
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 text-center mb-2">
+                  Start from Beginning?
+                </h3>
+
+                {/* Description */}
+                <p className="text-xs sm:text-sm text-gray-600 text-center mb-4 sm:mb-6 px-2">
+                  This will reset your CV builder and take you back to the start. Your current progress will be cleared.
+                </p>
+
+                {/* Buttons */}
+                <div className="flex gap-2 sm:gap-3">
+                  <button
+                    onClick={() => setShowClearConfirm(false)}
+                    className="flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmClear}
+                    className="flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg transition-colors"
+                  >
+                    Start Over
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
