@@ -1,13 +1,49 @@
+import { useEffect } from 'react';
 import { useSEO } from '../utils/seo';
 import { useHomeSettings } from '../hooks/useHomeSettings';
+import { generatePersonSchema, generateBreadcrumbSchema, generateFAQSchema, injectStructuredData } from '../utils/structuredData';
 
 export default function About() {
   const { getImageUrl } = useHomeSettings();
   
   useSEO({
-    title: 'About | Naqash Thaheem',
-    description: 'AI Automation Specialist | CRM Integrations | Power BI | OpenAI | Make.com | n8n with 8+ years of experience in building AI-powered automation workflows, CRM integrations, and scalable web platforms.',
+    title: 'About Naqash Thaheem - AI Automation Expert with 8+ Years Experience',
+    description: 'Learn about Naqash Thaheem, a leading AI automation expert and Systems Analyst with 8+ years of experience in workflow automation, CRM integration, Power BI dashboards, and business intelligence. Serving clients globally with remote automation solutions.',
+    keywords: ['Naqash Thaheem', 'AI automation expert', 'systems analyst', 'workflow automation specialist', 'CRM integration expert', 'Power BI consultant', 'business intelligence specialist', 'global automation services', 'n8n expert', 'Make.com specialist', 'Zoho CRM expert', 'OpenAI integration', 'remote automation consultant', 'international consultant', '8 years experience'],
+    url: '/about',
+    structuredData: 'person',
+    customStructuredData: generatePersonSchema()
   });
+
+  useEffect(() => {
+    // Add breadcrumb schema
+    const breadcrumbSchema = generateBreadcrumbSchema([
+      { name: 'Home', url: 'https://naqashthaheem.com' },
+      { name: 'About', url: 'https://naqashthaheem.com/about' }
+    ]);
+    injectStructuredData(breadcrumbSchema);
+
+    // Add FAQ schema for About page
+    const faqSchema = generateFAQSchema([
+      {
+        question: 'What is Naqash Thaheem\'s experience in AI automation?',
+        answer: 'Naqash Thaheem has 8+ years of experience in AI automation, specializing in n8n, Make.com, Zapier, and OpenAI integrations. He has delivered 100+ projects and created 50+ automation workflows for businesses globally.'
+      },
+      {
+        question: 'What services does Naqash Thaheem offer?',
+        answer: 'Naqash offers AI automation workflows, CRM integration services, Power BI dashboard development, web development, and business intelligence solutions. He specializes in Zoho CRM, HubSpot, n8n, Make.com, and OpenAI integrations.'
+      },
+      {
+        question: 'Where is Naqash Thaheem located?',
+        answer: 'Naqash Thaheem is based in Ajman, United Arab Emirates, but provides remote services to clients worldwide including the US, UK, Canada, Australia, Germany, Netherlands, and Singapore.'
+      },
+      {
+        question: 'What tools does Naqash use for automation?',
+        answer: 'Naqash uses n8n, Make.com, Zapier, OpenAI GPT models, Zoho CRM, HubSpot, Power BI, React, .NET Core, Laravel, and Python for creating comprehensive automation solutions and business intelligence dashboards.'
+      }
+    ]);
+    injectStructuredData(faqSchema);
+  }, []);
 
   return (
     <div className="bg-gray-50">

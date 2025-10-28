@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSEO } from '../utils/seo';
 import apiClient from '../api/axios';
 import { useHomeSettings } from '../hooks/useHomeSettings';
+import { generateBreadcrumbSchema, generateFAQSchema, injectStructuredData } from '../utils/structuredData';
 
 export default function Contact() {
   const { getImageUrl } = useHomeSettings();
@@ -18,9 +19,64 @@ export default function Contact() {
   }>({ type: null, message: '' });
 
   useSEO({
-    title: 'Contact | Naqash Thaheem',
-    description: 'Get in touch with Naqash Thaheem for automation, AI, and CRM integration projects.',
+    title: 'Contact Naqash Thaheem - Free Consultation | AI Automation Expert',
+    description: 'Get in touch with Naqash Thaheem for AI automation, CRM integration, Power BI dashboards, and business intelligence projects. Get a free consultation for your automation needs. Remote services available worldwide.',
+    keywords: ['contact Naqash Thaheem', 'AI automation consultation', 'CRM integration services', 'Power BI development', 'business intelligence consulting', 'workflow automation expert', 'automation project quote', 'remote automation services', 'n8n consultant', 'Make.com specialist', 'Zoho CRM expert', 'free consultation', 'automation expert contact'],
+    url: '/contact',
+    structuredData: 'custom',
+    customStructuredData: {
+      "@context": "https://schema.org",
+      "@type": "ContactPage",
+      "name": "Contact Naqash Thaheem - AI Automation Expert",
+      "description": "Get in touch with Naqash Thaheem for AI automation, CRM integration, and business intelligence projects",
+      "url": "https://naqashthaheem.com/contact",
+      "mainEntity": {
+        "@type": "Person",
+        "name": "Naqash Thaheem",
+        "jobTitle": "Systems Analyst & Automation Specialist",
+        "email": "contact@naqashthaheem.com",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Ajman",
+          "addressCountry": "AE"
+        },
+        "sameAs": [
+          "https://linkedin.com/in/naqash-thaheem",
+          "https://github.com/naqash-thaheem"
+        ]
+      }
+    }
   });
+
+  useEffect(() => {
+    // Add breadcrumb schema
+    const breadcrumbSchema = generateBreadcrumbSchema([
+      { name: 'Home', url: 'https://naqashthaheem.com' },
+      { name: 'Contact', url: 'https://naqashthaheem.com/contact' }
+    ]);
+    injectStructuredData(breadcrumbSchema);
+
+    // Add FAQ schema for Contact page
+    const faqSchema = generateFAQSchema([
+      {
+        question: 'How can I contact Naqash Thaheem for automation services?',
+        answer: 'You can contact Naqash Thaheem via email at contact@naqashthaheem.com, through the contact form on this page, or via LinkedIn at linkedin.com/in/naqash-thaheem. He typically responds within 24 hours.'
+      },
+      {
+        question: 'What is the typical response time for inquiries?',
+        answer: 'Naqash Thaheem typically responds to all inquiries within 24 hours. For urgent projects, please mention it in your message for priority response.'
+      },
+      {
+        question: 'Does Naqash provide free consultations?',
+        answer: 'Yes, Naqash offers free initial consultations for all automation, CRM integration, and business intelligence projects. Contact him to discuss your specific needs and requirements.'
+      },
+      {
+        question: 'Are the services available remotely?',
+        answer: 'Yes, Naqash Thaheem provides remote automation services to clients worldwide including the US, UK, Canada, Australia, Germany, Netherlands, and Singapore.'
+      }
+    ]);
+    injectStructuredData(faqSchema);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
