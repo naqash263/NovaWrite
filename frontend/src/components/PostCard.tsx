@@ -34,24 +34,27 @@ export function PostCard({ post }: PostCardProps) {
   const fallbackImage = fallbackImages[post.id % fallbackImages.length];
   
   return (
-    <article className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow" itemScope itemType="https://schema.org/BlogPosting">
-      <Link to={`/blog/${post.slug}`} aria-label={`Read article: ${post.title}`}>
-        <img
-          src={post.featured_image 
-            ? (post.featured_image.startsWith('http') 
-              ? post.featured_image 
-              : API_CONFIG.getStorageUrl(post.featured_image))
-            : fallbackImage
-          }
-          alt={post.title}
-          className="w-full h-48 object-cover"
-          onError={(e) => {
-            // If the featured image fails to load, use fallback
-            (e.target as HTMLImageElement).src = fallbackImage;
-          }}
-          itemProp="image"
-          loading="lazy"
-        />
+    <article className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow group" itemScope itemType="https://schema.org/BlogPosting">
+      <Link to={`/blog/${post.slug}`} aria-label={`Read article: ${post.title}`} className="block overflow-hidden">
+        <div className="relative w-full h-48 overflow-hidden bg-gray-100">
+          <img
+            src={post.featured_image 
+              ? (post.featured_image.startsWith('http') 
+                ? post.featured_image 
+                : API_CONFIG.getStorageUrl(post.featured_image))
+              : fallbackImage
+            }
+            alt={post.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={(e) => {
+              // If the featured image fails to load, use fallback
+              (e.target as HTMLImageElement).src = fallbackImage;
+            }}
+            itemProp="image"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300" />
+        </div>
       </Link>
       <div className="p-6">
         <div className="flex items-center gap-2 mb-3">

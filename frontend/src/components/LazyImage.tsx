@@ -63,7 +63,7 @@ export default function LazyImage({
   };
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div className="relative overflow-hidden">
       <img
         ref={imgRef}
         src={imageSrc}

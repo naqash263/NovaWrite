@@ -4,7 +4,6 @@ import apiClient from '../api/axios';
 import { FileList } from '../components/FileList';
 import { useSEO } from '../utils/seo';
 import { generateBlogPostSchema, generateBreadcrumbSchema, injectStructuredData } from '../utils/structuredData';
-import LazyImage from '../components/LazyImage';
 import { API_CONFIG } from '../config/api';
 
 interface Post {
@@ -37,6 +36,7 @@ export default function BlogPost() {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   // Calculate SEO values safely
   const getDescription = () => {
@@ -147,6 +147,25 @@ export default function BlogPost() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isImageModalOpen) {
+        setIsImageModalOpen(false);
+      }
+    };
+
+    if (isImageModalOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isImageModalOpen]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -173,16 +192,59 @@ export default function BlogPost() {
           
           {/* Featured Image */}
           {post.featured_image && (
-            <div className="relative w-full h-96 overflow-hidden">
-              <div itemProp="image">
-                <LazyImage
+            <>
+              <div 
+                className="article-featured-image cursor-pointer hover:opacity-90 transition-opacity duration-300 group" 
+                itemProp="image"
+                onClick={() => setIsImageModalOpen(true)}
+              >
+                <img
                   src={post.featured_image}
                   alt={post.title}
-                  className="w-full h-full object-cover"
-                  placeholder="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+"
+                  loading="lazy"
+                  className="group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1200" height="400"%3E%3Crect width="1200" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial" font-size="18" fill="%239CA3AF" text-anchor="middle" dy=".3em"%3ELoading...%3C/text%3E%3C/svg%3E';
+                  }}
                 />
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center">
+                  <svg className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                </div>
               </div>
-            </div>
+
+              {/* Image Lightbox Modal */}
+              {isImageModalOpen && (
+                <div 
+                  className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+                  onClick={() => setIsImageModalOpen(false)}
+                >
+                  <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
+                    <img
+                      src={post.featured_image}
+                      alt={post.title}
+                      className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <button
+                      onClick={() => setIsImageModalOpen(false)}
+                      className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+                      aria-label="Close image viewer"
+                    >
+                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                    <div className="absolute bottom-4 left-4 right-4 text-center text-white bg-black bg-opacity-50 rounded-lg px-4 py-2">
+                      <p className="text-sm">{post.title}</p>
+                      <p className="text-xs text-gray-300 mt-1">Click outside to close</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           
           {/* Article Content */}
