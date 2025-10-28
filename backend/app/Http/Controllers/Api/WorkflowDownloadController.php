@@ -112,7 +112,28 @@ class WorkflowDownloadController extends Controller
 
     public function download($id, Request $request)
     {
+        \Log::info('Workflow download requested', [
+            'id' => $id,
+            'token' => $request->query('token'),
+            'request_path' => $request->path(),
+            'is_premium' => null, // will be set below
+        ]);
+        
         $workflowFile = WorkflowFile::with(['workflow', 'file'])->findOrFail($id);
+        
+        \Log::info('Workflow file found', [
+            'workflow_file_id' => $workflowFile->id,
+            'workflow_id' => $workflowFile->workflow_id,
+            'file_id' => $workflowFile->file_id,
+            'is_premium' => $workflowFile->workflow->is_premium,
+            'is_active' => $workflowFile->is_active,
+            'workflow_status' => $workflowFile->workflow->status,
+        ]);
+
+        // Check if workflow file has a file attached
+        if (!$workflowFile->file) {
+            abort(404, 'File not attached to this workflow file');
+        }
 
         if (!$workflowFile->is_active || $workflowFile->workflow->status !== 'published') {
             abort(403, 'This file is no longer available');
@@ -144,7 +165,13 @@ class WorkflowDownloadController extends Controller
         $filePath = storage_path('app/public/' . $file->path);
 
         if (!file_exists($filePath)) {
-            abort(404, 'File not found');
+            \Log::error('Workflow file not found in storage', [
+                'workflow_file_id' => $workflowFile->id,
+                'file_id' => $file->id,
+                'file_path' => $filePath,
+                'expected_path' => $file->path,
+            ]);
+            abort(404, 'File not found in storage');
         }
 
         return response()->download($filePath, $file->name, [
