@@ -64,9 +64,56 @@ export default function WorkflowDetail() {
     isPremium: false,
   });
 
+  // Generate a proper SEO description
+  const getDescription = () => {
+    if (!workflow) return '';
+    
+    // If summary exists and is long enough, use it
+    if (workflow.summary && workflow.summary.length >= 120) {
+      return workflow.summary;
+    }
+    
+    // Otherwise, create a description from available data
+    const parts: string[] = [];
+    
+    if (workflow.title) {
+      parts.push(workflow.title);
+    }
+    
+    if (workflow.category?.name) {
+      parts.push(`${workflow.category.name} workflow`);
+    }
+    
+    if (workflow.tools && workflow.tools.length > 0) {
+      parts.push(`using ${workflow.tools.slice(0, 3).join(', ')}`);
+    }
+    
+    if (workflow.difficulty) {
+      parts.push(`for ${workflow.difficulty} users`);
+    }
+    
+    if (workflow.summary) {
+      parts.push(`- ${workflow.summary}`);
+    }
+    
+    let description = parts.join(' ');
+    
+    // If still too short, add default text
+    if (description.length < 120) {
+      description = `${workflow.title} - Download this AI automation workflow template by Systems Analyst Naqash Thaheem. ${workflow.summary || 'Free workflow template for business automation and process improvement.'}`;
+    }
+    
+    // Ensure description is within optimal length
+    if (description.length > 160) {
+      description = description.substring(0, 157) + '...';
+    }
+    
+    return description;
+  };
+
   useSEO({
     title: workflow ? `${workflow.title} | Naqash Thaheem` : 'Loading...',
-    description: workflow?.summary || '',
+    description: getDescription(),
     keywords: (workflow?.tags && Array.isArray(workflow.tags) ? workflow.tags : []) || [],
     url: `/workflows/${slug || ''}`,
     image: workflow?.image_url || '/images/workflows-og.jpg',
