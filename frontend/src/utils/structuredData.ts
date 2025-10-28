@@ -42,41 +42,49 @@ export function generateOrganizationSchema() {
   };
 }
 
-export function generateBreadcrumbSchema() {
+export function generateBreadcrumbSchema(items?: Array<{name: string, url: string}>) {
+  const breadcrumbItems = items || [
+    {
+      name: "Home",
+      url: "https://naqashthaheem.com"
+    },
+    {
+      name: "Resources",
+      url: "https://naqashthaheem.com/resources"
+    }
+  ];
+  
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://naqashthaheem.com"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Resources",
-        "item": "https://naqashthaheem.com/resources"
-      }
-    ]
+    "itemListElement": breadcrumbItems.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": item.name,
+      "item": item.url
+    }))
   };
 }
 
-export function generateFAQSchema() {
+export function generateFAQSchema(faqs?: Array<{question: string, answer: string}>) {
+  const faqItems = faqs || [
+    {
+      question: "What services do you offer?",
+      answer: "I offer systems analysis, automation solutions, and web development services."
+    }
+  ];
+  
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "What services do you offer?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "I offer systems analysis, automation solutions, and web development services."
-        }
+    "mainEntity": faqItems.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
       }
-    ]
+    }))
   };
 }
 
@@ -86,3 +94,4 @@ export function injectStructuredData(schema: any) {
   script.textContent = JSON.stringify(schema);
   document.head.appendChild(script);
 }
+
