@@ -88,24 +88,23 @@ class WorkflowDownloadController extends Controller
             $downloadData['email'] = $request->email;
         }
 
-        $download = WorkflowDownload::create($downloadData);
-
-        $workflowFile->incrementDownloads();
-
-        // Generate download URL
+        $downloadUrl = '';
         $baseUrl = url('/');
         
-        // Non-premium workflows can download directly without token
-        // Premium workflows require token for security
+        // Non-premium workflows can download directly without any tracking
+        // Premium workflows require token and tracking
         if ($workflowFile->workflow->is_premium) {
+            // Premium workflow - create download record with token
+            $download = WorkflowDownload::create($downloadData);
+            // Don't increment here - will increment on actual download
             $downloadUrl = $baseUrl . '/api/workflow-files/' . $workflowFile->id . '/download?token=' . $download->token;
         } else {
-            // Direct download for non-premium workflows
+            // Non-premium workflow - direct download, no tracking needed
             $downloadUrl = $baseUrl . '/api/workflow-files/' . $workflowFile->id . '/download';
         }
 
         return response()->json([
-            'message' => 'Download request recorded successfully',
+            'message' => $workflowFile->workflow->is_premium ? 'Download request recorded successfully' : 'Download ready',
             'download_url' => $downloadUrl,
             'file_name' => $workflowFile->file->name,
         ]);
@@ -132,6 +131,13 @@ class WorkflowDownloadController extends Controller
             if ($download->isExpired()) {
                 abort(403, 'Download link has expired');
             }
+            
+            // Mark premium download as completed
+            $download->update(['downloaded_at' => now()]);
+            $workflowFile->incrementDownloads();
+        } else {
+            // For non-premium workflows, increment download count without restriction
+            $workflowFile->incrementDownloads();
         }
 
         $file = $workflowFile->file;
