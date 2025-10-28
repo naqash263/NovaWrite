@@ -49,6 +49,10 @@ export default function Workflows() {
     status: 'draft',
     is_premium: false,
     image_url: '',
+    estimated_time: '',
+    difficulty: 'intermediate',
+    tags: [] as string[],
+    instructions: '',
   });
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [fileDescription, setFileDescription] = useState('');
@@ -204,6 +208,10 @@ export default function Workflows() {
       status: 'draft',
       is_premium: false,
       image_url: '',
+      estimated_time: '',
+      difficulty: 'intermediate',
+      tags: [],
+      instructions: '',
     });
     setEditingId(null);
     setShowForm(false);
@@ -222,6 +230,10 @@ export default function Workflows() {
       status: workflow.status || 'draft',
       is_premium: workflow.is_premium,
       image_url: workflow.image_url || '',
+      estimated_time: (workflow as any).estimated_time || '',
+      difficulty: (workflow as any).difficulty || 'intermediate',
+      tags: (workflow as any).tags || [],
+      instructions: (workflow as any).instructions || '',
     });
     setEditingId(workflow.id);
     setShowForm(true);
@@ -377,6 +389,61 @@ export default function Workflows() {
                 placeholder="e.g., Faster processing, Better accuracy, Cost savings (separate with commas)"
               />
               <p className="text-xs text-gray-500 mt-1">Separate multiple benefits with commas</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Time</label>
+                <input
+                  type="text"
+                  value={formData.estimated_time}
+                  onChange={(e) => setFormData({ ...formData, estimated_time: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder="e.g., 30 minutes, 2-3 hours"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty Level</label>
+                <select
+                  value={formData.difficulty}
+                  onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                >
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
+              <RichTextEditor
+                value={formData.instructions}
+                onChange={(instructions) => setFormData({ ...formData, instructions })}
+                placeholder="Enter step-by-step instructions for this workflow..."
+                height={250}
+              />
+              <p className="text-xs text-gray-500 mt-1">Detailed instructions on how to use this workflow</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+              <input
+                type="text"
+                value={formData.tags.join(', ')}
+                onChange={(e) => {
+                  const tags = e.target.value
+                    .split(',')
+                    .map(t => t.trim())
+                    .filter(t => t.length > 0);
+                  setFormData({ ...formData, tags });
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                placeholder="e.g., automation, n8n, productivity (separate with commas)"
+              />
+              <p className="text-xs text-gray-500 mt-1">Separate tags with commas</p>
             </div>
 
             <div>

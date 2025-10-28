@@ -30,11 +30,15 @@ class Workflow extends Model
         'created_by',
         'updated_by',
         'image_url',
+        'estimated_time',
+        'difficulty',
+        'tags',
     ];
 
     protected $casts = [
         'tools' => 'array',
         'benefits' => 'array',
+        'tags' => 'array',
         'allowed_user_ids' => 'array',
         'allowed_group_ids' => 'array',
         'is_premium' => 'boolean',

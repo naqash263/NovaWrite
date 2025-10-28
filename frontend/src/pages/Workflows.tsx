@@ -30,8 +30,12 @@ interface Workflow {
   slug: string;
   summary: string;
   description: string;
+  instructions?: string;
   tools: string[];
   benefits: string[];
+  estimated_time?: string;
+  difficulty?: string;
+  tags?: string[];
   is_premium: boolean;
   category?: WorkflowCategory;
   files: WorkflowFile[];
@@ -254,14 +258,22 @@ export default function Workflows() {
                     <p className="text-gray-600 leading-relaxed">
                       {displayDescription}
                     </p>
-                    {shouldShowReadMore && (
+                    <div className="mt-2 flex gap-3">
+                      {shouldShowReadMore && (
+                        <button
+                          onClick={() => toggleExpanded(workflow.id)}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                        >
+                          {isExpanded ? 'Read Less' : 'Read More'}
+                        </button>
+                      )}
                       <button
-                        onClick={() => toggleExpanded(workflow.id)}
-                        className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                        onClick={() => window.location.href = `/workflows/${workflow.slug}`}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                       >
-                        {isExpanded ? 'Read Less' : 'Read More'}
+                        View Full Details →
                       </button>
-                    )}
+                    </div>
                   </div>
                 )}
                 
@@ -270,6 +282,28 @@ export default function Workflows() {
                     <span className="inline-block bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-semibold">
                       {workflow.category.name}
                     </span>
+                  </div>
+                )}
+
+                {/* Estimated Time & Difficulty */}
+                {(workflow.estimated_time || workflow.difficulty) && (
+                  <div className="mb-4 flex gap-4">
+                    {workflow.estimated_time && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{workflow.estimated_time}</span>
+                      </div>
+                    )}
+                    {workflow.difficulty && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span className="capitalize">{workflow.difficulty}</span>
+                      </div>
+                    )}
                   </div>
                 )}
                 
@@ -299,6 +333,19 @@ export default function Workflows() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {workflow.tags && Array.isArray(workflow.tags) && workflow.tags.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex flex-wrap gap-2">
+                      {workflow.tags.map((tag, idx) => (
+                        <span key={idx} className="bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded border border-purple-200">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
