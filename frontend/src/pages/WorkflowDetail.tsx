@@ -313,16 +313,28 @@ export default function WorkflowDetail() {
                 className="article-featured-image cursor-pointer hover:opacity-90 transition-opacity duration-300 group" 
                 onClick={() => setIsImageModalOpen(true)}
               >
-                <img
-                  src={workflow.image_url}
-                  alt={workflow.title}
-                  loading="lazy"
-                  className="group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1200" height="400"%3E%3Crect width="1200" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial" font-size="18" fill="%239CA3AF" text-anchor="middle" dy=".3em"%3ELoading...%3C/text%3E%3C/svg%3E';
-                  }}
-                />
+                {workflow.image_url && workflow.image_url.trim() ? (
+                  <img
+                    src={workflow.image_url}
+                    alt={workflow.title}
+                    loading="lazy"
+                    className="group-hover:scale-105 transition-transform duration-300 w-full h-auto"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1200" height="400"%3E%3Crect width="1200" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial" font-size="18" fill="%239CA3AF" text-anchor="middle" dy=".3em"%3EWorkflow Image%3C/text%3E%3C/svg%3E';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-64 bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <p className="text-xl font-semibold">No Image</p>
+                      <p className="text-sm opacity-75">Workflow visualization</p>
+                    </div>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center">
                   <svg className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />

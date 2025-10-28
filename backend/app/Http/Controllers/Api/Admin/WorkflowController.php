@@ -100,19 +100,39 @@ class WorkflowController extends Controller
         $updateData = [
             'workflow_category_id' => $request->workflow_category_id,
             'title' => $request->title,
-            'summary' => $request->summary,
             'description' => $request->description,
-            'instructions' => $request->instructions,
-            'tools' => $request->tools ?? [],
-            'benefits' => $request->benefits ?? [],
-            'tags' => $request->tags ?? [],
-            'estimated_time' => $request->estimated_time,
-            'difficulty' => $request->difficulty,
-            'is_premium' => $request->is_premium ?? false,
             'status' => $request->status,
-            'image_url' => $request->image_url ?? null,
             'updated_by' => Auth::id(),
         ];
+
+        // Only update fields if they are provided (preserve existing values if not sent)
+        if ($request->has('summary')) {
+            $updateData['summary'] = $request->summary;
+        }
+        if ($request->has('instructions')) {
+            $updateData['instructions'] = $request->instructions;
+        }
+        if ($request->has('tools')) {
+            $updateData['tools'] = $request->tools ?? [];
+        }
+        if ($request->has('benefits')) {
+            $updateData['benefits'] = $request->benefits ?? [];
+        }
+        if ($request->has('tags')) {
+            $updateData['tags'] = $request->tags ?? [];
+        }
+        if ($request->has('estimated_time')) {
+            $updateData['estimated_time'] = $request->estimated_time;
+        }
+        if ($request->has('difficulty')) {
+            $updateData['difficulty'] = $request->difficulty;
+        }
+        if ($request->has('is_premium')) {
+            $updateData['is_premium'] = $request->boolean('is_premium');
+        }
+        if ($request->has('image_url')) {
+            $updateData['image_url'] = $request->image_url;
+        }
 
         // Only update slug if title changed
         if ($workflow->title !== $request->title) {
