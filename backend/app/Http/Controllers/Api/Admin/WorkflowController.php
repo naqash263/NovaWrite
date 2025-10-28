@@ -50,13 +50,13 @@ class WorkflowController extends Controller
                 'estimated_time' => $request->estimated_time,
                 'difficulty' => $request->difficulty,
                 'tags' => $request->tags ?? [],
-                'is_premium' => $request->is_premium ?? false,
+                'is_premium' => $request->boolean('is_premium', false),
                 'status' => $request->status,
                 'is_published' => $request->status === 'published',
                 'published_at' => $request->status === 'published' ? now() : null,
                 'image_url' => $request->image_url ?? null,
-                'created_by' => Auth::id(),
-                'updated_by' => Auth::id(),
+                'created_by' => Auth::id() ?? null,
+                'updated_by' => Auth::id() ?? null,
             ]);
         } catch (\Exception $e) {
             \Log::error('Workflow creation error: ' . $e->getMessage());
