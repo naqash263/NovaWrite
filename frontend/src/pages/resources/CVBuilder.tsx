@@ -2915,12 +2915,12 @@ export default function CVBuilder() {
         {/* API Key Manager */}
         <div className="mb-6">
           <ApiKeyManager />
-      </div>
+            </div>
 
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Clear Button - Top Right */}
           <div className="flex justify-end items-center p-3 sm:p-4 md:p-6 pb-0">
-            <button
+              <button
               onClick={handleClear}
               className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200 border border-blue-200"
               aria-label="Start from beginning"
@@ -2930,20 +2930,20 @@ export default function CVBuilder() {
               </svg>
               <span className="hidden sm:inline">Start from Beginning</span>
               <span className="sm:hidden">Reset</span>
-            </button>
-          </div>
-          
+              </button>
+      </div>
+
           <div className="p-3 sm:p-4 md:p-6 pt-2 sm:pt-3 md:pt-4">
             <div className="mb-4 sm:mb-6 md:mb-8">
               {renderStepContent()}
-            </div>
-            
-            <StepNavigation
-              currentStep={currentStep}
-              totalSteps={totalSteps}
-              onNext={handleNext}
-              onPrevious={handlePrevious}
-              onFinish={handleFinish}
+      </div>
+
+        <StepNavigation
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
+          onFinish={handleFinish}
             />
           </div>
         </div>
