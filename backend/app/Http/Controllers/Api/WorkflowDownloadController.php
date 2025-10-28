@@ -69,7 +69,10 @@ class WorkflowDownloadController extends Controller
             'workflow_id' => $workflowFile->workflow_id,
             'workflow_file_id' => $workflowFile->id,
             'downloaded_at' => now(),
+            'expires_at' => now()->addHours(24), // Token expires after 24 hours
             'marketing_opt_in' => $marketingOptIn,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ];
         
         if ($authenticatedUser) {
@@ -89,31 +92,46 @@ class WorkflowDownloadController extends Controller
 
         $workflowFile->incrementDownloads();
 
+        // Generate download URL
+        $baseUrl = url('/');
+        
+        // Non-premium workflows can download directly without token
+        // Premium workflows require token for security
+        if ($workflowFile->workflow->is_premium) {
+            $downloadUrl = $baseUrl . '/api/workflow-files/' . $workflowFile->id . '/download?token=' . $download->token;
+        } else {
+            // Direct download for non-premium workflows
+            $downloadUrl = $baseUrl . '/api/workflow-files/' . $workflowFile->id . '/download';
+        }
+
         return response()->json([
             'message' => 'Download request recorded successfully',
-            'download_url' => route('workflow-files.download', ['id' => $workflowFile->id, 'token' => $download->download_token]),
+            'download_url' => $downloadUrl,
             'file_name' => $workflowFile->file->name,
         ]);
     }
 
     public function download($id, Request $request)
     {
-        $request->validate([
-            'token' => 'required',
-        ]);
-
         $workflowFile = WorkflowFile::with(['workflow', 'file'])->findOrFail($id);
-        
-        $download = WorkflowDownload::where('download_token', $request->token)
-            ->where('workflow_file_id', $workflowFile->id)
-            ->firstOrFail();
-
-        if ($download->isExpired()) {
-            abort(403, 'Download link has expired');
-        }
 
         if (!$workflowFile->is_active || $workflowFile->workflow->status !== 'published') {
             abort(403, 'This file is no longer available');
+        }
+
+        // For premium workflows, require token validation
+        if ($workflowFile->workflow->is_premium) {
+            $request->validate([
+                'token' => 'required',
+            ]);
+
+            $download = WorkflowDownload::where('token', $request->token)
+                ->where('workflow_file_id', $workflowFile->id)
+                ->firstOrFail();
+
+            if ($download->isExpired()) {
+                abort(403, 'Download link has expired');
+            }
         }
 
         $file = $workflowFile->file;
