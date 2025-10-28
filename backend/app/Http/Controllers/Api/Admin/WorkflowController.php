@@ -22,41 +22,47 @@ class WorkflowController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'workflow_category_id' => 'required|exists:workflow_categories,id',
-            'title' => 'required|string|max:255',
-            'summary' => 'nullable|string',
-            'description' => 'required|string',
-            'instructions' => 'nullable|string',
-            'tools' => 'nullable|array',
-            'benefits' => 'nullable|array',
-            'tags' => 'nullable|array',
-            'estimated_time' => 'nullable|string|max:255',
-            'difficulty' => 'nullable|in:beginner,intermediate,advanced',
-            'is_premium' => 'boolean',
-            'status' => 'required|in:draft,published',
-        ]);
+        try {
+            $request->validate([
+                'workflow_category_id' => 'required|exists:workflow_categories,id',
+                'title' => 'required|string|max:255',
+                'summary' => 'nullable|string',
+                'description' => 'required|string',
+                'instructions' => 'nullable|string',
+                'tools' => 'nullable|array',
+                'benefits' => 'nullable|array',
+                'tags' => 'nullable|array',
+                'estimated_time' => 'nullable|string|max:255',
+                'difficulty' => 'nullable|in:beginner,intermediate,advanced',
+                'is_premium' => 'boolean',
+                'status' => 'required|in:draft,published',
+            ]);
 
-        $workflow = Workflow::create([
-            'workflow_category_id' => $request->workflow_category_id,
-            'title' => $request->title,
-            'slug' => Str::slug($request->title),
-            'summary' => $request->summary,
-            'description' => $request->description,
-            'instructions' => $request->instructions,
-            'tools' => $request->tools ?? [],
-            'benefits' => $request->benefits ?? [],
-            'estimated_time' => $request->estimated_time,
-            'difficulty' => $request->difficulty,
-            'tags' => $request->tags ?? [],
-            'is_premium' => $request->is_premium ?? false,
-            'status' => $request->status,
-            'is_published' => $request->status === 'published',
-            'published_at' => $request->status === 'published' ? now() : null,
-            'image_url' => $request->image_url ?? null,
-            'created_by' => Auth::id(),
-            'updated_by' => Auth::id(),
-        ]);
+            $workflow = Workflow::create([
+                'workflow_category_id' => $request->workflow_category_id,
+                'title' => $request->title,
+                'slug' => Str::slug($request->title),
+                'summary' => $request->summary,
+                'description' => $request->description,
+                'instructions' => $request->instructions,
+                'tools' => $request->tools ?? [],
+                'benefits' => $request->benefits ?? [],
+                'estimated_time' => $request->estimated_time,
+                'difficulty' => $request->difficulty,
+                'tags' => $request->tags ?? [],
+                'is_premium' => $request->is_premium ?? false,
+                'status' => $request->status,
+                'is_published' => $request->status === 'published',
+                'published_at' => $request->status === 'published' ? now() : null,
+                'image_url' => $request->image_url ?? null,
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Workflow creation error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            throw $e;
+        }
 
         // Dispatch event for push notifications (only for published workflows)
         if ($workflow->status === 'published') {
