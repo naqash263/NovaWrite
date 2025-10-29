@@ -85,15 +85,33 @@ class WorkflowDownloadController extends Controller
             $downloadData['email'] = $request->email;
         }
 
-        $download = WorkflowDownload::create($downloadData);
+        try {
+            $download = WorkflowDownload::create($downloadData);
 
-        $workflowFile->incrementDownloads();
+            $workflowFile->incrementDownloads();
 
-        return response()->json([
-            'message' => 'Download request recorded successfully',
-            'download_url' => route('workflow-files.download', ['id' => $workflowFile->id, 'token' => $download->download_token]),
-            'file_name' => $workflowFile->file->name,
-        ]);
+            // Ensure download_token is set (should be set by model boot method)
+            if (empty($download->download_token)) {
+                $download->refresh();
+            }
+
+            return response()->json([
+                'message' => 'Download request recorded successfully',
+                'download_url' => route('workflow-files.download', ['id' => $workflowFile->id, 'token' => $download->download_token]),
+                'file_name' => $workflowFile->file->name,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('WorkflowDownload creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'download_data' => $downloadData,
+            ]);
+            
+            return response()->json([
+                'message' => 'Failed to create download request. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+            ], 500);
+        }
     }
 
     public function download($id, Request $request)
