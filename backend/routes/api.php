@@ -818,6 +818,7 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::get('gemini-api-keys/comprehensive-stats', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'getComprehensiveStats']);
     Route::get('gemini-api-keys/health-check', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'checkApiKeysHealth']);
     Route::post('gemini-api-keys/reset-limits', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'resetLimits']);
+    Route::post('gemini-api-keys/reset-usage', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'resetUsageOnly']);
     Route::post('gemini-api-keys/{id}/test', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'test']);
     Route::apiResource('gemini-api-keys', \App\Http\Controllers\Api\Admin\GeminiApiController::class);
     

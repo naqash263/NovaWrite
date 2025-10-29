@@ -248,7 +248,7 @@ class GeminiApiController extends Controller
     /**
      * Reset API limits for all keys
      */
-    public function resetLimits(): JsonResponse
+public function resetLimits(): JsonResponse
     {
         try {
             $resetCount = 0;
@@ -282,6 +282,41 @@ class GeminiApiController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to reset API limits'
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset usage count only for all Gemini API keys (without changing limits)
+     */
+    public function resetUsageOnly(): JsonResponse
+    {
+        try {
+            $resetCount = 0;
+            
+            // Reset only usage count for Gemini API keys
+            $geminiKeys = GeminiApiKey::where('is_active', true)->get();
+            foreach ($geminiKeys as $key) {
+                $key->resetUsage();
+                $resetCount++;
+            }
+            
+            Log::info("Manual API usage reset completed. {$resetCount} Gemini keys were reset.");
+            
+            return response()->json([
+                'success' => true,
+                'message' => "API usage reset successfully. {$resetCount} Gemini keys were reset.",
+                'data' => [
+                    'reset_count' => $resetCount,
+                    'reset_time' => now()->toISOString(),
+                    'keys_reset' => $geminiKeys->pluck('name')->toArray()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error resetting API usage: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reset API usage'
             ], 500);
         }
     }
