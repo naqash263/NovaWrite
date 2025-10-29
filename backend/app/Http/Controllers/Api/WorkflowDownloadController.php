@@ -122,7 +122,7 @@ class WorkflowDownloadController extends Controller
 
         $workflowFile = WorkflowFile::with(['workflow', 'file'])->findOrFail($id);
         
-        $download = WorkflowDownload::where('download_token', $request->token)
+        $download = WorkflowDownload::where('token', $request->token)
             ->where('workflow_file_id', $workflowFile->id)
             ->firstOrFail();
 
