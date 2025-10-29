@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import apiClient from '../api/axios';
+import { updateAdSenseMetaTag } from '../utils/adsenseMeta';
 
 interface AdSenseSettings {
   client_id?: string;
@@ -32,6 +34,13 @@ export function useAdSenseSettings() {
   const settings = data || {};
   const isEnabled = settings.enabled === 'true';
   const hasClientId = settings.client_id && settings.client_id !== '' && settings.client_id !== 'ca-pub-YOUR_PUBLISHER_ID';
+
+  // Update AdSense meta tag when settings are loaded
+  useEffect(() => {
+    if (settings.client_id && hasClientId) {
+      updateAdSenseMetaTag(settings.client_id);
+    }
+  }, [settings.client_id, hasClientId]);
 
   return {
     settings,

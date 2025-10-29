@@ -295,6 +295,12 @@ export default function AdSenseSettings() {
               google.com/adsense
             </a>
           </li>
+          <li>
+            Add the AdSense meta tag to your site (already added to index.html):{' '}
+            <code className="bg-blue-100 px-1 rounded text-xs">
+              &lt;meta name="google-adsense-account" content="ca-pub-XXXXXXXXXX"&gt;
+            </code>
+          </li>
           <li>Submit your site for approval (24-48 hours)</li>
           <li>
             Once approved, get your Publisher ID from the AdSense dashboard
@@ -303,6 +309,9 @@ export default function AdSenseSettings() {
             Create ad units in AdSense dashboard for each position you want
           </li>
           <li>Enter the Publisher ID and ad slot IDs above</li>
+          <li>
+            The meta tag will automatically update when you save your Publisher ID
+          </li>
           <li>Toggle "Enable AdSense" to activate ads</li>
           <li>
             Add the auto-ads script to <code className="bg-blue-100 px-1 rounded">index.html</code> if using auto ads
