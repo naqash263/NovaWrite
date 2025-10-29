@@ -68,6 +68,7 @@ class WorkflowDownloadController extends Controller
         $downloadData = [
             'workflow_id' => $workflowFile->workflow_id,
             'workflow_file_id' => $workflowFile->id,
+            'email' => '', // Default empty email for NOT NULL constraint
             'downloaded_at' => now(),
             'marketing_opt_in' => $marketingOptIn,
         ];
@@ -88,7 +89,7 @@ class WorkflowDownloadController extends Controller
         try {
             $download = WorkflowDownload::create($downloadData);
 
-            // $workflowFile->incrementDownloads();
+            $workflowFile->incrementDownloads();
 
             // Ensure download_token is set (should be set by model boot method)
             if (empty($download->download_token)) {
