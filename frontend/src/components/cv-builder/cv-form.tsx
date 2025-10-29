@@ -170,10 +170,15 @@ export function CvForm({ data, onDataChange }: CvFormProps) {
 
   const fetchApiStats = async () => {
     try {
-      const response = await fetch('/api/cv/api-stats');
+      const response = await fetch('/api/cv-ai/stats');
       if (response.ok) {
-        const stats = await response.json();
-        setApiStats(stats);
+        const data = await response.json();
+        if (data.success) {
+          setApiStats({
+            totalRequests: data.data.total_requests,
+            availableRequests: data.data.available_requests
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to fetch API stats:', error);
