@@ -15,14 +15,40 @@ class AdSenseSettingsController extends Controller
      */
     public function index(): JsonResponse
     {
-        $settings = AdSenseSettings::orderBy('sort_order')
-            ->orderBy('key')
-            ->get();
+        try {
+            // Check if table exists and has data
+            if (!\Illuminate\Support\Facades\Schema::hasTable('ad_sense_settings')) {
+                // Return empty array if table doesn't exist
+                return response()->json([
+                    'success' => true,
+                    'data' => []
+                ]);
+            }
 
-        return response()->json([
-            'success' => true,
-            'data' => $settings
-        ]);
+            $settings = AdSenseSettings::orderBy('sort_order')
+                ->orderBy('key')
+                ->get();
+
+            // If no settings exist, initialize defaults
+            if ($settings->isEmpty()) {
+                $this->initializeDefaults();
+                $settings = AdSenseSettings::orderBy('sort_order')
+                    ->orderBy('key')
+                    ->get();
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $settings
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdSense settings index error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load settings',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
+            ], 500);
+        }
     }
 
     /**
@@ -30,15 +56,30 @@ class AdSenseSettingsController extends Controller
      */
     public function getActive(): JsonResponse
     {
-        $settings = AdSenseSettings::active()
-            ->orderBy('sort_order')
-            ->pluck('value', 'key')
-            ->toArray();
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('ad_sense_settings')) {
+                return response()->json([
+                    'success' => true,
+                    'data' => []
+                ]);
+            }
 
-        return response()->json([
-            'success' => true,
-            'data' => $settings
-        ]);
+            $settings = AdSenseSettings::active()
+                ->orderBy('sort_order')
+                ->pluck('value', 'key')
+                ->toArray();
+
+            return response()->json([
+                'success' => true,
+                'data' => $settings
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdSense getActive error: ' . $e->getMessage());
+            return response()->json([
+                'success' => true,
+                'data' => []
+            ]);
+        }
     }
 
     /**
@@ -46,45 +87,61 @@ class AdSenseSettingsController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'settings' => 'required|array',
-            'settings.*.key' => 'required|string|max:255',
-            'settings.*.value' => 'nullable|string',
-            'settings.*.title' => 'nullable|string|max:255',
-            'settings.*.description' => 'nullable|string',
-            'settings.*.is_active' => 'nullable|boolean',
-            'settings.*.sort_order' => 'nullable|integer|min:0',
-        ]);
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('ad_sense_settings')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Table does not exist. Please run migrations first.'
+                ], 500);
+            }
 
-        if ($validator->fails()) {
+            $validator = Validator::make($request->all(), [
+                'settings' => 'required|array',
+                'settings.*.key' => 'required|string|max:255',
+                'settings.*.value' => 'nullable|string',
+                'settings.*.title' => 'nullable|string|max:255',
+                'settings.*.description' => 'nullable|string',
+                'settings.*.is_active' => 'nullable|boolean',
+                'settings.*.sort_order' => 'nullable|integer|min:0',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $updated = [];
+            
+            foreach ($request->settings as $settingData) {
+                $setting = AdSenseSettings::updateOrCreate(
+                    ['key' => $settingData['key']],
+                    [
+                        'value' => $settingData['value'] ?? '',
+                        'title' => $settingData['title'] ?? ucfirst(str_replace('_', ' ', $settingData['key'])),
+                        'description' => $settingData['description'] ?? null,
+                        'is_active' => $settingData['is_active'] ?? true,
+                        'sort_order' => $settingData['sort_order'] ?? 0,
+                    ]
+                );
+                $updated[] = $setting;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'AdSense settings saved successfully',
+                'data' => $updated
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdSense settings store error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Failed to save settings',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
+            ], 500);
         }
-
-        $updated = [];
-        
-        foreach ($request->settings as $settingData) {
-            $setting = AdSenseSettings::updateOrCreate(
-                ['key' => $settingData['key']],
-                [
-                    'value' => $settingData['value'] ?? '',
-                    'title' => $settingData['title'] ?? ucfirst(str_replace('_', ' ', $settingData['key'])),
-                    'description' => $settingData['description'] ?? null,
-                    'is_active' => $settingData['is_active'] ?? true,
-                    'sort_order' => $settingData['sort_order'] ?? 0,
-                ]
-            );
-            $updated[] = $setting;
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'AdSense settings saved successfully',
-            'data' => $updated
-        ]);
     }
 
     /**
@@ -92,35 +149,44 @@ class AdSenseSettingsController extends Controller
      */
     public function update(Request $request, AdSenseSettings $adSenseSetting): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'value' => 'nullable|string',
-            'title' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'nullable|boolean',
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'value' => 'nullable|string',
+                'title' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'is_active' => 'nullable|boolean',
+                'sort_order' => 'nullable|integer|min:0',
+            ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $adSenseSetting->update($request->only([
+                'value',
+                'title',
+                'description',
+                'is_active',
+                'sort_order'
+            ]));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Setting updated successfully',
+                'data' => $adSenseSetting
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdSense settings update error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Failed to update setting',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
+            ], 500);
         }
-
-        $adSenseSetting->update($request->only([
-            'value',
-            'title',
-            'description',
-            'is_active',
-            'sort_order'
-        ]));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Setting updated successfully',
-            'data' => $adSenseSetting
-        ]);
     }
 
     /**
@@ -128,13 +194,22 @@ class AdSenseSettingsController extends Controller
      */
     public function toggleActive(AdSenseSettings $adSenseSetting): JsonResponse
     {
-        $adSenseSetting->update(['is_active' => !$adSenseSetting->is_active]);
+        try {
+            $adSenseSetting->update(['is_active' => !$adSenseSetting->is_active]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Setting status updated successfully',
-            'data' => $adSenseSetting
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Setting status updated successfully',
+                'data' => $adSenseSetting
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdSense settings toggle error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to toggle setting',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
+            ], 500);
+        }
     }
 
     /**
@@ -142,24 +217,44 @@ class AdSenseSettingsController extends Controller
      */
     public function destroy(AdSenseSettings $adSenseSetting): JsonResponse
     {
-        $adSenseSetting->delete();
+        try {
+            $adSenseSetting->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Setting deleted successfully'
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Setting deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdSense settings delete error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete setting',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
+            ], 500);
+        }
     }
 
     /**
-     * Reset to default settings
+     * Initialize default settings
      */
-    public function reset(): JsonResponse
+    private function initializeDefaults(): void
     {
-        // Delete all existing settings
-        AdSenseSettings::truncate();
+        $defaultSettings = $this->getDefaultSettings();
+        
+        foreach ($defaultSettings as $setting) {
+            AdSenseSettings::updateOrCreate(
+                ['key' => $setting['key']],
+                $setting
+            );
+        }
+    }
 
-        // Create default settings
-        $defaultSettings = [
+    /**
+     * Get default settings array
+     */
+    private function getDefaultSettings(): array
+    {
+        return [
             [
                 'key' => 'client_id',
                 'value' => '',
@@ -233,15 +328,39 @@ class AdSenseSettingsController extends Controller
                 'sort_order' => 0,
             ],
         ];
+    }
 
-        foreach ($defaultSettings as $setting) {
-            AdSenseSettings::create($setting);
+    /**
+     * Reset to default settings
+     */
+    public function reset(): JsonResponse
+    {
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('ad_sense_settings')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Table does not exist. Please run migrations first.'
+                ], 500);
+            }
+
+            // Delete all existing settings
+            AdSenseSettings::truncate();
+
+            // Create default settings
+            $this->initializeDefaults();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'AdSense settings reset to defaults',
+                'data' => AdSenseSettings::all()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdSense settings reset error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reset settings',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'AdSense settings reset to defaults',
-            'data' => AdSenseSettings::all()
-        ]);
     }
 }

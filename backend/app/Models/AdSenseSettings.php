@@ -41,7 +41,7 @@ class AdSenseSettings extends Model
     /**
      * Set setting value by key
      */
-    public static function setValue(string $key, $value, string $title = null, string $description = null): self
+    public static function setValue(string $key, $value, ?string $title = null, ?string $description = null): self
     {
         return static::updateOrCreate(
             ['key' => $key],
