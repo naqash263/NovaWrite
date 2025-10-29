@@ -69,10 +69,7 @@ class WorkflowDownloadController extends Controller
             'workflow_id' => $workflowFile->workflow_id,
             'workflow_file_id' => $workflowFile->id,
             'downloaded_at' => now(),
-            'expires_at' => now()->addHours(24), // Token expires after 24 hours
             'marketing_opt_in' => $marketingOptIn,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
         ];
         
         if ($authenticatedUser) {
@@ -88,90 +85,42 @@ class WorkflowDownloadController extends Controller
             $downloadData['email'] = $request->email;
         }
 
-        $downloadUrl = '';
-        $baseUrl = url('/');
-        
-        // Non-premium workflows can download directly without any tracking
-        // Premium workflows require token and tracking
-        if ($workflowFile->workflow->is_premium) {
-            // Premium workflow - create download record with token
-            $download = WorkflowDownload::create($downloadData);
-            // Don't increment here - will increment on actual download
-            $downloadUrl = $baseUrl . '/api/workflow-files/' . $workflowFile->id . '/download?token=' . $download->token;
-        } else {
-            // Non-premium workflow - direct download, no tracking needed
-            $downloadUrl = $baseUrl . '/api/workflow-files/' . $workflowFile->id . '/download';
-        }
+        $download = WorkflowDownload::create($downloadData);
+
+        $workflowFile->incrementDownloads();
 
         return response()->json([
-            'message' => $workflowFile->workflow->is_premium ? 'Download request recorded successfully' : 'Download ready',
-            'download_url' => $downloadUrl,
+            'message' => 'Download request recorded successfully',
+            'download_url' => route('workflow-files.download', ['id' => $workflowFile->id, 'token' => $download->download_token]),
             'file_name' => $workflowFile->file->name,
         ]);
     }
 
     public function download($id, Request $request)
     {
-        \Log::info('Workflow download requested', [
-            'id' => $id,
-            'token' => $request->query('token'),
-            'request_path' => $request->path(),
-            'is_premium' => null, // will be set below
-        ]);
-        
-        $workflowFile = WorkflowFile::with(['workflow', 'file'])->findOrFail($id);
-        
-        \Log::info('Workflow file found', [
-            'workflow_file_id' => $workflowFile->id,
-            'workflow_id' => $workflowFile->workflow_id,
-            'file_id' => $workflowFile->file_id,
-            'is_premium' => $workflowFile->workflow->is_premium,
-            'is_active' => $workflowFile->is_active,
-            'workflow_status' => $workflowFile->workflow->status,
+        $request->validate([
+            'token' => 'required',
         ]);
 
-        // Check if workflow file has a file attached
-        if (!$workflowFile->file) {
-            abort(404, 'File not attached to this workflow file');
+        $workflowFile = WorkflowFile::with(['workflow', 'file'])->findOrFail($id);
+        
+        $download = WorkflowDownload::where('download_token', $request->token)
+            ->where('workflow_file_id', $workflowFile->id)
+            ->firstOrFail();
+
+        if ($download->isExpired()) {
+            abort(403, 'Download link has expired');
         }
 
         if (!$workflowFile->is_active || $workflowFile->workflow->status !== 'published') {
             abort(403, 'This file is no longer available');
         }
 
-        // For premium workflows, require token validation
-        if ($workflowFile->workflow->is_premium) {
-            $request->validate([
-                'token' => 'required',
-            ]);
-
-            $download = WorkflowDownload::where('token', $request->token)
-                ->where('workflow_file_id', $workflowFile->id)
-                ->firstOrFail();
-
-            if ($download->isExpired()) {
-                abort(403, 'Download link has expired');
-            }
-            
-            // Mark premium download as completed
-            $download->update(['downloaded_at' => now()]);
-            $workflowFile->incrementDownloads();
-        } else {
-            // For non-premium workflows, increment download count without restriction
-            $workflowFile->incrementDownloads();
-        }
-
         $file = $workflowFile->file;
         $filePath = storage_path('app/public/' . $file->path);
 
         if (!file_exists($filePath)) {
-            \Log::error('Workflow file not found in storage', [
-                'workflow_file_id' => $workflowFile->id,
-                'file_id' => $file->id,
-                'file_path' => $filePath,
-                'expected_path' => $file->path,
-            ]);
-            abort(404, 'File not found in storage');
+            abort(404, 'File not found');
         }
 
         return response()->download($filePath, $file->name, [

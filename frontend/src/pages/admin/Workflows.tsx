@@ -188,7 +188,6 @@ export default function Workflows() {
     const data = {
       ...formData,
       workflow_category_id: Number(formData.workflow_category_id),
-      is_premium: Boolean(formData.is_premium), // Ensure boolean value
     };
 
     if (editingId) {

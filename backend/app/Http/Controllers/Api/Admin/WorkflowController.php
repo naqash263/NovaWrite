@@ -22,47 +22,37 @@ class WorkflowController extends Controller
 
     public function store(Request $request)
     {
-        try {
-            $request->validate([
-                'workflow_category_id' => 'required|exists:workflow_categories,id',
-                'title' => 'required|string|max:255',
-                'summary' => 'nullable|string',
-                'description' => 'required|string',
-                'instructions' => 'nullable|string',
-                'tools' => 'nullable|array',
-                'benefits' => 'nullable|array',
-                'tags' => 'nullable|array',
-                'estimated_time' => 'nullable|string|max:255',
-                'difficulty' => 'nullable|in:beginner,intermediate,advanced',
-                'is_premium' => 'boolean',
-                'status' => 'required|in:draft,published',
-            ]);
+        $request->validate([
+            'workflow_category_id' => 'required|exists:workflow_categories,id',
+            'title' => 'required|string|max:255',
+            'summary' => 'nullable|string',
+            'description' => 'required|string',
+            'tools' => 'nullable|array',
+            'benefits' => 'nullable|array',
+            'is_premium' => 'boolean',
+            'status' => 'required|in:draft,published',
+        ]);
 
-            $workflow = Workflow::create([
-                'workflow_category_id' => $request->workflow_category_id,
-                'title' => $request->title,
-                'slug' => Str::slug($request->title),
-                'summary' => $request->summary,
-                'description' => $request->description,
-                'instructions' => $request->instructions,
-                'tools' => $request->tools ?? [],
-                'benefits' => $request->benefits ?? [],
-                'estimated_time' => $request->estimated_time,
-                'difficulty' => $request->difficulty,
-                'tags' => $request->tags ?? [],
-                'is_premium' => $request->boolean('is_premium', false),
-                'status' => $request->status,
-                'is_published' => $request->status === 'published',
-                'published_at' => $request->status === 'published' ? now() : null,
-                'image_url' => $request->image_url ?? null,
-                'created_by' => Auth::id() ?? null,
-                'updated_by' => Auth::id() ?? null,
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Workflow creation error: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            throw $e;
-        }
+        $workflow = Workflow::create([
+            'workflow_category_id' => $request->workflow_category_id,
+            'title' => $request->title,
+            'slug' => Str::slug($request->title),
+            'summary' => $request->summary,
+            'description' => $request->description,
+            'instructions' => $request->instructions,
+            'tools' => $request->tools ?? [],
+            'benefits' => $request->benefits ?? [],
+            'estimated_time' => $request->estimated_time,
+            'difficulty' => $request->difficulty,
+            'tags' => $request->tags ?? [],
+            'is_premium' => $request->is_premium ?? false,
+            'status' => $request->status,
+            'is_published' => $request->status === 'published',
+            'published_at' => $request->status === 'published' ? now() : null,
+            'image_url' => $request->image_url ?? null,
+            'created_by' => Auth::id(),
+            'updated_by' => Auth::id(),
+        ]);
 
         // Dispatch event for push notifications (only for published workflows)
         if ($workflow->status === 'published') {
@@ -100,43 +90,19 @@ class WorkflowController extends Controller
         $updateData = [
             'workflow_category_id' => $request->workflow_category_id,
             'title' => $request->title,
+            'summary' => $request->summary,
             'description' => $request->description,
+            'instructions' => $request->instructions,
+            'tools' => $request->tools ?? [],
+            'benefits' => $request->benefits ?? [],
+            'tags' => $request->tags ?? [],
+            'estimated_time' => $request->estimated_time,
+            'difficulty' => $request->difficulty,
+            'is_premium' => $request->is_premium ?? false,
             'status' => $request->status,
+            'image_url' => $request->image_url ?? null,
             'updated_by' => Auth::id(),
         ];
-
-        // Only update fields if they are provided (preserve existing values if not sent)
-        if ($request->has('summary')) {
-            $updateData['summary'] = $request->summary;
-        }
-        if ($request->has('instructions')) {
-            $updateData['instructions'] = $request->instructions;
-        }
-        if ($request->has('tools')) {
-            $updateData['tools'] = $request->tools ?? [];
-        }
-        if ($request->has('benefits')) {
-            $updateData['benefits'] = $request->benefits ?? [];
-        }
-        if ($request->has('tags')) {
-            $updateData['tags'] = $request->tags ?? [];
-        }
-        if ($request->has('estimated_time')) {
-            $updateData['estimated_time'] = $request->estimated_time;
-        }
-        if ($request->has('difficulty')) {
-            $updateData['difficulty'] = $request->difficulty;
-        }
-        if ($request->has('is_premium')) {
-            $updateData['is_premium'] = $request->boolean('is_premium');
-        }
-        // Preserve existing image_url if not provided or empty
-        if ($request->has('image_url')) {
-            $updateData['image_url'] = $request->image_url ?: $workflow->image_url;
-        } else {
-            // If image_url is not in request, preserve existing value
-            $updateData['image_url'] = $workflow->image_url;
-        }
 
         // Only update slug if title changed
         if ($workflow->title !== $request->title) {
