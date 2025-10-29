@@ -32,8 +32,14 @@ class WorkflowDownload extends Model
         parent::boot();
 
         static::creating(function ($download) {
+            $uuid = Str::uuid()->toString();
+            
+            // Set both token and download_token for backward compatibility
             if (empty($download->token)) {
-                $download->token = Str::uuid()->toString();
+                $download->token = $uuid;
+            }
+            if (empty($download->download_token)) {
+                $download->download_token = $uuid;
             }
         });
     }
