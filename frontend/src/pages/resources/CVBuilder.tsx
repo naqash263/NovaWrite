@@ -2091,6 +2091,26 @@ export default function CVBuilder() {
 
   const totalSteps = 10;
 
+  // Helper function to change step with scroll behavior
+  const changeStep = (newStep: number) => {
+    setCurrentStep(newStep);
+    
+    // Scroll to top of step content on mobile
+    setTimeout(() => {
+      const stepContent = document.querySelector('.step-content');
+      if (stepContent) {
+        stepContent.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+      } else {
+        // Fallback: scroll to top of page
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
   // Handle profile picture upload using client-side FileReader (no backend upload)
   const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -2286,7 +2306,7 @@ export default function CVBuilder() {
     }
 
     if (savedStep) {
-      setCurrentStep(parseInt(savedStep));
+      changeStep(parseInt(savedStep));
     }
 
     if (savedCompletedSteps) {
@@ -2307,7 +2327,7 @@ export default function CVBuilder() {
   // Auto-advance to step 1 when creation mode is selected
   useEffect(() => {
     if (creationMode && currentStep === 0) {
-      setCurrentStep(1);
+      changeStep(1);
     }
   }, [creationMode, currentStep]);
 
@@ -2350,7 +2370,7 @@ export default function CVBuilder() {
     
     // Mark step as completed and advance to Personal Info step (step 1)
     markStepCompleted(1);
-    setCurrentStep(1);
+    changeStep(1);
     
     addToast({
       type: 'success',
@@ -2373,7 +2393,7 @@ export default function CVBuilder() {
     
     // Mark step as completed and advance to Personal Info step (step 1)
     markStepCompleted(1);
-    setCurrentStep(1);
+    changeStep(1);
     
     addToast({
       type: 'success',
@@ -2387,13 +2407,13 @@ export default function CVBuilder() {
     if (currentStep < totalSteps) {
       // Mark current step as completed before moving to next
       markStepCompleted(currentStep);
-      setCurrentStep(currentStep + 1);
+      changeStep(currentStep + 1);
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      changeStep(currentStep - 1);
     }
   };
 
@@ -2411,7 +2431,7 @@ export default function CVBuilder() {
       fontFamily: 'Arial, sans-serif',
       fontSize: 11,
     });
-    setCurrentStep(0);
+    changeStep(0);
     setCreationMode(null);
     setHasProcessedData(false);
     setCompletedSteps(new Set());
@@ -2934,7 +2954,7 @@ export default function CVBuilder() {
       </div>
 
           <div className="p-3 sm:p-4 md:p-6 pt-2 sm:pt-3 md:pt-4">
-            <div className="mb-4 sm:mb-6 md:mb-8">
+            <div className="mb-4 sm:mb-6 md:mb-8 step-content">
               {renderStepContent()}
       </div>
 
