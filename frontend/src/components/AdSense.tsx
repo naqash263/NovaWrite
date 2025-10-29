@@ -27,7 +27,7 @@ export default function AdSense({
   className = '',
   dataAdClient
 }: AdSenseProps) {
-  const adRef = useRef<HTMLDivElement>(null);
+  const adRef = useRef<HTMLModElement>(null);
   const scriptLoaded = useRef(false);
 
   useEffect(() => {
