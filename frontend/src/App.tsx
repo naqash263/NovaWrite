@@ -50,6 +50,7 @@ const SystemEmailSettings = lazy(() => import('./pages/admin/SystemEmailSettings
 const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
 const UserActivities = lazy(() => import('./pages/admin/UserActivities'));
 const HomeSettings = lazy(() => import('./pages/admin/HomeSettings'));
+const AdSenseSettings = lazy(() => import('./pages/admin/AdSenseSettings'));
 const GeminiApiManagement = lazy(() => import('./pages/admin/GeminiApiManagement'));
 const Monitoring = lazy(() => import('./pages/admin/Monitoring'));
 const CvTemplates = lazy(() => import('./pages/admin/CvTemplates'));
@@ -129,6 +130,7 @@ function App() {
               <Route path="/admin/user-management" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
               <Route path="/admin/user-activities" element={<ProtectedRoute requireAdmin><UserActivities /></ProtectedRoute>} />
               <Route path="/admin/home-settings" element={<ProtectedRoute requireAdmin><HomeSettings /></ProtectedRoute>} />
+              <Route path="/admin/adsense-settings" element={<ProtectedRoute requireAdmin><AdSenseSettings /></ProtectedRoute>} />
               <Route path="/admin/gemini-api" element={<ProtectedRoute requireAdmin><GeminiApiManagement /></ProtectedRoute>} />
               <Route path="/admin/monitoring" element={<ProtectedRoute requireAdmin><Monitoring /></ProtectedRoute>} />
               <Route path="/admin/cv-templates" element={<ProtectedRoute requireAdmin><CvTemplates /></ProtectedRoute>} />

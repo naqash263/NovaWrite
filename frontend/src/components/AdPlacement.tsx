@@ -1,4 +1,5 @@
 import AdSense from './AdSense';
+import { useAdSenseSettings } from '../hooks/useAdSenseSettings';
 
 interface AdPlacementProps {
   position: 'header' | 'sidebar' | 'content-top' | 'content-middle' | 'content-bottom' | 'footer' | 'between-posts';
@@ -9,19 +10,25 @@ interface AdPlacementProps {
  * Pre-configured AdSense placements with optimal positioning
  */
 export default function AdPlacement({ position, className = '' }: AdPlacementProps) {
-  // Get ad slots from environment or use defaults
-  // You'll replace these with your actual ad slot IDs from Google AdSense
-  const AD_SLOTS = {
-    header: import.meta.env.VITE_ADSENSE_SLOT_HEADER || 'HEADER_SLOT_ID',
-    sidebar: import.meta.env.VITE_ADSENSE_SLOT_SIDEBAR || 'SIDEBAR_SLOT_ID',
-    'content-top': import.meta.env.VITE_ADSENSE_SLOT_CONTENT_TOP || 'CONTENT_TOP_SLOT_ID',
-    'content-middle': import.meta.env.VITE_ADSENSE_SLOT_CONTENT_MIDDLE || 'CONTENT_MIDDLE_SLOT_ID',
-    'content-bottom': import.meta.env.VITE_ADSENSE_SLOT_CONTENT_BOTTOM || 'CONTENT_BOTTOM_SLOT_ID',
-    footer: import.meta.env.VITE_ADSENSE_SLOT_FOOTER || 'FOOTER_SLOT_ID',
-    'between-posts': import.meta.env.VITE_ADSENSE_SLOT_BETWEEN_POSTS || 'BETWEEN_POSTS_SLOT_ID'
+  const { isEnabled, getSlot } = useAdSenseSettings();
+
+  // Map position to setting key
+  const settingKeyMap: Record<string, string> = {
+    header: 'slot_header',
+    sidebar: 'slot_sidebar',
+    'content-top': 'slot_content_top',
+    'content-middle': 'slot_content_middle',
+    'content-bottom': 'slot_content_bottom',
+    footer: 'slot_footer',
+    'between-posts': 'slot_between_posts',
   };
 
-  const adSlot = AD_SLOTS[position];
+  const adSlot = getSlot(settingKeyMap[position]);
+
+  // Don't render if AdSense is disabled or no slot ID
+  if (!isEnabled || !adSlot) {
+    return null;
+  }
 
   // Different ad formats for different positions
   const getAdConfig = () => {
@@ -65,6 +72,7 @@ export default function AdPlacement({ position, className = '' }: AdPlacementPro
         fullWidthResponsive={config.fullWidthResponsive}
         style={config.style}
         className={className}
+        dataAdClient={getSlot('client_id')}
       />
     </div>
   );

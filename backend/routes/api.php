@@ -309,6 +309,9 @@ Route::post('/admin/cv-templates-temp', function (Request $request) {
 // Public home settings (no authentication required)
 Route::get('/home-settings', [\App\Http\Controllers\Api\Admin\HomeSettingsController::class, 'getPublicSettings']);
 
+// Public AdSense settings (no authentication required - for frontend)
+Route::get('/adsense-settings/active', [\App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'getActive']);
+
 // Debug endpoint to check JWT configuration
 Route::get('/debug/jwt', function () {
     $jwtSecret = config('jwt.secret');
@@ -706,6 +709,14 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::post('home-settings/upload-image', [HomeSettingsController::class, 'uploadImage']);
     Route::post('home-settings/bulk-update', [HomeSettingsController::class, 'bulkUpdate']);
     Route::post('home-settings/{homeSetting}/toggle-active', [HomeSettingsController::class, 'toggleActive']);
+
+    // AdSense Settings management
+    Route::get('adsense-settings', [App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'index']);
+    Route::post('adsense-settings', [App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'store']);
+    Route::put('adsense-settings/{adSenseSetting}', [App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'update']);
+    Route::delete('adsense-settings/{adSenseSetting}', [App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'destroy']);
+    Route::post('adsense-settings/{adSenseSetting}/toggle-active', [App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'toggleActive']);
+    Route::post('adsense-settings/reset', [App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'reset']);
 
     Route::get('workflows', [AdminWorkflowController::class, 'index']);
     Route::post('workflows', [AdminWorkflowController::class, 'store']);

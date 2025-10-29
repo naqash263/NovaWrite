@@ -6,7 +6,7 @@ interface AdSenseProps {
   fullWidthResponsive?: boolean;
   style?: React.CSSProperties;
   className?: string;
-  dataAdClient?: string;
+  dataAdClient?: string; // Optional - will be fetched from API if not provided
 }
 
 /**
@@ -25,7 +25,7 @@ export default function AdSense({
   fullWidthResponsive = true,
   style,
   className = '',
-  dataAdClient = import.meta.env.VITE_ADSENSE_CLIENT_ID || 'ca-pub-YOUR_PUBLISHER_ID'
+  dataAdClient
 }: AdSenseProps) {
   const adRef = useRef<HTMLDivElement>(null);
   const scriptLoaded = useRef(false);
@@ -33,9 +33,9 @@ export default function AdSense({
   useEffect(() => {
     // Only load AdSense if not in development and client ID is set
     const isProduction = import.meta.env.PROD;
-    const hasClientId = dataAdClient && dataAdClient !== 'ca-pub-YOUR_PUBLISHER_ID';
+    const hasClientId = dataAdClient && dataAdClient !== '' && dataAdClient !== 'ca-pub-YOUR_PUBLISHER_ID';
 
-    if (!isProduction || !hasClientId) {
+    if (!isProduction || !hasClientId || !dataAdClient) {
       return;
     }
 
@@ -78,9 +78,9 @@ export default function AdSense({
 
   // Don't render in development or if no client ID
   const isProduction = import.meta.env.PROD;
-  const hasClientId = dataAdClient && dataAdClient !== 'ca-pub-YOUR_PUBLISHER_ID';
+  const hasClientId = dataAdClient && dataAdClient !== '' && dataAdClient !== 'ca-pub-YOUR_PUBLISHER_ID';
 
-  if (!isProduction || !hasClientId) {
+  if (!isProduction || !hasClientId || !dataAdClient) {
     return null;
   }
 
