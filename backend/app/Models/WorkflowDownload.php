@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class WorkflowDownload extends Model
@@ -12,7 +11,6 @@ class WorkflowDownload extends Model
         'workflow_id',
         'workflow_file_id',
         'email',
-        'token',
         'download_token',
         'expires_at',
         'downloaded_at',
@@ -33,16 +31,8 @@ class WorkflowDownload extends Model
         parent::boot();
 
         static::creating(function ($download) {
-            $uuid = Str::uuid()->toString();
-            
-            // Set download_token (primary field)
             if (empty($download->download_token)) {
-                $download->download_token = $uuid;
-            }
-            
-            // Set token only if the column exists (for backward compatibility)
-            if (Schema::hasColumn('workflow_downloads', 'token') && empty($download->token)) {
-                $download->token = $uuid;
+                $download->download_token = Str::uuid()->toString();
             }
         });
     }
