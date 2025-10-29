@@ -88,7 +88,7 @@ class WorkflowDownloadController extends Controller
         try {
             $download = WorkflowDownload::create($downloadData);
 
-            $workflowFile->incrementDownloads();
+            // $workflowFile->incrementDownloads();
 
             // Ensure download_token is set (should be set by model boot method)
             if (empty($download->download_token)) {
@@ -122,7 +122,7 @@ class WorkflowDownloadController extends Controller
 
         $workflowFile = WorkflowFile::with(['workflow', 'file'])->findOrFail($id);
         
-        $download = WorkflowDownload::where('token', $request->token)
+        $download = WorkflowDownload::where('download_token', $request->token)
             ->where('workflow_file_id', $workflowFile->id)
             ->firstOrFail();
 
