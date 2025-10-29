@@ -4,7 +4,6 @@ import apiClient from '../api/axios';
 import { useSEO } from '../utils/seo';
 import { PageLoader } from '../components/LoadingComponents';
 import WorkflowDownloadModal from '../components/WorkflowDownloadModal';
-import { useHomeSettings } from '../hooks/useHomeSettings';
 
 interface WorkflowCategory {
   id: number;
@@ -47,7 +46,6 @@ interface Workflow {
 export default function WorkflowDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { getImageUrl } = useHomeSettings();
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -128,7 +126,7 @@ export default function WorkflowDetail() {
       'name': workflow.title,
       'description': workflow.summary,
       'url': `https://naqashthaheem.com/workflows/${slug}`,
-      'image': workflow.image_url ? `https://naqashthaheem.com${workflow.image_url}` : 'https://naqashthaheem.com/images/workflows-og.jpg',
+      'image': workflow.image_url || 'https://naqashthaheem.com/images/workflows-og.jpg',
       'applicationCategory': 'Automation Tool',
       'offers': {
         '@type': 'Offer',
@@ -314,7 +312,7 @@ export default function WorkflowDetail() {
                 onClick={() => setIsImageModalOpen(true)}
               >
                 <img
-                  src={getImageUrl(workflow.image_url)}
+                  src={workflow.image_url}
                   alt={workflow.title}
                   loading="lazy"
                   className="group-hover:scale-105 transition-transform duration-300"
@@ -338,7 +336,7 @@ export default function WorkflowDetail() {
                 >
                   <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
                     <img
-                      src={getImageUrl(workflow.image_url)}
+                      src={workflow.image_url}
                       alt={workflow.title}
                       className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                       onClick={(e) => e.stopPropagation()}
