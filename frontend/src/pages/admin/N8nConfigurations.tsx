@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Play, TestTube, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+// REMOVE: import { Tabs, Tab } from '@material-ui/core';
 
 interface N8nConfiguration {
   id: number;
@@ -10,6 +11,25 @@ interface N8nConfiguration {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+interface FallbackWebhook {
+  id: number;
+  url: string;
+  description?: string;
+  is_active: boolean;
+}
+
+interface FallbackEmail {
+  id: number;
+  action: string;
+  recipient_email: string;
+  recipient_name: string;
+  details: any;
+  status: string;
+  last_error?: string;
+  attempts: number;
+  created_at: string;
 }
 
 const N8nConfigurations: React.FC = () => {
@@ -25,9 +45,23 @@ const N8nConfigurations: React.FC = () => {
     webhook_timeout: 30,
     max_retry_attempts: 3
   });
+  // Fallback Webhook state
+  const [fallbackWebhooks, setFallbackWebhooks] = useState<FallbackWebhook[]>([]);
+  const [webhookForm, setWebhookForm] = useState<{id?: number; url: string; description: string}>({ url: '', description: '' });
+  const [webhookEditId, setWebhookEditId] = useState<number | null>(null);
+  const [webhookLoading, setWebhookLoading] = useState<boolean>(false);
+  // Fallback Notification
+  const [autoNotify, setAutoNotify] = useState(false);
+  // Failed/unsent email state
+  const [failedEmails, setFailedEmails] = useState<FallbackEmail[]>([]);
+  const [failedLoading, setFailedLoading] = useState(false);
+  const [tab, setTab] = useState(0);
 
   useEffect(() => {
     fetchConfigurations();
+    fetchFallbackWebhooks();
+    fetchAutoNotify();
+    fetchFailedEmails();
   }, []);
 
   const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
@@ -218,6 +252,97 @@ const N8nConfigurations: React.FC = () => {
     }
   };
 
+  // Fallback Webhook fetching
+  const fetchFallbackWebhooks = async () => {
+    setWebhookLoading(true);
+    try {
+      const res = await fetch('/api/admin/fallback-webhooks', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`} });
+      const data = await res.json();
+      if (data.success) setFallbackWebhooks(data.data);
+    } finally { setWebhookLoading(false); }
+  };
+
+  // Create or update webhook
+  const handleWebhookSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setWebhookLoading(true);
+    const method = webhookEditId ? 'PUT' : 'POST';
+    const url = webhookEditId ? `/api/admin/fallback-webhooks/${webhookEditId}` : '/api/admin/fallback-webhooks';
+    try {
+      const res = await fetch(url, {
+        method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ ...webhookForm, is_active: true })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWebhookForm({ url: '', description: '' }); setWebhookEditId(null);
+        fetchFallbackWebhooks();
+        showNotification('success', webhookEditId ? 'Webhook updated' : 'Webhook created');
+      } else showNotification('error', data.message || 'Error');
+    } finally { setWebhookLoading(false); }
+  };
+  // Edit webhook
+  const webhookStartEdit = (w: FallbackWebhook) => {
+    setWebhookEditId(w.id);
+    setWebhookForm({ url: w.url, description: w.description || '' });
+  };
+  // Delete webhook
+  const webhookDelete = async(id:number) => {
+    if (!window.confirm('Delete this webhook?')) return;
+    setWebhookLoading(true);
+    const res = await fetch(`/api/admin/fallback-webhooks/${id}`, {method:'DELETE', headers:{'Authorization': `Bearer ${localStorage.getItem('token')}`}});
+    const data = await res.json();
+    if (data.success) { fetchFallbackWebhooks(); showNotification('success','Deleted!'); }
+    setWebhookLoading(false);
+  }
+
+  // Auto-notify toggle
+  const fetchAutoNotify = async () => {
+    const n8nRes = await fetch('/api/admin/n8n-configurations', {headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}});
+    const n8nData = await n8nRes.json();
+    if (n8nData.success) {
+      const active = n8nData.data.find((n: any) => n.is_active);
+      setAutoNotify(active?.auto_notify_on_failure ?? false);
+    }
+  };
+  const handleAutoNotifyChange = async (val: boolean) => {
+    const n8nRes = await fetch('/api/admin/n8n-configurations', {headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}});
+    const n8nData = await n8nRes.json();
+    const active = n8nData.success ? n8nData.data.find((n: any) => n.is_active) : null;
+    if (!active) return;
+    const res = await fetch('/api/admin/fallback-notifications/toggle-auto', {
+      method:'POST',
+      headers: {'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}` },
+      body: JSON.stringify({ config_id: active.id, auto_notify_on_failure: val })
+    });
+    const data = await res.json();
+    if (data.success) { setAutoNotify(val); showNotification('success', 'Auto-notify updated'); }
+  };
+  // Manual notify
+  const handleNotifyNow = async () => {
+    const res = await fetch('/api/admin/fallback-notifications/notify-now', {method:'POST',headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}});
+    const data = await res.json();
+    if (data.success) showNotification('success','All webhooks notified');
+    else showNotification('error',data.message||'Error');
+  }
+
+  // ---------------- Failed/unsent emails -------------------
+  const fetchFailedEmails = async () => {
+    setFailedLoading(true);
+    const res = await fetch('/api/admin/fallback-emails', {headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}});
+    const data = await res.json();
+    if (data.success) setFailedEmails(data.data.data ?? []);
+    setFailedLoading(false);
+  }
+  // Mark as sent in failed panel
+  const handleMarkAsSent = async (id:number) => {
+    if (!window.confirm('Mark email as sent?')) return;
+    const res = await fetch(`/api/admin/fallback-emails/${id}/mark-sent`, {method:'POST', headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}});
+    const data = await res.json();
+    if (data.success) { fetchFailedEmails(); showNotification('success','Marked as sent'); }
+    else showNotification('error',data.message||'Error');
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -250,193 +375,262 @@ const N8nConfigurations: React.FC = () => {
         </div>
       )}
       
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">N8n Configurations</h1>
-        <button
-          onClick={() => {
-            setEditingConfig(null);
-            setFormData({ name: '', webhook_url: '', webhook_timeout: 30, max_retry_attempts: 3 });
-            setShowModal(true);
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Create Configuration
-        </button>
+      <div className="flex gap-6 border-b mb-4">
+        <button className={`pb-2 ${tab === 0 ? 'border-b-2 border-blue-600 font-bold': ''}`} onClick={()=>setTab(0)}>Configurations</button>
+        <button className={`pb-2 ${tab === 1 ? 'border-b-2 border-blue-600 font-bold': ''}`} onClick={()=>setTab(1)}>Fallback Webhooks</button>
+        <button className={`pb-2 ${tab === 2 ? 'border-b-2 border-blue-600 font-bold': ''}`} onClick={()=>setTab(2)}>Failed Emails</button>
       </div>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Webhook URL</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeout</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Retries</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {configurations.map((config) => (
-              <tr key={config.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {config.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
-                  {config.webhook_url}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {config.webhook_timeout}s
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {config.max_retry_attempts}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {config.is_active ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Active
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      <XCircle className="w-3 h-3 mr-1" />
-                      Inactive
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  <button
-                    onClick={() => handleEdit(config)}
-                    className="text-blue-600 hover:text-blue-900"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleTest(config.id)}
-                    disabled={loadingStates[`test-${config.id}`]}
-                    className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50"
-                    title="Test Connection"
-                  >
-                    {loadingStates[`test-${config.id}`] ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <TestTube className="w-4 h-4" />
-                    )}
-                  </button>
-                  {config.is_active ? (
-                    <button
-                      onClick={() => handleDeactivate(config.id)}
-                      disabled={loadingStates[`deactivate-${config.id}`]}
-                      className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
-                      title="Deactivate"
-                    >
-                      {loadingStates[`deactivate-${config.id}`] ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <XCircle className="w-4 h-4" />
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleActivate(config.id)}
-                      disabled={loadingStates[`activate-${config.id}`]}
-                      className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                      title="Activate"
-                    >
-                      {loadingStates[`activate-${config.id}`] ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Play className="w-4 h-4" />
-                      )}
-                    </button>
-                  )}
-                  {!config.is_active && (
-                    <button
-                      onClick={() => handleDelete(config.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                {editingConfig ? 'Edit Configuration' : 'Create Configuration'}
-              </h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Webhook URL</label>
-                  <input
-                    type="url"
-                    value={formData.webhook_url}
-                    onChange={(e) => setFormData({ ...formData, webhook_url: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Timeout (seconds)</label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="300"
-                    value={formData.webhook_timeout}
-                    onChange={(e) => setFormData({ ...formData, webhook_timeout: parseInt(e.target.value) })}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Max Retry Attempts</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={formData.max_retry_attempts}
-                    onChange={(e) => setFormData({ ...formData, max_retry_attempts: parseInt(e.target.value) })}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                  >
-                    {editingConfig ? 'Update' : 'Create'}
-                  </button>
-                </div>
-              </form>
-            </div>
+      {tab === 0 && (
+        <div className="pt-4">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">N8n Configurations</h1>
+            <button
+              onClick={() => {
+                setEditingConfig(null);
+                setFormData({ name: '', webhook_url: '', webhook_timeout: 30, max_retry_attempts: 3 });
+                setShowModal(true);
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create Configuration
+            </button>
           </div>
+
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Webhook URL</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeout</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Retries</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {configurations.map((config) => (
+                  <tr key={config.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {config.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
+                      {config.webhook_url}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {config.webhook_timeout}s
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {config.max_retry_attempts}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {config.is_active ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Inactive
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => handleEdit(config)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleTest(config.id)}
+                        disabled={loadingStates[`test-${config.id}`]}
+                        className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50"
+                        title="Test Connection"
+                      >
+                        {loadingStates[`test-${config.id}`] ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <TestTube className="w-4 h-4" />
+                        )}
+                      </button>
+                      {config.is_active ? (
+                        <button
+                          onClick={() => handleDeactivate(config.id)}
+                          disabled={loadingStates[`deactivate-${config.id}`]}
+                          className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
+                          title="Deactivate"
+                        >
+                          {loadingStates[`deactivate-${config.id}`] ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <XCircle className="w-4 h-4" />
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleActivate(config.id)}
+                          disabled={loadingStates[`activate-${config.id}`]}
+                          className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                          title="Activate"
+                        >
+                          {loadingStates[`activate-${config.id}`] ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Play className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
+                      {!config.is_active && (
+                        <button
+                          onClick={() => handleDelete(config.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Modal */}
+          {showModal && (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+              <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div className="mt-3">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    {editingConfig ? 'Edit Configuration' : 'Create Configuration'}
+                  </h3>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Name</label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Webhook URL</label>
+                      <input
+                        type="url"
+                        value={formData.webhook_url}
+                        onChange={(e) => setFormData({ ...formData, webhook_url: e.target.value })}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Timeout (seconds)</label>
+                      <input
+                        type="number"
+                        min="5"
+                        max="300"
+                        value={formData.webhook_timeout}
+                        onChange={(e) => setFormData({ ...formData, webhook_timeout: parseInt(e.target.value) })}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Max Retry Attempts</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={formData.max_retry_attempts}
+                        onChange={(e) => setFormData({ ...formData, max_retry_attempts: parseInt(e.target.value) })}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowModal(false)}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                      >
+                        {editingConfig ? 'Update' : 'Create'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {tab === 1 && (
+        <div className="pt-4">
+          <div className="flex items-center justify-between mb-4"><h2>Fallback Webhooks</h2></div>
+          <form onSubmit={handleWebhookSubmit} className="flex gap-4 mb-4">
+            <input type="url" required className="border p-2 rounded" placeholder="Webhook URL" value={webhookForm.url} onChange={e => setWebhookForm({...webhookForm,url:e.target.value})} style={{width:'28rem'}} />
+            <input type="text" className="border p-2 rounded" placeholder="Description" value={webhookForm.description} onChange={e => setWebhookForm({...webhookForm,description:e.target.value})} />
+            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{webhookEditId?'Update':'Add'}</button>
+            {webhookEditId && <button type="button" onClick={()=>{setWebhookEditId(null);setWebhookForm({url:'',description:''})}} className="ml-2 px-4 py-2 bg-gray-200 rounded">Cancel</button>}
+          </form>
+          <div>
+            {webhookLoading ? <div>Loading...</div> : (
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead><tr><th>URL</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {fallbackWebhooks.map(w => (
+                    <tr key={w.id} className={!w.is_active ? 'opacity-70' : ''}>
+                      <td className="px-2 py-2 max-w-xs truncate">{w.url}</td>
+                      <td className="px-2 py-2">{w.description || '-'}</td>
+                      <td className="px-2 py-2">{w.is_active ? 'Active':'Inactive'}</td>
+                      <td className="px-2 py-2">
+                        <button onClick={()=>webhookStartEdit(w)} className="px-2 text-blue-600">Edit</button>
+                        <button onClick={()=>webhookDelete(w.id)} className="px-2 text-red-600">Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <div className="flex items-center mt-8">
+            <input type="checkbox" checked={autoNotify} onChange={e=>handleAutoNotifyChange(e.target.checked)} className="mr-2" id="auto-notify" />
+            <label htmlFor="auto-notify">Automatically notify all fallback webhooks when a new failed email is detected</label>
+            <button className="ml-4 bg-blue-600 px-3 py-2 text-white rounded" onClick={handleNotifyNow}>Notify All Now</button>
+          </div>
+        </div>
+      )}
+      {tab === 2 && (
+        <div className="pt-4">
+          <h2 className="font-semibold mb-2">Failed/Unsent Emails</h2>
+          {failedLoading ? <div>Loading...</div> : (
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead><tr><th>ID</th><th>Recipient</th><th>Action</th><th>Status</th><th>Attempts</th><th>Error</th><th>Details</th><th>Actions</th></tr></thead>
+              <tbody>
+                {failedEmails.map(e => (
+                  <tr key={e.id}>
+                    <td>{e.id}</td>
+                    <td>{e.recipient_name} ({e.recipient_email})</td>
+                    <td>{e.action}</td>
+                    <td>{e.status}</td>
+                    <td>{e.attempts}</td>
+                    <td title={e.last_error}>{e.last_error? e.last_error.slice(0,32)+'...': ''}</td>
+                    <td><details><summary>Show</summary><pre className="text-xs whitespace-pre-wrap max-w-sm">{JSON.stringify(e.details,null,2)}</pre></details></td>
+                    <td><button className="bg-green-600 text-white px-2 py-1 rounded" onClick={()=>handleMarkAsSent(e.id)}>Mark as Sent</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </div>
