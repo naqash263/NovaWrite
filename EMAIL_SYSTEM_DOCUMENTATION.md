@@ -205,3 +205,46 @@ If you need help with:
 - Any other email-related features
 
 Just let me know! The system is fully functional and ready to use once you configure your SMTP settings.
+
+# EMAIL SYSTEM: Direct Send & Admin Fallback Workflow
+
+## Direct Email Sending (Primary Flow)
+- All system emails send directly from the Laravel backend to the primary external webhook URL (N8n, etc.) set by admin in N8n Configuration.
+- **On Success:**
+  - Email is marked as `completed` in `email_queue`.
+- **On Failure:**
+  - Email is marked as `failed` (or `unsent`) in `email_queue`.
+  - No retry, no dispatch to queue, and no auto-processing by queue workers.
+- All webhook URLs and timeouts are admin-configurable in the N8n Configuration section (not .env).
+
+## Fallback/Manual Admin Processing
+- **Admin-only API** exposes unsent/failed email records that can be picked up for retry/resend by admin services or an external fallback sender.
+- Endpoints:
+  - `GET /api/admin/fallback-emails`: List all failed/unsent email records (paginated, filterable by status, action, recipient).
+  - `POST /api/admin/fallback-emails/{id}/mark-sent`: Mark a record as sent (sets status to completed).
+- All endpoints are protected by standard admin API middleware (only authenticated admins can access).
+
+## Admin Controls
+- All email system URLs (primary webhook, fallback, etc.) are changed via admin N8n Configuration in the control panel.
+- No changes to URLs are required in .env or code deployments.
+- Only admin users or admin-privileged API clients can run fallback recovery actions.
+
+## Sample Fallback Flow
+1. Admin (or admin API client) lists failed emails:
+   GET `/api/admin/fallback-emails?status=failed`
+2. Admin fetches details and processes/send externally as needed.
+3. When successful, admin marks the email as sent:
+   POST `/api/admin/fallback-emails/{id}/mark-sent`
+4. The system updates the record's status and logs the change.
+
+## No Queue Fallback
+- The Laravel queue/job flow is no longer used for any failed sends.
+- No pending/processing status is set for failures; only `completed` or `failed`/`unsent` are used.
+- Manual fallback only.
+
+## Monitoring & Troubleshooting
+- Admin and support tools can view all statuses via existing and new admin endpoints for `email_queue`.
+- All errors are logged and troubleshootable via email logs and admin API tools.
+
+---
+The new flow guarantees transparency, admin control, and explicit handling for both main and fallback delivery, fully bypassing legacy auto-retry or queue worker jobs for unsent emails.

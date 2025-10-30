@@ -72,36 +72,85 @@ class EmailService
     }
 
     /**
-     * Send email using a template via N8n
+     * Send email using a template with direct send and status logging
      */
     public function sendTemplateEmail(string $templateName, array $variables, string $to, ?string $toName = null): bool
     {
         try {
             $config = N8nConfiguration::getActive();
-            
             if (!$config) {
                 Log::error("No active N8n configuration found for template: {$templateName}");
                 return false;
             }
 
-            // Create email queue entry
-            $emailQueue = EmailQueue::create([
+            // Attempt direct send to N8n
+            $n8nService = app(N8nEmailService::class);
+            $recipient = [
+                'email' => $to,
+                'name' => $toName ?? 'User'
+            ];
+
+            $success = $n8nService->sendToN8n($templateName, $recipient, $variables);
+
+            if ($success) {
+                // Log as completed
+                EmailQueue::create([
+                    'action' => $templateName,
+                    'recipient_email' => $to,
+                    'recipient_name' => $toName,
+                    'details' => $variables,
+                    'max_attempts' => 1,
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                    'attempts' => 1,
+                ]);
+                Log::info("Email sent and logged as completed using template: {$templateName} to: {$to}");
+                return true;
+            } else {
+                // Log as failed (not pending/processing/queued)
+                $record = EmailQueue::create([
+                    'action' => $templateName,
+                    'recipient_email' => $to,
+                    'recipient_name' => $toName,
+                    'details' => $variables,
+                    'max_attempts' => 1,
+                    'status' => 'failed',
+                    'last_error' => 'Direct send failure',
+                    'attempts' => 1,
+                ]);
+                // Auto-notify if enabled in active N8n configuration
+                if ($config && ($config->auto_notify_on_failure ?? false)) {
+                    try {
+                        app(\App\Services\FallbackWebhookNotifier::class)->notifySingleEmail($record);
+                    } catch (\Throwable $t) {
+                        Log::warning('Auto notify on failure failed', ['error' => $t->getMessage()]);
+                    }
+                }
+                Log::error("Failed to send email directly via N8n using template: {$templateName} to: {$to}");
+                return false;
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to send email directly via N8n: " . $e->getMessage(), ['exception' => $e->getTraceAsString()]);
+            // Log as failed
+            $record = EmailQueue::create([
                 'action' => $templateName,
                 'recipient_email' => $to,
                 'recipient_name' => $toName,
                 'details' => $variables,
-                'max_attempts' => $config->max_retry_attempts,
-                'status' => 'pending'
+                'max_attempts' => 1,
+                'status' => 'failed',
+                'last_error' => $e->getMessage(),
+                'attempts' => 1,
             ]);
-
-            // Dispatch job to send email
-            SendN8nEmail::dispatch($emailQueue);
-
-            Log::info("Email queued successfully using template: {$templateName} to: {$to}");
-            return true;
-
-        } catch (\Exception $e) {
-            Log::error("Failed to queue email using template {$templateName}: " . $e->getMessage());
+            // Auto-notify if enabled
+            $config = N8nConfiguration::getActive();
+            if ($config && ($config->auto_notify_on_failure ?? false)) {
+                try {
+                    app(\App\Services\FallbackWebhookNotifier::class)->notifySingleEmail($record);
+                } catch (\Throwable $t) {
+                    Log::warning('Auto notify on failure failed', ['error' => $t->getMessage()]);
+                }
+            }
             return false;
         }
     }
@@ -111,30 +160,8 @@ class EmailService
      */
     public function sendTemplateEmailDirect(string $templateName, array $variables, string $to, ?string $toName = null): bool
     {
-        try {
-            $n8nService = app(N8nEmailService::class);
-            
-            $recipient = [
-                'email' => $to,
-                'name' => $toName ?? 'User'
-            ];
-
-            $success = $n8nService->sendToN8n($templateName, $recipient, $variables);
-
-            if ($success) {
-                Log::info("Email sent directly via N8n using template: {$templateName} to: {$to}");
-                return true;
-            } else {
-                Log::error("Failed to send email directly via N8n using template: {$templateName} to: {$to}");
-                return false;
-            }
-
-        } catch (\Exception $e) {
-            Log::error("Failed to send email directly via N8n: " . $e->getMessage(), [
-                'exception' => $e->getTraceAsString()
-            ]);
-            return false;
-        }
+        // Use main sendTemplateEmail (always direct now)
+        return $this->sendTemplateEmail($templateName, $variables, $to, $toName);
     }
 
     /**
@@ -142,7 +169,7 @@ class EmailService
      */
     public function sendTemplateEmailWithSmtp(string $templateName, array $variables, string $to, ?string $toName = null, ?int $smtpConfigId = null): bool
     {
-        // Redirect to N8n-based method
+        // Use main sendTemplateEmail (SMTP is deprecated and no longer used)
         return $this->sendTemplateEmail($templateName, $variables, $to, $toName);
     }
 

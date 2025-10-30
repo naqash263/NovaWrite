@@ -15,13 +15,15 @@ class N8nConfiguration extends Model
         'webhook_url',
         'webhook_timeout',
         'max_retry_attempts',
-        'is_active'
+        'is_active',
+        'auto_notify_on_failure'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'webhook_timeout' => 'integer',
-        'max_retry_attempts' => 'integer'
+        'max_retry_attempts' => 'integer',
+        'auto_notify_on_failure' => 'boolean'
     ];
 
     /**

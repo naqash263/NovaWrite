@@ -133,7 +133,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         items: [
           { path: '/admin/user-management', label: 'User Management', icon: '👥' },
           { path: '/admin/user-activities', label: 'User Activities', icon: '👤' },
-          { path: '/admin/user-groups', label: 'User Groups', icon: '👨‍👩‍👧‍👦' },
+      { path: '/admin/user-groups', label: 'User Groups', icon: '👨‍👩‍👧‍👦' },
         ]
       },
       {
@@ -219,7 +219,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Sidebar Footer */}
           <div className="border-t border-gray-200 p-4">
-            <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-medium">
                           {user.name.charAt(0).toUpperCase()}
@@ -229,7 +229,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
                         </div>
-                                    </div>
+                    </div>
             <div className="mt-3 space-y-1">
                                         <Link
                 to="/"
@@ -240,16 +240,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </svg>
                 View Site
                                         </Link>
-                          <button
+                    <button
                 onClick={() => logout('/')}
                 className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          >
+                    >
                             <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Logout
-                          </button>
-                        </div>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
                       </div>
                   </div>
 

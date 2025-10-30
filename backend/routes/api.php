@@ -867,6 +867,16 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::get('email-logs', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'index']);
     Route::get('email-logs/{id}', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'show']);
     Route::get('email-logs/stats', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'stats']);
+
+    // Fallback Webhooks Management
+    Route::get('fallback-webhooks', [\App\Http\Controllers\Api\Admin\FallbackWebhookController::class, 'index']);
+    Route::post('fallback-webhooks', [\App\Http\Controllers\Api\Admin\FallbackWebhookController::class, 'store']);
+    Route::put('fallback-webhooks/{id}', [\App\Http\Controllers\Api\Admin\FallbackWebhookController::class, 'update']);
+    Route::delete('fallback-webhooks/{id}', [\App\Http\Controllers\Api\Admin\FallbackWebhookController::class, 'destroy']);
+
+    // Fallback Notifications
+    Route::post('fallback-notifications/notify-now', [\App\Http\Controllers\Api\Admin\FallbackNotificationController::class, 'notifyNow']);
+    Route::post('fallback-notifications/toggle-auto', [\App\Http\Controllers\Api\Admin\FallbackNotificationController::class, 'toggleAuto']);
 });
 
 // User API Key Management (authenticated users only)
