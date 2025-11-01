@@ -203,6 +203,7 @@ export default function Register() {
               <input
                 id="name"
                 type="text"
+                autoComplete="name"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -218,6 +219,7 @@ export default function Register() {
               <input
                 id="email"
                 type="email"
+                autoComplete="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -233,6 +235,7 @@ export default function Register() {
               <input
                 id="password"
                 type="password"
+                autoComplete="new-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -249,6 +252,7 @@ export default function Register() {
               <input
                 id="passwordConfirmation"
                 type="password"
+                autoComplete="new-password"
                 required
                 value={passwordConfirmation}
                 onChange={(e) => setPasswordConfirmation(e.target.value)}

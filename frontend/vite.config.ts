@@ -73,7 +73,34 @@ export default defineConfig({
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 5 // 5 minutes
               },
-              networkTimeoutSeconds: 10
+              networkTimeoutSeconds: 30, // Increased from 10 to 30 seconds
+              cacheableResponse: {
+                statuses: [0, 200] // Cache responses including network errors (0)
+              }
+            }
+          },
+          // Handle static assets with better error handling
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          },
+          // Handle CSS and JS files
+          {
+            urlPattern: /\.(?:css|js)$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'assets-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              }
             }
           }
         ]

@@ -312,7 +312,8 @@ export function CvForm({ data, onDataChange }: CvFormProps) {
                       <FormControl>
                         <Input 
                           {...field} 
-                          type="email" 
+                          type="email"
+                          autoComplete="email"
                           placeholder="your.email@example.com" 
                           className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
                         />
@@ -329,7 +330,9 @@ export function CvForm({ data, onDataChange }: CvFormProps) {
                       <FormLabel className="text-sm font-semibold text-gray-700">Phone Number</FormLabel>
                       <FormControl>
                         <Input 
-                          {...field} 
+                          {...field}
+                          type="tel"
+                          autoComplete="tel"
                           placeholder="+1 (555) 123-4567" 
                           className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
                         />
