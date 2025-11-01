@@ -363,4 +363,53 @@ class AdSenseSettingsController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Serve ads.txt file for Google AdSense verification
+     * Format: google.com, pub-XXXXXXXXXX, DIRECT, f08c47fec0942fa0
+     * 
+     * @return \Illuminate\Http\Response
+     */
+    public function serveAdsTxt()
+    {
+        try {
+            $clientId = '';
+            
+            // Try to get Publisher ID from database
+            if (\Illuminate\Support\Facades\Schema::hasTable('ad_sense_settings')) {
+                $clientIdSetting = AdSenseSettings::where('key', 'client_id')
+                    ->where('is_active', true)
+                    ->first();
+                
+                if ($clientIdSetting && !empty($clientIdSetting->value)) {
+                    $clientId = $clientIdSetting->value;
+                }
+            }
+
+            // Extract Publisher ID (remove "ca-pub-" prefix if present)
+            $publisherId = '';
+            if (!empty($clientId)) {
+                // Remove "ca-pub-" prefix if present
+                $publisherId = str_replace('ca-pub-', '', $clientId);
+            }
+
+            // Generate ads.txt content
+            // Format: google.com, pub-XXXXXXXXXX, DIRECT, f08c47fec0942fa0
+            $adsTxtContent = '';
+            if (!empty($publisherId)) {
+                $adsTxtContent = "google.com, pub-{$publisherId}, DIRECT, f08c47fec0942fa0\n";
+            }
+
+            // Return as plain text with correct headers
+            return response($adsTxtContent, 200)
+                ->header('Content-Type', 'text/plain; charset=utf-8')
+                ->header('Cache-Control', 'public, max-age=3600');
+        } catch (\Exception $e) {
+            \Log::error('AdSense ads.txt serve error: ' . $e->getMessage());
+            
+            // Return empty ads.txt on error (better than 500 error for crawlers)
+            return response('', 200)
+                ->header('Content-Type', 'text/plain; charset=utf-8');
+        }
+    }
 }

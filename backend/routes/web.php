@@ -30,3 +30,7 @@ Route::get('/auth/google/callback', function (Request $request) {
     
     return redirect($apiUrl);
 });
+
+// Serve ads.txt dynamically for Google AdSense verification
+// This must be at the root domain: https://naqashthaheem.com/ads.txt
+Route::get('/ads.txt', [App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'serveAdsTxt']);

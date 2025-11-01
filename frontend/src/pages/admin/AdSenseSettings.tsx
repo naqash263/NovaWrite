@@ -312,6 +312,11 @@ export default function AdSenseSettings() {
           <li>
             The meta tag will automatically update when you save your Publisher ID
           </li>
+          <li>
+            <strong>ads.txt file</strong> is automatically generated and served at{' '}
+            <code className="bg-blue-100 px-1 rounded">/ads.txt</code> from your database settings.
+            Google will verify this file automatically. No manual file upload needed!
+          </li>
           <li>Toggle "Enable AdSense" to activate ads</li>
           <li>
             Add the auto-ads script to <code className="bg-blue-100 px-1 rounded">index.html</code> if using auto ads
