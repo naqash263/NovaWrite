@@ -59,14 +59,28 @@ jobs:
           mkdir -p ~/naqashthaheem.com
           cd ~/naqashthaheem.com
           
-          # Clone or update repository
+          # Clone or update repository first
           if [ ! -d ".git" ]; then
+            echo "📥 Cloning repository..."
             git clone https://github.com/naqash263/NovaWrite.git .
           else
+            echo "🔄 Updating repository..."
             git fetch --all
             git reset --hard origin/main
           fi
           
+          # Verify script exists
+          if [ ! -f "scripts/deploy-production.sh" ]; then
+            echo "❌ Error: scripts/deploy-production.sh not found in repository"
+            echo "📁 Current directory: $(pwd)"
+            echo "📁 Directory contents:"
+            ls -la
+            echo "📁 Scripts directory:"
+            ls -la scripts/ 2>/dev/null || echo "Scripts directory does not exist"
+            exit 1
+          fi
+          
           # Make script executable and run it from repository
           chmod +x scripts/deploy-production.sh
+          echo "🚀 Executing deployment script..."
           bash scripts/deploy-production.sh
