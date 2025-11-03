@@ -904,4 +904,7 @@ Route::get('cv-templates/default', [\App\Http\Controllers\Api\CvTemplateControll
 Route::get('cv-templates/{cvTemplate}', [\App\Http\Controllers\Api\CvTemplateController::class, 'show']);
 Route::post('cv-templates/customize', [\App\Http\Controllers\Api\CvTemplateController::class, 'customize']);
 
+// Dynamic sitemap - accessible via /api/sitemap-ntw2024.xml
+Route::get('sitemap-ntw2024.xml', [\App\Http\Controllers\Api\SitemapController::class, 'index']);
+
 
