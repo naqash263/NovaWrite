@@ -501,6 +501,10 @@ jobs:
           echo "<IfModule mod_rewrite.c>" > ~/naqashthaheem.com/public_html/.htaccess
           echo "    RewriteEngine On" >> ~/naqashthaheem.com/public_html/.htaccess
           echo "" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "    # Handle sitemap requests - route to backend API" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "    RewriteCond %{REQUEST_URI} ^/sitemap-ntw2024\.xml$ [NC]" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "    RewriteRule ^sitemap-ntw2024\.xml$ /api/sitemap-ntw2024.xml [L]" >> ~/naqashthaheem.com/public_html/.htaccess
+          echo "" >> ~/naqashthaheem.com/public_html/.htaccess
           echo "    # Handle API requests" >> ~/naqashthaheem.com/public_html/.htaccess
           echo "    RewriteCond %{REQUEST_URI} ^/api/(.*)$" >> ~/naqashthaheem.com/public_html/.htaccess
           echo "    RewriteRule ^api/(.*)$ api/public/\$1 [L]" >> ~/naqashthaheem.com/public_html/.htaccess
