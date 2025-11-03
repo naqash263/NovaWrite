@@ -1,5 +1,9 @@
 RewriteEngine On
 
+# Handle sitemap requests - route to backend API
+RewriteCond %{REQUEST_URI} ^/sitemap-ntw2024\.xml$ [NC]
+RewriteRule ^sitemap-ntw2024\.xml$ /api/sitemap-ntw2024.xml [L]
+
 # Handle storage files first - redirect to backend storage
 RewriteCond %{REQUEST_URI} ^/storage/(.*)$
 RewriteRule ^storage/(.*)$ /api/storage/$1 [L]
