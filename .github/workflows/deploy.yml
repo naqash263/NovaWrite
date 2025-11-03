@@ -37,6 +37,17 @@ jobs:
         fi
         npm run build
         
+    - name: Upload deployment script
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 21098
+        source: "scripts/deploy-production.sh"
+        target: "/tmp"
+    
     - name: Deploy to server
       uses: appleboy/ssh-action@v0.1.5
       with:
@@ -45,9 +56,19 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         port: 21098
-        timeout: 300s
-        command_timeout: 300s
+        timeout: 600s
+        command_timeout: 600s
         script: |
+          # Export environment variables
+          export STABLE_APP_KEY="${{ secrets.STABLE_APP_KEY }}"
+          export VAPID_PUBLIC_KEY="${{ secrets.VAPID_PUBLIC_KEY }}"
+          export VAPID_PRIVATE_KEY="${{ secrets.VAPID_PRIVATE_KEY }}"
+          export VAPID_SUBJECT="${{ secrets.VAPID_SUBJECT }}"
+          export VITE_VAPID_PUBLIC_KEY="${{ secrets.VAPID_PUBLIC_KEY }}"
+          
+          # Make script executable and run it
+          chmod +x /tmp/deploy-production.sh
+          bash /tmp/deploy-production.sh
           # Colors for output
           RED='\033[0;31m'
           GREEN='\033[0;32m'
