@@ -37,17 +37,6 @@ jobs:
         fi
         npm run build
         
-    - name: Upload deployment script
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        passphrase: ${{ secrets.SSH_PASSPHRASE }}
-        port: 21098
-        source: "scripts/deploy-production.sh"
-        target: "/tmp"
-    
     - name: Deploy to server
       uses: appleboy/ssh-action@v0.1.5
       with:
@@ -66,6 +55,18 @@ jobs:
           export VAPID_SUBJECT="${{ secrets.VAPID_SUBJECT }}"
           export VITE_VAPID_PUBLIC_KEY="${{ secrets.VAPID_PUBLIC_KEY }}"
           
-          # Make script executable and run it
-          chmod +x /tmp/deploy-production.sh
-          bash /tmp/deploy-production.sh
+          # Create main directory structure
+          mkdir -p ~/naqashthaheem.com
+          cd ~/naqashthaheem.com
+          
+          # Clone or update repository
+          if [ ! -d ".git" ]; then
+            git clone https://github.com/naqash263/NovaWrite.git .
+          else
+            git fetch --all
+            git reset --hard origin/main
+          fi
+          
+          # Make script executable and run it from repository
+          chmod +x scripts/deploy-production.sh
+          bash scripts/deploy-production.sh
