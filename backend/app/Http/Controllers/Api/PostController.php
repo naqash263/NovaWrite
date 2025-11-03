@@ -376,6 +376,9 @@ class PostController extends Controller
         
         // Clear cache with current timestamp to force refresh
         Cache::put('posts.last_updated', now(), 86400); // 24 hours
+        
+        // Clear sitemap cache so it regenerates with new posts
+        \App\Http\Controllers\Api\SitemapController::clearCache();
     }
 
     /**

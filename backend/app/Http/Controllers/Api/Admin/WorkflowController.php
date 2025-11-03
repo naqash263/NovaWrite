@@ -9,6 +9,7 @@ use App\Events\NewWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class WorkflowController extends Controller
 {
@@ -58,6 +59,10 @@ class WorkflowController extends Controller
         if ($workflow->status === 'published') {
             event(new NewWorkflow($workflow));
         }
+
+        // Update workflows cache timestamp and clear sitemap
+        Cache::put('workflows.last_updated', now(), 86400);
+        \App\Http\Controllers\Api\SitemapController::clearCache();
 
         return response()->json($workflow->load(['category', 'files']), 201);
     }
@@ -122,6 +127,10 @@ class WorkflowController extends Controller
 
         $workflow->update($updateData);
 
+        // Update workflows cache timestamp and clear sitemap
+        Cache::put('workflows.last_updated', now(), 86400);
+        \App\Http\Controllers\Api\SitemapController::clearCache();
+
         return response()->json($workflow->load(['category', 'files']));
     }
 
@@ -129,6 +138,11 @@ class WorkflowController extends Controller
     {
         $workflow = Workflow::findOrFail($id);
         $workflow->delete();
+        
+        // Update workflows cache timestamp and clear sitemap
+        Cache::put('workflows.last_updated', now(), 86400);
+        \App\Http\Controllers\Api\SitemapController::clearCache();
+        
         return response()->json(['message' => 'Workflow deleted successfully']);
     }
 

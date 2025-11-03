@@ -34,3 +34,7 @@ Route::get('/auth/google/callback', function (Request $request) {
 // Serve ads.txt dynamically for Google AdSense verification
 // This must be at the root domain: https://naqashthaheem.com/ads.txt
 Route::get('/ads.txt', [App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'serveAdsTxt']);
+
+// Serve dynamic sitemap including all blog posts and workflows
+// This must be at the root domain: https://naqashthaheem.com/sitemap-ntw2024.xml
+Route::get('/sitemap-ntw2024.xml', [App\Http\Controllers\Api\SitemapController::class, 'index']);
