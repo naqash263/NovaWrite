@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/axios';
 import { PostCard } from '../components/PostCard';
+import AdPlacement from '../components/AdPlacement';
 // Removed LazyImage for faster image loading
 import { useSEO } from '../utils/seo';
 import { generateAISearchSchema, generateKnowledgeGraphSchema, generateFAQSchema, injectAISearchOptimizations } from '../utils/aiSearchOptimization';
@@ -598,6 +599,11 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Ad: Content Top */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <AdPlacement position="content-top" />
+      </div>
 
       {/* Skills Progress Bars Section */}
       <section className="py-16 bg-gray-50 scroll-animate">

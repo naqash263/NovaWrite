@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../../api/axios';
+import AdPlacement from '../../components/AdPlacement';
 import { useSEO } from '../../utils/seo';
 // Removed LazyImage for faster image loading
 import { CourseCardSkeleton } from '../../components/Skeleton';
@@ -102,6 +103,9 @@ export default function Courses() {
           </p>
         </div>
 
+        {/* Ad: Content Top */}
+        <AdPlacement position="content-top" className="mb-8" />
+
         {courses.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 text-lg">No courses available yet. Check back soon!</p>
@@ -158,6 +162,9 @@ export default function Courses() {
             ))}
           </div>
         )}
+        
+        {/* Ad: Content Bottom */}
+        <AdPlacement position="content-bottom" className="mt-8" />
       </div>
     </div>
   );

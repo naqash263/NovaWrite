@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AdPlacement from '../components/AdPlacement';
 import { useSEO } from '../utils/seo';
 import { generateBreadcrumbSchema, generateFAQSchema, injectStructuredData } from '../utils/structuredData';
 import { useEffect } from 'react';
@@ -306,6 +307,12 @@ export default function Resources() {
           <div className="max-w-2xl mx-auto mb-8">
             <ApiKeyManager />
           </div>
+          
+          {/* Ad: Content Top */}
+          <div className="max-w-4xl mx-auto mb-8">
+            <AdPlacement position="content-top" />
+          </div>
+          
           <div className="bg-blue-50 rounded-2xl p-8 mb-8 max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Choose Our Tools?</h2>
             <div className="grid md:grid-cols-3 gap-6 text-left">

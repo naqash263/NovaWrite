@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/axios';
+import AdPlacement from '../components/AdPlacement';
 import { useSEO } from '../utils/seo';
 import { PageLoader } from '../components/LoadingComponents';
 import WorkflowDownloadModal from '../components/WorkflowDownloadModal';
@@ -234,7 +235,17 @@ export default function WorkflowDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <aside className="lg:col-span-1 hidden lg:block">
+            <div className="sticky top-4">
+              <AdPlacement position="sidebar" />
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
         {/* Breadcrumb */}
         <nav className="mb-8">
           <ol className="flex items-center space-x-2 text-sm text-gray-500">
@@ -362,6 +373,9 @@ export default function WorkflowDetail() {
 
           {/* Content */}
           <div className="p-8">
+            {/* Ad: Content Top */}
+            <AdPlacement position="content-top" className="mb-8" />
+            
             {/* Description */}
             {workflow.description && (
               <div className="mb-8">
@@ -372,6 +386,9 @@ export default function WorkflowDetail() {
                 />
               </div>
             )}
+            
+            {/* Ad: Content Middle */}
+            <AdPlacement position="content-middle" className="my-8" />
 
             {/* Tools */}
             {workflow.tools && Array.isArray(workflow.tools) && workflow.tools.length > 0 && (
@@ -448,6 +465,9 @@ export default function WorkflowDetail() {
               </div>
             )}
 
+            {/* Ad: Content Bottom */}
+            <AdPlacement position="content-bottom" className="mt-8" />
+            
             {/* Back Button */}
             <div className="mt-8 pt-8 border-t border-gray-200">
               <button
@@ -462,6 +482,8 @@ export default function WorkflowDetail() {
             </div>
           </div>
         </article>
+          </div>
+        </div>
       </div>
 
       {/* Download Modal */}

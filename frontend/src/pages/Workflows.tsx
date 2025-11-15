@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/axios';
+import AdPlacement from '../components/AdPlacement';
 import { useSEO } from '../utils/seo';
 import { WorkflowCardSkeleton } from '../components/Skeleton';
 import WorkflowDownloadModal from '../components/WorkflowDownloadModal';
@@ -184,6 +185,9 @@ export default function Workflows() {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        {/* Ad: Content Top */}
+        <AdPlacement position="content-top" className="mb-8" />
+        
         <div className="mb-8 flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <input
@@ -243,8 +247,9 @@ export default function Workflows() {
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-8">
-            {workflows.map((workflow) => {
+          <>
+            <div className="grid md:grid-cols-2 gap-8">
+              {workflows.map((workflow, index) => {
               const isExpanded = expandedWorkflows.has(workflow.id);
               const shouldShowReadMore = workflow.description && workflow.description.length > 150;
               const displayDescription = isExpanded ? workflow.description : 
@@ -393,10 +398,19 @@ export default function Workflows() {
                 )}
               </div>
               );
-            })}
-          </div>
+              })}
+            </div>
+            
+            {/* Ad: Content Middle - After every 4 workflows */}
+            {workflows.length > 4 && (
+              <AdPlacement position="content-middle" className="my-8" />
+            )}
+            
+            {/* Ad: Content Bottom */}
+            <AdPlacement position="content-bottom" className="mt-8 mb-8" />
+          </>
         )}
-
+        
         <div className="mt-16 bg-blue-600 rounded-lg p-8 text-center text-white">
           <h2 className="text-3xl font-bold mb-4">Ready to Automate Your Business?</h2>
           <p className="text-xl mb-6 text-blue-100">
