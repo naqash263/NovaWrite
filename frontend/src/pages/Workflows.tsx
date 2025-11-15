@@ -249,7 +249,7 @@ export default function Workflows() {
         ) : (
           <>
             <div className="grid md:grid-cols-2 gap-8">
-              {workflows.map((workflow, index) => {
+              {workflows.map((workflow) => {
               const isExpanded = expandedWorkflows.has(workflow.id);
               const shouldShowReadMore = workflow.description && workflow.description.length > 150;
               const displayDescription = isExpanded ? workflow.description : 
