@@ -36,43 +36,78 @@ export default function AdSense({
     const hasClientId = dataAdClient && dataAdClient !== '' && dataAdClient !== 'ca-pub-YOUR_PUBLISHER_ID';
 
     if (!isProduction || !hasClientId || !dataAdClient) {
+      console.log('[AdSense] Skipping ad load:', { isProduction, hasClientId, dataAdClient });
       return;
     }
 
-    // Load AdSense script only once
+    // Load AdSense script only once globally
     if (!scriptLoaded.current && !window.adsbygoogle) {
       const script = document.createElement('script');
-      script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+      script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + encodeURIComponent(dataAdClient);
       script.async = true;
       script.crossOrigin = 'anonymous';
       script.setAttribute('data-ad-client', dataAdClient);
+      
+      script.onload = () => {
+        console.log('[AdSense] Script loaded successfully');
+      };
+      
+      script.onerror = (error) => {
+        console.error('[AdSense] Script failed to load:', error);
+      };
+      
       document.head.appendChild(script);
       scriptLoaded.current = true;
+      window.adsbygoogle = window.adsbygoogle || [];
     }
 
-    // Initialize ad after script loads
+    // Initialize ad after script loads and element is ready
     const initializeAd = () => {
-      if (adRef.current && window.adsbygoogle && !adRef.current.hasChildNodes()) {
+      if (!adRef.current) {
+        console.log('[AdSense] Ad ref not ready');
+        return;
+      }
+
+      // Check if ad is already initialized (has children)
+      if (adRef.current.hasChildNodes()) {
+        console.log('[AdSense] Ad already initialized');
+        return;
+      }
+
+      if (window.adsbygoogle) {
         try {
+          console.log('[AdSense] Initializing ad:', { adSlot, dataAdClient });
           (window.adsbygoogle = window.adsbygoogle || []).push({});
         } catch (e) {
-          console.error('AdSense error:', e);
+          console.error('[AdSense] Error initializing ad:', e);
         }
+      } else {
+        console.log('[AdSense] adsbygoogle not available yet');
       }
     };
 
     // Wait for script to load
-    if (window.adsbygoogle) {
-      initializeAd();
+    if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
+      // Small delay to ensure DOM is ready
+      setTimeout(initializeAd, 100);
     } else {
       const checkInterval = setInterval(() => {
-        if (window.adsbygoogle) {
+        if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
           initializeAd();
           clearInterval(checkInterval);
         }
       }, 100);
 
-      return () => clearInterval(checkInterval);
+      // Cleanup after 10 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(checkInterval);
+        console.warn('[AdSense] Timeout waiting for script to load');
+      }, 10000);
+
+      return () => {
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+      };
     }
   }, [adSlot, dataAdClient]);
 

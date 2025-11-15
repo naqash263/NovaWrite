@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import apiClient from '../api/axios';
 import { FileList } from '../components/FileList';
+import AdPlacement from '../components/AdPlacement';
 import { useSEO } from '../utils/seo';
 import { generateBlogPostSchema, generateBreadcrumbSchema, injectStructuredData } from '../utils/structuredData';
 import { API_CONFIG } from '../config/api';
@@ -187,8 +188,18 @@ export default function BlogPost() {
 
   return (
     <main className="bg-gray-50 py-16" role="main">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <article className="bg-white rounded-lg shadow-md overflow-hidden" itemScope itemType="https://schema.org/BlogPosting">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <aside className="lg:col-span-1 hidden lg:block">
+            <div className="sticky top-4">
+              <AdPlacement position="sidebar" />
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            <article className="bg-white rounded-lg shadow-md overflow-hidden" itemScope itemType="https://schema.org/BlogPosting">
           
           {/* Featured Image */}
           {post.featured_image && (
@@ -313,12 +324,23 @@ export default function BlogPost() {
               </p>
             )}
 
+            {/* Ad: Content Top */}
+            <AdPlacement position="content-top" className="my-6" />
+
             {/* Main Article Content */}
             <div
               className="prose prose-lg max-w-none"
               dangerouslySetInnerHTML={{ __html: post.content }}
               itemProp="articleBody"
             />
+
+            {/* Ad: Content Middle - Insert after first paragraph if content is long */}
+            {post.content && post.content.length > 2000 && (
+              <AdPlacement position="content-middle" className="my-8" />
+            )}
+
+            {/* Ad: Content Bottom */}
+            <AdPlacement position="content-bottom" className="my-6" />
 
             {/* Associated Files */}
             {post.files && post.files.length > 0 && (
@@ -340,6 +362,8 @@ export default function BlogPost() {
 
           </div>
         </article>
+          </div>
+        </div>
       </div>
     </main>
   );

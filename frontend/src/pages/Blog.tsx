@@ -7,6 +7,7 @@ import { CategoryFilter } from '../components/CategoryFilter';
 import { PostCardSkeleton } from '../components/Skeleton';
 import Pagination from '../components/Pagination';
 import AdvancedFilters from '../components/AdvancedFilters';
+import AdPlacement from '../components/AdPlacement';
 import { useSEO } from '../utils/seo';
 
 interface Post {
@@ -308,11 +309,25 @@ export default function Blog() {
           </div>
         ) : posts.length > 0 ? (
           <>
+            {/* Ad: Content Top */}
+            <AdPlacement position="content-top" className="mb-8" />
+            
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-              {posts.map((post: Post) => (
-                <PostCard key={post.id} post={post} />
+              {posts.map((post: Post, index: number) => (
+                <div key={post.id}>
+                  <PostCard post={post} />
+                  {/* Ad: Between Posts - Show after every 6 posts */}
+                  {(index + 1) % 6 === 0 && (index + 1) < posts.length && (
+                    <div className="col-span-full mt-8">
+                      <AdPlacement position="between-posts" />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
+
+            {/* Ad: Content Bottom */}
+            <AdPlacement position="content-bottom" className="mb-8" />
 
             {pagination.lastPage > 1 && (
               <Pagination
