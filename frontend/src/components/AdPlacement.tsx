@@ -10,7 +10,7 @@ interface AdPlacementProps {
  * Pre-configured AdSense placements with optimal positioning
  */
 export default function AdPlacement({ position, className = '' }: AdPlacementProps) {
-  const { isEnabled, getSlot } = useAdSenseSettings();
+  const { isEnabled, getSlot, settings, isLoading } = useAdSenseSettings();
 
   // Map position to setting key
   const settingKeyMap: Record<string, string> = {
@@ -24,6 +24,19 @@ export default function AdPlacement({ position, className = '' }: AdPlacementPro
   };
 
   const adSlot = getSlot(settingKeyMap[position]);
+  const clientId = getSlot('client_id');
+
+  // Debug logging (only in development or if ads not showing)
+  if (import.meta.env.DEV || (!isEnabled || !adSlot)) {
+    console.log(`[AdPlacement:${position}]`, {
+      isEnabled,
+      isLoading,
+      adSlot,
+      clientId,
+      hasClientId: !!clientId && clientId !== 'ca-pub-YOUR_PUBLISHER_ID',
+      settings: settings,
+    });
+  }
 
   // Don't render if AdSense is disabled or no slot ID
   if (!isEnabled || !adSlot) {

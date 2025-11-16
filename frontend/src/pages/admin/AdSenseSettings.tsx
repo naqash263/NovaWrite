@@ -43,6 +43,7 @@ export default function AdSenseSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adsense-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['adsense-settings-active'] });
       addToast({
         type: 'success',
         title: 'Settings Saved',
@@ -68,6 +69,7 @@ export default function AdSenseSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adsense-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['adsense-settings-active'] });
       addToast({
         type: 'success',
         title: 'Settings Reset',
@@ -87,6 +89,7 @@ export default function AdSenseSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adsense-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['adsense-settings-active'] });
     },
   });
 
@@ -111,7 +114,15 @@ export default function AdSenseSettings() {
   };
 
   const handleSave = () => {
-    saveMutation.mutate(localSettings);
+    // Ensure settings with values are marked as active
+    const settingsToSave = localSettings.map(setting => ({
+      ...setting,
+      // Mark as active if it has a value (except for 'enabled' which is controlled separately)
+      is_active: setting.key === 'enabled' 
+        ? setting.is_active 
+        : (setting.value && setting.value.trim() !== '') ? true : setting.is_active
+    }));
+    saveMutation.mutate(settingsToSave);
   };
 
   const handleReset = () => {
