@@ -85,10 +85,9 @@ class UserManagementController extends Controller
 
         $updateData = $request->only(['name', 'email', 'role']);
 
-        // Handle password update - only update if password is provided and not empty
-        // Note: User model has 'password' => 'hashed' cast, so we don't need to hash manually
-        if ($request->filled('password') && !empty(trim($request->password))) {
-            $updateData['password'] = $request->password; // Model will auto-hash via cast
+        // Handle password update
+        if ($request->has('password') && $request->password) {
+            $updateData['password'] = Hash::make($request->password);
         }
 
         $user->update($updateData);

@@ -81,9 +81,8 @@ class UserController extends Controller
             'role' => $request->role,
         ];
 
-        // Handle password update - User model has 'password' => 'hashed' cast, so we don't need to hash manually
-        if ($request->filled('password') && !empty(trim($request->password))) {
-            $updateData['password'] = $request->password; // Model will auto-hash via cast
+        if ($request->filled('password')) {
+            $updateData['password'] = Hash::make($request->password);
         }
 
         $user->update($updateData);

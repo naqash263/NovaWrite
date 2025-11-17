@@ -116,13 +116,26 @@ class AdSenseSettingsController extends Controller
             $updated = [];
             
             foreach ($request->settings as $settingData) {
+                $value = $settingData['value'] ?? '';
+                $hasValue = !empty($value) && trim($value) !== '';
+                
+                // Auto-activate settings that have values (except 'enabled' which is controlled separately)
+                $shouldBeActive = false;
+                if ($settingData['key'] === 'enabled') {
+                    // For 'enabled', use the provided is_active value or default to true if value is 'true'
+                    $shouldBeActive = $settingData['is_active'] ?? ($value === 'true');
+                } else {
+                    // For other settings, mark as active if they have a value
+                    $shouldBeActive = $hasValue ? true : ($settingData['is_active'] ?? false);
+                }
+                
                 $setting = AdSenseSettings::updateOrCreate(
                     ['key' => $settingData['key']],
                     [
-                        'value' => $settingData['value'] ?? '',
+                        'value' => $value,
                         'title' => $settingData['title'] ?? ucfirst(str_replace('_', ' ', $settingData['key'])),
                         'description' => $settingData['description'] ?? null,
-                        'is_active' => $settingData['is_active'] ?? true,
+                        'is_active' => $shouldBeActive,
                         'sort_order' => $settingData['sort_order'] ?? 0,
                     ]
                 );
@@ -410,6 +423,55 @@ class AdSenseSettingsController extends Controller
             // Return empty ads.txt on error (better than 500 error for crawlers)
             return response('', 200)
                 ->header('Content-Type', 'text/plain; charset=utf-8');
+        }
+    }
+
+    /**
+     * Debug endpoint to see all settings (including inactive)
+     * Useful for troubleshooting why ads aren't showing
+     */
+    public function debug(): JsonResponse
+    {
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('ad_sense_settings')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Table does not exist',
+                    'data' => []
+                ]);
+            }
+
+            $allSettings = AdSenseSettings::orderBy('sort_order')
+                ->get()
+                ->map(function ($setting) {
+                    return [
+                        'id' => $setting->id,
+                        'key' => $setting->key,
+                        'value' => $setting->value,
+                        'is_active' => $setting->is_active,
+                        'title' => $setting->title,
+                    ];
+                });
+
+            $activeSettings = AdSenseSettings::active()
+                ->orderBy('sort_order')
+                ->pluck('value', 'key')
+                ->toArray();
+
+            return response()->json([
+                'success' => true,
+                'all_settings' => $allSettings,
+                'active_settings' => $activeSettings,
+                'active_count' => count($activeSettings),
+                'total_count' => $allSettings->count(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdSense debug error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => []
+            ], 500);
         }
     }
 }

@@ -311,6 +311,7 @@ Route::get('/home-settings', [\App\Http\Controllers\Api\Admin\HomeSettingsContro
 
 // Public AdSense settings (no authentication required - for frontend)
 Route::get('/adsense-settings/active', [\App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'getActive']);
+Route::get('/adsense-settings/debug', [\App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'debug']);
 
 // Debug endpoint to check JWT configuration
 Route::get('/debug/jwt', function () {
