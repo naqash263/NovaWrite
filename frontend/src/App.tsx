@@ -17,6 +17,8 @@ const Blog = lazy(() => import('./pages/Blog'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
 const Workflows = lazy(() => import('./pages/Workflows'));
 const WorkflowDetail = lazy(() => import('./pages/WorkflowDetail'));
+const Projects = lazy(() => import('./pages/Projects'));
+const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const UserLogin = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
@@ -36,6 +38,7 @@ const Files = lazy(() => import('./pages/admin/Files'));
 const WorkflowCategories = lazy(() => import('./pages/admin/workflows/WorkflowCategories'));
 const AdminWorkflows = lazy(() => import('./pages/admin/Workflows'));
 const TestWorkflows = lazy(() => import('./pages/admin/TestWorkflows'));
+const AdminProjects = lazy(() => import('./pages/admin/Projects'));
 const Users = lazy(() => import('./pages/admin/Users'));
 const UserGroups = lazy(() => import('./pages/admin/UserGroups'));
 const ApiTokens = lazy(() => import('./pages/admin/ApiTokens'));
@@ -91,6 +94,8 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/workflows" element={<Workflows />} />
               <Route path="/workflows/:slug" element={<WorkflowDetail />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/:slug" element={<ProjectDetail />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
@@ -116,6 +121,7 @@ function App() {
               <Route path="/admin/workflows/categories" element={<ProtectedRoute requireAdmin><WorkflowCategories /></ProtectedRoute>} />
               <Route path="/admin/workflows" element={<ProtectedRoute requireAdmin><AdminWorkflows /></ProtectedRoute>} />
               <Route path="/admin/test-workflows" element={<ProtectedRoute requireAdmin><TestWorkflows /></ProtectedRoute>} />
+              <Route path="/admin/projects" element={<ProtectedRoute requireAdmin><AdminProjects /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute requireAdmin><Users /></ProtectedRoute>} />
               <Route path="/admin/user-groups" element={<ProtectedRoute requireAdmin><UserGroups /></ProtectedRoute>} />
               <Route path="/admin/api-tokens" element={<ProtectedRoute requireAdmin><ApiTokens /></ProtectedRoute>} />

@@ -30,6 +30,10 @@ interface Workflow {
   slug: string;
   summary: string;
   description: string;
+  product_description?: string;
+  meta_description?: string;
+  meta_keywords?: string | string[];
+  seo_title?: string;
   instructions?: string;
   tools: string[];
   benefits: string[];
@@ -65,37 +69,14 @@ export default function WorkflowDetail() {
 
   // Generate a proper SEO description
   const getDescription = () => {
-    if (!workflow) return '';
+    if (!workflow) return 'Loading workflow details...';
     
-    // If summary exists and is long enough, use it
-    if (workflow.summary && workflow.summary.length >= 120) {
-      return workflow.summary;
-    }
-    
-    // Otherwise, create a description from available data
-    const parts: string[] = [];
-    
-    if (workflow.title) {
-      parts.push(workflow.title);
-    }
-    
-    if (workflow.category?.name) {
-      parts.push(`${workflow.category.name} workflow`);
-    }
-    
-    if (workflow.tools && workflow.tools.length > 0) {
-      parts.push(`using ${workflow.tools.slice(0, 3).join(', ')}`);
-    }
-    
-    if (workflow.difficulty) {
-      parts.push(`for ${workflow.difficulty} users`);
-    }
-    
-    if (workflow.summary) {
-      parts.push(`- ${workflow.summary}`);
-    }
-    
-    let description = parts.join(' ');
+    // Priority: meta_description > product_description > description > summary
+    let description = workflow.meta_description || 
+                     workflow.product_description || 
+                     workflow.description || 
+                     workflow.summary || 
+                     '';
     
     // If still too short, add default text
     if (description.length < 120) {
@@ -110,10 +91,38 @@ export default function WorkflowDetail() {
     return description;
   };
 
+  const getKeywords = () => {
+    if (!workflow) return [];
+    
+    // Combine meta_keywords (if string, split by comma) with tags
+    let keywords: string[] = [];
+    
+    if (workflow.meta_keywords) {
+      if (typeof workflow.meta_keywords === 'string') {
+        keywords = workflow.meta_keywords.split(',').map(k => k.trim()).filter(k => k);
+      } else if (Array.isArray(workflow.meta_keywords)) {
+        keywords = workflow.meta_keywords;
+      }
+    }
+    
+    // Add tags if they exist
+    if (workflow.tags && Array.isArray(workflow.tags)) {
+      keywords = [...keywords, ...workflow.tags];
+    }
+    
+    // Remove duplicates
+    return [...new Set(keywords)];
+  };
+
+  const getTitle = () => {
+    if (!workflow) return 'Loading...';
+    return workflow.seo_title || `${workflow.title} | AI Automation Workflow by Naqash Thaheem`;
+  };
+
   useSEO({
-    title: workflow ? `${workflow.title} | Naqash Thaheem` : 'Loading...',
+    title: getTitle(),
     description: getDescription(),
-    keywords: (workflow?.tags && Array.isArray(workflow.tags) ? workflow.tags : []) || [],
+    keywords: getKeywords(),
     url: `/workflows/${slug || ''}`,
     image: workflow?.image_url || '/images/workflows-og.jpg',
     type: 'article',
@@ -123,29 +132,47 @@ export default function WorkflowDetail() {
     structuredData: workflow ? 'custom' as const : undefined,
     customStructuredData: workflow ? {
       '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
+      '@type': ['SoftwareApplication', 'Product'],
       'name': workflow.title,
-      'description': workflow.summary,
+      'description': workflow.product_description || workflow.meta_description || workflow.description || workflow.summary || '',
       'url': `https://naqashthaheem.com/workflows/${slug}`,
-      'image': workflow.image_url || 'https://naqashthaheem.com/images/workflows-og.jpg',
+      'image': workflow.image_url ? `https://naqashthaheem.com${workflow.image_url}` : 'https://naqashthaheem.com/images/workflows-og.jpg',
       'applicationCategory': 'Automation Tool',
+      'applicationSubCategory': 'Business Process Automation',
+      'operatingSystem': 'Web-based',
       'offers': {
         '@type': 'Offer',
         'price': '0',
-        'priceCurrency': 'USD'
+        'priceCurrency': 'USD',
+        'availability': 'https://schema.org/InStock',
+        'url': `https://naqashthaheem.com/workflows/${slug}`
       },
       'aggregateRating': {
         '@type': 'AggregateRating',
         'ratingValue': '5',
-        'ratingCount': '1'
+        'ratingCount': '1',
+        'bestRating': '5',
+        'worstRating': '1'
       },
       'author': {
         '@type': 'Person',
         'name': 'Naqash Thaheem',
-        'url': 'https://naqashthaheem.com/about'
+        'url': 'https://naqashthaheem.com/about',
+        'jobTitle': 'Systems Analyst & AI Automation Specialist'
+      },
+      'publisher': {
+        '@type': 'Person',
+        'name': 'Naqash Thaheem',
+        'url': 'https://naqashthaheem.com'
       },
       'datePublished': workflow.created_at,
-      'dateModified': workflow.updated_at
+      'dateModified': workflow.updated_at,
+      'keywords': getKeywords().join(', '),
+      'inLanguage': 'en-US',
+      'isAccessibleForFree': true,
+      'category': workflow.category?.name || 'Automation',
+      'featureList': workflow.benefits || [],
+      'softwareRequirements': workflow.tools || []
     } : undefined
   });
 
@@ -376,6 +403,17 @@ export default function WorkflowDetail() {
             {/* Ad: Content Top */}
             <AdPlacement position="content-top" className="mb-8" />
             
+            {/* Product Description (if available) */}
+            {workflow.product_description && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Product Description</h2>
+                <div 
+                  className="prose max-w-none text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: workflow.product_description }}
+                />
+              </div>
+            )}
+
             {/* Description */}
             {workflow.description && (
               <div className="mb-8">

@@ -43,7 +43,7 @@ fi
 
 # Also kill by port (in case PIDs didn't work)
 kill_port 8001 "Backend"
-kill_port 3000 "Frontend"
+kill_port 3003 "Frontend"
 
 echo ""
 echo -e "${GREEN}✅ All servers stopped${NC}"

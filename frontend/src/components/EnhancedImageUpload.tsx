@@ -39,6 +39,11 @@ export default function EnhancedImageUpload({
   const [loadingFiles, setLoadingFiles] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Update preview when currentImage changes
+  useEffect(() => {
+    setPreview(currentImage || null);
+  }, [currentImage]);
+
   // Load existing files when component mounts
   useEffect(() => {
     loadExistingFiles();

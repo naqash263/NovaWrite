@@ -8,7 +8,7 @@
 
 Before starting, ensure you have:
 - ✅ Backend running on http://localhost:8001
-- ✅ Frontend running on http://localhost:3000
+- ✅ Frontend running on http://localhost:3003
 - ✅ PostgreSQL database running
 - ✅ Admin user account
 - ✅ At least one course created

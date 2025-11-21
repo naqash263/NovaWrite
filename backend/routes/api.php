@@ -612,6 +612,9 @@ Route::get('workflow-categories', [WorkflowController::class, 'categories']);
 Route::get('workflows', [WorkflowController::class, 'index']);
 Route::get('workflows/{slug}', [WorkflowController::class, 'show']);
 
+Route::get('projects', [App\Http\Controllers\Api\ProjectController::class, 'index']);
+Route::get('projects/{slug}', [App\Http\Controllers\Api\ProjectController::class, 'show']);
+
 Route::post('workflow-downloads', [WorkflowDownloadController::class, 'requestDownload']);
 Route::get('workflow-files/{id}/download', [WorkflowDownloadController::class, 'download'])->name('workflow-files.download');
 
@@ -726,6 +729,14 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::delete('workflows/{id}', [AdminWorkflowController::class, 'destroy']);
     Route::post('workflows/{id}/files', [AdminWorkflowController::class, 'attachFile']);
     Route::delete('workflows/{id}/files/{fileId}', [AdminWorkflowController::class, 'detachFile']);
+    
+    // Projects Management
+    Route::get('projects', [App\Http\Controllers\Api\Admin\ProjectController::class, 'index']);
+    Route::post('projects', [App\Http\Controllers\Api\Admin\ProjectController::class, 'store']);
+    Route::get('projects/{id}', [App\Http\Controllers\Api\Admin\ProjectController::class, 'show']);
+    Route::put('projects/{id}', [App\Http\Controllers\Api\Admin\ProjectController::class, 'update']);
+    Route::delete('projects/{id}', [App\Http\Controllers\Api\Admin\ProjectController::class, 'destroy']);
+    Route::get('projects/stats', [App\Http\Controllers\Api\Admin\ProjectController::class, 'stats']);
     
     // User management routes
     Route::get('users/stats', [AdminUserController::class, 'stats']);

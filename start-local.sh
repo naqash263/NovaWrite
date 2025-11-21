@@ -13,7 +13,6 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Get the script directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Function to check if port is in use
 check_port() {
@@ -33,14 +32,14 @@ if check_port 8001; then
     fi
 fi
 
-# Check if frontend port 3000 is already in use
-if check_port 3000; then
-    echo -e "${YELLOW}⚠️  Port 3000 is already in use (frontend may already be running)${NC}"
+# Check if frontend port 3003 is already in use
+if check_port 3003; then
+    echo -e "${YELLOW}⚠️  Port 3003 is already in use (frontend may already be running)${NC}"
     echo "   Kill it? (y/n)"
     read -r response
     if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        lsof -ti:3000 | xargs kill -9 2>/dev/null
-        echo -e "${GREEN}✅ Killed process on port 3000${NC}"
+        lsof -ti:3003 | xargs kill -9 2>/dev/null
+        echo -e "${GREEN}✅ Killed process on port 3003${NC}"
         sleep 1
     fi
 fi
@@ -71,7 +70,7 @@ echo ""
 # Start backend in background
 echo -e "${GREEN}🚀 Starting Backend (Laravel)...${NC}"
 cd "$SCRIPT_DIR/backend"
-php artisan serve > /dev/null 2>&1 &
+php artisan serve --host=127.0.0.1 --port=8001 > /dev/null 2>&1 &
 BACKEND_PID=$!
 sleep 2
 
@@ -93,8 +92,8 @@ FRONTEND_PID=$!
 sleep 3
 
 # Check if frontend started successfully
-if check_port 3000; then
-    echo -e "${GREEN}✅ Frontend running at http://localhost:3000${NC}"
+if check_port 3003; then
+    echo -e "${GREEN}✅ Frontend running at http://localhost:3003${NC}"
 else
     echo -e "${YELLOW}❌ Frontend failed to start${NC}"
     echo "   Try manually: cd frontend && npm run dev"
@@ -106,7 +105,7 @@ echo -e "${GREEN}  🎉 Local Development Environment Ready!${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════${NC}"
 echo ""
 echo -e "${BLUE}📝 Access Points:${NC}"
-echo "   Frontend:  http://localhost:3000"
+echo "   Frontend:  http://localhost:3003"
 echo "   Backend:   http://localhost:8001"
 echo "   API:       http://localhost:8001/api"
 echo ""
@@ -134,10 +133,10 @@ sleep 2
 echo -e "${GREEN}🌐 Opening browser...${NC}"
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
-    open http://localhost:3000
+    open http://localhost:3003
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Linux
-    xdg-open http://localhost:3000
+    xdg-open http://localhost:3003
 fi
 
 echo ""

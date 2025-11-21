@@ -303,11 +303,17 @@ class FileController extends Controller
     public function serve($path)
     {
         try {
-            // Construct the full file path
-            $filePath = storage_path('app/public/uploads/' . $path);
+            // The path already includes 'uploads/' from the route, so we use it directly
+            // Path format: uploads/filename.png
+            $filePath = storage_path('app/public/' . $path);
             
             // Check if file exists
             if (!file_exists($filePath)) {
+                \Log::warning('File not found', [
+                    'requested_path' => $path,
+                    'full_path' => $filePath,
+                    'exists' => file_exists($filePath)
+                ]);
                 return response()->json(['message' => 'File not found'], 404);
             }
             
@@ -327,6 +333,11 @@ class FileController extends Controller
             return response()->file($filePath, $headers);
             
         } catch (\Exception $e) {
+            \Log::error('Error serving file', [
+                'path' => $path,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'message' => 'Error serving file.',
                 'error' => $e->getMessage()

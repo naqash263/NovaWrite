@@ -44,6 +44,10 @@ export default function Workflows() {
     title: '',
     summary: '',
     description: '',
+    product_description: '',
+    meta_description: '',
+    meta_keywords: '',
+    seo_title: '',
     tools: [] as string[],
     benefits: [] as string[],
     status: 'draft',
@@ -203,6 +207,10 @@ export default function Workflows() {
       title: '',
       summary: '',
       description: '',
+      product_description: '',
+      meta_description: '',
+      meta_keywords: '',
+      seo_title: '',
       tools: [],
       benefits: [],
       status: 'draft',
@@ -225,6 +233,12 @@ export default function Workflows() {
       title: workflow.title,
       summary: workflow.summary || '',
       description: workflow.description || '',
+      product_description: (workflow as any).product_description || '',
+      meta_description: (workflow as any).meta_description || '',
+      meta_keywords: typeof (workflow as any).meta_keywords === 'string' 
+        ? (workflow as any).meta_keywords 
+        : ((workflow as any).meta_keywords || []).join(', '),
+      seo_title: (workflow as any).seo_title || '',
       tools: workflow.tools || [],
       benefits: workflow.benefits || [],
       status: workflow.status || 'draft',
@@ -346,6 +360,69 @@ export default function Workflows() {
                 placeholder="Enter workflow description..."
                 height={300}
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Product Description (AI & SEO Friendly)
+                <span className="text-xs text-gray-500 ml-2">Used for product listings and search engines</span>
+              </label>
+              <RichTextEditor
+                value={formData.product_description}
+                onChange={(product_description) => setFormData({ ...formData, product_description })}
+                placeholder="Enter detailed product description optimized for AI and search engines..."
+                height={250}
+              />
+              <p className="text-xs text-gray-500 mt-1">This description will be used for SEO and AI search optimization</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  SEO Title
+                  <span className="text-xs text-gray-500 ml-2">(Optional - defaults to workflow title)</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.seo_title}
+                  onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder="e.g., Best AI Automation Workflow for CRM Integration"
+                  maxLength={70}
+                />
+                <p className="text-xs text-gray-500 mt-1">Recommended: 50-60 characters</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Meta Description
+                  <span className="text-xs text-gray-500 ml-2">(For search engines)</span>
+                </label>
+                <textarea
+                  value={formData.meta_description}
+                  onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder="Brief description for search engine results..."
+                  rows={3}
+                  maxLength={160}
+                />
+                <p className="text-xs text-gray-500 mt-1">Recommended: 120-160 characters</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Meta Keywords
+                <span className="text-xs text-gray-500 ml-2">(Comma-separated for SEO)</span>
+              </label>
+              <input
+                type="text"
+                value={formData.meta_keywords}
+                onChange={(e) => setFormData({ ...formData, meta_keywords: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                placeholder="e.g., AI automation, workflow, CRM integration, business intelligence"
+              />
+              <p className="text-xs text-gray-500 mt-1">Separate keywords with commas</p>
             </div>
 
             <EnhancedImageUpload

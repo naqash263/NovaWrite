@@ -121,6 +121,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         items: [
       { path: '/admin/posts', label: 'Posts', icon: '📝' },
       { path: '/admin/workflows', label: 'Workflows', icon: '⚡' },
+      { path: '/admin/projects', label: 'My Projects', icon: '📁' },
       { path: '/admin/courses', label: 'Courses', icon: '📚' },
       { path: '/admin/files', label: 'Files', icon: '📁' },
           { path: '/admin/cv-templates', label: 'CV Templates', icon: '📄' },
@@ -341,17 +342,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
                 
                 <Link
-                  to="/courses"
+                  to="/projects"
                   className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    location.pathname.startsWith('/courses')
+                    location.pathname.startsWith('/projects')
                       ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
                       : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50 hover:shadow-sm'
                   }`}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
-                  Courses
+                  Projects
                 </Link>
                 
                 <Link
@@ -558,6 +559,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           <p className="text-xs text-gray-500">{user.email}</p>
                         </div>
                         
+                  {user.role === 'admin' && (
+                    <Link
+                      to="/admin/projects"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <span className="mr-3">📁</span>
+                      Manage Projects
+                    </Link>
+                  )}
+                  
                   <Link
                     to="/my-courses"
                           onClick={() => setUserDropdownOpen(false)}
@@ -668,17 +680,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   Home
                 </Link>
                 <Link
-                  to="/courses"
-                      className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
-                        location.pathname.startsWith('/courses')
-                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                  Courses
+                  to="/projects"
+                  className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                    location.pathname.startsWith('/projects')
+                      ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Projects
                 </Link>
                     <Link
                       to="/workflows"
@@ -859,6 +871,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   
                   {user ? (
                     <>
+                      {user.role === 'admin' && (
+                        <Link
+                          to="/admin/projects"
+                          className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                        >
+                          <span className="mr-3">📁</span>
+                          Manage Projects
+                        </Link>
+                      )}
                       
                       <Link
                         to="/my-courses"
@@ -975,11 +996,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </svg>
                   Home
                 </Link></li>
-                <li><Link to="/courses" className="text-gray-400 hover:text-white transition-colors flex items-center group">
+                <li><Link to="/projects" className="text-gray-400 hover:text-white transition-colors flex items-center group">
                   <svg className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
-                  Courses
+                  Projects
                 </Link></li>
                 <li><Link to="/workflows" className="text-gray-400 hover:text-white transition-colors flex items-center group">
                   <svg className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

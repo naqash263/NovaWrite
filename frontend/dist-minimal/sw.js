@@ -64,7 +64,7 @@ self.addEventListener('fetch', (event) => {
       url.pathname.includes('?t=') ||
       url.pathname.includes('@vite') ||
       url.pathname.includes('@fs') ||
-      url.hostname === 'localhost' && url.port === '3000' && url.pathname.startsWith('/src/')) {
+      url.hostname === 'localhost' && url.port === '3003' && url.pathname.startsWith('/src/')) {
     return; // Let the browser handle these requests normally
   }
 
