@@ -975,6 +975,34 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </svg>
                 </a>
                 <a 
+                  href="https://www.fiverr.com/hoiyothaheem" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg hover:bg-green-600 transition-colors group"
+                  aria-label="Fiverr"
+                >
+                  <img 
+                    src="/images/fiverr-icon.svg" 
+                    alt="Fiverr" 
+                    className="w-5 h-5"
+                    onError={(e) => {
+                      // Fallback to SVG if image doesn't exist
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                      svg.setAttribute('class', 'w-5 h-5 fill-none stroke-current');
+                      svg.setAttribute('viewBox', '0 0 24 24');
+                      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                      path.setAttribute('stroke-linecap', 'round');
+                      path.setAttribute('stroke-linejoin', 'round');
+                      path.setAttribute('stroke-width', '2');
+                      path.setAttribute('d', 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z');
+                      svg.appendChild(path);
+                      target.parentNode?.appendChild(svg);
+                    }}
+                  />
+                </a>
+                <a 
                   href="mailto:contact@naqashthaheem.com"
                   className="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors group"
                   aria-label="Email"

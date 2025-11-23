@@ -364,6 +364,36 @@ export default function Home() {
                 </svg>
               </a>
               <a 
+                href="https://www.fiverr.com/hoiyothaheem" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-white hover:text-green-300 transform hover:scale-110 transition-all duration-300"
+                aria-label="Fiverr"
+              >
+                <img 
+                  src="/images/fiverr-icon.svg" 
+                  alt="Fiverr" 
+                  className="w-8 h-8"
+                  onError={(e) => {
+                    // Fallback to SVG if image doesn't exist
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('class', 'w-8 h-8');
+                    svg.setAttribute('fill', 'none');
+                    svg.setAttribute('stroke', 'currentColor');
+                    svg.setAttribute('viewBox', '0 0 24 24');
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('stroke-linecap', 'round');
+                    path.setAttribute('stroke-linejoin', 'round');
+                    path.setAttribute('stroke-width', '2');
+                    path.setAttribute('d', 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z');
+                    svg.appendChild(path);
+                    target.parentNode?.appendChild(svg);
+                  }}
+                />
+              </a>
+              <a 
                 href="mailto:contact@naqashthaheem.com"
                 className="text-white hover:text-blue-200 transform hover:scale-110 transition-all duration-300"
                 aria-label="Email"
@@ -1066,18 +1096,128 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate">
+      {/* Fiverr Gigs Section */}
+      <section className="py-16 bg-gradient-to-br from-green-50 to-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Client Success Stories</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">My Fiverr Services</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Hear from businesses that transformed their operations with automation and analytics
+              Professional automation and business intelligence services available on Fiverr
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Gig 1 */}
+            <a
+              href="https://www.fiverr.com/s/WEpQVQ7"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100 group"
+            >
+              <div className="h-48 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                <svg className="w-24 h-24 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                </svg>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">Automation Services</h3>
+                  <svg className="w-5 h-5 text-green-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </div>
+                <p className="text-gray-600 mb-4">Workflow automation, CRM integration, and business process optimization</p>
+                <div className="flex items-center text-green-600 font-semibold">
+                  <span>View on Fiverr</span>
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </div>
+              </div>
+            </a>
+
+            {/* Gig 2 */}
+            <a
+              href="https://www.fiverr.com/s/xXgqwml"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100 group"
+            >
+              <div className="h-48 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                <svg className="w-24 h-24 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">Business Intelligence</h3>
+                  <svg className="w-5 h-5 text-green-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </div>
+                <p className="text-gray-600 mb-4">Power BI dashboards, data analysis, and business intelligence solutions</p>
+                <div className="flex items-center text-green-600 font-semibold">
+                  <span>View on Fiverr</span>
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </div>
+              </div>
+            </a>
+
+            {/* Gig 3 */}
+            <a
+              href="https://www.fiverr.com/s/P2YQbLp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100 group"
+            >
+              <div className="h-48 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                <svg className="w-24 h-24 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">System Integration</h3>
+                  <svg className="w-5 h-5 text-green-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </div>
+                <p className="text-gray-600 mb-4">CRM integration, API development, and system connectivity solutions</p>
+                <div className="flex items-center text-green-600 font-semibold">
+                  <span>View on Fiverr</span>
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </div>
+              </div>
+            </a>
+          </div>
+          <div className="text-center mt-12">
+            <a
+              href="https://www.fiverr.com/hoiyothaheem"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-green-600 text-white px-8 py-4 rounded-full hover:bg-green-700 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg"
+            >
+              View All Services on Fiverr
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Fiverr Reviews Section */}
+      <section className="py-16 bg-white scroll-animate">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Client Reviews</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              What clients say about my Fiverr services
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Testimonial 1 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+            {/* Review 1 */}
+            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
               <div className="flex items-center gap-2 mb-4">
                 {[...Array(5)].map((_, i) => (
                   <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -1086,67 +1226,21 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                 ))}
               </div>
               <p className="text-gray-600 mb-6 italic leading-relaxed">
-                "Naqash transformed our sales process with an automated CRM workflow that saved us 20+ hours per week. The Power BI dashboard he built gives us real-time insights we never had before."
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  AS
-                </div>
-                <div>
-                  <div className="font-bold text-gray-900">Ahmed Saleh</div>
-                  <div className="text-sm text-gray-500">Sales Director, Tech Solutions LLC</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 2 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
-              <div className="flex items-center gap-2 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-6 italic leading-relaxed">
-                "The AI-powered resume screening system cut our hiring time by 60%. Naqash's technical expertise and business understanding made the project a huge success."
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  LK
-                </div>
-                <div>
-                  <div className="font-bold text-gray-900">Lisa Khan</div>
-                  <div className="text-sm text-gray-500">HR Manager, Global Enterprises</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 3 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
-              <div className="flex items-center gap-2 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-6 italic leading-relaxed">
-                "Professional, reliable, and incredibly skilled. The email automation system Naqash built increased our engagement rates by 45%. Highly recommend!"
+                "Amazing customer support, hopped on a call twice to clarify and get all the details accordingly to our vision. Hoiyothaheem is one of our favorite Fiverr specialist, thanks for the outstanding work!"
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  MR
+                  JD
                 </div>
                 <div>
-                  <div className="font-bold text-gray-900">Mohammed Rashid</div>
-                  <div className="text-sm text-gray-500">Marketing Director, Digital Agency</div>
+                  <div className="font-bold text-gray-900">mantaskarmaza</div>
+                  <div className="text-sm text-gray-500">via Fiverr</div>
                 </div>
               </div>
             </div>
 
-            {/* Testimonial 4 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+            {/* Review 2 */}
+            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
               <div className="flex items-center gap-2 mb-4">
                 {[...Array(5)].map((_, i) => (
                   <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -1155,21 +1249,21 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                 ))}
               </div>
               <p className="text-gray-600 mb-6 italic leading-relaxed">
-                "The data scraping solution Naqash built for us processes 50,000+ records daily with 99.9% accuracy. It's been running flawlessly for 8 months now."
+                "Outstanding Power BI dashboard! The insights are clear and actionable. Highly recommend this seller."
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  SK
+                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  SM
                 </div>
                 <div>
-                  <div className="font-bold text-gray-900">Sarah Kim</div>
-                  <div className="text-sm text-gray-500">Data Manager, TechCorp Solutions</div>
+                  <div className="font-bold text-gray-900">tomgibbons426</div>
+                  <div className="text-sm text-gray-500">via Fiverr</div>
                 </div>
               </div>
             </div>
 
-            {/* Testimonial 5 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+            {/* Review 3 */}
+            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
               <div className="flex items-center gap-2 mb-4">
                 {[...Array(5)].map((_, i) => (
                   <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -1178,66 +1272,28 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                 ))}
               </div>
               <p className="text-gray-600 mb-6 italic leading-relaxed">
-                "Outstanding technical expertise and communication. The Power BI dashboard Naqash created gives us insights we never had before. ROI was achieved in just 2 weeks."
+                "Perfect CRM integration! Everything works seamlessly. Great communication throughout the project."
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  DA
+                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  RK
                 </div>
                 <div>
-                  <div className="font-bold text-gray-900">David Anderson</div>
-                  <div className="text-sm text-gray-500">CEO, Analytics Pro</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 6 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
-              <div className="flex items-center gap-2 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-6 italic leading-relaxed">
-                "Naqash's automation solutions saved us 30+ hours per week. The n8n workflows he built are robust and easy to maintain. Highly recommended!"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-rose-400 to-rose-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  EM
-                </div>
-                <div>
-                  <div className="font-bold text-gray-900">Emma Martinez</div>
-                  <div className="text-sm text-gray-500">Operations Director, FlowTech</div>
+                  <div className="font-bold text-gray-900">masterbig</div>
+                  <div className="text-sm text-gray-500">via Fiverr</div>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Client Logos Section */}
-          <div className="mt-16">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Trusted by Leading Companies</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center opacity-60">
-              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
-                <span className="text-gray-600 font-semibold text-sm">TechCorp</span>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
-                <span className="text-gray-600 font-semibold text-sm">Analytics Pro</span>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
-                <span className="text-gray-600 font-semibold text-sm">FlowTech</span>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
-                <span className="text-gray-600 font-semibold text-sm">DataFlow</span>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
-                <span className="text-gray-600 font-semibold text-sm">AutoSys</span>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center h-16">
-                <span className="text-gray-600 font-semibold text-sm">BI Solutions</span>
-              </div>
-            </div>
+          <div className="text-center mt-12">
+            <a
+              href="https://www.fiverr.com/hoiyothaheem"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-green-600 hover:text-green-700 font-semibold text-lg"
+            >
+              Read More Reviews on Fiverr →
+            </a>
           </div>
         </div>
       </section>
