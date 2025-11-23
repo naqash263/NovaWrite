@@ -32,8 +32,15 @@ export function useAdSenseSettings() {
   });
 
   const settings = data || {};
-  const isEnabled = settings.enabled === 'true';
+  // If enabled is explicitly 'false', disable ads. Otherwise, if we have client_id and slots, enable ads
+  const enabledValue = settings.enabled;
   const hasClientId = settings.client_id && settings.client_id !== '' && settings.client_id !== 'ca-pub-YOUR_PUBLISHER_ID';
+  const hasSlots = settings.slot_header || settings.slot_sidebar || settings.slot_content_top || settings.slot_content_middle || settings.slot_content_bottom || settings.slot_footer || settings.slot_between_posts;
+  
+  // Enable ads if:
+  // 1. enabled is explicitly 'true', OR
+  // 2. enabled is missing/undefined but we have client_id and at least one slot (backward compatibility)
+  const isEnabled = enabledValue === 'true' || (enabledValue === undefined && hasClientId && hasSlots);
 
   // Debug logging (only in development or if ads not showing)
   useEffect(() => {

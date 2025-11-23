@@ -64,10 +64,18 @@ class AdSenseSettingsController extends Controller
                 ]);
             }
 
+            // Get all active settings
             $settings = AdSenseSettings::active()
                 ->orderBy('sort_order')
                 ->pluck('value', 'key')
                 ->toArray();
+
+            // Always include 'enabled' setting if it exists, regardless of is_active status
+            // This ensures the frontend can check if AdSense is enabled
+            $enabledSetting = AdSenseSettings::where('key', 'enabled')->first();
+            if ($enabledSetting) {
+                $settings['enabled'] = $enabledSetting->value;
+            }
 
             return response()->json([
                 'success' => true,
