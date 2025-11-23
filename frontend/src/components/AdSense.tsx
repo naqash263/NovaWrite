@@ -68,44 +68,69 @@ export default function AdSense({
     const initializeAd = () => {
       if (!adRef.current) {
         console.log('[AdSense] Ad ref not ready');
-        return;
+        return false;
       }
 
-      // Check if ad is already initialized (has children)
-      if (adRef.current.hasChildNodes()) {
+      // Check if ad is already initialized (has children or data-ad-status attribute)
+      if (adRef.current.hasChildNodes() || adRef.current.getAttribute('data-ad-status')) {
         console.log('[AdSense] Ad already initialized');
-        return;
+        return true;
       }
 
-      if (window.adsbygoogle) {
+      if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
         try {
-          console.log('[AdSense] Initializing ad:', { adSlot, dataAdClient });
+          console.log('[AdSense] Initializing ad:', { adSlot, dataAdClient, adFormat });
+          // Push empty object to initialize the ad (Google reads data attributes from ins element)
           (window.adsbygoogle = window.adsbygoogle || []).push({});
+          return true;
         } catch (e) {
           console.error('[AdSense] Error initializing ad:', e);
+          return false;
         }
       } else {
         console.log('[AdSense] adsbygoogle not available yet');
+        return false;
       }
     };
 
-    // Wait for script to load
+    // Wait for script to load and DOM to be ready
+    const tryInitialize = () => {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          setTimeout(() => {
+            if (!initializeAd()) {
+              // Retry after a short delay if initialization failed
+              setTimeout(tryInitialize, 500);
+            }
+          }, 200);
+        });
+      } else {
+        setTimeout(() => {
+          if (!initializeAd()) {
+            // Retry after a short delay if initialization failed
+            setTimeout(tryInitialize, 500);
+          }
+        }, 200);
+      }
+    };
+
+    // Start initialization process
     if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
-      // Small delay to ensure DOM is ready
-      setTimeout(initializeAd, 100);
+      tryInitialize();
     } else {
+      // Wait for script to load
       const checkInterval = setInterval(() => {
         if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
-          initializeAd();
           clearInterval(checkInterval);
+          tryInitialize();
         }
       }, 100);
 
-      // Cleanup after 10 seconds
+      // Cleanup after 15 seconds
       const timeout = setTimeout(() => {
         clearInterval(checkInterval);
         console.warn('[AdSense] Timeout waiting for script to load');
-      }, 10000);
+      }, 15000);
 
       return () => {
         clearInterval(checkInterval);

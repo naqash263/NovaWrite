@@ -35,6 +35,24 @@ export function useAdSenseSettings() {
   const isEnabled = settings.enabled === 'true';
   const hasClientId = settings.client_id && settings.client_id !== '' && settings.client_id !== 'ca-pub-YOUR_PUBLISHER_ID';
 
+  // Debug logging (only in development or if ads not showing)
+  useEffect(() => {
+    if (import.meta.env.DEV || !isEnabled || !hasClientId) {
+      console.log('[useAdSenseSettings] Settings loaded:', {
+        enabled: settings.enabled,
+        isEnabled,
+        hasClientId,
+        clientId: settings.client_id,
+        slots: {
+          header: settings.slot_header,
+          sidebar: settings.slot_sidebar,
+          content_top: settings.slot_content_top,
+        },
+        allSettings: settings,
+      });
+    }
+  }, [settings, isEnabled, hasClientId]);
+
   // Update AdSense meta tag when settings are loaded
   useEffect(() => {
     if (settings.client_id && hasClientId) {
