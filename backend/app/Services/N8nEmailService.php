@@ -20,7 +20,7 @@ class N8nEmailService
     /**
      * Send email data to N8n webhook
      */
-    public function sendToN8n(string $action, array $recipient, array $details): bool
+    public function sendToN8n(string $action, array $recipient, array $details, ?int $customTimeout = null): bool
     {
         $config = N8nConfiguration::getActive();
         
@@ -40,17 +40,20 @@ class N8nEmailService
             'details' => $details
         ];
 
+        $timeout = $customTimeout ?? $config->webhook_timeout;
+
         try {
             Log::info("Sending to N8n webhook", [
                 'url' => $config->webhook_url,
                 'action' => $action,
                 'recipient' => $recipient['email'],
+                'timeout' => $timeout,
                 'payload' => json_encode($payload)
             ]);
 
             $response = $this->client->post($config->webhook_url, [
                 'json' => $payload,
-                'timeout' => $config->webhook_timeout,
+                'timeout' => $timeout,
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json'
