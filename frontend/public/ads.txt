@@ -1,2 +1,6 @@
+# This file is a fallback. The dynamic ads.txt is served from backend at /ads.txt
+# Backend route reads from admin AdSense settings and generates ads.txt dynamically
+# Format: google.com, pub-XXXXXXXXXX, DIRECT, f08c47fec0942fa0
+# 
+# Fallback value (will be overridden by backend if admin configures AdSense):
 google.com, pub-7546164915439451, DIRECT, f08c47fec0942fa0
-

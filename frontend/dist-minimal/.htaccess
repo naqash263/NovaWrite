@@ -1,5 +1,9 @@
 RewriteEngine On
 
+# Handle ads.txt requests - route to backend API (dynamic from admin settings)
+RewriteCond %{REQUEST_URI} ^/ads\.txt$ [NC]
+RewriteRule ^ads\.txt$ /api/ads.txt [L]
+
 # Handle storage files first - redirect to backend storage
 RewriteCond %{REQUEST_URI} ^/storage/(.*)$
 RewriteRule ^storage/(.*)$ /api/storage/$1 [L]

@@ -38,10 +38,20 @@ export default function AdPlacement({ position, className = '' }: AdPlacementPro
     });
   }
 
-  // Don't render if AdSense is disabled or no slot ID
-  if (!isEnabled || !adSlot) {
+  // In development mode, always show for layout testing
+  const isDevelopment = import.meta.env.DEV;
+  
+  // In production, don't render if AdSense is disabled or no slot ID
+  if (!isDevelopment && (!isEnabled || !adSlot)) {
     return null;
   }
+
+  // Use real values if available (when admin activates), otherwise use test values for dev testing
+  const displaySlot = adSlot || (isDevelopment ? `TEST-${position.toUpperCase()}` : '');
+  const displayClientId = clientId || (isDevelopment ? 'ca-pub-TEST' : '');
+  
+  // Show in dev mode always, or in production if enabled with real config
+  const shouldShow = isDevelopment || (isEnabled && adSlot);
 
   // Different ad formats for different positions
   const getAdConfig = () => {
@@ -77,15 +87,20 @@ export default function AdPlacement({ position, className = '' }: AdPlacementPro
   const config = getAdConfig();
 
   // Wrap in container with proper styling
+  // Always show in dev mode, or if enabled in production
+  if (!shouldShow) {
+    return null;
+  }
+
   return (
     <div className={`ad-placement ad-placement-${position} ${className}`}>
       <AdSense
-        adSlot={adSlot}
+        adSlot={displaySlot}
         adFormat={config.adFormat}
         fullWidthResponsive={config.fullWidthResponsive}
         style={config.style}
         className={className}
-        dataAdClient={getSlot('client_id')}
+        dataAdClient={displayClientId}
       />
     </div>
   );
