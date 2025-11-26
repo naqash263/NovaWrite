@@ -9,6 +9,7 @@ import { API_CONFIG } from '../../config/api';
 import apiClient from '../../api/axios';
 import jsPDF from 'jspdf';
 import ApiKeyManager from '../../components/ApiKeyManager';
+import AdPlacement from '../../components/AdPlacement';
 
 
 // Custom File Input Component
@@ -2932,6 +2933,9 @@ export default function CVBuilder() {
           </p>
       </div>
 
+        {/* Ad Placement - Top */}
+        <AdPlacement position="content-top" className="mb-6" />
+
         {/* API Key Manager */}
         <div className="mb-6">
           <ApiKeyManager />
@@ -2958,6 +2962,9 @@ export default function CVBuilder() {
               {renderStepContent()}
       </div>
 
+        {/* Ad Placement - Middle (between content and navigation) */}
+        <AdPlacement position="content-middle" className="mb-6" />
+
         <StepNavigation
           currentStep={currentStep}
           totalSteps={totalSteps}
@@ -2967,6 +2974,9 @@ export default function CVBuilder() {
             />
           </div>
         </div>
+
+        {/* Ad Placement - Bottom */}
+        <AdPlacement position="content-bottom" className="mt-8" />
 
         {/* Clear Confirmation Modal */}
         {showClearConfirm && (
