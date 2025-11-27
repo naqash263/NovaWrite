@@ -75,6 +75,7 @@ const CareerPathPlanner = lazy(() => import('./pages/resources/CareerPathPlanner
 const JobSearchOptimizer = lazy(() => import('./pages/resources/JobSearchOptimizer'));
 const SkillsAssessment = lazy(() => import('./pages/resources/SkillsAssessment'));
 const CoverLetterGenerator = lazy(() => import('./pages/resources/CoverLetterGenerator'));
+const ConversionTools = lazy(() => import('./pages/resources/ConversionTools'));
 const N8nConfigurations = lazy(() => import('./pages/admin/N8nConfigurations'));
 const EmailQueue = lazy(() => import('./pages/admin/EmailQueue'));
 const EmailLogs = lazy(() => import('./pages/admin/EmailLogs'));
@@ -158,6 +159,7 @@ function App() {
         <Route path="/resources/job-search-optimizer" element={<JobSearchOptimizer />} />
         <Route path="/resources/skills-assessment" element={<SkillsAssessment />} />
         <Route path="/resources/cover-letter-generator" element={<CoverLetterGenerator />} />
+        <Route path="/resources/conversion-tools" element={<ConversionTools />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
