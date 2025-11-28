@@ -52,6 +52,14 @@ Route::prefix('career-tools')->group(function () {
     Route::post('/job-search/generate', [App\Http\Controllers\Api\CareerToolsController::class, 'generateJobSearchStrategy']);
 });
 
+// AI-powered utility tools (public access - authentication optional)
+Route::prefix('ai-tools')->group(function () {
+    Route::post('/text-summarizer/summarize', [App\Http\Controllers\Api\TextSummarizerController::class, 'summarize']);
+    Route::post('/article-rewriter/rewrite', [App\Http\Controllers\Api\ArticleRewriterController::class, 'rewrite']);
+    Route::post('/grammar-checker/check', [App\Http\Controllers\Api\GrammarCheckerController::class, 'check']);
+    Route::post('/language-translator/translate', [App\Http\Controllers\Api\LanguageTranslatorController::class, 'translate']);
+});
+
 // App analytics routes
 Route::middleware(\App\Http\Middleware\ApiAuth::class)->prefix('analytics')->group(function () {
     Route::post('/track/install', [App\Http\Controllers\Api\AppAnalyticsController::class, 'trackInstall']);

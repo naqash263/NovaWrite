@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useSEO } from '../../utils/seo';
 import { generateBreadcrumbSchema, generateFAQSchema, injectStructuredData } from '../../utils/structuredData';
 import AdPlacement from '../../components/AdPlacement';
@@ -195,9 +196,11 @@ const converterOptions: ConverterOption[] = [
 ];
 
 export default function ConversionTools() {
-  const [selectedConverter, setSelectedConverter] = useState<ConverterType>('length');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedConverter, setSelectedConverter] = useState<ConverterType>(
+    (searchParams.get('tool') as ConverterType) || 'length'
+  );
   const [searchQuery, setSearchQuery] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const selectedConverterInfo = converterOptions.find(c => c.id === selectedConverter);
   
@@ -278,6 +281,11 @@ export default function ConversionTools() {
     health: filteredConverters.filter(c => c.category === 'health'),
   };
 
+  const handleConverterSelect = (converterId: ConverterType) => {
+    setSelectedConverter(converterId);
+    setSearchParams({ tool: converterId });
+  };
+
   const renderConverter = () => {
     switch (selectedConverter) {
       case 'length': return <LengthConverter />;
@@ -301,255 +309,199 @@ export default function ConversionTools() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 px-4">
-            {selectedConverterInfo?.name || 'Conversion Tools'} - Free Online Unit Converters & Calculators
+        <div className="mb-6">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+            🔄 Conversion Tools
           </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-4 px-4">
-            {selectedConverterInfo?.seoDescription || 'Free, easy-to-use conversion tools for everyday life. Convert units, calculate values, and transform data instantly.'}
+          <p className="text-gray-600">
+            Free online conversion tools for measurements, utilities, technical, and health calculations
           </p>
-          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 px-4">
-            <span className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              Completely Free
-            </span>
-            <span className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              No Registration
-            </span>
-            <span className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              Instant Results
-            </span>
-            <span className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              Privacy-Focused
-            </span>
-          </div>
         </div>
 
-        {/* AI-Friendly Content Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8 max-w-4xl mx-auto">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">About {selectedConverterInfo?.name || 'Conversion Tools'}</h2>
-          <div className="prose prose-sm sm:prose-lg max-w-none text-gray-700">
-            <p className="mb-4">
-              {selectedConverterInfo?.name || 'Our conversion tools'} provide accurate, instant conversions for {selectedConverterInfo?.category === 'measurement' ? 'measurement units' : selectedConverterInfo?.category === 'utility' ? 'everyday utilities' : selectedConverterInfo?.category === 'technical' ? 'technical applications' : 'health and life calculations'}. 
-              Whether you're a student, professional, developer, or just need quick conversions, our tools are designed to be fast, accurate, and easy to use.
-            </p>
-            <p className="mb-4">
-              All conversions are performed instantly in your browser with no data transmission to servers. This ensures your privacy while providing lightning-fast results. 
-              Our tools support a wide range of units and formats, making them suitable for various use cases including education, business, development, and personal projects.
-            </p>
-            <p>
-              <strong>Key Features:</strong> Real-time conversions, multiple unit support, swap units functionality, accurate calculations, mobile-responsive design, 
-              no registration required, completely free, and privacy-focused with local processing.
-            </p>
-          </div>
-        </div>
-
-        {/* Ad Placement */}
-        <div className="max-w-4xl mx-auto mb-8">
-          <AdPlacement position="content-top" />
-        </div>
-
-        {/* Mobile Sidebar Toggle */}
-        <div className="lg:hidden mb-4">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors"
-          >
-            <span className="font-medium text-gray-900">
-              {selectedConverterInfo?.name || 'Select Converter'}
-            </span>
-            <svg 
-              className={`w-5 h-5 text-gray-500 transition-transform ${sidebarOpen ? 'rotate-180' : ''}`}
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
-          {/* Sidebar - Converter Selection */}
-          <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block lg:w-80 flex-shrink-0`}>
-            {/* Mobile Overlay */}
-            {sidebarOpen && (
-              <div
-                className="fixed inset-0 bg-gray-600 bg-opacity-50 z-40 lg:hidden"
-                onClick={() => setSidebarOpen(false)}
-              />
-            )}
-            
-            <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 ${sidebarOpen ? 'fixed inset-y-0 left-0 z-50 w-80 overflow-y-auto lg:relative lg:inset-auto' : ''} lg:sticky lg:top-8`}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Select Converter</h2>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="lg:hidden p-1 text-gray-400 hover:text-gray-600"
-                  aria-label="Close sidebar"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-md p-4 sticky top-4">
               {/* Search */}
               <div className="mb-4">
                 <input
                   type="text"
-                  placeholder="Search converters..."
+                  placeholder="Search tools..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
 
-              {/* Converter List */}
-              <div className="space-y-4 max-h-[calc(100vh-200px)] lg:max-h-[calc(100vh-300px)] overflow-y-auto">
-                {Object.entries(groupedConverters).map(([category, converters]) => {
-                  if (converters.length === 0) return null;
-                  
-                  return (
+              {/* Tool List */}
+              <div className="space-y-2">
+                {Object.entries(groupedConverters).map(([category, converters]) => (
+                  converters.length > 0 && (
                     <div key={category} className="mb-4">
-                      <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">
-                        {category === 'measurement' && '📏 Measurements'}
-                        {category === 'utility' && '🔧 Utilities'}
-                        {category === 'technical' && '💻 Technical'}
-                        {category === 'health' && '🏥 Health & Life'}
+                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        {category === 'measurement' ? 'Measurements' : category === 'utility' ? 'Utilities' : category === 'technical' ? 'Technical' : 'Health & Life'}
                       </h3>
-                      <div className="space-y-2">
-                        {converters.map((converter) => (
-                          <button
-                            key={converter.id}
-                            onClick={() => {
-                              setSelectedConverter(converter.id);
-                              setSidebarOpen(false);
-                            }}
-                            className={`w-full text-left p-3 sm:p-4 rounded-lg border transition-all duration-200 touch-manipulation ${
-                              selectedConverter === converter.id
-                                ? 'border-blue-500 bg-blue-50 text-blue-900 shadow-sm'
-                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 active:bg-gray-100'
-                            }`}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <span className="text-2xl">{converter.icon}</span>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-gray-900 text-sm">{converter.name}</h4>
-                                <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{converter.description}</p>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
+                      {converters.map((converter) => (
+                        <button
+                          key={converter.id}
+                          onClick={() => handleConverterSelect(converter.id)}
+                          className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-colors text-sm ${
+                            selectedConverter === converter.id
+                              ? 'bg-blue-100 text-blue-900 font-medium'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className="mr-2">{converter.icon}</span>
+                          {converter.name}
+                        </button>
+                      ))}
                     </div>
-                  );
-                })}
+                  )
+                ))}
               </div>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
-              {/* Converter Header */}
-              <div className="mb-4 sm:mb-6">
-                <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
-                  <span className="text-2xl sm:text-3xl">{selectedConverterInfo?.icon}</span>
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{selectedConverterInfo?.name}</h2>
-                </div>
-                <p className="text-sm sm:text-base text-gray-600">{selectedConverterInfo?.description}</p>
+          <div className="lg:col-span-3">
+            {/* Ad at top of tool */}
+            <div className="mb-6">
+              <AdPlacement position="content-top" />
+            </div>
+            
+            {renderConverter()}
+            
+            {/* SEO & AI-Friendly Content Sections */}
+            <div className="space-y-6 mt-8">
+              {/* About Section */}
+              <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">About {selectedConverterInfo?.name || 'Conversion Tools'}</h2>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  {selectedConverterInfo?.name || 'Our conversion tools'} provide accurate, instant conversions for {selectedConverterInfo?.category === 'measurement' ? 'measurement units' : selectedConverterInfo?.category === 'utility' ? 'everyday utilities' : selectedConverterInfo?.category === 'technical' ? 'technical applications' : 'health and life calculations'}. 
+                  Whether you're a student, professional, developer, or just need quick conversions, our tools are designed to be fast, accurate, and easy to use.
+                </p>
+                <p className="text-gray-700 leading-relaxed">
+                  All conversions are performed instantly in your browser with no data transmission to servers. This ensures your privacy while providing lightning-fast results. 
+                  Our tools support a wide range of units and formats, making them suitable for various use cases including education, business, development, and personal projects.
+                </p>
               </div>
 
-              {/* Converter Component */}
-              <div className="mt-8">
-                {renderConverter()}
+              {/* Use Cases */}
+              <div className="p-6 bg-gray-50 rounded-lg">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">✓</span>
+                    <span>Students converting units for homework and exams</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">✓</span>
+                    <span>Professionals working with international measurements</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">✓</span>
+                    <span>Developers converting between number systems and formats</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">✓</span>
+                    <span>Travelers converting currencies and time zones</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">✓</span>
+                    <span>Cooks and bakers converting recipe measurements</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">✓</span>
+                    <span>Health professionals calculating BMI and health metrics</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Features */}
+              <div className="p-6 bg-white border border-gray-200 rounded-lg">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-blue-600 font-bold">1</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-1">Real-Time Conversions</h4>
+                      <p className="text-sm text-gray-600">Instant results as you type, no waiting required</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-green-600 font-bold">2</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-1">Multiple Units</h4>
+                      <p className="text-sm text-gray-600">Support for dozens of units in each category</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-purple-600 font-bold">3</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-1">Swap Functionality</h4>
+                      <p className="text-sm text-gray-600">Quickly swap between source and target units</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-orange-600 font-bold">4</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-1">Privacy-First</h4>
+                      <p className="text-sm text-gray-600">All processing happens locally in your browser</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* FAQ Section */}
+              <div className="p-6 bg-blue-50 rounded-lg">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Are these conversion tools free to use?</h4>
+                    <p className="text-gray-700 text-sm">
+                      Yes, all conversion tools are completely free to use with no registration required. You can use them as many times as you need without any limitations or hidden fees.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">How accurate are the conversions?</h4>
+                    <p className="text-gray-700 text-sm">
+                      All conversions use standard conversion factors and are accurate to 6 decimal places. Currency conversions use real-time exchange rates from reliable financial data sources, updated automatically.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Can I use these tools on mobile devices?</h4>
+                    <p className="text-gray-700 text-sm">
+                      Yes, all conversion tools are fully responsive and work perfectly on mobile phones, tablets, and desktop computers. The interface adapts to your screen size for optimal usability.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Do these tools store my data?</h4>
+                    <p className="text-gray-700 text-sm">
+                      No, all conversions are performed locally in your browser. We do not store, track, or transmit any of your input data. Your privacy is our priority.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">What units are supported?</h4>
+                    <p className="text-gray-700 text-sm">
+                      Each converter supports multiple units relevant to its category. For example, the length converter supports meters, feet, inches, kilometers, miles, yards, and more. 
+                      Check the dropdown menu in each converter to see all available units.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Ad Placement */}
-            <div className="max-w-4xl mx-auto mt-8">
-              <AdPlacement position="content-bottom" />
-            </div>
-
-            {/* FAQ Section */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8 mt-6 sm:mt-8">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Frequently Asked Questions</h2>
-              <div className="space-y-4 sm:space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Are these conversion tools free to use?</h3>
-                  <p className="text-gray-600">
-                    Yes, all conversion tools are completely free to use with no registration required. You can use them as many times as you need without any limitations or hidden fees.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">How accurate are the conversions?</h3>
-                  <p className="text-gray-600">
-                    All conversions use standard conversion factors and are accurate to 6 decimal places. Currency conversions use real-time exchange rates from reliable financial data sources, updated automatically.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Can I use these tools on mobile devices?</h3>
-                  <p className="text-gray-600">
-                    Yes, all conversion tools are fully responsive and work perfectly on mobile phones, tablets, and desktop computers. The interface adapts to your screen size for optimal usability.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Do these tools store my data?</h3>
-                  <p className="text-gray-600">
-                    No, all conversions are performed locally in your browser. We do not store, track, or transmit any of your input data. Your privacy is our priority.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">What units are supported?</h3>
-                  <p className="text-gray-600">
-                    Each converter supports multiple units relevant to its category. For example, the length converter supports meters, feet, inches, kilometers, miles, yards, and more. 
-                    Check the dropdown menu in each converter to see all available units.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Related Tools Section */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8 mt-6 sm:mt-8">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Related Conversion Tools</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                {converterOptions
-                  .filter(c => c.id !== selectedConverter && c.category === selectedConverterInfo?.category)
-                  .slice(0, 6)
-                  .map((converter) => (
-                    <button
-                      key={converter.id}
-                      onClick={() => {
-                        setSelectedConverter(converter.id);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="text-left p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 active:bg-blue-100 transition-all duration-200 touch-manipulation"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">{converter.icon}</span>
-                        <div>
-                          <h4 className="font-medium text-gray-900">{converter.name}</h4>
-                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{converter.description}</p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-              </div>
-            </div>
+            
+            <AdPlacement position="content-bottom" />
           </div>
         </div>
       </div>

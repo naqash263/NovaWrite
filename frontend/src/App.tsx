@@ -76,6 +76,8 @@ const JobSearchOptimizer = lazy(() => import('./pages/resources/JobSearchOptimiz
 const SkillsAssessment = lazy(() => import('./pages/resources/SkillsAssessment'));
 const CoverLetterGenerator = lazy(() => import('./pages/resources/CoverLetterGenerator'));
 const ConversionTools = lazy(() => import('./pages/resources/ConversionTools'));
+const UtilityTools = lazy(() => import('./pages/resources/UtilityTools'));
+const AITools = lazy(() => import('./pages/resources/AITools'));
 const N8nConfigurations = lazy(() => import('./pages/admin/N8nConfigurations'));
 const EmailQueue = lazy(() => import('./pages/admin/EmailQueue'));
 const EmailLogs = lazy(() => import('./pages/admin/EmailLogs'));
@@ -160,6 +162,8 @@ function App() {
         <Route path="/resources/skills-assessment" element={<SkillsAssessment />} />
         <Route path="/resources/cover-letter-generator" element={<CoverLetterGenerator />} />
         <Route path="/resources/conversion-tools" element={<ConversionTools />} />
+        <Route path="/resources/utility-tools" element={<UtilityTools />} />
+        <Route path="/resources/ai-tools" element={<AITools />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

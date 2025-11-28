@@ -12,6 +12,12 @@ interface AdPlacementProps {
 export default function AdPlacement({ position, className = '' }: AdPlacementProps) {
   const { isEnabled, getSlot, settings, isLoading } = useAdSenseSettings();
 
+  // Safety check: if position is undefined, return null
+  if (!position) {
+    console.warn('[AdPlacement] Position prop is required but was not provided');
+    return null;
+  }
+
   // Map position to setting key
   const settingKeyMap: Record<string, string> = {
     header: 'slot_header',

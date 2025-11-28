@@ -475,8 +475,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       
                       <div className="border-t border-gray-100 my-2"></div>
                       
+                      <div className="border-t border-gray-100 my-2"></div>
+                      
                       <div className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-2">
-                        Utility Tools
+                        Conversion & Utility Tools
                       </div>
                       <Link
                         to="/resources/conversion-tools"
@@ -484,7 +486,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         <span className="mr-3 text-base">🔄</span>
-                        Conversion Tools
+                        Conversion Tools (15+)
+                      </Link>
+                      <Link
+                        to="/resources/utility-tools"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="mr-3 text-base">🛠️</span>
+                        Utility Tools (7)
+                      </Link>
+                      <Link
+                        to="/resources/ai-tools"
+                        onClick={() => setMoreDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="mr-3 text-base">🤖</span>
+                        AI-Powered Tools (4)
                       </Link>
                       
                       <div className="border-t border-gray-100 my-2"></div>
@@ -818,14 +836,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     </Link>
                     
                     <div className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-2">
-                      Utility Tools
+                      Conversion & Utility Tools
                     </div>
                     <Link
                       to="/resources/conversion-tools"
                       className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
                     >
                       <span className="mr-3 text-base">🔄</span>
-                      Conversion Tools
+                      Conversion Tools (15+)
+                    </Link>
+                    <Link
+                      to="/resources/utility-tools"
+                      className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <span className="mr-3 text-base">🛠️</span>
+                      Utility Tools (7)
+                    </Link>
+                    <Link
+                      to="/resources/ai-tools"
+                      className="flex items-center px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <span className="mr-3 text-base">🤖</span>
+                      AI-Powered Tools (4)
                     </Link>
                   </div>
                 </div>
