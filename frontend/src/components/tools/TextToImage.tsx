@@ -284,10 +284,13 @@ export default function TextToImage() {
     });
     
     // Add final item
-    if (lastItem !== null && lastItem.text !== '\n') {
-      const trimmedText = lastItem.text.trim();
-      if (trimmedText) {
-        cleaned.push({ text: trimmedText, bold: lastItem.bold, italic: lastItem.italic });
+    if (lastItem !== null) {
+      const finalItem: TextSegment = lastItem;
+      if (finalItem.text !== '\n') {
+        const trimmedText = finalItem.text.trim();
+        if (trimmedText) {
+          cleaned.push({ text: trimmedText, bold: finalItem.bold, italic: finalItem.italic });
+        }
       }
     }
     
