@@ -172,16 +172,33 @@ class TextToImageController extends Controller
             $textAreaWidth = $width - ($padding * 2);
             $textX = $padding;
 
+            // Get font path first (needed for text wrapping and rendering)
+            try {
+                $fontPath = $this->getFontPath($fontFamily);
+            } catch (\Exception $e) {
+                // If font not found, try to use a default
+                \Log::warning('Font not found: ' . $fontFamily . ' - ' . $e->getMessage());
+                try {
+                    $fontPath = $this->getFontPath('Arial');
+                } catch (\Exception $e2) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Font system error: ' . $e2->getMessage() . '. Please contact administrator to install TTF fonts on the server.',
+                        'error' => 'FONT_NOT_FOUND'
+                    ], 500);
+                }
+            }
+
             // Measure and wrap heading text
             $headingLines = [];
             if (!empty(trim($heading))) {
-                $headingLines = $this->wrapText($heading, $fontFamily, $headingSize, $textAreaWidth, true);
+                $headingLines = $this->wrapText($heading, $fontFamily, $headingSize, $textAreaWidth, true, $fontPath);
             }
 
             // Measure and wrap summary text
             $summaryLines = [];
             if (!empty(trim($summary))) {
-                $summaryLines = $this->wrapText($summary, $fontFamily, $summarySize, $textAreaWidth, false);
+                $summaryLines = $this->wrapText($summary, $fontFamily, $summarySize, $textAreaWidth, false, $fontPath);
             }
 
             // Calculate total text height for vertical centering
@@ -196,7 +213,7 @@ class TextToImageController extends Controller
             // Draw heading with shadow
             if (count($headingLines) > 0) {
                 foreach ($headingLines as $index => $line) {
-                    $x = $this->getTextX($textAlign, $textX, $width, $line, $fontFamily, $headingSize, true);
+                    $x = $this->getTextX($textAlign, $textX, $width, $line, $fontPath, $headingSize, true);
                     $y = (int)($textY + ($index * $headingSize * 1.2));
                     
                     if ($textShadow) {
@@ -212,7 +229,7 @@ class TextToImageController extends Controller
             // Draw summary with shadow
             if (count($summaryLines) > 0) {
                 foreach ($summaryLines as $index => $line) {
-                    $x = $this->getTextX($textAlign, $textX, $width, $line, $fontFamily, $summarySize, false);
+                    $x = $this->getTextX($textAlign, $textX, $width, $line, $fontPath, $summarySize, false);
                     $y = (int)($textY + ($index * $summarySize * $lineSpacing));
                     
                     if ($textShadow) {
