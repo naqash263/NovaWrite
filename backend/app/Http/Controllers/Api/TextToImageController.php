@@ -316,18 +316,28 @@ class TextToImageController extends Controller
     /**
      * Wrap text to fit within width
      */
-    private function wrapText($text, $fontFamily, $fontSize, $maxWidth, $isBold): array
+    private function wrapText($text, $fontFamily, $fontSize, $maxWidth, $isBold, $fontPath = null): array
     {
-        // For now, use simple word wrapping
-        // In production, you'd use imagettfbbox for accurate measurement
         $words = explode(' ', $text);
         $lines = [];
         $currentLine = '';
 
         foreach ($words as $word) {
             $testLine = $currentLine . ($currentLine ? ' ' : '') . $word;
-            // Approximate width (rough estimate: 0.6 * fontSize per character)
-            $estimatedWidth = strlen($testLine) * $fontSize * 0.6;
+            
+            // Try to get accurate width if font path is available
+            $estimatedWidth = strlen($testLine) * $fontSize * 0.6; // Default estimate
+            
+            if ($fontPath && function_exists('imagettfbbox')) {
+                try {
+                    $bbox = imagettfbbox($fontSize, 0, $fontPath, $testLine);
+                    if ($bbox !== false) {
+                        $estimatedWidth = $bbox[4] - $bbox[0];
+                    }
+                } catch (\Exception $e) {
+                    // Use estimate if measurement fails
+                }
+            }
             
             if ($estimatedWidth > $maxWidth && $currentLine) {
                 $lines[] = $currentLine;
