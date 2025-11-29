@@ -193,18 +193,36 @@ class TextToImageController extends Controller
             $startY = ($height - $totalTextHeight) / 2;
             $textY = $startY;
 
+            // Get font path once (with error handling)
+            try {
+                $fontPath = $this->getFontPath($fontFamily);
+            } catch (\Exception $e) {
+                // If font not found, try to use a default
+                \Log::warning('Font not found: ' . $fontFamily . ' - ' . $e->getMessage());
+                // Try one more time with Arial
+                try {
+                    $fontPath = $this->getFontPath('Arial');
+                } catch (\Exception $e2) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Font system error: ' . $e2->getMessage() . '. Please contact administrator to install TTF fonts on the server.',
+                        'error' => 'FONT_NOT_FOUND'
+                    ], 500);
+                }
+            }
+
             // Draw heading with shadow
             if (count($headingLines) > 0) {
                 foreach ($headingLines as $index => $line) {
                     $x = $this->getTextX($textAlign, $textX, $width, $line, $fontFamily, $headingSize, true);
-                    $y = $textY + ($index * $headingSize * 1.2);
+                    $y = (int)($textY + ($index * $headingSize * 1.2));
                     
                     if ($textShadow) {
                         // Draw shadow
-                        imagettftext($image, $headingSize, 0, $x + 2, $y + 2, $shadowColorAlloc, $this->getFontPath($fontFamily), $line);
+                        imagettftext($image, $headingSize, 0, $x + 2, $y + 2, $shadowColorAlloc, $fontPath, $line);
                     }
                     // Draw text
-                    imagettftext($image, $headingSize, 0, $x, $y, $headingColorAlloc, $this->getFontPath($fontFamily), $line);
+                    imagettftext($image, $headingSize, 0, $x, $y, $headingColorAlloc, $fontPath, $line);
                 }
                 $textY += count($headingLines) * $headingSize * 1.2 + $headingSpacing;
             }
@@ -213,14 +231,14 @@ class TextToImageController extends Controller
             if (count($summaryLines) > 0) {
                 foreach ($summaryLines as $index => $line) {
                     $x = $this->getTextX($textAlign, $textX, $width, $line, $fontFamily, $summarySize, false);
-                    $y = $textY + ($index * $summarySize * $lineSpacing);
+                    $y = (int)($textY + ($index * $summarySize * $lineSpacing));
                     
                     if ($textShadow) {
                         // Draw shadow
-                        imagettftext($image, $summarySize, 0, $x + 1, $y + 1, $shadowColorAlloc, $this->getFontPath($fontFamily), $line);
+                        imagettftext($image, $summarySize, 0, $x + 1, $y + 1, $shadowColorAlloc, $fontPath, $line);
                     }
                     // Draw text
-                    imagettftext($image, $summarySize, 0, $x, $y, $summaryColorAlloc, $this->getFontPath($fontFamily), $line);
+                    imagettftext($image, $summarySize, 0, $x, $y, $summaryColorAlloc, $fontPath, $line);
                 }
             }
 
@@ -352,40 +370,121 @@ class TextToImageController extends Controller
     {
         // Map common font families to system font paths
         $fontMap = [
-            'Arial' => '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-            'Helvetica' => '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-            'Times New Roman' => '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf',
-            'Courier New' => '/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf',
+            'Arial' => [
+                '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+                '/usr/share/fonts/TTF/DejaVuSans.ttf',
+                '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+            ],
+            'Helvetica' => [
+                '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+                '/usr/share/fonts/TTF/DejaVuSans.ttf',
+            ],
+            'Times New Roman' => [
+                '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf',
+                '/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf',
+                '/usr/share/fonts/TTF/DejaVuSerif.ttf',
+            ],
+            'Courier New' => [
+                '/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf',
+                '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf',
+                '/usr/share/fonts/TTF/DejaVuSansMono.ttf',
+            ],
         ];
 
-        // Try to find font in common locations
-        if (isset($fontMap[$fontFamily]) && file_exists($fontMap[$fontFamily])) {
-            return $fontMap[$fontFamily];
-        }
-
-        // Fallback to DejaVu Sans (usually available on Linux servers)
-        $fallback = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
-        if (file_exists($fallback)) {
-            return $fallback;
-        }
-
-        // Last resort: try to find any TTF font
-        $possiblePaths = [
-            '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-            '/System/Library/Fonts/Helvetica.ttc', // macOS
-            'C:/Windows/Fonts/arial.ttf', // Windows
-        ];
-
-        foreach ($possiblePaths as $path) {
-            if (file_exists($path)) {
-                return $path;
+        // Try font-specific paths first
+        if (isset($fontMap[$fontFamily])) {
+            foreach ($fontMap[$fontFamily] as $path) {
+                if (file_exists($path)) {
+                    return $path;
+                }
             }
         }
 
-        // If no font found, we'll use built-in fonts (but they won't support TTF)
-        // This is a fallback - in production, you should ensure fonts are available
-        throw new \Exception('No suitable font found. Please ensure TTF fonts are installed on the server.');
+        // Search common font directories
+        $fontDirectories = [
+            '/usr/share/fonts/truetype/liberation/',
+            '/usr/share/fonts/truetype/dejavu/',
+            '/usr/share/fonts/TTF/',
+            '/usr/share/fonts/',
+            '/System/Library/Fonts/', // macOS
+            'C:/Windows/Fonts/', // Windows
+        ];
+
+        // Try to find any TTF font in common directories
+        foreach ($fontDirectories as $dir) {
+            if (is_dir($dir)) {
+                // Try common font names
+                $commonFonts = [
+                    'LiberationSans-Regular.ttf',
+                    'DejaVuSans.ttf',
+                    'arial.ttf',
+                    'Arial.ttf',
+                    'helvetica.ttf',
+                    'Helvetica.ttf',
+                ];
+                
+                foreach ($commonFonts as $fontFile) {
+                    $path = $dir . $fontFile;
+                    if (file_exists($path)) {
+                        return $path;
+                    }
+                }
+                
+                // Try to find any .ttf file in the directory
+                $files = glob($dir . '*.ttf');
+                if (!empty($files)) {
+                    return $files[0];
+                }
+                
+                // Try .ttc files (TrueType Collection)
+                $files = glob($dir . '*.ttc');
+                if (!empty($files)) {
+                    return $files[0];
+                }
+            }
+        }
+
+        // Last resort: search recursively in /usr/share/fonts
+        $foundFont = $this->findFontRecursive('/usr/share/fonts');
+        if ($foundFont) {
+            return $foundFont;
+        }
+
+        // If still no font found, throw exception with helpful message
+        throw new \Exception('No suitable TTF font found. Please install fonts on the server. Common locations: /usr/share/fonts/truetype/liberation/ or /usr/share/fonts/truetype/dejavu/');
+    }
+
+    /**
+     * Recursively search for TTF fonts
+     */
+    private function findFontRecursive($directory, $maxDepth = 3, $currentDepth = 0): ?string
+    {
+        if ($currentDepth >= $maxDepth || !is_dir($directory) || !is_readable($directory)) {
+            return null;
+        }
+
+        $files = glob($directory . '/*.ttf');
+        if (!empty($files)) {
+            return $files[0];
+        }
+
+        $files = glob($directory . '/*.ttc');
+        if (!empty($files)) {
+            return $files[0];
+        }
+
+        // Search subdirectories
+        $subdirs = glob($directory . '/*', GLOB_ONLYDIR);
+        foreach ($subdirs as $subdir) {
+            $found = $this->findFontRecursive($subdir, $maxDepth, $currentDepth + 1);
+            if ($found) {
+                return $found;
+            }
+        }
+
+        return null;
     }
 }
 
