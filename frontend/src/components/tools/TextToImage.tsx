@@ -248,11 +248,11 @@ export default function TextToImage() {
     result.forEach((item: TextSegment) => {
       if (item.text === '\n') {
         // Line break - finalize last item if exists
-        if (lastItem && lastItem.text !== '\n') {
+        if (lastItem !== null && lastItem.text !== '\n') {
           // Trim the last item before adding
           const trimmedText = lastItem.text.trim();
           if (trimmedText) {
-            cleaned.push({ ...lastItem, text: trimmedText });
+            cleaned.push({ text: trimmedText, bold: lastItem.bold, italic: lastItem.italic });
           }
           lastItem = null;
         }
@@ -265,17 +265,17 @@ export default function TextToImage() {
         // Text node - normalize spaces but keep structure
         const normalizedText = item.text.replace(/\s+/g, ' '); // Normalize multiple spaces to single
         
-        if (lastItem && lastItem.text !== '\n' && 
+        if (lastItem !== null && lastItem.text !== '\n' && 
             lastItem.bold === item.bold && lastItem.italic === item.italic) {
           // Merge with previous if same formatting - add space if needed
           const needsSpace = !lastItem.text.endsWith(' ') && !normalizedText.startsWith(' ');
-          lastItem = { ...lastItem, text: lastItem.text + (needsSpace ? ' ' : '') + normalizedText };
+          lastItem = { text: lastItem.text + (needsSpace ? ' ' : '') + normalizedText, bold: lastItem.bold, italic: lastItem.italic };
         } else {
           // Finalize previous and start new
-          if (lastItem && lastItem.text !== '\n') {
+          if (lastItem !== null && lastItem.text !== '\n') {
             const trimmedText = lastItem.text.trim();
             if (trimmedText) {
-              cleaned.push({ ...lastItem, text: trimmedText });
+              cleaned.push({ text: trimmedText, bold: lastItem.bold, italic: lastItem.italic });
             }
           }
           lastItem = { text: normalizedText, bold: item.bold, italic: item.italic };
@@ -284,12 +284,10 @@ export default function TextToImage() {
     });
     
     // Add final item
-    if (lastItem) {
-      if (lastItem.text !== '\n') {
-        const trimmedText = lastItem.text.trim();
-        if (trimmedText) {
-          cleaned.push({ text: trimmedText, bold: lastItem.bold, italic: lastItem.italic });
-        }
+    if (lastItem !== null && lastItem.text !== '\n') {
+      const trimmedText = lastItem.text.trim();
+      if (trimmedText) {
+        cleaned.push({ text: trimmedText, bold: lastItem.bold, italic: lastItem.italic });
       }
     }
     
