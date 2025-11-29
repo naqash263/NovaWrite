@@ -241,17 +241,18 @@ export default function TextToImage() {
     Array.from(tempDiv.childNodes).forEach(node => traverse(node));
     
     // Clean up: merge consecutive text nodes with same formatting
-    const cleaned: Array<{ text: string; bold?: boolean; italic?: boolean }> = [];
-    let lastItem: { text: string; bold?: boolean; italic?: boolean } | null = null;
+    type TextSegment = { text: string; bold?: boolean; italic?: boolean };
+    const cleaned: TextSegment[] = [];
+    let lastItem: TextSegment | null = null;
     
-    result.forEach((item) => {
+    result.forEach((item: TextSegment) => {
       if (item.text === '\n') {
         // Line break - finalize last item if exists
         if (lastItem && lastItem.text !== '\n') {
           // Trim the last item before adding
-          lastItem.text = lastItem.text.trim();
-          if (lastItem.text) {
-            cleaned.push(lastItem);
+          const trimmedText = lastItem.text.trim();
+          if (trimmedText) {
+            cleaned.push({ ...lastItem, text: trimmedText });
           }
           lastItem = null;
         }
@@ -268,13 +269,13 @@ export default function TextToImage() {
             lastItem.bold === item.bold && lastItem.italic === item.italic) {
           // Merge with previous if same formatting - add space if needed
           const needsSpace = !lastItem.text.endsWith(' ') && !normalizedText.startsWith(' ');
-          lastItem.text += (needsSpace ? ' ' : '') + normalizedText;
+          lastItem = { ...lastItem, text: lastItem.text + (needsSpace ? ' ' : '') + normalizedText };
         } else {
           // Finalize previous and start new
           if (lastItem && lastItem.text !== '\n') {
-            lastItem.text = lastItem.text.trim();
-            if (lastItem.text) {
-              cleaned.push(lastItem);
+            const trimmedText = lastItem.text.trim();
+            if (trimmedText) {
+              cleaned.push({ ...lastItem, text: trimmedText });
             }
           }
           lastItem = { text: normalizedText, bold: item.bold, italic: item.italic };
@@ -283,12 +284,10 @@ export default function TextToImage() {
     });
     
     // Add final item
-    if (lastItem) {
-      if (lastItem.text !== '\n') {
-        lastItem.text = lastItem.text.trim();
-        if (lastItem.text) {
-          cleaned.push(lastItem);
-        }
+    if (lastItem && lastItem.text !== '\n') {
+      const trimmedText = lastItem.text.trim();
+      if (trimmedText) {
+        cleaned.push({ ...lastItem, text: trimmedText });
       }
     }
     
