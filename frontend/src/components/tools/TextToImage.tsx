@@ -256,7 +256,8 @@ export default function TextToImage() {
           lastItem = null;
         }
         // Add line break (but not if last was also line break)
-        if (cleaned.length === 0 || cleaned[cleaned.length - 1].text !== '\n') {
+        const lastCleaned = cleaned[cleaned.length - 1];
+        if (cleaned.length === 0 || !lastCleaned || lastCleaned.text !== '\n') {
           cleaned.push(item);
         }
       } else {
