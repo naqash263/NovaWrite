@@ -283,10 +283,12 @@ export default function TextToImage() {
     });
     
     // Add final item
-    if (lastItem && lastItem.text !== '\n') {
-      lastItem.text = lastItem.text.trim();
-      if (lastItem.text) {
-        cleaned.push(lastItem);
+    if (lastItem) {
+      if (lastItem.text !== '\n') {
+        lastItem.text = lastItem.text.trim();
+        if (lastItem.text) {
+          cleaned.push(lastItem);
+        }
       }
     }
     
