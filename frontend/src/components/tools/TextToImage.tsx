@@ -25,8 +25,14 @@ export default function TextToImage() {
   const [useApi, setUseApi] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+  const [backgroundImageFile, setBackgroundImageFile] = useState<File | null>(null);
+  const [useBackgroundImage, setUseBackgroundImage] = useState<boolean>(false);
+  const [backgroundOverlay, setBackgroundOverlay] = useState<boolean>(true);
+  const [backgroundOverlayOpacity, setBackgroundOverlayOpacity] = useState<number>(0.3);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const backgroundImageInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
     title: 'Free Text to Image Generator - Create Images from Text Online | Text Image Maker',
@@ -97,6 +103,36 @@ export default function TextToImage() {
     { name: 'Light', bg: '#F9FAFB', heading: '#111827', summary: '#6B7280' },
   ];
 
+  const handleBackgroundImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file');
+      return;
+    }
+
+    setBackgroundImageFile(file);
+    setError('');
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string;
+      setBackgroundImage(imageUrl);
+      setUseBackgroundImage(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeBackgroundImage = () => {
+    setBackgroundImage(null);
+    setBackgroundImageFile(null);
+    setUseBackgroundImage(false);
+    if (backgroundImageInputRef.current) {
+      backgroundImageInputRef.current.value = '';
+    }
+  };
+
   const generateImage = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -107,6 +143,48 @@ export default function TextToImage() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Draw background image if provided
+    if (useBackgroundImage && backgroundImage) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Draw background image (cover the entire canvas)
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Add overlay for better text readability if enabled
+        if (backgroundOverlay) {
+          ctx.fillStyle = `rgba(0, 0, 0, ${backgroundOverlayOpacity})`;
+          ctx.fillRect(0, 0, width, height);
+        }
+
+        // Continue with text rendering
+        drawTextOnCanvas(ctx);
+        
+        // Convert to image after text is drawn
+        const dataUrl = canvas.toDataURL('image/png');
+        setGeneratedImage(dataUrl);
+      };
+      img.onerror = () => {
+        // If image fails to load, fall back to color background
+        drawColorBackground(ctx);
+        drawTextOnCanvas(ctx);
+        const dataUrl = canvas.toDataURL('image/png');
+        setGeneratedImage(dataUrl);
+      };
+      img.src = backgroundImage;
+    } else {
+      // Use color/gradient background
+      drawColorBackground(ctx);
+      drawTextOnCanvas(ctx);
+      const dataUrl = canvas.toDataURL('image/png');
+      setGeneratedImage(dataUrl);
+    }
+  }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing, useBackgroundImage, backgroundImage, backgroundOverlay, backgroundOverlayOpacity]);
+
+  const drawColorBackground = (ctx: CanvasRenderingContext2D) => {
     // Fill background with gradient or solid color
     if (useGradient) {
       const gradient = ctx.createLinearGradient(0, 0, 0, height);
@@ -117,6 +195,9 @@ export default function TextToImage() {
       ctx.fillStyle = backgroundColor;
     }
     ctx.fillRect(0, 0, width, height);
+  };
+
+  const drawTextOnCanvas = (ctx: CanvasRenderingContext2D) => {
 
     // Calculate text area
     const textAreaWidth = width - (padding * 2);
@@ -225,11 +306,7 @@ export default function TextToImage() {
     ctx.shadowBlur = 0;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
-
-    // Convert to image
-    const dataUrl = canvas.toDataURL('image/png');
-    setGeneratedImage(dataUrl);
-  }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing]);
+  };
 
   const downloadImage = () => {
     if (!generatedImage) return;
@@ -275,6 +352,13 @@ export default function TextToImage() {
       formData.append('textShadowBlur', textShadowBlur.toString());
       formData.append('lineSpacing', lineSpacing.toString());
       formData.append('headingSpacing', headingSpacing.toString());
+      formData.append('useBackgroundImage', useBackgroundImage.toString());
+      formData.append('backgroundOverlay', backgroundOverlay.toString());
+      formData.append('backgroundOverlayOpacity', backgroundOverlayOpacity.toString());
+      
+      if (useBackgroundImage && backgroundImageFile) {
+        formData.append('backgroundImage', backgroundImageFile);
+      }
 
       const response = await fetch(`${API_URL}/utility-tools/text-to-image/generate`, {
         method: 'POST',
@@ -310,7 +394,7 @@ export default function TextToImage() {
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing, useApi, generateImage]);
+  }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing, useApi, useBackgroundImage, backgroundImage, backgroundOverlay, backgroundOverlayOpacity, generateImage]);
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
@@ -413,17 +497,106 @@ export default function TextToImage() {
               </div>
             </div>
 
+            {/* Background Image */}
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">🖼️ Background Image</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="flex items-center space-x-3 cursor-pointer mb-2">
+                    <input
+                      type="checkbox"
+                      checked={useBackgroundImage}
+                      onChange={(e) => {
+                        setUseBackgroundImage(e.target.checked);
+                        if (!e.target.checked) {
+                          setBackgroundImage(null);
+                          setBackgroundImageFile(null);
+                        }
+                      }}
+                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-gray-700 font-medium">Use Background Image</span>
+                  </label>
+                  
+                  {useBackgroundImage && (
+                    <div className="mt-3 space-y-3">
+                      <div>
+                        <input
+                          ref={backgroundImageInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleBackgroundImageSelect}
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        />
+                      </div>
+                      
+                      {backgroundImage && (
+                        <div className="relative">
+                          <img
+                            src={backgroundImage}
+                            alt="Background preview"
+                            className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                          />
+                          <button
+                            onClick={removeBackgroundImage}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                            title="Remove background image"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="flex items-center space-x-3 cursor-pointer mb-2">
+                          <input
+                            type="checkbox"
+                            checked={backgroundOverlay}
+                            onChange={(e) => setBackgroundOverlay(e.target.checked)}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-gray-700 text-sm">Add Dark Overlay (for better text readability)</span>
+                        </label>
+                        {backgroundOverlay && (
+                          <div className="mt-2">
+                            <label className="block text-xs text-gray-600 mb-1">
+                              Overlay Opacity: {Math.round(backgroundOverlayOpacity * 100)}%
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="0.8"
+                              step="0.1"
+                              value={backgroundOverlayOpacity}
+                              onChange={(e) => setBackgroundOverlayOpacity(parseFloat(e.target.value))}
+                              className="w-full"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Color Presets */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Color Presets
+                Color Presets {useBackgroundImage && '(disabled when using background image)'}
               </label>
               <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                 {colorPresets.map((preset) => (
                   <button
                     key={preset.name}
-                    onClick={() => applyColorPreset(preset)}
-                    className="p-2 border-2 border-gray-300 rounded-lg hover:border-blue-500 transition-colors"
+                    onClick={() => {
+                      if (!useBackgroundImage) {
+                        applyColorPreset(preset);
+                      }
+                    }}
+                    disabled={useBackgroundImage}
+                    className="p-2 border-2 border-gray-300 rounded-lg hover:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title={preset.name}
                   >
                     <div
@@ -440,20 +613,22 @@ export default function TextToImage() {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Background Color
+                  Background Color {useBackgroundImage && '(disabled when using background image)'}
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="color"
                     value={backgroundColor}
                     onChange={(e) => setBackgroundColor(e.target.value)}
-                    className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                    disabled={useBackgroundImage}
+                    className="w-16 h-10 border border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <input
                     type="text"
                     value={backgroundColor}
                     onChange={(e) => setBackgroundColor(e.target.value)}
-                    className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    disabled={useBackgroundImage}
+                    className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -585,12 +760,18 @@ export default function TextToImage() {
                     <input
                       type="checkbox"
                       checked={useGradient}
-                      onChange={(e) => setUseGradient(e.target.checked)}
-                      className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                      onChange={(e) => {
+                        setUseGradient(e.target.checked);
+                        if (e.target.checked) {
+                          setUseBackgroundImage(false);
+                        }
+                      }}
+                      disabled={useBackgroundImage}
+                      className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 disabled:opacity-50"
                     />
-                    <span className="text-gray-700 font-medium">Gradient Background</span>
+                    <span className="text-gray-700 font-medium">Gradient Background {useBackgroundImage && '(disabled when using background image)'}</span>
                   </label>
-                  {useGradient && (
+                  {useGradient && !useBackgroundImage && (
                     <div className="mt-2 flex gap-2">
                       <input
                         type="color"

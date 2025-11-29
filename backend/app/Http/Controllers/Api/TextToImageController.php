@@ -35,6 +35,10 @@ class TextToImageController extends Controller
             'textShadowBlur' => 'nullable|integer|min:0|max:20',
             'lineSpacing' => 'nullable|numeric|min:1.0|max:3.0',
             'headingSpacing' => 'nullable|integer|min:20|max:100',
+            'useBackgroundImage' => 'nullable|boolean',
+            'backgroundImage' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:10240',
+            'backgroundOverlay' => 'nullable|boolean',
+            'backgroundOverlayOpacity' => 'nullable|numeric|min:0|max:0.8',
         ], [
             'heading.max' => 'Heading must not exceed 500 characters.',
             'summary.max' => 'Summary must not exceed 2000 characters.',
@@ -77,6 +81,9 @@ class TextToImageController extends Controller
             $textShadowBlur = $request->input('textShadowBlur', 8);
             $lineSpacing = $request->input('lineSpacing', 1.5);
             $headingSpacing = $request->input('headingSpacing', 50);
+            $useBackgroundImage = $request->input('useBackgroundImage', false);
+            $backgroundOverlay = $request->input('backgroundOverlay', true);
+            $backgroundOverlayOpacity = $request->input('backgroundOverlayOpacity', 0.3);
 
             // Validate that at least heading or summary is provided
             if (empty(trim($heading)) && empty(trim($summary))) {
@@ -89,23 +96,75 @@ class TextToImageController extends Controller
             // Create image using GD library
             $image = imagecreatetruecolor($width, $height);
             
-            // Convert hex colors to RGB
-            $bgColor = $this->hexToRgb($backgroundColor);
-            $headingRgb = $this->hexToRgb($headingColor);
-            $summaryRgb = $this->hexToRgb($summaryColor);
-            $gradientRgb = $this->hexToRgb($gradientColor);
+            // Handle background image if provided
+            $backgroundImageResource = null;
+            if ($useBackgroundImage && $request->hasFile('backgroundImage')) {
+                $backgroundFile = $request->file('backgroundImage');
+                $backgroundImagePath = $backgroundFile->getRealPath();
+                $backgroundImageInfo = getimagesize($backgroundImagePath);
+                
+                if ($backgroundImageInfo) {
+                    $mimeType = $backgroundImageInfo['mime'];
+                    if ($mimeType === 'image/jpeg') {
+                        $backgroundImageResource = imagecreatefromjpeg($backgroundImagePath);
+                    } elseif ($mimeType === 'image/png') {
+                        $backgroundImageResource = imagecreatefrompng($backgroundImagePath);
+                    } elseif ($mimeType === 'image/gif') {
+                        $backgroundImageResource = imagecreatefromgif($backgroundImagePath);
+                    } elseif ($mimeType === 'image/webp') {
+                        $backgroundImageResource = imagecreatefromwebp($backgroundImagePath);
+                    }
+                    
+                    if ($backgroundImageResource) {
+                        // Resize background image to fit canvas
+                        imagecopyresampled(
+                            $image,
+                            $backgroundImageResource,
+                            0, 0, 0, 0,
+                            $width,
+                            $height,
+                            imagesx($backgroundImageResource),
+                            imagesy($backgroundImageResource)
+                        );
+                        
+                        // Add overlay if enabled
+                        if ($backgroundOverlay) {
+                            $overlayColor = imagecolorallocatealpha($image, 0, 0, 0, (int)((1 - $backgroundOverlayOpacity) * 127));
+                            imagefilledrectangle($image, 0, 0, $width, $height, $overlayColor);
+                        }
+                        
+                        imagedestroy($backgroundImageResource);
+                    }
+                }
+            }
+            
+            // If no background image was set, use color/gradient
+            if (!$backgroundImageResource) {
+                // Convert hex colors to RGB
+                $bgColor = $this->hexToRgb($backgroundColor);
+                $headingRgb = $this->hexToRgb($headingColor);
+                $summaryRgb = $this->hexToRgb($summaryColor);
+                $gradientRgb = $this->hexToRgb($gradientColor);
 
-            // Allocate colors
-            $bgColorAlloc = imagecolorallocate($image, $bgColor['r'], $bgColor['g'], $bgColor['b']);
-            $headingColorAlloc = imagecolorallocate($image, $headingRgb['r'], $headingRgb['g'], $headingRgb['b']);
-            $summaryColorAlloc = imagecolorallocate($image, $summaryRgb['r'], $summaryRgb['g'], $summaryRgb['b']);
-            $shadowColorAlloc = imagecolorallocatealpha($image, 0, 0, 0, 50);
+                // Allocate colors
+                $bgColorAlloc = imagecolorallocate($image, $bgColor['r'], $bgColor['g'], $bgColor['b']);
+                $headingColorAlloc = imagecolorallocate($image, $headingRgb['r'], $headingRgb['g'], $headingRgb['b']);
+                $summaryColorAlloc = imagecolorallocate($image, $summaryRgb['r'], $summaryRgb['g'], $summaryRgb['b']);
+                $shadowColorAlloc = imagecolorallocatealpha($image, 0, 0, 0, 50);
 
-            // Fill background with gradient or solid color
-            if ($useGradient) {
-                $this->drawGradient($image, $bgColor, $gradientRgb, $width, $height);
+                // Fill background with gradient or solid color
+                if ($useGradient) {
+                    $this->drawGradient($image, $bgColor, $gradientRgb, $width, $height);
+                } else {
+                    imagefill($image, 0, 0, $bgColorAlloc);
+                }
             } else {
-                imagefill($image, 0, 0, $bgColorAlloc);
+                // Allocate colors for text (still needed even with background image)
+                $headingRgb = $this->hexToRgb($headingColor);
+                $summaryRgb = $this->hexToRgb($summaryColor);
+                $headingColorAlloc = imagecolorallocate($image, $headingRgb['r'], $headingRgb['g'], $headingRgb['b']);
+                $summaryColorAlloc = imagecolorallocate($image, $summaryRgb['r'], $summaryRgb['g'], $summaryRgb['b']);
+                $shadowColorAlloc = imagecolorallocatealpha($image, 0, 0, 0, 50);
             }
 
             // Calculate text area
