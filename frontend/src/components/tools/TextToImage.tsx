@@ -30,6 +30,7 @@ export default function TextToImage() {
   const [useBackgroundImage, setUseBackgroundImage] = useState<boolean>(false);
   const [backgroundOverlay, setBackgroundOverlay] = useState<boolean>(true);
   const [backgroundOverlayOpacity, setBackgroundOverlayOpacity] = useState<number>(0.3);
+  const [useHtmlMode, setUseHtmlMode] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
@@ -184,6 +185,52 @@ export default function TextToImage() {
     }
   }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing, useBackgroundImage, backgroundImage, backgroundOverlay, backgroundOverlayOpacity]);
 
+  // Parse HTML to extract text with formatting
+  const parseHtmlText = (html: string): Array<{ text: string; bold?: boolean; italic?: boolean }> => {
+    if (!html) return [];
+    
+    // Create a temporary DOM element to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    const result: Array<{ text: string; bold?: boolean; italic?: boolean }> = [];
+    
+    const traverse = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent?.trim();
+        if (text) {
+          // Check parent nodes for formatting
+          let parent = node.parentElement;
+          let isBold = false;
+          let isItalic = false;
+          
+          while (parent && parent !== tempDiv) {
+            const tagName = parent.tagName.toLowerCase();
+            if (tagName === 'b' || tagName === 'strong') isBold = true;
+            if (tagName === 'i' || tagName === 'em') isItalic = true;
+            parent = parent.parentElement;
+          }
+          
+          result.push({ text, bold: isBold, italic: isItalic });
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as Element;
+        const tagName = element.tagName.toLowerCase();
+        
+        // Add line breaks for block elements
+        if (tagName === 'br' || tagName === 'p' || tagName === 'div') {
+          result.push({ text: '\n' });
+        }
+        
+        // Traverse child nodes
+        Array.from(node.childNodes).forEach(traverse);
+      }
+    };
+    
+    Array.from(tempDiv.childNodes).forEach(traverse);
+    return result;
+  };
+
   const drawColorBackground = (ctx: CanvasRenderingContext2D) => {
     // Fill background with gradient or solid color
     if (useGradient) {
@@ -222,27 +269,82 @@ export default function TextToImage() {
     });
     if (headingCurrentLine) headingLines.push(headingCurrentLine);
 
-    // Measure summary text
-    ctx.font = `${summarySize}px ${fontFamily}`;
-    const summaryWords = summary.trim() ? summary.split(' ') : [];
-    const summaryLines: string[] = [];
-    let summaryCurrentLine = '';
+    // Measure summary text - handle HTML mode
+    type SummaryLine = { text: string; bold?: boolean; italic?: boolean } | string;
+    let summaryLines: SummaryLine[] = [];
     
-    summaryWords.forEach((word) => {
-      const testLine = summaryCurrentLine + (summaryCurrentLine ? ' ' : '') + word;
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > textAreaWidth && summaryCurrentLine) {
-        summaryLines.push(summaryCurrentLine);
-        summaryCurrentLine = word;
-      } else {
-        summaryCurrentLine = testLine;
+    if (useHtmlMode && summary.trim()) {
+      // Parse HTML and create formatted segments
+      const segments = parseHtmlText(summary);
+      let currentLine: Array<{ text: string; bold?: boolean; italic?: boolean }> = [];
+      let currentLineWidth = 0;
+      
+      segments.forEach((segment: { text: string; bold?: boolean; italic?: boolean }) => {
+        if (segment.text === '\n') {
+          // Line break
+          if (currentLine.length > 0) {
+            summaryLines.push(...currentLine);
+            summaryLines.push({ text: '\n' });
+            currentLine = [];
+            currentLineWidth = 0;
+          }
+        } else {
+          // Set font for measurement
+          const fontStyle = `${segment.italic ? 'italic ' : ''}${segment.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
+          ctx.font = fontStyle;
+          
+          const words = segment.text.split(' ');
+          words.forEach((word: string) => {
+            const testText = (currentLine.length > 0 ? ' ' : '') + word;
+            const metrics = ctx.measureText(testText);
+            
+            if (currentLineWidth + metrics.width > textAreaWidth && currentLine.length > 0) {
+              // Start new line
+              summaryLines.push(...currentLine);
+              summaryLines.push({ text: '\n' });
+              currentLine = [{ text: word, bold: segment.bold, italic: segment.italic }];
+              currentLineWidth = metrics.width;
+            } else {
+              // Add to current line
+              if (currentLine.length > 0) {
+                currentLine.push({ text: ' ' });
+              }
+              currentLine.push({ text: word, bold: segment.bold, italic: segment.italic });
+              currentLineWidth += metrics.width;
+            }
+          });
+        }
+      });
+      
+      if (currentLine.length > 0) {
+        summaryLines.push(...currentLine);
       }
-    });
-    if (summaryCurrentLine) summaryLines.push(summaryCurrentLine);
+    } else {
+      // Plain text mode
+      ctx.font = `${summarySize}px ${fontFamily}`;
+      const summaryWords = summary.trim() ? summary.split(' ') : [];
+      let summaryCurrentLine = '';
+      
+      summaryWords.forEach((word) => {
+        const testLine = summaryCurrentLine + (summaryCurrentLine ? ' ' : '') + word;
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > textAreaWidth && summaryCurrentLine) {
+          summaryLines.push(summaryCurrentLine);
+          summaryCurrentLine = word;
+        } else {
+          summaryCurrentLine = testLine;
+        }
+      });
+      if (summaryCurrentLine) summaryLines.push(summaryCurrentLine);
+    }
 
     // Calculate total text height for vertical centering
     const headingHeight = headingLines.length * headingSize * 1.2;
-    const summaryHeight = summaryLines.length * summarySize * lineSpacing;
+    // Count actual lines in summary
+    const summaryLineCount = useHtmlMode 
+      ? summaryLines.filter(s => typeof s === 'object' && 'text' in s && s.text === '\n').length + 1
+      : summaryLines.length;
+    const summaryHeight = summaryLineCount * summarySize * lineSpacing;
     const totalTextHeight = headingHeight + (headingLines.length > 0 && summaryLines.length > 0 ? headingSpacing : 0) + summaryHeight;
     
     // Start Y position (centered vertically)
@@ -278,7 +380,6 @@ export default function TextToImage() {
 
     // Draw summary with shadow
     if (summaryLines.length > 0) {
-      ctx.font = `${summarySize}px ${fontFamily}`;
       ctx.textAlign = textAlign;
       ctx.textBaseline = 'top';
       
@@ -295,10 +396,79 @@ export default function TextToImage() {
       }
 
       ctx.fillStyle = summaryColor;
-      summaryLines.forEach((line, index) => {
-        const x = textAlign === 'left' ? textX : textAlign === 'right' ? width - textX : width / 2;
-        ctx.fillText(line, x, textY + (index * summarySize * lineSpacing));
-      });
+      
+      if (useHtmlMode) {
+        // Render HTML-formatted text
+        let currentY = textY;
+        let currentLineSegments: Array<{ text: string; bold?: boolean; italic?: boolean }> = [];
+        
+        summaryLines.forEach((segment) => {
+          if (typeof segment === 'object' && 'text' in segment && segment.text === '\n') {
+            // Render current line and move to next
+            if (currentLineSegments.length > 0) {
+              let lineX = textAlign === 'left' ? textX : textAlign === 'right' ? width - textX : width / 2;
+              
+              if (textAlign === 'center') {
+                // For center alignment, calculate the total width first
+                const totalWidth = currentLineSegments.reduce((sum, s) => {
+                  ctx.font = `${s.italic ? 'italic ' : ''}${s.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
+                  return sum + ctx.measureText(s.text).width;
+                }, 0);
+                lineX = (width - totalWidth) / 2;
+              }
+              
+              currentLineSegments.forEach((seg) => {
+                const fontStyle = `${seg.italic ? 'italic ' : ''}${seg.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
+                ctx.font = fontStyle;
+                
+                if (textShadow) {
+                  ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                  ctx.shadowBlur = textShadowBlur;
+                  ctx.shadowOffsetX = 1;
+                  ctx.shadowOffsetY = 1;
+                }
+                
+                ctx.fillText(seg.text, lineX, currentY);
+                lineX += ctx.measureText(seg.text).width;
+              });
+              
+              currentLineSegments = [];
+              currentY += summarySize * lineSpacing;
+            }
+          } else if (typeof segment === 'object' && 'text' in segment) {
+            currentLineSegments.push(segment);
+          }
+        });
+        
+        // Render remaining segments
+        if (currentLineSegments.length > 0) {
+          let lineX = textAlign === 'left' ? textX : textAlign === 'right' ? width - textX : width / 2;
+          
+          if (textAlign === 'center') {
+            const totalWidth = currentLineSegments.reduce((sum, s) => {
+              ctx.font = `${s.italic ? 'italic ' : ''}${s.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
+              return sum + ctx.measureText(s.text).width;
+            }, 0);
+            lineX = (width - totalWidth) / 2;
+          }
+          
+          currentLineSegments.forEach((seg) => {
+            const fontStyle = `${seg.italic ? 'italic ' : ''}${seg.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
+            ctx.font = fontStyle;
+            ctx.fillText(seg.text, lineX, currentY);
+            lineX += ctx.measureText(seg.text).width;
+          });
+        }
+      } else {
+        // Plain text mode
+        ctx.font = `${summarySize}px ${fontFamily}`;
+        summaryLines.forEach((line, index) => {
+          if (typeof line === 'string') {
+            const x = textAlign === 'left' ? textX : textAlign === 'right' ? width - textX : width / 2;
+            ctx.fillText(line, x, textY + (index * summarySize * lineSpacing));
+          }
+        });
+      }
     }
 
     // Reset shadow
@@ -394,7 +564,7 @@ export default function TextToImage() {
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing, useApi, useBackgroundImage, backgroundImage, backgroundOverlay, backgroundOverlayOpacity, generateImage]);
+  }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing, useApi, useBackgroundImage, backgroundImage, backgroundOverlay, backgroundOverlayOpacity, useHtmlMode, generateImage]);
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
@@ -437,16 +607,49 @@ export default function TextToImage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Summary/Description Text
-              </label>
-              <textarea
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                placeholder="Enter your summary or description..."
-                rows={4}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Summary/Description Text
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useHtmlMode}
+                    onChange={(e) => setUseHtmlMode(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-gray-600">HTML Mode</span>
+                </label>
+              </div>
+              {useHtmlMode ? (
+                <div>
+                  <textarea
+                    value={summary}
+                    onChange={(e) => setSummary(e.target.value)}
+                    placeholder="Enter HTML text (supports &lt;b&gt;, &lt;i&gt;, &lt;br&gt;, &lt;p&gt;, &lt;div&gt;)..."
+                    rows={6}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                  />
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-800 font-semibold mb-1">Supported HTML Tags:</p>
+                    <ul className="text-xs text-blue-700 space-y-1">
+                      <li><code className="bg-blue-100 px-1 rounded">&lt;b&gt;</code> or <code className="bg-blue-100 px-1 rounded">&lt;strong&gt;</code> - Bold text</li>
+                      <li><code className="bg-blue-100 px-1 rounded">&lt;i&gt;</code> or <code className="bg-blue-100 px-1 rounded">&lt;em&gt;</code> - Italic text</li>
+                      <li><code className="bg-blue-100 px-1 rounded">&lt;br&gt;</code> - Line break</li>
+                      <li><code className="bg-blue-100 px-1 rounded">&lt;p&gt;</code> or <code className="bg-blue-100 px-1 rounded">&lt;div&gt;</code> - Paragraph/block (creates line break)</li>
+                    </ul>
+                    <p className="text-xs text-blue-600 mt-2">Example: <code className="bg-blue-100 px-1 rounded">This is &lt;b&gt;bold&lt;/b&gt; and this is &lt;i&gt;italic&lt;/i&gt; text.</code></p>
+                  </div>
+                </div>
+              ) : (
+                <textarea
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  placeholder="Enter your summary or description..."
+                  rows={4}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              )}
             </div>
 
             {/* Size Presets */}

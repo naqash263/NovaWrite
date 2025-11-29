@@ -39,6 +39,7 @@ class TextToImageController extends Controller
             'backgroundImage' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:10240',
             'backgroundOverlay' => 'nullable|boolean',
             'backgroundOverlayOpacity' => 'nullable|numeric|min:0|max:0.8',
+            'useHtmlMode' => 'nullable|boolean',
         ], [
             'heading.max' => 'Heading must not exceed 500 characters.',
             'summary.max' => 'Summary must not exceed 2000 characters.',
