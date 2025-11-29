@@ -246,7 +246,7 @@ export default function TextToImage() {
     type TextSegment = { text: string; bold?: boolean; italic?: boolean };
     const cleaned: TextSegment[] = [];
     
-    result.forEach((item: TextSegment, index: number) => {
+    result.forEach((item: TextSegment) => {
       if (item.text === '\n') {
         // Line break - always add (but not if last was also line break)
         const lastCleaned = cleaned[cleaned.length - 1];
