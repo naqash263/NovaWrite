@@ -554,5 +554,91 @@ class TextToImageController extends Controller
 
         return null;
     }
+
+    /**
+     * Download image from URL
+     */
+    private function downloadImageFromUrl($url): ?string
+    {
+        try {
+            // Validate URL
+            if (!filter_var($url, FILTER_VALIDATE_URL)) {
+                return null;
+            }
+
+            // Create temporary file
+            $tempFile = tempnam(sys_get_temp_dir(), 'bg_image_');
+            if (!$tempFile) {
+                return null;
+            }
+
+            // Initialize cURL
+            $ch = curl_init($url);
+            if (!$ch) {
+                return null;
+            }
+
+            // Set cURL options
+            $fp = fopen($tempFile, 'wb');
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => false,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS => 5,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ImageDownloader/1.0)',
+                CURLOPT_FILE => $fp,
+            ]);
+
+            // Execute request
+            $success = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+            fclose($fp);
+
+            // Check if download was successful
+            if (!$success || $httpCode !== 200 || !empty($error)) {
+                @unlink($tempFile);
+                \Log::warning('Failed to download image from URL', [
+                    'url' => $url,
+                    'http_code' => $httpCode,
+                    'error' => $error
+                ]);
+                return null;
+            }
+
+            // Verify it's actually an image
+            $imageInfo = @getimagesize($tempFile);
+            if (!$imageInfo || !in_array($imageInfo['mime'], ['image/jpeg', 'image/png', 'image/gif', 'image/webp'])) {
+                @unlink($tempFile);
+                \Log::warning('Downloaded file is not a valid image', [
+                    'url' => $url,
+                    'mime_type' => $imageInfo['mime'] ?? 'unknown'
+                ]);
+                return null;
+            }
+
+            // Check file size (max 10MB)
+            $fileSize = filesize($tempFile);
+            if ($fileSize > 10 * 1024 * 1024) {
+                @unlink($tempFile);
+                \Log::warning('Downloaded image is too large', [
+                    'url' => $url,
+                    'size' => $fileSize
+                ]);
+                return null;
+            }
+
+            return $tempFile;
+        } catch (\Exception $e) {
+            \Log::error('Error downloading image from URL', [
+                'url' => $url,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
 }
 

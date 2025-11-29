@@ -48,6 +48,7 @@ Content-Type: multipart/form-data
 #### Background Image
 - `useBackgroundImage` (boolean, optional): Use uploaded background image (default: `false`)
 - `backgroundImage` (file, optional): Background image file (JPEG, PNG, GIF, WebP, max: 10MB)
+- `backgroundImageUrl` (string, optional): URL to background image (alternative to file upload, max: 2048 chars)
 - `backgroundOverlay` (boolean, optional): Add dark overlay for text readability (default: `true`)
 - `backgroundOverlayOpacity` (numeric, optional, min: 0, max: 0.8): Overlay opacity (default: 0.3)
 
