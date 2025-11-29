@@ -193,24 +193,6 @@ class TextToImageController extends Controller
             $startY = ($height - $totalTextHeight) / 2;
             $textY = $startY;
 
-            // Get font path once (with error handling)
-            try {
-                $fontPath = $this->getFontPath($fontFamily);
-            } catch (\Exception $e) {
-                // If font not found, try to use a default
-                \Log::warning('Font not found: ' . $fontFamily . ' - ' . $e->getMessage());
-                // Try one more time with Arial
-                try {
-                    $fontPath = $this->getFontPath('Arial');
-                } catch (\Exception $e2) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Font system error: ' . $e2->getMessage() . '. Please contact administrator to install TTF fonts on the server.',
-                        'error' => 'FONT_NOT_FOUND'
-                    ], 500);
-                }
-            }
-
             // Draw heading with shadow
             if (count($headingLines) > 0) {
                 foreach ($headingLines as $index => $line) {
@@ -348,18 +330,27 @@ class TextToImageController extends Controller
     /**
      * Get X position for text based on alignment
      */
-    private function getTextX($align, $textX, $width, $text, $fontFamily, $fontSize, $isBold): int
+    private function getTextX($align, $textX, $width, $text, $fontPath, $fontSize, $isBold): int
     {
-        $fontPath = $this->getFontPath($fontFamily);
-        $bbox = imagettfbbox($fontSize, 0, $fontPath, $text);
-        $textWidth = $bbox[4] - $bbox[0];
+        try {
+            $bbox = imagettfbbox($fontSize, 0, $fontPath, $text);
+            if ($bbox === false) {
+                // Fallback to approximate width
+                $textWidth = strlen($text) * $fontSize * 0.6;
+            } else {
+                $textWidth = $bbox[4] - $bbox[0];
+            }
+        } catch (\Exception $e) {
+            // Fallback to approximate width if font not found
+            $textWidth = strlen($text) * $fontSize * 0.6;
+        }
 
         if ($align === 'left') {
             return $textX;
         } elseif ($align === 'right') {
             return $width - $textX - $textWidth;
         } else {
-            return ($width - $textWidth) / 2;
+            return (int)(($width - $textWidth) / 2);
         }
     }
 
