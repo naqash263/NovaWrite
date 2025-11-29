@@ -115,7 +115,7 @@ export default function LanguageTranslator() {
         },
         body: JSON.stringify({
           text: text.trim(),
-          source_language: sourceLanguage === 'auto' ? null : sourceLanguage,
+          source_language: sourceLanguage === 'auto' ? 'auto' : sourceLanguage,
           target_language: targetLanguage,
           preserve_formatting: preserveFormatting
         })

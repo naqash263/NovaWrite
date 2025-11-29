@@ -163,31 +163,49 @@ class ArticleRewriterController extends Controller
     private function getAvailableApiKey()
     {
         try {
-            $user = auth('api')->user();
+            $user = null;
+            try {
+                $user = auth('api')->user();
+            } catch (\Exception $e) {
+                // User not authenticated, continue with public access
+                Log::info('No authenticated user for article rewriter, using public API access');
+            }
             
             if ($user) {
-                $userApiKey = UserApiKey::where('user_id', $user->id)
-                    ->where('is_active', true)
-                    ->whereRaw('used_requests < max_requests')
-                    ->first();
+                try {
+                    $userApiKey = UserApiKey::where('user_id', $user->id)
+                        ->where('is_active', true)
+                        ->whereRaw('used_requests < max_requests')
+                        ->first();
 
-                if ($userApiKey) {
-                    Log::info('Using user API key for article rewriter', ['user_id' => $user->id]);
-                    return $userApiKey;
+                    if ($userApiKey) {
+                        Log::info('Using user API key for article rewriter', ['user_id' => $user->id]);
+                        return $userApiKey;
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to get user API key: ' . $e->getMessage());
                 }
             }
 
-            $adminApiKey = GeminiApiKey::where('is_active', true)
-                ->whereRaw('used_requests < total_requests')
-                ->first();
-                
-            if ($adminApiKey) {
-                Log::info('Using admin API key for article rewriter');
-                return $adminApiKey;
+            try {
+                $adminApiKey = GeminiApiKey::where('is_active', true)
+                    ->whereRaw('used_requests < total_requests')
+                    ->first();
+                    
+                if ($adminApiKey) {
+                    Log::info('Using admin API key for article rewriter');
+                    return $adminApiKey;
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to get admin API key: ' . $e->getMessage());
+                throw $e; // Re-throw database connection errors
             }
 
             Log::warning('No available API keys for article rewriter');
             return null;
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error('Database connection error in article rewriter: ' . $e->getMessage());
+            throw new \Exception('Database connection failed. Please try again later.');
         } catch (\Exception $e) {
             Log::error('API key retrieval failed: ' . $e->getMessage());
             return null;

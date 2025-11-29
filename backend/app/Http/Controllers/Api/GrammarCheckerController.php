@@ -185,31 +185,49 @@ class GrammarCheckerController extends Controller
     private function getAvailableApiKey()
     {
         try {
-            $user = auth('api')->user();
+            $user = null;
+            try {
+                $user = auth('api')->user();
+            } catch (\Exception $e) {
+                // User not authenticated, continue with public access
+                Log::info('No authenticated user for grammar checker, using public API access');
+            }
             
             if ($user) {
-                $userApiKey = UserApiKey::where('user_id', $user->id)
-                    ->where('is_active', true)
-                    ->whereRaw('used_requests < max_requests')
-                    ->first();
+                try {
+                    $userApiKey = UserApiKey::where('user_id', $user->id)
+                        ->where('is_active', true)
+                        ->whereRaw('used_requests < max_requests')
+                        ->first();
 
-                if ($userApiKey) {
-                    Log::info('Using user API key for grammar checker', ['user_id' => $user->id]);
-                    return $userApiKey;
+                    if ($userApiKey) {
+                        Log::info('Using user API key for grammar checker', ['user_id' => $user->id]);
+                        return $userApiKey;
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to get user API key: ' . $e->getMessage());
                 }
             }
 
-            $adminApiKey = GeminiApiKey::where('is_active', true)
-                ->whereRaw('used_requests < total_requests')
-                ->first();
-                
-            if ($adminApiKey) {
-                Log::info('Using admin API key for grammar checker');
-                return $adminApiKey;
+            try {
+                $adminApiKey = GeminiApiKey::where('is_active', true)
+                    ->whereRaw('used_requests < total_requests')
+                    ->first();
+                    
+                if ($adminApiKey) {
+                    Log::info('Using admin API key for grammar checker');
+                    return $adminApiKey;
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to get admin API key: ' . $e->getMessage());
+                throw $e; // Re-throw database connection errors
             }
 
             Log::warning('No available API keys for grammar checker');
             return null;
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error('Database connection error in grammar checker: ' . $e->getMessage());
+            throw new \Exception('Database connection failed. Please try again later.');
         } catch (\Exception $e) {
             Log::error('API key retrieval failed: ' . $e->getMessage());
             return null;
