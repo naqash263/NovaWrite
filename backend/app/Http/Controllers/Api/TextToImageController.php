@@ -37,6 +37,7 @@ class TextToImageController extends Controller
             'headingSpacing' => 'nullable|integer|min:20|max:100',
             'useBackgroundImage' => 'nullable|boolean',
             'backgroundImage' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:10240',
+            'backgroundImageUrl' => 'nullable|url|max:2048',
             'backgroundOverlay' => 'nullable|boolean',
             'backgroundOverlayOpacity' => 'nullable|numeric|min:0|max:0.8',
             'useHtmlMode' => 'nullable|boolean',
@@ -83,6 +84,7 @@ class TextToImageController extends Controller
             $lineSpacing = $request->input('lineSpacing', 1.5);
             $headingSpacing = $request->input('headingSpacing', 50);
             $useBackgroundImage = $request->input('useBackgroundImage', false);
+            $backgroundImageUrl = $request->input('backgroundImageUrl');
             $backgroundOverlay = $request->input('backgroundOverlay', true);
             $backgroundOverlayOpacity = $request->input('backgroundOverlayOpacity', 0.3);
 
@@ -99,42 +101,90 @@ class TextToImageController extends Controller
             
             // Handle background image if provided
             $backgroundImageResource = null;
-            if ($useBackgroundImage && $request->hasFile('backgroundImage')) {
-                $backgroundFile = $request->file('backgroundImage');
-                $backgroundImagePath = $backgroundFile->getRealPath();
-                $backgroundImageInfo = getimagesize($backgroundImagePath);
-                
-                if ($backgroundImageInfo) {
-                    $mimeType = $backgroundImageInfo['mime'];
-                    if ($mimeType === 'image/jpeg') {
-                        $backgroundImageResource = imagecreatefromjpeg($backgroundImagePath);
-                    } elseif ($mimeType === 'image/png') {
-                        $backgroundImageResource = imagecreatefrompng($backgroundImagePath);
-                    } elseif ($mimeType === 'image/gif') {
-                        $backgroundImageResource = imagecreatefromgif($backgroundImagePath);
-                    } elseif ($mimeType === 'image/webp') {
-                        $backgroundImageResource = imagecreatefromwebp($backgroundImagePath);
+            $backgroundImagePath = null;
+            
+            if ($useBackgroundImage) {
+                // Check if image is provided as file upload
+                if ($request->hasFile('backgroundImage')) {
+                    $backgroundFile = $request->file('backgroundImage');
+                    $backgroundImagePath = $backgroundFile->getRealPath();
+                }
+                // Check if image is provided as URL
+                elseif ($backgroundImageUrl) {
+                    try {
+                        // Download image from URL
+                        $tempPath = $this->downloadImageFromUrl($backgroundImageUrl);
+                        if ($tempPath) {
+                            $backgroundImagePath = $tempPath;
+                        } else {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Failed to download background image from URL. Please ensure the URL is accessible and points to a valid image file.',
+                                'error' => 'IMAGE_DOWNLOAD_FAILED'
+                            ], 422);
+                        }
+                    } catch (\Exception $e) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Error downloading background image: ' . $e->getMessage(),
+                            'error' => 'IMAGE_DOWNLOAD_ERROR'
+                        ], 422);
                     }
+                }
+                
+                // Process the image if we have a path
+                if ($backgroundImagePath) {
+                    $backgroundImageInfo = @getimagesize($backgroundImagePath);
                     
-                    if ($backgroundImageResource) {
-                        // Resize background image to fit canvas
-                        imagecopyresampled(
-                            $image,
-                            $backgroundImageResource,
-                            0, 0, 0, 0,
-                            $width,
-                            $height,
-                            imagesx($backgroundImageResource),
-                            imagesy($backgroundImageResource)
-                        );
-                        
-                        // Add overlay if enabled
-                        if ($backgroundOverlay) {
-                            $overlayColor = imagecolorallocatealpha($image, 0, 0, 0, (int)((1 - $backgroundOverlayOpacity) * 127));
-                            imagefilledrectangle($image, 0, 0, $width, $height, $overlayColor);
+                    if ($backgroundImageInfo) {
+                        $mimeType = $backgroundImageInfo['mime'];
+                        if ($mimeType === 'image/jpeg') {
+                            $backgroundImageResource = @imagecreatefromjpeg($backgroundImagePath);
+                        } elseif ($mimeType === 'image/png') {
+                            $backgroundImageResource = @imagecreatefrompng($backgroundImagePath);
+                        } elseif ($mimeType === 'image/gif') {
+                            $backgroundImageResource = @imagecreatefromgif($backgroundImagePath);
+                        } elseif ($mimeType === 'image/webp') {
+                            $backgroundImageResource = @imagecreatefromwebp($backgroundImagePath);
                         }
                         
-                        imagedestroy($backgroundImageResource);
+                        if ($backgroundImageResource) {
+                            // Resize background image to fit canvas
+                            imagecopyresampled(
+                                $image,
+                                $backgroundImageResource,
+                                0, 0, 0, 0,
+                                $width,
+                                $height,
+                                imagesx($backgroundImageResource),
+                                imagesy($backgroundImageResource)
+                            );
+                            
+                            // Add overlay if enabled
+                            if ($backgroundOverlay) {
+                                $overlayColor = imagecolorallocatealpha($image, 0, 0, 0, (int)((1 - $backgroundOverlayOpacity) * 127));
+                                imagefilledrectangle($image, 0, 0, $width, $height, $overlayColor);
+                            }
+                            
+                            imagedestroy($backgroundImageResource);
+                        } else {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Failed to process background image. Please ensure it is a valid image file (JPEG, PNG, GIF, or WebP).',
+                                'error' => 'IMAGE_PROCESSING_FAILED'
+                            ], 422);
+                        }
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Invalid background image. Please ensure it is a valid image file.',
+                            'error' => 'INVALID_IMAGE'
+                        ], 422);
+                    }
+                    
+                    // Clean up temporary file if it was downloaded from URL
+                    if ($backgroundImageUrl && file_exists($backgroundImagePath) && strpos($backgroundImagePath, sys_get_temp_dir()) !== false) {
+                        @unlink($backgroundImagePath);
                     }
                 }
             }
