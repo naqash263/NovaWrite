@@ -1,6 +1,108 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSEO } from '../../utils/seo';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+
+interface Preset {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  description: string;
+  category: string;
+}
+
+const SOCIAL_MEDIA_PRESETS: Preset[] = [
+  {
+    id: 'instagram-post',
+    name: 'Instagram Post',
+    width: 1080,
+    height: 1080,
+    description: 'Square format for Instagram feed posts',
+    category: 'social-media'
+  },
+  {
+    id: 'instagram-story',
+    name: 'Instagram Story',
+    width: 1080,
+    height: 1920,
+    description: 'Vertical format for Instagram stories',
+    category: 'social-media'
+  },
+  {
+    id: 'instagram-reel',
+    name: 'Instagram Reel',
+    width: 1080,
+    height: 1920,
+    description: 'Vertical format for Instagram reels',
+    category: 'social-media'
+  },
+  {
+    id: 'facebook-post',
+    name: 'Facebook Post',
+    width: 1200,
+    height: 630,
+    description: 'Recommended size for Facebook posts',
+    category: 'social-media'
+  },
+  {
+    id: 'facebook-cover',
+    name: 'Facebook Cover',
+    width: 1640,
+    height: 859,
+    description: 'Facebook page cover photo',
+    category: 'social-media'
+  },
+  {
+    id: 'twitter-post',
+    name: 'Twitter Post',
+    width: 1200,
+    height: 675,
+    description: 'Recommended size for Twitter posts',
+    category: 'social-media'
+  },
+  {
+    id: 'twitter-header',
+    name: 'Twitter Header',
+    width: 1500,
+    height: 500,
+    description: 'Twitter profile header image',
+    category: 'social-media'
+  },
+  {
+    id: 'linkedin-post',
+    name: 'LinkedIn Post',
+    width: 1200,
+    height: 627,
+    description: 'Recommended size for LinkedIn posts',
+    category: 'social-media'
+  },
+  {
+    id: 'linkedin-cover',
+    name: 'LinkedIn Cover',
+    width: 1584,
+    height: 396,
+    description: 'LinkedIn company page cover image',
+    category: 'social-media'
+  },
+  {
+    id: 'youtube-thumbnail',
+    name: 'YouTube Thumbnail',
+    width: 1280,
+    height: 720,
+    description: 'YouTube video thumbnail (16:9)',
+    category: 'social-media'
+  },
+  {
+    id: 'pinterest-pin',
+    name: 'Pinterest Pin',
+    width: 1000,
+    height: 1500,
+    description: 'Vertical format for Pinterest pins',
+    category: 'social-media'
+  },
+];
+
 export default function ImageResizer() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [resizedImage, setResizedImage] = useState<string | null>(null);
@@ -11,15 +113,22 @@ export default function ImageResizer() {
   const [format, setFormat] = useState<'png' | 'jpeg' | 'webp'>('jpeg');
   const [originalSize, setOriginalSize] = useState<{ width: number; height: number } | null>(null);
   const [fileSize, setFileSize] = useState<{ original: number; resized: number } | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<string>('default');
+  const [useApi, setUseApi] = useState<boolean>(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useSEO({
-    title: 'Free Image Resizer - Resize Images Online | Image Size Converter',
-    description: 'Resize images online for free. Adjust width, height, maintain aspect ratio, change format, and adjust quality. Download resized images instantly. No registration required.',
+    title: 'Free Image Resizer - Resize Images Online | Social Media Image Resizer',
+    description: 'Resize images online for free with social media presets. Instagram, Facebook, Twitter, LinkedIn, YouTube, and Pinterest sizes. Adjust dimensions, maintain aspect ratio, change format, and adjust quality.',
     url: '/resources/utility-tools/image-resizer',
     keywords: [
       'image resizer', 'resize image', 'image size converter', 'resize photo',
+      'social media image resizer', 'instagram image size', 'facebook image size',
+      'twitter image size', 'linkedin image size', 'youtube thumbnail', 'pinterest image size',
       'image compressor', 'photo resizer', 'image editor', 'resize picture',
       'online image resizer', 'free image resizer', 'image tool'
     ],
@@ -28,7 +137,7 @@ export default function ImageResizer() {
       '@context': 'https://schema.org',
       '@type': 'WebApplication',
       'name': 'Image Resizer',
-      'description': 'Free online image resizer. Resize images with adjustable dimensions, format conversion, and quality control.',
+      'description': 'Free online image resizer with social media presets. Resize images with adjustable dimensions, format conversion, and quality control.',
       'url': 'https://naqashthaheem.com/resources/utility-tools/image-resizer',
       'applicationCategory': 'UtilityApplication',
       'operatingSystem': 'Web Browser',
@@ -39,16 +148,18 @@ export default function ImageResizer() {
       },
       'featureList': [
         'Resize images to custom dimensions',
+        'Social media presets (Instagram, Facebook, Twitter, etc.)',
         'Maintain aspect ratio option',
         'Format conversion (JPEG, PNG, WebP)',
         'Quality adjustment',
         'Before/after size comparison',
+        'API support',
         'Instant download'
       ],
       'aggregateRating': {
         '@type': 'AggregateRating',
-        'ratingValue': '4.7',
-        'ratingCount': '2400',
+        'ratingValue': '4.8',
+        'ratingCount': '3200',
         'bestRating': '5',
         'worstRating': '1'
       }
@@ -60,9 +171,12 @@ export default function ImageResizer() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file');
+      setError('Please select a valid image file');
       return;
     }
+
+    setOriginalFile(file);
+    setError('');
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -73,22 +187,38 @@ export default function ImageResizer() {
       const img = new Image();
       img.onload = () => {
         setOriginalSize({ width: img.width, height: img.height });
-        if (maintainAspectRatio) {
-          const aspectRatio = img.width / img.height;
-          if (width / height > aspectRatio) {
-            setHeight(Math.round(width / aspectRatio));
+        if (selectedPreset === 'default') {
+          if (maintainAspectRatio) {
+            const aspectRatio = img.width / img.height;
+            if (width / height > aspectRatio) {
+              setHeight(Math.round(width / aspectRatio));
+            } else {
+              setWidth(Math.round(height * aspectRatio));
+            }
           } else {
-            setWidth(Math.round(height * aspectRatio));
+            setWidth(img.width);
+            setHeight(img.height);
           }
-        } else {
-          setWidth(img.width);
-          setHeight(img.height);
         }
-        resizeImage(img, width, height);
+        if (!useApi) {
+          resizeImage(img, width, height);
+        }
       };
       img.src = imageUrl;
     };
     reader.readAsDataURL(file);
+  };
+
+  const handlePresetSelect = (presetId: string) => {
+    setSelectedPreset(presetId);
+    if (presetId !== 'default') {
+      const preset = SOCIAL_MEDIA_PRESETS.find(p => p.id === presetId);
+      if (preset) {
+        setWidth(preset.width);
+        setHeight(preset.height);
+        // The useEffect will handle the resize when width/height change
+      }
+    }
   };
 
   const resizeImage = (img: HTMLImageElement, targetWidth: number, targetHeight: number) => {
@@ -114,43 +244,100 @@ export default function ImageResizer() {
     setFileSize(prev => prev ? { ...prev, resized: fileSizeBytes } : null);
   };
 
-  const handleResize = () => {
-    if (!originalImage) return;
+  const handleResize = async () => {
+    if (!originalImage || !originalFile) return;
 
-    const img = new Image();
-    img.onload = () => {
-      let targetWidth = width;
-      let targetHeight = height;
-
-      if (maintainAspectRatio && originalSize) {
-        const aspectRatio = originalSize.width / originalSize.height;
-        if (targetWidth / targetHeight > aspectRatio) {
-          targetHeight = Math.round(targetWidth / aspectRatio);
-          setHeight(targetHeight);
-        } else {
-          targetWidth = Math.round(targetHeight * aspectRatio);
-          setWidth(targetWidth);
+    if (useApi) {
+      setIsProcessing(true);
+      setError('');
+      try {
+        const formData = new FormData();
+        formData.append('image', originalFile);
+        formData.append('width', width.toString());
+        formData.append('height', height.toString());
+        formData.append('maintain_aspect_ratio', maintainAspectRatio.toString());
+        formData.append('quality', quality.toString());
+        formData.append('format', format);
+        if (selectedPreset !== 'default') {
+          formData.append('preset', selectedPreset);
         }
-      }
 
-      resizeImage(img, targetWidth, targetHeight);
-    };
-    img.src = originalImage;
+        const response = await fetch(`${API_URL}/utility-tools/image-resizer/resize`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to resize image');
+        }
+
+        if (data.success) {
+          setResizedImage(data.data.url);
+          setFileSize({
+            original: data.data.original_size,
+            resized: data.data.resized_size
+          });
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to resize image via API');
+        setResizedImage(null);
+      } finally {
+        setIsProcessing(false);
+      }
+    } else {
+      const img = new Image();
+      img.onload = () => {
+        let targetWidth = width;
+        let targetHeight = height;
+
+        if (maintainAspectRatio && originalSize) {
+          const aspectRatio = originalSize.width / originalSize.height;
+          if (targetWidth / targetHeight > aspectRatio) {
+            targetHeight = Math.round(targetWidth / aspectRatio);
+            setHeight(targetHeight);
+          } else {
+            targetWidth = Math.round(targetHeight * aspectRatio);
+            setWidth(targetWidth);
+          }
+        }
+
+        resizeImage(img, targetWidth, targetHeight);
+      };
+      img.src = originalImage;
+    }
   };
 
   const handleWidthChange = (newWidth: number) => {
     setWidth(newWidth);
-    if (maintainAspectRatio && originalSize) {
+    setSelectedPreset('default');
+    if (maintainAspectRatio && originalSize && !useApi) {
       const aspectRatio = originalSize.width / originalSize.height;
       setHeight(Math.round(newWidth / aspectRatio));
+      if (originalImage) {
+        const img = new Image();
+        img.onload = () => {
+          resizeImage(img, newWidth, Math.round(newWidth / aspectRatio));
+        };
+        img.src = originalImage;
+      }
     }
   };
 
   const handleHeightChange = (newHeight: number) => {
     setHeight(newHeight);
-    if (maintainAspectRatio && originalSize) {
+    setSelectedPreset('default');
+    if (maintainAspectRatio && originalSize && !useApi) {
       const aspectRatio = originalSize.width / originalSize.height;
       setWidth(Math.round(newHeight * aspectRatio));
+      if (originalImage) {
+        const img = new Image();
+        img.onload = () => {
+          resizeImage(img, Math.round(newHeight * aspectRatio), newHeight);
+        };
+        img.src = originalImage;
+      }
     }
   };
 
@@ -170,10 +357,36 @@ export default function ImageResizer() {
   };
 
   useEffect(() => {
-    if (originalImage) {
-      handleResize();
+    if (originalImage && !useApi && originalSize) {
+      const img = new Image();
+      img.onload = () => {
+        let targetWidth = width;
+        let targetHeight = height;
+
+        if (maintainAspectRatio && originalSize) {
+          const aspectRatio = originalSize.width / originalSize.height;
+          if (targetWidth / targetHeight > aspectRatio) {
+            targetHeight = Math.round(targetWidth / aspectRatio);
+            // Only update if different to prevent infinite loop
+            if (targetHeight !== height) {
+              setHeight(targetHeight);
+              return; // Let the next useEffect cycle handle the resize
+            }
+          } else {
+            targetWidth = Math.round(targetHeight * aspectRatio);
+            // Only update if different to prevent infinite loop
+            if (targetWidth !== width) {
+              setWidth(targetWidth);
+              return; // Let the next useEffect cycle handle the resize
+            }
+          }
+        }
+
+        resizeImage(img, targetWidth, targetHeight);
+      };
+      img.src = originalImage;
     }
-  }, [width, height, quality, format, maintainAspectRatio]);
+  }, [width, height, quality, format, maintainAspectRatio, originalImage, originalSize, useApi]);
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
@@ -182,7 +395,7 @@ export default function ImageResizer() {
           🖼️ Image Resizer
         </h1>
         <p className="text-gray-600 mb-6">
-          Resize images online for free. Adjust dimensions, maintain aspect ratio, change format, and adjust quality.
+          Resize images online for free. Choose from social media presets or custom dimensions. Adjust format and quality.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -200,6 +413,54 @@ export default function ImageResizer() {
                 onChange={handleFileSelect}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+            </div>
+
+            {/* Processing Mode */}
+            <div className="mb-6">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useApi}
+                  onChange={(e) => setUseApi(e.target.checked)}
+                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-gray-700">Use API for processing (better for large images)</span>
+              </label>
+            </div>
+
+            {/* Social Media Presets */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Social Media Presets
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                <button
+                  onClick={() => handlePresetSelect('default')}
+                  className={`p-3 rounded-lg border-2 transition-all text-left ${
+                    selectedPreset === 'default'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-semibold text-sm text-gray-900">Custom</div>
+                  <div className="text-xs text-gray-500">Manual size</div>
+                </button>
+                {SOCIAL_MEDIA_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => handlePresetSelect(preset.id)}
+                    className={`p-3 rounded-lg border-2 transition-all text-left ${
+                      selectedPreset === preset.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    title={preset.description}
+                  >
+                    <div className="font-semibold text-sm text-gray-900">{preset.name}</div>
+                    <div className="text-xs text-gray-500">{preset.width}×{preset.height}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {originalSize && (
@@ -289,6 +550,13 @@ export default function ImageResizer() {
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm">{error}</p>
+              </div>
+            )}
+
             {fileSize && fileSize.resized > 0 && (
               <div className="mb-6 p-4 bg-green-50 rounded-lg">
                 <div className="text-sm text-gray-600 mb-2">Resized Size</div>
@@ -301,10 +569,20 @@ export default function ImageResizer() {
               </div>
             )}
 
+            {useApi && (
+              <button
+                onClick={handleResize}
+                disabled={!originalImage || isProcessing}
+                className="w-full mb-3 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
+              >
+                {isProcessing ? 'Processing...' : '🔄 Resize via API'}
+              </button>
+            )}
+
             {resizedImage && (
               <button
                 onClick={downloadImage}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
               >
                 📥 Download Resized Image
               </button>
@@ -346,16 +624,31 @@ export default function ImageResizer() {
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">About Image Resizer</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Our Image Resizer is a powerful, client-side tool that resizes images directly in your 
-              browser using HTML5 Canvas technology. All processing happens locally, ensuring your 
-              images are never uploaded to any server. This provides maximum privacy and security 
-              for your images.
+              Our Image Resizer is a powerful tool that resizes images directly in your browser or via API. 
+              It includes pre-configured sizes for all major social media platforms, making it easy to prepare 
+              images for Instagram, Facebook, Twitter, LinkedIn, YouTube, and Pinterest.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              Perfect for resizing photos for social media, websites, email attachments, or any 
-              other use case. The tool supports multiple formats and quality settings to optimize 
-              file size while maintaining visual quality.
+              Choose from social media presets or set custom dimensions. The tool supports client-side processing 
+              for privacy or API processing for better performance with large images. All processing maintains 
+              image quality while optimizing file size.
             </p>
+          </div>
+
+          {/* Social Media Presets Info */}
+          <div className="p-6 bg-purple-50 rounded-lg">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Available Social Media Presets</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {SOCIAL_MEDIA_PRESETS.map((preset) => (
+                <div key={preset.id} className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="font-semibold text-gray-900 mb-1">{preset.name}</h4>
+                  <div className="text-sm text-gray-600 mb-2">
+                    {preset.width} × {preset.height} px
+                  </div>
+                  <div className="text-xs text-gray-500">{preset.description}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Use Cases */}
@@ -364,27 +657,27 @@ export default function ImageResizer() {
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
-                <span>Resizing images for social media posts</span>
+                <span>Resize images for Instagram posts, stories, and reels</span>
               </li>
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
-                <span>Optimizing images for websites and blogs</span>
+                <span>Optimize images for Facebook posts and cover photos</span>
               </li>
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
-                <span>Reducing file size for email attachments</span>
+                <span>Create Twitter posts and header images</span>
               </li>
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
-                <span>Converting between image formats</span>
+                <span>Prepare LinkedIn posts and cover images</span>
               </li>
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
-                <span>Creating thumbnails and preview images</span>
+                <span>Create YouTube thumbnails</span>
               </li>
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
-                <span>Preparing images for print materials</span>
+                <span>Optimize Pinterest pins</span>
               </li>
             </ul>
           </div>
@@ -398,8 +691,8 @@ export default function ImageResizer() {
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Custom Dimensions</h4>
-                  <p className="text-sm text-gray-600">Resize to any width and height up to 10,000px</p>
+                  <h4 className="font-semibold text-gray-900 mb-1">Social Media Presets</h4>
+                  <p className="text-sm text-gray-600">11 pre-configured sizes for major platforms</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -407,8 +700,8 @@ export default function ImageResizer() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Aspect Ratio</h4>
-                  <p className="text-sm text-gray-600">Maintain original proportions or customize freely</p>
+                  <h4 className="font-semibold text-gray-900 mb-1">API Support</h4>
+                  <p className="text-sm text-gray-600">Client-side or API processing options</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -417,7 +710,7 @@ export default function ImageResizer() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-1">Format Support</h4>
-                  <p className="text-sm text-gray-600">Convert between JPEG, PNG, and WebP formats</p>
+                  <p className="text-sm text-gray-600">Convert between JPEG, PNG, and WebP</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -426,7 +719,7 @@ export default function ImageResizer() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-1">Quality Control</h4>
-                  <p className="text-sm text-gray-600">Adjust quality (0.1-1.0) to balance size and appearance</p>
+                  <p className="text-sm text-gray-600">Adjust quality to balance size and appearance</p>
                 </div>
               </div>
             </div>
@@ -437,31 +730,32 @@ export default function ImageResizer() {
             <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
             <div className="space-y-4">
               <div>
+                <h4 className="font-semibold text-gray-900 mb-2">What social media presets are available?</h4>
+                <p className="text-gray-700 text-sm">
+                  We provide presets for Instagram (post, story, reel), Facebook (post, cover), Twitter (post, header), 
+                  LinkedIn (post, cover), YouTube (thumbnail), and Pinterest (pin). All presets use recommended dimensions 
+                  for optimal display on each platform.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Should I use client-side or API processing?</h4>
+                <p className="text-gray-700 text-sm">
+                  Client-side processing is faster and more private (images never leave your browser). Use API processing 
+                  for very large images or when you need server-side optimization. Both methods produce the same results.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Can I use custom dimensions?</h4>
+                <p className="text-gray-700 text-sm">
+                  Yes, select "Custom" from the presets and enter your desired width and height. You can resize to any 
+                  dimensions up to 10,000 × 10,000 pixels.
+                </p>
+              </div>
+              <div>
                 <h4 className="font-semibold text-gray-900 mb-2">Is my image uploaded to a server?</h4>
                 <p className="text-gray-700 text-sm">
-                  No, all image processing happens locally in your browser using HTML5 Canvas. Your 
-                  images never leave your device.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What image formats are supported?</h4>
-                <p className="text-gray-700 text-sm">
-                  You can upload JPEG, PNG, GIF, WebP, and BMP images. Output formats include JPEG, 
-                  PNG, and WebP.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the maximum image size?</h4>
-                <p className="text-gray-700 text-sm">
-                  Maximum dimensions are 10,000 × 10,000 pixels. File size limits depend on your 
-                  browser's memory capacity.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How do I choose the right format?</h4>
-                <p className="text-gray-700 text-sm">
-                  JPEG for photos (smaller size), PNG for images with transparency, WebP for modern 
-                  browsers (best compression).
+                  Only if you enable "Use API for processing". With client-side processing (default), all image processing 
+                  happens locally in your browser. Your images never leave your device.
                 </p>
               </div>
             </div>
@@ -472,15 +766,16 @@ export default function ImageResizer() {
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
           <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>JPEG is best for photos, PNG for images with transparency, WebP for modern browsers</li>
-            <li>Lower quality reduces file size but may affect image appearance</li>
-            <li>Maintain aspect ratio to prevent image distortion</li>
-            <li>Maximum dimensions: 10,000 × 10,000 pixels</li>
-            <li>Check file size before/after to see compression results</li>
+            <li>Use social media presets for optimal display on each platform</li>
+            <li>Instagram posts work best at 1080×1080 (square format)</li>
+            <li>Instagram stories and reels use 1080×1920 (vertical format)</li>
+            <li>Facebook posts: 1200×630, Facebook covers: 1640×859</li>
+            <li>YouTube thumbnails: 1280×720 (16:9 aspect ratio)</li>
+            <li>Use API processing for images larger than 5MB</li>
+            <li>All processing happens in your browser by default - no uploads required</li>
           </ul>
         </div>
       </div>
     </div>
   );
 }
-

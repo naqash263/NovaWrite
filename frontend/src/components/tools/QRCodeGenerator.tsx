@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { useSEO } from '../../utils/seo';
 
@@ -11,7 +11,6 @@ export default function QRCodeGenerator() {
   const [darkColor, setDarkColor] = useState<string>('#000000');
   const [lightColor, setLightColor] = useState<string>('#FFFFFF');
   const [errorCorrectionLevel, setErrorCorrectionLevel] = useState<'L' | 'M' | 'Q' | 'H'>('M');
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useSEO({
     title: 'Free QR Code Generator - Create QR Codes Online | QR Code Maker',
@@ -278,7 +277,6 @@ export default function QRCodeGenerator() {
                     src={qrCodeUrl}
                     alt="QR Code"
                     className="mx-auto mb-4 max-w-full"
-                    ref={canvasRef}
                   />
                   {error && (
                     <p className="text-red-600 text-sm mt-2">{error}</p>

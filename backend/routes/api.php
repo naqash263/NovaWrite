@@ -60,6 +60,13 @@ Route::prefix('ai-tools')->group(function () {
     Route::post('/language-translator/translate', [App\Http\Controllers\Api\LanguageTranslatorController::class, 'translate']);
 });
 
+// Image Resizer API routes (public access)
+Route::prefix('utility-tools')->group(function () {
+    Route::post('/image-resizer/resize', [App\Http\Controllers\Api\ImageResizerController::class, 'resize']);
+    Route::get('/image-resizer/presets', [App\Http\Controllers\Api\ImageResizerController::class, 'presets']);
+    Route::post('/text-to-image/generate', [App\Http\Controllers\Api\TextToImageController::class, 'generate']);
+});
+
 // App analytics routes
 Route::middleware(\App\Http\Middleware\ApiAuth::class)->prefix('analytics')->group(function () {
     Route::post('/track/install', [App\Http\Controllers\Api\AppAnalyticsController::class, 'trackInstall']);

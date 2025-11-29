@@ -46,19 +46,30 @@ const toolCategories = [
   {
     id: 'utility-tools',
     title: "Utility Tools",
-    description: "Free productivity tools: Text to Speech, Password Generator, QR Code, Image Resizer, and more",
+    description: "Free productivity tools: Password Generator, QR Code, Image Resizer, PDF tools, and more",
     icon: "🛠️",
     path: "/resources/utility-tools",
     color: "purple",
     tools: [
-      { name: "Text to Speech", path: "/resources/utility-tools?tool=text-to-speech", icon: "🔊" },
       { name: "Password Generator", path: "/resources/utility-tools?tool=password-generator", icon: "🔐" },
       { name: "QR Code Generator", path: "/resources/utility-tools?tool=qr-code-generator", icon: "📱" },
       { name: "Image Resizer", path: "/resources/utility-tools?tool=image-resizer", icon: "🖼️" },
+      { name: "Text to Image", path: "/resources/utility-tools?tool=text-to-image", icon: "✨" },
       { name: "Word Counter", path: "/resources/utility-tools?tool=word-counter", icon: "📊" },
       { name: "Loan Calculator", path: "/resources/utility-tools?tool=loan-calculator", icon: "💰" },
+      { name: "Tip Calculator", path: "/resources/utility-tools?tool=tip-calculator", icon: "💵" },
+      { name: "Compound Interest Calculator", path: "/resources/utility-tools?tool=compound-interest-calculator", icon: "📈" },
       { name: "JSON Formatter", path: "/resources/utility-tools?tool=json-formatter", icon: "📋" },
-      { name: "View All (7)", path: "/resources/utility-tools", icon: "🛠️" },
+      { name: "Base64 Encoder", path: "/resources/utility-tools?tool=base64-encoder", icon: "🔐" },
+      { name: "URL Encoder", path: "/resources/utility-tools?tool=url-encoder", icon: "🔗" },
+      { name: "Regex Tester", path: "/resources/utility-tools?tool=regex-tester", icon: "🔍" },
+      { name: "UUID Generator", path: "/resources/utility-tools?tool=uuid-generator", icon: "🆔" },
+      { name: "JWT Decoder", path: "/resources/utility-tools?tool=jwt-decoder", icon: "🔓" },
+      { name: "PDF Merger", path: "/resources/utility-tools?tool=pdf-merger", icon: "🔗" },
+      { name: "PDF Splitter", path: "/resources/utility-tools?tool=pdf-splitter", icon: "✂️" },
+      { name: "PDF Compressor", path: "/resources/utility-tools?tool=pdf-compressor", icon: "📦" },
+      { name: "PDF Rotate", path: "/resources/utility-tools?tool=pdf-rotate", icon: "🔄" },
+      { name: "View All (18)", path: "/resources/utility-tools", icon: "🛠️" },
     ]
   },
   {
@@ -132,7 +143,7 @@ export default function Resources() {
       },
       {
         question: 'What types of tools are available?',
-        answer: 'We offer four main categories: Career Tools (CV Builder, LinkedIn Optimizer), Conversion Tools (15+ unit converters), Utility Tools (Text to Speech, Password Generator), and AI-Powered Tools (Text Summarizer, Grammar Checker).'
+        answer: 'We offer four main categories: Career Tools (CV Builder, LinkedIn Optimizer), Conversion Tools (15+ unit converters), Utility Tools (Password Generator, QR Code, PDF tools), and AI-Powered Tools (Text Summarizer, Grammar Checker).'
       },
       {
         question: 'Do I need to create an account?',
@@ -252,13 +263,13 @@ export default function Resources() {
         {/* API Key Manager */}
         <div className="max-w-2xl mx-auto mb-8">
           <ApiKeyManager />
-        </div>
-
+                  </div>
+                  
         {/* Ad: Content Top */}
         <div className="max-w-4xl mx-auto mb-12">
           <AdPlacement position="content-top" />
-        </div>
-
+                  </div>
+                  
         {/* Tool Categories */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {toolCategories.map((category) => {
@@ -305,7 +316,7 @@ export default function Resources() {
                   </div>
                   
                   {/* View All Button */}
-                  <button
+                  <button 
                     onClick={() => {
                       if (category.id === 'career-tools') {
                         setShowCareerTools(true);
@@ -379,7 +390,7 @@ export default function Resources() {
               callbacks by 40%, save hours of work, and improve productivity. All tools are built with industry best practices, 
               modern web technologies, and user-friendly interfaces.
             </p>
-          </div>
+                  </div>
 
           {/* Use Cases */}
           <div className="bg-gray-50 rounded-lg p-6 sm:p-8">
@@ -422,8 +433,8 @@ export default function Resources() {
                 </p>
               </div>
             </div>
-          </div>
-
+                  </div>
+                  
           {/* Features */}
           <div className="bg-white border border-gray-200 rounded-lg p-6 sm:p-8">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
@@ -440,21 +451,21 @@ export default function Resources() {
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-green-600 font-bold">2</span>
-                </div>
+          </div>
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-1">No Registration</h4>
                   <p className="text-sm text-gray-600">Start using tools immediately without creating an account</p>
                 </div>
-              </div>
+                  </div>
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
-                <div>
+                    <div>
                   <h4 className="font-semibold text-gray-900 mb-1">Privacy-Focused</h4>
                   <p className="text-sm text-gray-600">Most tools process data locally - your data never leaves your browser</p>
-                </div>
-              </div>
+                    </div>
+                  </div>
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-orange-600 font-bold">4</span>
@@ -481,7 +492,7 @@ export default function Resources() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">What types of tools are available?</h3>
               <p className="text-gray-600 text-sm">
-                We offer four main categories: Career Tools (CV Builder, LinkedIn Optimizer), Conversion Tools (15+ unit converters), Utility Tools (Text to Speech, Password Generator), and AI-Powered Tools (Text Summarizer, Grammar Checker).
+                We offer four main categories: Career Tools (CV Builder, LinkedIn Optimizer), Conversion Tools (15+ unit converters), Utility Tools (Password Generator, QR Code, PDF tools), and AI-Powered Tools (Text Summarizer, Grammar Checker).
               </p>
             </div>
             <div>
@@ -497,7 +508,7 @@ export default function Resources() {
               </p>
             </div>
           </div>
-        </div>
+              </div>
 
         {/* Ad: Content Bottom */}
         <div className="max-w-4xl mx-auto mb-8">

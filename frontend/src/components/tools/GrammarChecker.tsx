@@ -3,11 +3,6 @@ import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
-interface Suggestion {
-  text: string;
-  type?: string;
-}
-
 export default function GrammarChecker() {
   const [text, setText] = useState<string>('');
   const [correctedText, setCorrectedText] = useState<string>('');

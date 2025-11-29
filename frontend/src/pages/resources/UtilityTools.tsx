@@ -3,23 +3,37 @@ import { useSearchParams } from 'react-router-dom';
 import { useSEO } from '../../utils/seo';
 import { generateBreadcrumbSchema, generateFAQSchema, injectStructuredData } from '../../utils/structuredData';
 import AdPlacement from '../../components/AdPlacement';
-import TextToSpeech from '../../components/tools/TextToSpeech';
 import PasswordGenerator from '../../components/tools/PasswordGenerator';
 import QRCodeGenerator from '../../components/tools/QRCodeGenerator';
 import ImageResizer from '../../components/tools/ImageResizer';
 import WordCounter from '../../components/tools/WordCounter';
 import LoanCalculator from '../../components/tools/LoanCalculator';
 import JSONFormatter from '../../components/tools/JSONFormatter';
+import PDFMerger from '../../components/tools/PDFMerger';
+import PDFSplitter from '../../components/tools/PDFSplitter';
+import PDFCompressor from '../../components/tools/PDFCompressor';
+import PDFRotate from '../../components/tools/PDFRotate';
+import TipCalculator from '../../components/tools/TipCalculator';
+import CompoundInterestCalculator from '../../components/tools/CompoundInterestCalculator';
+import Base64Encoder from '../../components/tools/Base64Encoder';
+import URLEncoder from '../../components/tools/URLEncoder';
+import RegexTester from '../../components/tools/RegexTester';
+import UUIDGenerator from '../../components/tools/UUIDGenerator';
+import JWTDecoder from '../../components/tools/JWTDecoder';
+import TextToImage from '../../components/tools/TextToImage';
 
 type ToolType = 
-  | 'text-to-speech' | 'password-generator' | 'qr-code-generator' 
-  | 'image-resizer' | 'word-counter' | 'loan-calculator' | 'json-formatter';
+  | 'password-generator' | 'qr-code-generator' 
+  | 'image-resizer' | 'word-counter' | 'loan-calculator' | 'json-formatter'
+  | 'pdf-merger' | 'pdf-splitter' | 'pdf-compressor' | 'pdf-rotate'
+  | 'tip-calculator' | 'compound-interest-calculator' | 'base64-encoder' | 'url-encoder'
+  | 'regex-tester' | 'uuid-generator' | 'jwt-decoder' | 'text-to-image';
 
 interface ToolOption {
   id: ToolType;
   name: string;
   icon: string;
-  category: 'productivity' | 'developer' | 'financial';
+  category: 'productivity' | 'developer' | 'financial' | 'pdf';
   description: string;
   seoTitle?: string;
   seoDescription?: string;
@@ -27,16 +41,6 @@ interface ToolOption {
 }
 
 const toolOptions: ToolOption[] = [
-  { 
-    id: 'text-to-speech', 
-    name: 'Text to Speech', 
-    icon: '🔊', 
-    category: 'productivity', 
-    description: 'Convert text to natural-sounding speech with multiple voices and controls',
-    seoTitle: 'Free Text to Speech Converter - Online TTS Tool | Convert Text to Voice',
-    seoDescription: 'Free online text to speech converter. Convert any text to natural-sounding speech with multiple voices, adjustable speed, pitch, and volume. No registration required.',
-    keywords: ['text to speech', 'TTS', 'speech synthesis', 'text to voice', 'voice generator', 'online TTS']
-  },
   { 
     id: 'password-generator', 
     name: 'Password Generator', 
@@ -68,6 +72,16 @@ const toolOptions: ToolOption[] = [
     keywords: ['image resizer', 'resize image', 'image size converter', 'resize photo', 'image compressor']
   },
   { 
+    id: 'text-to-image', 
+    name: 'Text to Image', 
+    icon: '✨', 
+    category: 'productivity', 
+    description: 'Create beautiful images from text with customizable colors, fonts, and layouts',
+    seoTitle: 'Free Text to Image Generator - Create Images from Text Online | Text Image Maker',
+    seoDescription: 'Free online text to image generator. Create beautiful images from text with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics.',
+    keywords: ['text to image', 'text image generator', 'create image from text', 'text image maker', 'quote image generator']
+  },
+  { 
     id: 'word-counter', 
     name: 'Word Counter', 
     icon: '📊', 
@@ -88,6 +102,26 @@ const toolOptions: ToolOption[] = [
     keywords: ['loan calculator', 'mortgage calculator', 'auto loan calculator', 'personal loan calculator', 'amortization calculator']
   },
   { 
+    id: 'tip-calculator', 
+    name: 'Tip Calculator', 
+    icon: '💵', 
+    category: 'financial', 
+    description: 'Calculate tip amount, split bill, and total per person',
+    seoTitle: 'Free Tip Calculator - Calculate Tip Amount & Split Bill | Online Tip Calculator',
+    seoDescription: 'Free online tip calculator. Calculate tip amount, split bill, and total per person. Multiple tip percentages, round up option. Perfect for restaurants and services.',
+    keywords: ['tip calculator', 'calculate tip', 'split bill calculator', 'restaurant tip calculator', 'tip percentage calculator']
+  },
+  { 
+    id: 'compound-interest-calculator', 
+    name: 'Compound Interest Calculator', 
+    icon: '📈', 
+    category: 'financial', 
+    description: 'Calculate future value, investment growth, and returns with compound interest',
+    seoTitle: 'Free Compound Interest Calculator - Investment Growth Calculator | Future Value Calculator',
+    seoDescription: 'Free online compound interest calculator. Calculate future value, investment growth, and returns. Supports multiple compounding frequencies and additional contributions.',
+    keywords: ['compound interest calculator', 'investment calculator', 'future value calculator', 'compound interest', 'investment growth calculator']
+  },
+  { 
     id: 'json-formatter', 
     name: 'JSON Formatter', 
     icon: '📋', 
@@ -97,26 +131,116 @@ const toolOptions: ToolOption[] = [
     seoDescription: 'Free online JSON formatter and validator. Beautify, minify, validate, and format JSON data. Includes syntax highlighting and error detection. No registration required.',
     keywords: ['JSON formatter', 'JSON validator', 'JSON beautifier', 'JSON minifier', 'format JSON', 'validate JSON']
   },
+  { 
+    id: 'base64-encoder', 
+    name: 'Base64 Encoder', 
+    icon: '🔐', 
+    category: 'developer', 
+    description: 'Encode text to Base64 or decode Base64 to text with UTF-8 support',
+    seoTitle: 'Free Base64 Encoder & Decoder - Encode Decode Base64 Online | Base64 Converter',
+    seoDescription: 'Free online Base64 encoder and decoder. Encode text to Base64 or decode Base64 to text. Instant conversion, copy to clipboard. Perfect for developers and data encoding.',
+    keywords: ['Base64 encoder', 'Base64 decoder', 'Base64 converter', 'encode Base64', 'decode Base64', 'Base64 encode decode']
+  },
+  { 
+    id: 'url-encoder', 
+    name: 'URL Encoder', 
+    icon: '🔗', 
+    category: 'developer', 
+    description: 'Encode URLs for safe transmission or decode URL-encoded strings',
+    seoTitle: 'Free URL Encoder & Decoder - Encode Decode URL Online | URL Percent Encoding',
+    seoDescription: 'Free online URL encoder and decoder. Encode URLs for safe transmission or decode URL-encoded strings. Percent encoding, instant conversion, copy to clipboard.',
+    keywords: ['URL encoder', 'URL decoder', 'URL encode', 'URL decode', 'percent encoding', 'URL encoding']
+  },
+  { 
+    id: 'regex-tester', 
+    name: 'Regex Tester', 
+    icon: '🔍', 
+    category: 'developer', 
+    description: 'Test regular expressions with real-time matching and highlighting',
+    seoTitle: 'Free Regex Tester - Test Regular Expressions Online | Regex Pattern Tester',
+    seoDescription: 'Free online regex tester. Test regular expressions with real-time matching, highlighting, and explanation. Supports all regex flags and common patterns.',
+    keywords: ['regex tester', 'regular expression tester', 'regex test', 'regex pattern tester', 'online regex']
+  },
+  { 
+    id: 'uuid-generator', 
+    name: 'UUID Generator', 
+    icon: '🆔', 
+    category: 'developer', 
+    description: 'Generate unique identifiers (UUIDs) - v1 and v4 support',
+    seoTitle: 'Free UUID Generator - Generate UUIDs Online | UUID v1 v4 Generator',
+    seoDescription: 'Free online UUID generator. Generate UUIDs (v1, v4), multiple UUIDs, validate UUIDs, and copy to clipboard. Perfect for developers and database IDs.',
+    keywords: ['UUID generator', 'generate UUID', 'UUID v4', 'UUID v1', 'GUID generator', 'online UUID generator']
+  },
+  { 
+    id: 'jwt-decoder', 
+    name: 'JWT Decoder', 
+    icon: '🔓', 
+    category: 'developer', 
+    description: 'Decode JWT tokens to view header and payload',
+    seoTitle: 'Free JWT Decoder - Decode JWT Tokens Online | JWT Token Decoder',
+    seoDescription: 'Free online JWT decoder. Decode JWT tokens to view header and payload. Pretty print JSON, validate structure. Perfect for debugging JWT tokens.',
+    keywords: ['JWT decoder', 'decode JWT', 'JWT token decoder', 'JWT parser', 'online JWT decoder']
+  },
+  { 
+    id: 'pdf-merger', 
+    name: 'PDF Merger', 
+    icon: '🔗', 
+    category: 'pdf', 
+    description: 'Combine multiple PDF files into one document with drag-and-drop reordering',
+    seoTitle: 'Free PDF Merger - Combine Multiple PDFs Online | Merge PDF Files',
+    seoDescription: 'Free online PDF merger. Combine multiple PDF files into one document. Drag and drop reordering, preview before merging. No registration required.',
+    keywords: ['PDF merger', 'merge PDF', 'combine PDF', 'PDF combiner', 'merge PDF files', 'online PDF merger']
+  },
+  { 
+    id: 'pdf-splitter', 
+    name: 'PDF Splitter', 
+    icon: '✂️', 
+    category: 'pdf', 
+    description: 'Split PDF into individual pages or extract specific pages and ranges',
+    seoTitle: 'Free PDF Splitter - Split PDF Pages Online | Extract PDF Pages',
+    seoDescription: 'Free online PDF splitter. Extract specific pages from PDF, split PDF into multiple files, or extract page ranges. All processing happens in your browser.',
+    keywords: ['PDF splitter', 'split PDF', 'extract PDF pages', 'PDF page extractor', 'split PDF online', 'free PDF splitter']
+  },
+  { 
+    id: 'pdf-compressor', 
+    name: 'PDF Compressor', 
+    icon: '📦', 
+    category: 'pdf', 
+    description: 'Reduce PDF file size while maintaining quality with multiple compression levels',
+    seoTitle: 'Free PDF Compressor - Reduce PDF File Size Online | Compress PDF Files',
+    seoDescription: 'Free online PDF compressor. Reduce PDF file size while maintaining quality. Choose compression level (low, medium, high). All processing happens in your browser.',
+    keywords: ['PDF compressor', 'compress PDF', 'reduce PDF size', 'PDF file size reducer', 'online PDF compressor', 'free PDF compressor']
+  },
+  { 
+    id: 'pdf-rotate', 
+    name: 'PDF Rotate', 
+    icon: '🔄', 
+    category: 'pdf', 
+    description: 'Rotate PDF pages 90°, 180°, or 270° to fix orientation issues',
+    seoTitle: 'Free PDF Rotate - Rotate PDF Pages Online | Rotate PDF 90, 180, 270 Degrees',
+    seoDescription: 'Free online PDF rotator. Rotate PDF pages 90°, 180°, or 270°. Rotate all pages or selected pages. All processing happens in your browser.',
+    keywords: ['PDF rotate', 'rotate PDF', 'rotate PDF pages', 'PDF page rotator', 'online PDF rotate', 'free PDF rotate']
+  },
 ];
 
 export default function UtilityTools() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTool, setSelectedTool] = useState<ToolType>(
-    (searchParams.get('tool') as ToolType) || 'text-to-speech'
+    (searchParams.get('tool') as ToolType) || 'password-generator'
   );
   const [searchQuery, setSearchQuery] = useState('');
 
   const selectedToolInfo = toolOptions.find(t => t.id === selectedTool);
   
   // Dynamic SEO based on selected tool
-  const seoTitle = selectedToolInfo?.seoTitle || 'Free Utility Tools - Text to Speech, Password Generator, QR Code & More | Naqash Thaheem';
-  const seoDescription = selectedToolInfo?.seoDescription || 'Comprehensive collection of free utility tools: Text to Speech, Password Generator, QR Code Generator, Image Resizer, Word Counter, Loan Calculator, and JSON Formatter. All tools are free and easy to use.';
-  const seoKeywords = selectedToolInfo?.keywords || ['utility tools', 'text to speech', 'password generator', 'QR code generator', 'image resizer', 'word counter', 'loan calculator', 'JSON formatter', 'free tools', 'online tools'];
+  const seoTitle = selectedToolInfo?.seoTitle || 'Free Utility Tools - Password Generator, QR Code, PDF Tools & More | Naqash Thaheem';
+  const seoDescription = selectedToolInfo?.seoDescription || 'Comprehensive collection of free utility tools: Password Generator, QR Code Generator, Image Resizer, Word Counter, Loan Calculator, JSON Formatter, and PDF tools. All tools are free and easy to use.';
+  const seoKeywords = selectedToolInfo?.keywords || ['utility tools', 'password generator', 'QR code generator', 'image resizer', 'word counter', 'loan calculator', 'JSON formatter', 'PDF tools', 'free tools', 'online tools'];
 
   useSEO({
     title: seoTitle,
     description: seoDescription,
-    url: `/resources/utility-tools${selectedTool !== 'text-to-speech' ? `?tool=${selectedTool}` : ''}`,
+    url: `/resources/utility-tools${selectedTool !== 'password-generator' ? `?tool=${selectedTool}` : ''}`,
     keywords: seoKeywords,
     structuredData: 'custom',
     customStructuredData: {
@@ -187,18 +311,30 @@ export default function UtilityTools() {
     productivity: filteredTools.filter(t => t.category === 'productivity'),
     financial: filteredTools.filter(t => t.category === 'financial'),
     developer: filteredTools.filter(t => t.category === 'developer'),
+    pdf: filteredTools.filter(t => t.category === 'pdf'),
   };
 
   const renderTool = () => {
     switch (selectedTool) {
-      case 'text-to-speech': return <TextToSpeech />;
       case 'password-generator': return <PasswordGenerator />;
       case 'qr-code-generator': return <QRCodeGenerator />;
       case 'image-resizer': return <ImageResizer />;
       case 'word-counter': return <WordCounter />;
       case 'loan-calculator': return <LoanCalculator />;
+      case 'tip-calculator': return <TipCalculator />;
+      case 'compound-interest-calculator': return <CompoundInterestCalculator />;
       case 'json-formatter': return <JSONFormatter />;
-      default: return <TextToSpeech />;
+      case 'base64-encoder': return <Base64Encoder />;
+      case 'url-encoder': return <URLEncoder />;
+      case 'regex-tester': return <RegexTester />;
+      case 'uuid-generator': return <UUIDGenerator />;
+      case 'jwt-decoder': return <JWTDecoder />;
+      case 'text-to-image': return <TextToImage />;
+      case 'pdf-merger': return <PDFMerger />;
+      case 'pdf-splitter': return <PDFSplitter />;
+      case 'pdf-compressor': return <PDFCompressor />;
+      case 'pdf-rotate': return <PDFRotate />;
+      default: return <PasswordGenerator />;
     }
   };
 
@@ -211,7 +347,7 @@ export default function UtilityTools() {
             🛠️ Utility Tools
           </h1>
           <p className="text-gray-600">
-            Free online utility tools for productivity, development, and financial calculations
+            Free online utility tools for productivity, development, financial calculations, and PDF manipulation
           </p>
         </div>
 
@@ -236,7 +372,7 @@ export default function UtilityTools() {
                   tools.length > 0 && (
                     <div key={category} className="mb-4">
                       <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                        {category === 'productivity' ? 'Productivity' : category === 'financial' ? 'Financial' : 'Developer'}
+                        {category === 'productivity' ? 'Productivity' : category === 'financial' ? 'Financial' : category === 'developer' ? 'Developer' : 'PDF Tools'}
                       </h3>
                       {tools.map((tool) => (
                         <button

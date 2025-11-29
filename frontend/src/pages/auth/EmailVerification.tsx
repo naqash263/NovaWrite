@@ -32,7 +32,7 @@ export default function EmailVerification() {
 
   // Countdown timer effect
   useEffect(() => {
-    let interval: number;
+    let interval: ReturnType<typeof setInterval>;
     if (resendCooldown > 0) {
       interval = setInterval(() => {
         setResendCooldown((prev) => {

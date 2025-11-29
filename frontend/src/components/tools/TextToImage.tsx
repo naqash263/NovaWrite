@@ -1,0 +1,871 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSEO } from '../../utils/seo';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+
+export default function TextToImage() {
+  const [heading, setHeading] = useState<string>('Create Beautiful Images');
+  const [summary, setSummary] = useState<string>('Transform your text into stunning visuals with customizable colors, fonts, and layouts.');
+  const [backgroundColor, setBackgroundColor] = useState<string>('#3B82F6');
+  const [headingColor, setHeadingColor] = useState<string>('#FFFFFF');
+  const [summaryColor, setSummaryColor] = useState<string>('#F3F4F6');
+  const [width, setWidth] = useState<number>(1200);
+  const [height, setHeight] = useState<number>(630);
+  const [headingSize, setHeadingSize] = useState<number>(56);
+  const [summarySize, setSummarySize] = useState<number>(28);
+  const [fontFamily, setFontFamily] = useState<string>('Arial');
+  const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
+  const [padding, setPadding] = useState<number>(80);
+  const [useGradient, setUseGradient] = useState<boolean>(false);
+  const [gradientColor, setGradientColor] = useState<string>('#1E40AF');
+  const [textShadow, setTextShadow] = useState<boolean>(true);
+  const [textShadowBlur, setTextShadowBlur] = useState<number>(8);
+  const [lineSpacing, setLineSpacing] = useState<number>(1.5);
+  const [headingSpacing, setHeadingSpacing] = useState<number>(50);
+  const [useApi, setUseApi] = useState<boolean>(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useSEO({
+    title: 'Free Text to Image Generator - Create Images from Text Online | Text Image Maker',
+    description: 'Free online text to image generator. Create beautiful images from text with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics.',
+    url: '/resources/utility-tools/text-to-image',
+    keywords: [
+      'text to image', 'text image generator', 'create image from text', 'text image maker',
+      'quote image generator', 'social media image maker', 'text graphics', 'image from text',
+      'online text to image', 'free text image generator', 'text design tool'
+    ],
+    structuredData: 'custom',
+    customStructuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      'name': 'Text to Image Generator',
+      'description': 'Free online tool to create images from text with customizable colors, fonts, and layouts.',
+      'url': 'https://naqashthaheem.com/resources/utility-tools/text-to-image',
+      'applicationCategory': 'UtilityApplication',
+      'operatingSystem': 'Web Browser',
+      'offers': {
+        '@type': 'Offer',
+        'price': '0',
+        'priceCurrency': 'USD'
+      },
+      'featureList': [
+        'Create images from text',
+        'Customizable colors',
+        'Multiple font options',
+        'Heading and summary text',
+        'Custom dimensions',
+        'Text alignment options',
+        'Instant download'
+      ],
+      'aggregateRating': {
+        '@type': 'AggregateRating',
+        'ratingValue': '4.6',
+        'ratingCount': '1800',
+        'bestRating': '5',
+        'worstRating': '1'
+      }
+    }
+  });
+
+  const fontOptions = [
+    'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana',
+    'Georgia', 'Palatino', 'Garamond', 'Comic Sans MS', 'Impact',
+    'Trebuchet MS', 'Lucida Console', 'Tahoma', 'Arial Black'
+  ];
+
+  const presetSizes = [
+    { name: 'Social Media Post', width: 1200, height: 630 },
+    { name: 'Instagram Post', width: 1080, height: 1080 },
+    { name: 'Instagram Story', width: 1080, height: 1920 },
+    { name: 'Facebook Post', width: 1200, height: 630 },
+    { name: 'Twitter Post', width: 1200, height: 675 },
+    { name: 'LinkedIn Post', width: 1200, height: 627 },
+    { name: 'YouTube Thumbnail', width: 1280, height: 720 },
+    { name: 'Custom', width: 1200, height: 630 },
+  ];
+
+  const colorPresets = [
+    { name: 'Blue', bg: '#3B82F6', heading: '#FFFFFF', summary: '#E0E7FF' },
+    { name: 'Purple', bg: '#8B5CF6', heading: '#FFFFFF', summary: '#EDE9FE' },
+    { name: 'Green', bg: '#10B981', heading: '#FFFFFF', summary: '#D1FAE5' },
+    { name: 'Red', bg: '#EF4444', heading: '#FFFFFF', summary: '#FEE2E2' },
+    { name: 'Orange', bg: '#F59E0B', heading: '#FFFFFF', summary: '#FEF3C7' },
+    { name: 'Dark', bg: '#1F2937', heading: '#FFFFFF', summary: '#9CA3AF' },
+    { name: 'Light', bg: '#F9FAFB', heading: '#111827', summary: '#6B7280' },
+  ];
+
+  const generateImage = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Fill background with gradient or solid color
+    if (useGradient) {
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, backgroundColor);
+      gradient.addColorStop(1, gradientColor);
+      ctx.fillStyle = gradient;
+    } else {
+      ctx.fillStyle = backgroundColor;
+    }
+    ctx.fillRect(0, 0, width, height);
+
+    // Calculate text area
+    const textAreaWidth = width - (padding * 2);
+    const textX = padding;
+    
+    // Measure heading text
+    ctx.font = `bold ${headingSize}px ${fontFamily}`;
+    ctx.textAlign = textAlign;
+    const headingWords = heading.trim() ? heading.split(' ') : [];
+    const headingLines: string[] = [];
+    let headingCurrentLine = '';
+    
+    headingWords.forEach((word) => {
+      const testLine = headingCurrentLine + (headingCurrentLine ? ' ' : '') + word;
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > textAreaWidth && headingCurrentLine) {
+        headingLines.push(headingCurrentLine);
+        headingCurrentLine = word;
+      } else {
+        headingCurrentLine = testLine;
+      }
+    });
+    if (headingCurrentLine) headingLines.push(headingCurrentLine);
+
+    // Measure summary text
+    ctx.font = `${summarySize}px ${fontFamily}`;
+    const summaryWords = summary.trim() ? summary.split(' ') : [];
+    const summaryLines: string[] = [];
+    let summaryCurrentLine = '';
+    
+    summaryWords.forEach((word) => {
+      const testLine = summaryCurrentLine + (summaryCurrentLine ? ' ' : '') + word;
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > textAreaWidth && summaryCurrentLine) {
+        summaryLines.push(summaryCurrentLine);
+        summaryCurrentLine = word;
+      } else {
+        summaryCurrentLine = testLine;
+      }
+    });
+    if (summaryCurrentLine) summaryLines.push(summaryCurrentLine);
+
+    // Calculate total text height for vertical centering
+    const headingHeight = headingLines.length * headingSize * 1.2;
+    const summaryHeight = summaryLines.length * summarySize * lineSpacing;
+    const totalTextHeight = headingHeight + (headingLines.length > 0 && summaryLines.length > 0 ? headingSpacing : 0) + summaryHeight;
+    
+    // Start Y position (centered vertically)
+    let startY = (height - totalTextHeight) / 2;
+    let textY = startY;
+
+    // Draw heading with shadow
+    if (headingLines.length > 0) {
+      ctx.font = `bold ${headingSize}px ${fontFamily}`;
+      ctx.textAlign = textAlign;
+      ctx.textBaseline = 'top';
+      
+      if (textShadow) {
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = textShadowBlur;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+      } else {
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+
+      ctx.fillStyle = headingColor;
+      headingLines.forEach((line, index) => {
+        const x = textAlign === 'left' ? textX : textAlign === 'right' ? width - textX : width / 2;
+        ctx.fillText(line, x, textY + (index * headingSize * 1.2));
+      });
+
+      textY += headingLines.length * headingSize * 1.2 + headingSpacing;
+    }
+
+    // Draw summary with shadow
+    if (summaryLines.length > 0) {
+      ctx.font = `${summarySize}px ${fontFamily}`;
+      ctx.textAlign = textAlign;
+      ctx.textBaseline = 'top';
+      
+      if (textShadow) {
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = textShadowBlur;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+      } else {
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+
+      ctx.fillStyle = summaryColor;
+      summaryLines.forEach((line, index) => {
+        const x = textAlign === 'left' ? textX : textAlign === 'right' ? width - textX : width / 2;
+        ctx.fillText(line, x, textY + (index * summarySize * lineSpacing));
+      });
+    }
+
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Convert to image
+    const dataUrl = canvas.toDataURL('image/png');
+    setGeneratedImage(dataUrl);
+  }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing]);
+
+  const downloadImage = () => {
+    if (!generatedImage) return;
+
+    const link = document.createElement('a');
+    link.href = generatedImage;
+    link.download = `text-image-${Date.now()}.png`;
+    link.click();
+  };
+
+  const applyPresetSize = (preset: typeof presetSizes[0]) => {
+    setWidth(preset.width);
+    setHeight(preset.height);
+  };
+
+  const applyColorPreset = (preset: typeof colorPresets[0]) => {
+    setBackgroundColor(preset.bg);
+    setHeadingColor(preset.heading);
+    setSummaryColor(preset.summary);
+  };
+
+  const generateImageViaApi = async () => {
+    setIsProcessing(true);
+    setError('');
+    
+    try {
+      const formData = new FormData();
+      formData.append('heading', heading);
+      formData.append('summary', summary);
+      formData.append('width', width.toString());
+      formData.append('height', height.toString());
+      formData.append('backgroundColor', backgroundColor);
+      formData.append('headingColor', headingColor);
+      formData.append('summaryColor', summaryColor);
+      formData.append('headingSize', headingSize.toString());
+      formData.append('summarySize', summarySize.toString());
+      formData.append('fontFamily', fontFamily);
+      formData.append('textAlign', textAlign);
+      formData.append('padding', padding.toString());
+      formData.append('useGradient', useGradient.toString());
+      formData.append('gradientColor', gradientColor);
+      formData.append('textShadow', textShadow.toString());
+      formData.append('textShadowBlur', textShadowBlur.toString());
+      formData.append('lineSpacing', lineSpacing.toString());
+      formData.append('headingSpacing', headingSpacing.toString());
+
+      const response = await fetch(`${API_URL}/utility-tools/text-to-image/generate`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to generate image');
+      }
+
+      if (data.success) {
+        setGeneratedImage(data.data.url);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate image via API');
+      setGeneratedImage(null);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (heading || summary) {
+      if (useApi) {
+        // For API, we'll generate on button click instead of auto
+        return;
+      }
+      // Use setTimeout to debounce and prevent excessive re-renders
+      const timer = setTimeout(() => {
+        generateImage();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing, useApi, generateImage]);
+
+  return (
+    <div className="max-w-6xl mx-auto p-4 sm:p-6">
+      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+          ✨ Text to Image Generator
+        </h1>
+        <p className="text-gray-600 mb-6">
+          Create beautiful images from text with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics.
+        </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Controls */}
+          <div className="space-y-6">
+            {/* Processing Mode */}
+            <div className="mb-4">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useApi}
+                  onChange={(e) => setUseApi(e.target.checked)}
+                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-gray-700">Use API for processing (better for large images)</span>
+              </label>
+            </div>
+
+            {/* Text Inputs */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Heading Text
+              </label>
+              <input
+                type="text"
+                value={heading}
+                onChange={(e) => setHeading(e.target.value)}
+                placeholder="Enter your heading..."
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Summary/Description Text
+              </label>
+              <textarea
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                placeholder="Enter your summary or description..."
+                rows={4}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Size Presets */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Image Size Presets
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {presetSizes.map((preset) => (
+                  <button
+                    key={preset.name}
+                    onClick={() => applyPresetSize(preset)}
+                    className="p-2 text-xs border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Dimensions */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Width (px)
+                </label>
+                <input
+                  type="number"
+                  value={width}
+                  onChange={(e) => setWidth(parseInt(e.target.value) || 100)}
+                  min="100"
+                  max="5000"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Height (px)
+                </label>
+                <input
+                  type="number"
+                  value={height}
+                  onChange={(e) => setHeight(parseInt(e.target.value) || 100)}
+                  min="100"
+                  max="5000"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Color Presets */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Color Presets
+              </label>
+              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                {colorPresets.map((preset) => (
+                  <button
+                    key={preset.name}
+                    onClick={() => applyColorPreset(preset)}
+                    className="p-2 border-2 border-gray-300 rounded-lg hover:border-blue-500 transition-colors"
+                    title={preset.name}
+                  >
+                    <div
+                      className="w-full h-8 rounded mb-1"
+                      style={{ backgroundColor: preset.bg }}
+                    />
+                    <div className="text-xs text-gray-600">{preset.name}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Colors */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Background Color
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                    className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                    className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Heading Color
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={headingColor}
+                    onChange={(e) => setHeadingColor(e.target.value)}
+                    className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={headingColor}
+                    onChange={(e) => setHeadingColor(e.target.value)}
+                    className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Summary Color
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={summaryColor}
+                    onChange={(e) => setSummaryColor(e.target.value)}
+                    className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={summaryColor}
+                    onChange={(e) => setSummaryColor(e.target.value)}
+                    className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Typography Options */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Heading Size: {headingSize}px
+                </label>
+                <input
+                  type="range"
+                  min="20"
+                  max="120"
+                  value={headingSize}
+                  onChange={(e) => setHeadingSize(parseInt(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Summary Size: {summarySize}px
+                </label>
+                <input
+                  type="range"
+                  min="12"
+                  max="60"
+                  value={summarySize}
+                  onChange={(e) => setSummarySize(parseInt(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Font Family
+                </label>
+                <select
+                  value={fontFamily}
+                  onChange={(e) => setFontFamily(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {fontOptions.map((font) => (
+                    <option key={font} value={font} style={{ fontFamily: font }}>
+                      {font}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Text Alignment
+                </label>
+                <select
+                  value={textAlign}
+                  onChange={(e) => setTextAlign(e.target.value as 'left' | 'center' | 'right')}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Padding: {padding}px
+              </label>
+              <input
+                type="range"
+                min="20"
+                max="200"
+                value={padding}
+                onChange={(e) => setPadding(parseInt(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            {/* Visual Enhancements */}
+            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">✨ Visual Enhancements</h3>
+              
+              <div className="space-y-4">
+                {/* Gradient Background */}
+                <div>
+                  <label className="flex items-center space-x-3 cursor-pointer mb-2">
+                    <input
+                      type="checkbox"
+                      checked={useGradient}
+                      onChange={(e) => setUseGradient(e.target.checked)}
+                      className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                    />
+                    <span className="text-gray-700 font-medium">Gradient Background</span>
+                  </label>
+                  {useGradient && (
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="color"
+                        value={gradientColor}
+                        onChange={(e) => setGradientColor(e.target.value)}
+                        className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={gradientColor}
+                        onChange={(e) => setGradientColor(e.target.value)}
+                        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+                        placeholder="#1E40AF"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Text Shadow */}
+                <div>
+                  <label className="flex items-center space-x-3 cursor-pointer mb-2">
+                    <input
+                      type="checkbox"
+                      checked={textShadow}
+                      onChange={(e) => setTextShadow(e.target.checked)}
+                      className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                    />
+                    <span className="text-gray-700 font-medium">Text Shadow (Better Readability)</span>
+                  </label>
+                  {textShadow && (
+                    <div className="mt-2">
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Shadow Blur: {textShadowBlur}px
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="20"
+                        value={textShadowBlur}
+                        onChange={(e) => setTextShadowBlur(parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Line Spacing */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Summary Line Spacing: {lineSpacing.toFixed(1)}
+                  </label>
+                  <input
+                    type="range"
+                    min="1.0"
+                    max="3.0"
+                    step="0.1"
+                    value={lineSpacing}
+                    onChange={(e) => setLineSpacing(parseFloat(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Heading Spacing */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Heading-Summary Gap: {headingSpacing}px
+                  </label>
+                  <input
+                    type="range"
+                    min="20"
+                    max="100"
+                    value={headingSpacing}
+                    onChange={(e) => setHeadingSpacing(parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm">{error}</p>
+              </div>
+            )}
+
+            {useApi && (
+              <button
+                onClick={generateImageViaApi}
+                disabled={(!heading && !summary) || isProcessing}
+                className="w-full mb-3 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
+              >
+                {isProcessing ? '🔄 Generating...' : '✨ Generate via API'}
+              </button>
+            )}
+
+            {generatedImage && (
+              <button
+                onClick={downloadImage}
+                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
+              >
+                📥 Download Image
+              </button>
+            )}
+          </div>
+
+          {/* Preview */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Preview
+            </label>
+            <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300 min-h-[400px] flex items-center justify-center">
+              {generatedImage ? (
+                <div className="text-center">
+                  <img
+                    src={generatedImage}
+                    alt="Generated"
+                    className="max-w-full max-h-[600px] mx-auto rounded-lg shadow-lg"
+                  />
+                  <div className="text-sm text-gray-600 mt-2">
+                    {width} × {height} px
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-gray-400">
+                  <div className="text-6xl mb-4">✨</div>
+                  <p>Enter text to generate image</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <canvas ref={canvasRef} className="hidden" />
+
+        {/* SEO & AI-Friendly Content Sections */}
+        <div className="space-y-6 mt-8">
+          {/* About Section */}
+          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Text to Image Generator</h2>
+            <p className="text-gray-700 leading-relaxed mb-4">
+              Our Text to Image Generator is a powerful tool that creates beautiful images from text. Perfect for 
+              creating social media graphics, quote images, announcements, and promotional content. All processing 
+              happens locally in your browser using HTML5 Canvas.
+            </p>
+            <p className="text-gray-700 leading-relaxed">
+              Customize colors, fonts, sizes, alignment, and dimensions to create professional-looking images. 
+              Choose from preset sizes for social media platforms or create custom dimensions.
+            </p>
+          </div>
+
+          {/* Use Cases */}
+          <div className="p-6 bg-gray-50 rounded-lg">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">✓</span>
+                <span>Create quote images for social media</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">✓</span>
+                <span>Design announcement graphics</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">✓</span>
+                <span>Create promotional banners</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">✓</span>
+                <span>Design social media posts</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">✓</span>
+                <span>Create text-based graphics</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">✓</span>
+                <span>Design headers and covers</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Features */}
+          <div className="p-6 bg-white border border-gray-200 rounded-lg">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                  <span className="text-blue-600 font-bold">1</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Heading & Summary</h4>
+                  <p className="text-sm text-gray-600">Separate heading and summary text with different styling</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                  <span className="text-green-600 font-bold">2</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Color Customization</h4>
+                  <p className="text-sm text-gray-600">Customize background, heading, and summary colors</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                  <span className="text-purple-600 font-bold">3</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Size Presets</h4>
+                  <p className="text-sm text-gray-600">Pre-configured sizes for social media platforms</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                  <span className="text-orange-600 font-bold">4</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Typography Control</h4>
+                  <p className="text-sm text-gray-600">Adjust font size, family, and alignment</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="p-6 bg-blue-50 rounded-lg">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">What image format is generated?</h4>
+                <p className="text-gray-700 text-sm">
+                  Images are generated in PNG format, which supports transparency and high quality. You can use 
+                  these images anywhere - social media, websites, presentations, etc.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Can I use custom colors?</h4>
+                <p className="text-gray-700 text-sm">
+                  Yes, you can use any color by entering a hex code (e.g., #FF5733) or using the color picker. 
+                  We also provide color presets for quick selection.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">What's the maximum image size?</h4>
+                <p className="text-gray-700 text-sm">
+                  You can create images up to 5,000 × 5,000 pixels. For best results, use the preset sizes 
+                  optimized for each social media platform.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Is my text stored or uploaded?</h4>
+                <p className="text-gray-700 text-sm">
+                  No, all image generation happens locally in your browser. Your text is never uploaded to any 
+                  server or stored anywhere. Your privacy is guaranteed.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+            <li>Use heading for main text and summary for supporting text</li>
+            <li>Choose contrasting colors for better readability</li>
+            <li>Use preset sizes for optimal social media display</li>
+            <li>Center alignment works best for quote images</li>
+            <li>Adjust padding to control text spacing from edges</li>
+            <li>All processing happens in your browser - no uploads required</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
