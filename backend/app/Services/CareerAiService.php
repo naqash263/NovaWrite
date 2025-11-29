@@ -320,7 +320,7 @@ class CareerAiService
     /**
      * Call Gemini API
      */
-    private function callGeminiApi($apiKey, string $prompt): array
+    public function callGeminiApi($apiKey, string $prompt): mixed
     {
         try {
             // Get the actual API key value
@@ -384,30 +384,32 @@ class CareerAiService
             if (strpos($aiResponse, '```json') !== false) {
                 $cleanResponse = preg_replace('/```json\s*/', '', $aiResponse);
                 $cleanResponse = preg_replace('/\s*```/', '', $cleanResponse);
+            } elseif (strpos($aiResponse, '```') !== false) {
+                // Remove any code blocks
+                $cleanResponse = preg_replace('/```[a-z]*\s*/', '', $aiResponse);
+                $cleanResponse = preg_replace('/\s*```/', '', $cleanResponse);
             }
             
-            $parsedData = json_decode($cleanResponse, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                Log::error('JSON parsing error: ' . json_last_error_msg());
-                
-                // Try to extract JSON from the response if it's embedded in text
-                if (preg_match('/\{.*\}/s', $cleanResponse, $matches)) {
-                    Log::info('Attempting to extract JSON from embedded text...');
-                    $extractedJson = $matches[0];
-                    $parsedData = json_decode($extractedJson, true);
-                    if (json_last_error() === JSON_ERROR_NONE) {
-                        Log::info('Successfully extracted JSON from embedded text');
-                    } else {
-                        Log::error('Failed to parse extracted JSON: ' . json_last_error_msg());
-                        return [];
-                    }
-                } else {
-                    Log::error('No JSON found in response');
-                    return [];
+            // Try to parse as JSON first
+            $parsedData = json_decode(trim($cleanResponse), true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($parsedData)) {
+                return $parsedData;
+            }
+            
+            // If not JSON, try to extract JSON from the response if it's embedded in text
+            if (preg_match('/\{.*\}/s', $cleanResponse, $matches)) {
+                Log::info('Attempting to extract JSON from embedded text...');
+                $extractedJson = $matches[0];
+                $parsedData = json_decode($extractedJson, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($parsedData)) {
+                    Log::info('Successfully extracted JSON from embedded text');
+                    return $parsedData;
                 }
             }
             
-            return $parsedData ?? [];
+            // If all JSON parsing fails, return the clean response as string
+            Log::info('Returning response as string (not JSON)');
+            return trim($cleanResponse);
         } catch (RequestException $e) {
             Log::error('Gemini API request failed: ' . $e->getMessage());
             

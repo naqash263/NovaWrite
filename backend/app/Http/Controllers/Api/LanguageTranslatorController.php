@@ -28,8 +28,15 @@ class LanguageTranslatorController extends Controller
         $validator = Validator::make($request->all(), [
             'text' => 'required|string|max:50000',
             'source_language' => 'nullable|string|max:50',
-            'target_language' => 'required|string|max:50',
+            'target_language' => 'required|string|max:50|min:1',
             'preserve_formatting' => 'sometimes|boolean'
+        ], [
+            'text.required' => 'Text is required',
+            'text.string' => 'Text must be a string',
+            'text.max' => 'Text must not exceed 50,000 characters',
+            'target_language.required' => 'Target language is required',
+            'target_language.string' => 'Target language must be a string',
+            'target_language.min' => 'Target language cannot be empty',
         ]);
 
         if ($validator->fails()) {
