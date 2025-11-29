@@ -214,9 +214,36 @@ export default function ImageResizer() {
     if (presetId !== 'default') {
       const preset = SOCIAL_MEDIA_PRESETS.find(p => p.id === presetId);
       if (preset) {
+        // Temporarily disable aspect ratio to set exact preset dimensions
+        const wasMaintainingAspect = maintainAspectRatio;
+        if (wasMaintainingAspect) {
+          setMaintainAspectRatio(false);
+        }
         setWidth(preset.width);
         setHeight(preset.height);
-        // The useEffect will handle the resize when width/height change
+        
+        // Trigger resize immediately if image is loaded
+        if (originalImage && !useApi) {
+          setTimeout(() => {
+            const img = new Image();
+            img.onload = () => {
+              resizeImage(img, preset.width, preset.height);
+            };
+            img.src = originalImage;
+          }, 50);
+        } else if (originalImage && useApi && originalFile) {
+          // For API mode, trigger resize
+          setTimeout(() => {
+            handleResize();
+          }, 50);
+        }
+        
+        // Re-enable aspect ratio after a brief moment if it was enabled
+        if (wasMaintainingAspect) {
+          setTimeout(() => {
+            setMaintainAspectRatio(true);
+          }, 200);
+        }
       }
     }
   };
@@ -365,28 +392,23 @@ export default function ImageResizer() {
 
         if (maintainAspectRatio && originalSize) {
           const aspectRatio = originalSize.width / originalSize.height;
-          if (targetWidth / targetHeight > aspectRatio) {
+          const targetAspectRatio = targetWidth / targetHeight;
+          
+          if (targetAspectRatio > aspectRatio) {
+            // Target is wider - adjust height
             targetHeight = Math.round(targetWidth / aspectRatio);
-            // Only update if different to prevent infinite loop
-            if (targetHeight !== height) {
-              setHeight(targetHeight);
-              return; // Let the next useEffect cycle handle the resize
-            }
           } else {
+            // Target is taller - adjust width
             targetWidth = Math.round(targetHeight * aspectRatio);
-            // Only update if different to prevent infinite loop
-            if (targetWidth !== width) {
-              setWidth(targetWidth);
-              return; // Let the next useEffect cycle handle the resize
-            }
           }
         }
 
+        // Always resize with calculated dimensions
         resizeImage(img, targetWidth, targetHeight);
       };
       img.src = originalImage;
     }
-  }, [width, height, quality, format, maintainAspectRatio, originalImage, originalSize, useApi]);
+  }, [width, height, quality, format, maintainAspectRatio, originalImage, originalSize, useApi, selectedPreset]);
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
@@ -569,10 +591,10 @@ export default function ImageResizer() {
               </div>
             )}
 
-            {useApi && (
+            {useApi && originalImage && (
               <button
                 onClick={handleResize}
-                disabled={!originalImage || isProcessing}
+                disabled={!originalFile || isProcessing}
                 className="w-full mb-3 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
               >
                 {isProcessing ? 'Processing...' : '🔄 Resize via API'}
