@@ -525,6 +525,7 @@ export default function TextToImage() {
       formData.append('useBackgroundImage', useBackgroundImage.toString());
       formData.append('backgroundOverlay', backgroundOverlay.toString());
       formData.append('backgroundOverlayOpacity', backgroundOverlayOpacity.toString());
+      formData.append('useHtmlMode', useHtmlMode.toString());
       
       if (useBackgroundImage && backgroundImageFile) {
         formData.append('backgroundImage', backgroundImageFile);
