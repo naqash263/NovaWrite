@@ -198,9 +198,10 @@ export default function TextToImage() {
     const traverse = (node: Node, isBold: boolean = false, isItalic: boolean = false) => {
       if (node.nodeType === Node.TEXT_NODE) {
         const text = node.textContent || '';
-        // Keep text as-is, don't trim (we'll handle spacing when rendering)
-        if (text.length > 0) {
-          result.push({ text, bold: isBold, italic: isItalic });
+        // Keep text as-is, normalize whitespace but preserve structure
+        const normalizedText = text.replace(/\s+/g, ' '); // Normalize multiple spaces
+        if (normalizedText.length > 0) {
+          result.push({ text: normalizedText, bold: isBold, italic: isItalic });
         }
       } else if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as Element;
@@ -240,59 +241,43 @@ export default function TextToImage() {
     
     Array.from(tempDiv.childNodes).forEach(node => traverse(node));
     
-    // Clean up: merge consecutive text nodes with same formatting
+    // Clean up: merge only truly consecutive text nodes with same formatting
+    // Don't merge text that appears before/after HTML tags - keep them separate
     type TextSegment = { text: string; bold?: boolean; italic?: boolean };
     const cleaned: TextSegment[] = [];
-    let lastItem: TextSegment | null = null;
     
-    result.forEach((item: TextSegment) => {
+    result.forEach((item: TextSegment, index: number) => {
       if (item.text === '\n') {
-        // Line break - finalize last item if exists
-        if (lastItem !== null && lastItem.text !== '\n') {
-          // Trim the last item before adding
-          const trimmedText = lastItem.text.trim();
-          if (trimmedText) {
-            cleaned.push({ text: trimmedText, bold: lastItem.bold, italic: lastItem.italic });
-          }
-          lastItem = null;
-        }
-        // Add line break (but not if last was also line break)
+        // Line break - always add (but not if last was also line break)
         const lastCleaned = cleaned[cleaned.length - 1];
         if (cleaned.length === 0 || !lastCleaned || lastCleaned.text !== '\n') {
           cleaned.push(item);
         }
       } else {
-        // Text node - normalize spaces but keep structure
-        const normalizedText = item.text.replace(/\s+/g, ' '); // Normalize multiple spaces to single
-        
-        if (lastItem !== null && lastItem.text !== '\n' && 
-            lastItem.bold === item.bold && lastItem.italic === item.italic) {
-          // Merge with previous if same formatting - add space if needed
-          const needsSpace = !lastItem.text.endsWith(' ') && !normalizedText.startsWith(' ');
-          lastItem = { text: lastItem.text + (needsSpace ? ' ' : '') + normalizedText, bold: lastItem.bold, italic: lastItem.italic };
-        } else {
-          // Finalize previous and start new
-          if (lastItem !== null && lastItem.text !== '\n') {
-            const trimmedText = lastItem.text.trim();
-            if (trimmedText) {
-              cleaned.push({ text: trimmedText, bold: lastItem.bold, italic: lastItem.italic });
-            }
+        // Text node - trim and add
+        const trimmedText = item.text.trim();
+        if (trimmedText) {
+          // Check if we should merge with previous item
+          // Only merge if previous is also text (not line break) AND has same formatting
+          const lastCleaned = cleaned[cleaned.length - 1];
+          if (lastCleaned && 
+              lastCleaned.text !== '\n' && 
+              lastCleaned.bold === item.bold && 
+              lastCleaned.italic === item.italic) {
+            // Merge with previous - add space if needed
+            const needsSpace = !lastCleaned.text.endsWith(' ') && !trimmedText.startsWith(' ');
+            cleaned[cleaned.length - 1] = { 
+              text: lastCleaned.text + (needsSpace ? ' ' : '') + trimmedText, 
+              bold: lastCleaned.bold, 
+              italic: lastCleaned.italic 
+            };
+          } else {
+            // Add as new segment
+            cleaned.push({ text: trimmedText, bold: item.bold, italic: item.italic });
           }
-          lastItem = { text: normalizedText, bold: item.bold, italic: item.italic };
         }
       }
     });
-    
-    // Add final item
-    if (lastItem !== null) {
-      const finalItem: TextSegment = lastItem;
-      if (finalItem.text !== '\n') {
-        const trimmedText = finalItem.text.trim();
-        if (trimmedText) {
-          cleaned.push({ text: trimmedText, bold: finalItem.bold, italic: finalItem.italic });
-        }
-      }
-    }
     
     return cleaned;
   };
