@@ -194,11 +194,15 @@ export default function TextToImage() {
     tempDiv.innerHTML = html;
     
     const result: Array<{ text: string; bold?: boolean; italic?: boolean }> = [];
+    let lastWasLineBreak = false;
     
     const traverse = (node: Node) => {
       if (node.nodeType === Node.TEXT_NODE) {
-        const text = node.textContent?.trim();
-        if (text) {
+        const text = node.textContent || '';
+        // Preserve spaces but normalize multiple spaces to single space
+        const normalizedText = text.replace(/\s+/g, ' ').trim();
+        
+        if (normalizedText) {
           // Check parent nodes for formatting
           let parent = node.parentElement;
           let isBold = false;
@@ -211,15 +215,19 @@ export default function TextToImage() {
             parent = parent.parentElement;
           }
           
-          result.push({ text, bold: isBold, italic: isItalic });
+          result.push({ text: normalizedText, bold: isBold, italic: isItalic });
+          lastWasLineBreak = false;
         }
       } else if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as Element;
         const tagName = element.tagName.toLowerCase();
         
-        // Add line breaks for block elements
-        if (tagName === 'br' || tagName === 'p' || tagName === 'div') {
+        // Add line breaks for block elements (but not if we just added one)
+        if ((tagName === 'br' || tagName === 'p' || tagName === 'div') && !lastWasLineBreak) {
           result.push({ text: '\n' });
+          lastWasLineBreak = true;
+        } else {
+          lastWasLineBreak = false;
         }
         
         // Traverse child nodes
@@ -228,7 +236,23 @@ export default function TextToImage() {
     };
     
     Array.from(tempDiv.childNodes).forEach(traverse);
-    return result;
+    
+    // Remove consecutive line breaks
+    const cleaned: Array<{ text: string; bold?: boolean; italic?: boolean }> = [];
+    let lastWasBreak = false;
+    result.forEach((item) => {
+      if (item.text === '\n') {
+        if (!lastWasBreak) {
+          cleaned.push(item);
+          lastWasBreak = true;
+        }
+      } else {
+        cleaned.push(item);
+        lastWasBreak = false;
+      }
+    });
+    
+    return cleaned;
   };
 
   const drawColorBackground = (ctx: CanvasRenderingContext2D) => {
@@ -281,41 +305,54 @@ export default function TextToImage() {
       
       segments.forEach((segment: { text: string; bold?: boolean; italic?: boolean }) => {
         if (segment.text === '\n') {
-          // Line break
+          // Line break - finalize current line
           if (currentLine.length > 0) {
             summaryLines.push(...currentLine);
             summaryLines.push({ text: '\n' });
             currentLine = [];
             currentLineWidth = 0;
+          } else {
+            // Empty line break
+            summaryLines.push({ text: '\n' });
           }
         } else {
           // Set font for measurement
           const fontStyle = `${segment.italic ? 'italic ' : ''}${segment.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
           ctx.font = fontStyle;
           
-          const words = segment.text.split(' ');
-          words.forEach((word: string) => {
-            const testText = (currentLine.length > 0 ? ' ' : '') + word;
-            const metrics = ctx.measureText(testText);
+          // Split by spaces but preserve the text
+          const text = segment.text.trim();
+          if (!text) return; // Skip empty segments
+          
+          const words = text.split(/\s+/).filter(w => w.length > 0);
+          
+          words.forEach((word: string, wordIndex: number) => {
+            // Add space before word if not first word in segment or line
+            const needsSpace = (currentLine.length > 0 || wordIndex > 0);
+            const spaceWidth = needsSpace ? ctx.measureText(' ').width : 0;
+            const wordWidth = ctx.measureText(word).width;
+            const totalWidth = spaceWidth + wordWidth;
             
-            if (currentLineWidth + metrics.width > textAreaWidth && currentLine.length > 0) {
+            if (currentLineWidth + totalWidth > textAreaWidth && currentLine.length > 0) {
               // Start new line
               summaryLines.push(...currentLine);
               summaryLines.push({ text: '\n' });
               currentLine = [{ text: word, bold: segment.bold, italic: segment.italic }];
-              currentLineWidth = metrics.width;
+              currentLineWidth = wordWidth;
             } else {
               // Add to current line
-              if (currentLine.length > 0) {
+              if (needsSpace) {
                 currentLine.push({ text: ' ' });
+                currentLineWidth += spaceWidth;
               }
               currentLine.push({ text: word, bold: segment.bold, italic: segment.italic });
-              currentLineWidth += metrics.width;
+              currentLineWidth += wordWidth;
             }
           });
         }
       });
       
+      // Finalize last line
       if (currentLine.length > 0) {
         summaryLines.push(...currentLine);
       }
@@ -402,62 +439,66 @@ export default function TextToImage() {
         let currentY = textY;
         let currentLineSegments: Array<{ text: string; bold?: boolean; italic?: boolean }> = [];
         
-        summaryLines.forEach((segment) => {
-          if (typeof segment === 'object' && 'text' in segment && segment.text === '\n') {
-            // Render current line and move to next
-            if (currentLineSegments.length > 0) {
-              let lineX = textAlign === 'left' ? textX : textAlign === 'right' ? width - textX : width / 2;
-              
-              if (textAlign === 'center') {
-                // For center alignment, calculate the total width first
-                const totalWidth = currentLineSegments.reduce((sum, s) => {
-                  ctx.font = `${s.italic ? 'italic ' : ''}${s.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
-                  return sum + ctx.measureText(s.text).width;
-                }, 0);
-                lineX = (width - totalWidth) / 2;
-              }
-              
-              currentLineSegments.forEach((seg) => {
-                const fontStyle = `${seg.italic ? 'italic ' : ''}${seg.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
-                ctx.font = fontStyle;
-                
-                if (textShadow) {
-                  ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-                  ctx.shadowBlur = textShadowBlur;
-                  ctx.shadowOffsetX = 1;
-                  ctx.shadowOffsetY = 1;
-                }
-                
-                ctx.fillText(seg.text, lineX, currentY);
-                lineX += ctx.measureText(seg.text).width;
-              });
-              
-              currentLineSegments = [];
-              currentY += summarySize * lineSpacing;
-            }
-          } else if (typeof segment === 'object' && 'text' in segment) {
-            currentLineSegments.push(segment);
-          }
-        });
-        
-        // Render remaining segments
-        if (currentLineSegments.length > 0) {
-          let lineX = textAlign === 'left' ? textX : textAlign === 'right' ? width - textX : width / 2;
+        const renderLine = (segments: Array<{ text: string; bold?: boolean; italic?: boolean }>, y: number) => {
+          if (segments.length === 0) return;
           
-          if (textAlign === 'center') {
-            const totalWidth = currentLineSegments.reduce((sum, s) => {
-              ctx.font = `${s.italic ? 'italic ' : ''}${s.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
-              return sum + ctx.measureText(s.text).width;
-            }, 0);
+          // Calculate total width for alignment
+          let totalWidth = 0;
+          segments.forEach((seg) => {
+            ctx.font = `${seg.italic ? 'italic ' : ''}${seg.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
+            totalWidth += ctx.measureText(seg.text).width;
+          });
+          
+          // Determine starting X position based on alignment
+          let lineX: number;
+          if (textAlign === 'left') {
+            lineX = textX;
+          } else if (textAlign === 'right') {
+            lineX = width - textX - totalWidth;
+          } else {
+            // center
             lineX = (width - totalWidth) / 2;
           }
           
-          currentLineSegments.forEach((seg) => {
+          // Render each segment
+          segments.forEach((seg) => {
             const fontStyle = `${seg.italic ? 'italic ' : ''}${seg.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
             ctx.font = fontStyle;
-            ctx.fillText(seg.text, lineX, currentY);
+            
+            if (textShadow) {
+              ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+              ctx.shadowBlur = textShadowBlur;
+              ctx.shadowOffsetX = 1;
+              ctx.shadowOffsetY = 1;
+            }
+            
+            ctx.fillText(seg.text, lineX, y);
             lineX += ctx.measureText(seg.text).width;
           });
+        };
+        
+        summaryLines.forEach((segment) => {
+          if (typeof segment === 'object' && 'text' in segment) {
+            if (segment.text === '\n') {
+              // Render current line and move to next
+              if (currentLineSegments.length > 0) {
+                renderLine(currentLineSegments, currentY);
+                currentLineSegments = [];
+                currentY += summarySize * lineSpacing;
+              } else {
+                // Empty line - just move down
+                currentY += summarySize * lineSpacing;
+              }
+            } else {
+              // Add segment to current line
+              currentLineSegments.push(segment);
+            }
+          }
+        });
+        
+        // Render remaining segments (last line)
+        if (currentLineSegments.length > 0) {
+          renderLine(currentLineSegments, currentY);
         }
       } else {
         // Plain text mode
