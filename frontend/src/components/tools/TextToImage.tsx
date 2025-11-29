@@ -194,63 +194,100 @@ export default function TextToImage() {
     tempDiv.innerHTML = html;
     
     const result: Array<{ text: string; bold?: boolean; italic?: boolean }> = [];
-    let lastWasLineBreak = false;
     
-    const traverse = (node: Node) => {
+    const traverse = (node: Node, isBold: boolean = false, isItalic: boolean = false) => {
       if (node.nodeType === Node.TEXT_NODE) {
         const text = node.textContent || '';
-        // Preserve spaces but normalize multiple spaces to single space
-        const normalizedText = text.replace(/\s+/g, ' ').trim();
-        
-        if (normalizedText) {
-          // Check parent nodes for formatting
-          let parent = node.parentElement;
-          let isBold = false;
-          let isItalic = false;
-          
-          while (parent && parent !== tempDiv) {
-            const tagName = parent.tagName.toLowerCase();
-            if (tagName === 'b' || tagName === 'strong') isBold = true;
-            if (tagName === 'i' || tagName === 'em') isItalic = true;
-            parent = parent.parentElement;
-          }
-          
-          result.push({ text: normalizedText, bold: isBold, italic: isItalic });
-          lastWasLineBreak = false;
+        // Keep text as-is, don't trim (we'll handle spacing when rendering)
+        if (text.length > 0) {
+          result.push({ text, bold: isBold, italic: isItalic });
         }
       } else if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as Element;
         const tagName = element.tagName.toLowerCase();
         
-        // Add line breaks for block elements (but not if we just added one)
-        if ((tagName === 'br' || tagName === 'p' || tagName === 'div') && !lastWasLineBreak) {
-          result.push({ text: '\n' });
-          lastWasLineBreak = true;
-        } else {
-          lastWasLineBreak = false;
+        // Update formatting state
+        let newBold = isBold;
+        let newItalic = isItalic;
+        
+        if (tagName === 'b' || tagName === 'strong') {
+          newBold = true;
+        } else if (tagName === 'i' || tagName === 'em') {
+          newItalic = true;
         }
         
-        // Traverse child nodes
-        Array.from(node.childNodes).forEach(traverse);
+        // Add line breaks for block elements
+        if (tagName === 'br') {
+          result.push({ text: '\n', bold: false, italic: false });
+        } else if (tagName === 'p' || tagName === 'div') {
+          // Add line break before and after block elements
+          if (result.length > 0 && result[result.length - 1].text !== '\n') {
+            result.push({ text: '\n', bold: false, italic: false });
+          }
+          // Traverse children
+          Array.from(node.childNodes).forEach(child => traverse(child, newBold, newItalic));
+          // Add line break after
+          if (result.length > 0 && result[result.length - 1].text !== '\n') {
+            result.push({ text: '\n', bold: false, italic: false });
+          }
+          return;
+        }
+        
+        // Traverse child nodes with updated formatting
+        Array.from(node.childNodes).forEach(child => traverse(child, newBold, newItalic));
       }
     };
     
-    Array.from(tempDiv.childNodes).forEach(traverse);
+    Array.from(tempDiv.childNodes).forEach(node => traverse(node));
     
-    // Remove consecutive line breaks
+    // Clean up: merge consecutive text nodes with same formatting
     const cleaned: Array<{ text: string; bold?: boolean; italic?: boolean }> = [];
-    let lastWasBreak = false;
+    let lastItem: { text: string; bold?: boolean; italic?: boolean } | null = null;
+    
     result.forEach((item) => {
       if (item.text === '\n') {
-        if (!lastWasBreak) {
+        // Line break - finalize last item if exists
+        if (lastItem && lastItem.text !== '\n') {
+          // Trim the last item before adding
+          lastItem.text = lastItem.text.trim();
+          if (lastItem.text) {
+            cleaned.push(lastItem);
+          }
+          lastItem = null;
+        }
+        // Add line break (but not if last was also line break)
+        if (cleaned.length === 0 || cleaned[cleaned.length - 1].text !== '\n') {
           cleaned.push(item);
-          lastWasBreak = true;
         }
       } else {
-        cleaned.push(item);
-        lastWasBreak = false;
+        // Text node - normalize spaces but keep structure
+        const normalizedText = item.text.replace(/\s+/g, ' '); // Normalize multiple spaces to single
+        
+        if (lastItem && lastItem.text !== '\n' && 
+            lastItem.bold === item.bold && lastItem.italic === item.italic) {
+          // Merge with previous if same formatting - add space if needed
+          const needsSpace = !lastItem.text.endsWith(' ') && !normalizedText.startsWith(' ');
+          lastItem.text += (needsSpace ? ' ' : '') + normalizedText;
+        } else {
+          // Finalize previous and start new
+          if (lastItem && lastItem.text !== '\n') {
+            lastItem.text = lastItem.text.trim();
+            if (lastItem.text) {
+              cleaned.push(lastItem);
+            }
+          }
+          lastItem = { text: normalizedText, bold: item.bold, italic: item.italic };
+        }
       }
     });
+    
+    // Add final item
+    if (lastItem && lastItem.text !== '\n') {
+      lastItem.text = lastItem.text.trim();
+      if (lastItem.text) {
+        cleaned.push(lastItem);
+      }
+    }
     
     return cleaned;
   };
@@ -316,33 +353,34 @@ export default function TextToImage() {
             summaryLines.push({ text: '\n' });
           }
         } else {
-          // Set font for measurement
-          const fontStyle = `${segment.italic ? 'italic ' : ''}${segment.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
-          ctx.font = fontStyle;
-          
-          // Split by spaces but preserve the text
+          // Trim the segment text
           const text = segment.text.trim();
           if (!text) return; // Skip empty segments
           
+          // Split into words
           const words = text.split(/\s+/).filter(w => w.length > 0);
           
-          words.forEach((word: string, wordIndex: number) => {
-            // Add space before word if not first word in segment or line
-            const needsSpace = (currentLine.length > 0 || wordIndex > 0);
-            const spaceWidth = needsSpace ? ctx.measureText(' ').width : 0;
+          words.forEach((word: string) => {
+            // Set font for measurement
+            const fontStyle = `${segment.italic ? 'italic ' : ''}${segment.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
+            ctx.font = fontStyle;
+            
+            // Calculate widths
             const wordWidth = ctx.measureText(word).width;
+            const spaceWidth = currentLine.length > 0 ? ctx.measureText(' ').width : 0;
             const totalWidth = spaceWidth + wordWidth;
             
+            // Check if we need to wrap
             if (currentLineWidth + totalWidth > textAreaWidth && currentLine.length > 0) {
-              // Start new line
+              // Wrap to new line
               summaryLines.push(...currentLine);
               summaryLines.push({ text: '\n' });
               currentLine = [{ text: word, bold: segment.bold, italic: segment.italic }];
               currentLineWidth = wordWidth;
             } else {
               // Add to current line
-              if (needsSpace) {
-                currentLine.push({ text: ' ' });
+              if (currentLine.length > 0) {
+                currentLine.push({ text: ' ', bold: false, italic: false });
                 currentLineWidth += spaceWidth;
               }
               currentLine.push({ text: word, bold: segment.bold, italic: segment.italic });
@@ -442,9 +480,14 @@ export default function TextToImage() {
         const renderLine = (segments: Array<{ text: string; bold?: boolean; italic?: boolean }>, y: number) => {
           if (segments.length === 0) return;
           
+          // Filter out empty segments and space-only segments at start/end
+          const filteredSegments = segments.filter(seg => seg.text.trim().length > 0 || seg.text === ' ');
+          
+          if (filteredSegments.length === 0) return;
+          
           // Calculate total width for alignment
           let totalWidth = 0;
-          segments.forEach((seg) => {
+          filteredSegments.forEach((seg) => {
             ctx.font = `${seg.italic ? 'italic ' : ''}${seg.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
             totalWidth += ctx.measureText(seg.text).width;
           });
@@ -461,7 +504,7 @@ export default function TextToImage() {
           }
           
           // Render each segment
-          segments.forEach((seg) => {
+          filteredSegments.forEach((seg) => {
             const fontStyle = `${seg.italic ? 'italic ' : ''}${seg.bold ? 'bold ' : ''}${summarySize}px ${fontFamily}`;
             ctx.font = fontStyle;
             
