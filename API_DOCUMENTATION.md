@@ -80,6 +80,29 @@ Content-Type: multipart/form-data
 ### Example: Instagram Post with Background Image
 
 #### cURL
+#### Using Background Image URL
+```bash
+curl -X POST https://naqashthaheem.com/api/utility-tools/text-to-image/generate \
+  -F "heading=Welcome to My Instagram" \
+  -F "summary=Follow for amazing content and updates!" \
+  -F "width=1080" \
+  -F "height=1080" \
+  -F "headingColor=#FFFFFF" \
+  -F "summaryColor=#F3F4F6" \
+  -F "headingSize=72" \
+  -F "summarySize=36" \
+  -F "fontFamily=Arial" \
+  -F "textAlign=center" \
+  -F "padding=100" \
+  -F "useBackgroundImage=true" \
+  -F "backgroundImageUrl=https://drive.google.com/uc?export=view&id=1io04gaHWlcw2y-G6PLSUOE15lMWhlk9k" \
+  -F "backgroundOverlay=true" \
+  -F "backgroundOverlayOpacity=0.4" \
+  -F "textShadow=true" \
+  -F "textShadowBlur=10"
+```
+
+#### Using Background Image File Upload
 ```bash
 curl -X POST https://naqashthaheem.com/api/utility-tools/text-to-image/generate \
   -F "heading=Welcome to My Instagram" \
