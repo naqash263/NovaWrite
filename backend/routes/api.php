@@ -634,6 +634,7 @@ Route::post('workflow-downloads', [WorkflowDownloadController::class, 'requestDo
 Route::get('workflow-files/{id}/download', [WorkflowDownloadController::class, 'download'])->name('workflow-files.download');
 
 Route::post('contact', [ContactController::class, 'submit']);
+Route::post('contact/analyze', [ContactController::class, 'analyze']);
 
 Route::get('courses', [CourseController::class, 'index']);
 Route::get('courses/{slug}', [CourseController::class, 'show']);
