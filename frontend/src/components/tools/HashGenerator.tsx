@@ -89,27 +89,6 @@ export default function HashGenerator() {
     return md5(text);
   };
 
-  const handleTextHash = async () => {
-    if (!inputText.trim()) {
-      setHashResult('');
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      if (selectedAlgorithm === 'MD5') {
-        // For MD5, we'll use a workaround or show a message
-        setHashResult('MD5 is not natively supported in browsers. Please use SHA-256 or SHA-512, or use an external MD5 library.');
-      } else {
-        const hash = await generateHash(inputText, selectedAlgorithm);
-        setHashResult(hash);
-      }
-    } catch (error) {
-      setHashResult('Error generating hash. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const handleFileHash = async (file: File) => {
     setIsProcessing(true);
@@ -165,11 +144,28 @@ export default function HashGenerator() {
   };
 
   useEffect(() => {
-    if (inputText) {
-      handleTextHash();
-    } else {
-      setHashResult('');
-    }
+    const generateTextHash = async () => {
+      if (!inputText.trim()) {
+        setHashResult('');
+        return;
+      }
+
+      setIsProcessing(true);
+      try {
+        if (selectedAlgorithm === 'MD5') {
+          setHashResult('MD5 is not natively supported in browsers. Please use SHA-256 or SHA-512, or use an external MD5 library.');
+        } else {
+          const hash = await generateHash(inputText, selectedAlgorithm);
+          setHashResult(hash);
+        }
+      } catch (error) {
+        setHashResult('Error generating hash. Please try again.');
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    generateTextHash();
   }, [inputText, selectedAlgorithm]);
 
   return (
