@@ -32,6 +32,7 @@ import ImageFormatConverter from '../../components/tools/ImageFormatConverter';
 import ColorPicker from '../../components/tools/ColorPicker';
 import MarkdownPreview from '../../components/tools/MarkdownPreview';
 import FileConverter from '../../components/tools/FileConverter';
+import DocumentConverter from '../../components/tools/DocumentConverter';
 
 type ToolType = 
   | 'password-generator' | 'qr-code-generator' 
@@ -40,7 +41,7 @@ type ToolType =
   | 'tip-calculator' | 'compound-interest-calculator' | 'base64-encoder' | 'url-encoder'
   | 'regex-tester' | 'uuid-generator' | 'jwt-decoder' | 'text-to-image'
   | 'lorem-ipsum-generator' | 'text-case-converter' | 'hash-generator' | 'image-compressor'
-  | 'sql-formatter' | 'css-formatter' | 'html-formatter' | 'image-format-converter' | 'color-picker' | 'markdown-preview' | 'file-converter';
+  | 'sql-formatter' | 'css-formatter' | 'html-formatter' | 'image-format-converter' | 'color-picker' | 'markdown-preview' | 'file-converter' | 'document-converter';
 
 interface ToolOption {
   id: ToolType;
@@ -474,6 +475,7 @@ export default function UtilityTools() {
       case 'color-picker': return <ColorPicker />;
       case 'markdown-preview': return <MarkdownPreview />;
       case 'file-converter': return <FileConverter />;
+      case 'document-converter': return <DocumentConverter />;
       default: return <PasswordGenerator />;
     }
   };

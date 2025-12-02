@@ -80,7 +80,8 @@ const toolCategories = [
       { name: "Color Picker", path: "/resources/utility-tools?tool=color-picker", icon: "🎨" },
       { name: "Markdown Preview", path: "/resources/utility-tools?tool=markdown-preview", icon: "📄" },
       { name: "File Converter", path: "/resources/utility-tools?tool=file-converter", icon: "📁" },
-      { name: "View All (29)", path: "/resources/utility-tools", icon: "🛠️" },
+      { name: "Document Converter", path: "/resources/utility-tools?tool=document-converter", icon: "📄" },
+      { name: "View All (30)", path: "/resources/utility-tools", icon: "🛠️" },
     ]
   },
   {

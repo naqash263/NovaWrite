@@ -67,6 +67,7 @@ Route::prefix('utility-tools')->group(function () {
     Route::get('/image-resizer/presets', [App\Http\Controllers\Api\ImageResizerController::class, 'presets']);
     Route::post('/text-to-image/generate', [App\Http\Controllers\Api\TextToImageController::class, 'generate']);
     Route::post('/image-compressor/compress', [App\Http\Controllers\Api\ImageCompressorController::class, 'compress']);
+    Route::post('/document-converter/convert', [App\Http\Controllers\Api\DocumentConverterController::class, 'convert']);
 });
 
 // App analytics routes
