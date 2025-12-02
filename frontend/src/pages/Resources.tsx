@@ -78,7 +78,8 @@ const toolCategories = [
       { name: "HTML Formatter", path: "/resources/utility-tools?tool=html-formatter", icon: "🌐" },
       { name: "Image Format Converter", path: "/resources/utility-tools?tool=image-format-converter", icon: "🔄" },
       { name: "Color Picker", path: "/resources/utility-tools?tool=color-picker", icon: "🎨" },
-      { name: "View All (27)", path: "/resources/utility-tools", icon: "🛠️" },
+      { name: "Markdown Preview", path: "/resources/utility-tools?tool=markdown-preview", icon: "📄" },
+      { name: "View All (28)", path: "/resources/utility-tools", icon: "🛠️" },
     ]
   },
   {
