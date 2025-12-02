@@ -9,6 +9,7 @@ import GrammarChecker from '../../components/tools/GrammarChecker';
 import LanguageTranslator from '../../components/tools/LanguageTranslator';
 import KeywordExtractor from '../../components/tools/KeywordExtractor';
 import ApiKeyBanner from '../../components/ApiKeyBanner';
+import ApiKeyManager from '../../components/ApiKeyManager';
 
 type AIToolType = 
   | 'text-summarizer' | 'article-rewriter' | 'grammar-checker' | 'language-translator' | 'keyword-extractor';
@@ -229,6 +230,11 @@ export default function AITools() {
           <div className="lg:col-span-3">
             {/* API Key Banner */}
             <ApiKeyBanner />
+            
+            {/* API Key Manager (shows stats and add key button) */}
+            <div className="mb-6">
+              <ApiKeyManager />
+            </div>
             
             {/* Ad at top of tool */}
             <div className="mb-6">
