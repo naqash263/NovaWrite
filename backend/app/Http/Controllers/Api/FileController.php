@@ -333,21 +333,32 @@ class FileController extends Controller
                          strpos($path, 'converted_') !== false ||
                          !in_array($mimeType, ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']);
             
+            // Add CORS headers to allow cross-origin access
+            $corsHeaders = [
+                'Access-Control-Allow-Origin' => '*',
+                'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+                'Access-Control-Allow-Headers' => 'Content-Type, Authorization',
+                'Access-Control-Max-Age' => '86400',
+            ];
+            
             if ($isDownload) {
                 // Use download response with proper headers
-                return response()->download($filePath, $filename, [
+                $headers = array_merge([
                     'Content-Type' => $mimeType,
                     'Content-Length' => $fileSize,
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
                     'Cache-Control' => 'public, max-age=3600', // 1 hour cache for downloads
-                ]);
+                ], $corsHeaders);
+                
+                return response()->download($filePath, $filename, $headers);
             } else {
                 // Use file response for images (display inline)
-                $headers = [
+                $headers = array_merge([
                     'Content-Type' => $mimeType,
                     'Content-Length' => $fileSize,
                     'Cache-Control' => 'public, max-age=31536000', // 1 year cache
                     'Last-Modified' => gmdate('D, d M Y H:i:s', filemtime($filePath)) . ' GMT',
-                ];
+                ], $corsHeaders);
                 return response()->file($filePath, $headers);
             }
             
