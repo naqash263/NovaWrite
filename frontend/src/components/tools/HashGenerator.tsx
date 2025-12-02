@@ -77,17 +77,8 @@ export default function HashGenerator() {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
 
-  // Simple MD5 implementation (for checksums only, not for security)
-  const generateMD5 = async (text: string): Promise<string> => {
-    // Using a simple MD5 implementation
-    // Note: For production, consider using a proper library
-    const md5 = (str: string): string => {
-      // This is a simplified version - for real MD5, use a library
-      // For now, we'll show a message that MD5 requires a library
-      return 'MD5 requires additional library. Please use SHA-256 or SHA-512 for better security.';
-    };
-    return md5(text);
-  };
+  // MD5 is not natively supported in Web Crypto API
+  // Users should use SHA-256 or SHA-512 instead
 
 
   const handleFileHash = async (file: File) => {
@@ -139,9 +130,6 @@ export default function HashGenerator() {
     }
   };
 
-  const compareHashes = (hash1: string, hash2: string): boolean => {
-    return hash1.toLowerCase() === hash2.toLowerCase();
-  };
 
   useEffect(() => {
     const generateTextHash = async () => {

@@ -225,6 +225,36 @@ const toolOptions: ToolOption[] = [
     seoDescription: 'Free online PDF rotator. Rotate PDF pages 90°, 180°, or 270°. Rotate all pages or selected pages. All processing happens in your browser.',
     keywords: ['PDF rotate', 'rotate PDF', 'rotate PDF pages', 'PDF page rotator', 'online PDF rotate', 'free PDF rotate']
   },
+  { 
+    id: 'lorem-ipsum-generator', 
+    name: 'Lorem Ipsum Generator', 
+    icon: '📝', 
+    category: 'productivity', 
+    description: 'Generate placeholder text in paragraphs, words, or sentences with multiple text types',
+    seoTitle: 'Free Lorem Ipsum Generator - Generate Placeholder Text Online | Lorem Ipsum Text Generator',
+    seoDescription: 'Free online Lorem Ipsum generator. Generate placeholder text in paragraphs, words, or sentences. Multiple text types: Lorem Ipsum, Bacon Ipsum, Cupcake Ipsum, Hipster Ipsum. Copy to clipboard. No registration required.',
+    keywords: ['lorem ipsum generator', 'lorem ipsum', 'placeholder text generator', 'dummy text generator', 'lorem ipsum text', 'generate lorem ipsum']
+  },
+  { 
+    id: 'text-case-converter', 
+    name: 'Text Case Converter', 
+    icon: '🔄', 
+    category: 'developer', 
+    description: 'Convert text between uppercase, lowercase, camelCase, snake_case, kebab-case, and more',
+    seoTitle: 'Free Text Case Converter - Uppercase, Lowercase, camelCase, snake_case Converter | Text Case Tool',
+    seoDescription: 'Free online text case converter. Convert text to uppercase, lowercase, title case, camelCase, PascalCase, snake_case, kebab-case, and more. Copy to clipboard. No registration required.',
+    keywords: ['text case converter', 'case converter', 'uppercase lowercase converter', 'camelCase converter', 'snake_case converter', 'kebab-case converter']
+  },
+  { 
+    id: 'hash-generator', 
+    name: 'Hash Generator', 
+    icon: '🔐', 
+    category: 'developer', 
+    description: 'Generate MD5, SHA-1, SHA-256, and SHA-512 hashes from text or files',
+    seoTitle: 'Free Hash Generator - MD5, SHA-1, SHA-256, SHA-512 Hash Generator | Online Hash Tool',
+    seoDescription: 'Free online hash generator. Generate MD5, SHA-1, SHA-256, and SHA-512 hashes from text or files. Compare hashes, copy to clipboard. Perfect for developers and security professionals. No registration required.',
+    keywords: ['hash generator', 'MD5 generator', 'SHA-256 generator', 'SHA-1 generator', 'SHA-512 generator', 'hash calculator', 'online hash tool']
+  },
 ];
 
 export default function UtilityTools() {
