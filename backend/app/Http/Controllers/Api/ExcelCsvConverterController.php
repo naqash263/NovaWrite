@@ -55,13 +55,15 @@ class ExcelCsvConverterController extends Controller
             }
             
             Storage::disk('public')->put($path, $convertedFile);
-            $url = Storage::disk('public')->url($path);
+            
+            // Generate URL using API route instead of storage URL
+            $apiUrl = config('app.url') . '/api/storage/' . $path;
 
             return response()->json([
                 'success' => true,
                 'message' => 'File converted successfully',
                 'data' => [
-                    'url' => $url,
+                    'url' => $apiUrl,
                     'path' => $path,
                     'filename' => $filename,
                     'source_format' => $sourceFormat,
