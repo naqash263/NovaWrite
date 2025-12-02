@@ -451,25 +451,15 @@ export default function TextToImage() {
         
         if (enhancedShadow) {
           // Enhanced multi-layer shadow for depth
-          // Draw shadows first (behind text)
+          // Draw multiple shadow layers for depth effect
           ctx.shadowColor = 'transparent';
           ctx.shadowBlur = 0;
           
-          // Outer shadow (darker, more blur) - draw as separate text
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-          ctx.filter = 'blur(4px)';
-          ctx.fillText(line, x + 4, y + 4);
-          ctx.filter = 'none';
-          
-          // Middle shadow
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-          ctx.filter = 'blur(2px)';
-          ctx.fillText(line, x + 3, y + 3);
-          ctx.filter = 'none';
-          
-          // Inner shadow (closer to text)
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-          ctx.fillText(line, x + 2, y + 2);
+          // Outer shadow layers (darker, more offset)
+          for (let i = 4; i >= 2; i--) {
+            ctx.fillStyle = `rgba(0, 0, 0, ${0.3 - (4 - i) * 0.1})`;
+            ctx.fillText(line, x + i, y + i);
+          }
         } else if (textShadow) {
           ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
           ctx.shadowBlur = textShadowBlur;
