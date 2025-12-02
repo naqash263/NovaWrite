@@ -13,6 +13,16 @@ Route::get('/health/storage', [App\Http\Controllers\Api\HealthController::class,
 Route::get('/health/queue', [App\Http\Controllers\Api\QueueHealthController::class, 'check']);
 
 // Storage file serving (no authentication required)
+// Handle OPTIONS preflight requests for CORS
+Route::options('/storage/{path}', function () {
+    return response('', 200)->withHeaders([
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Content-Type, Authorization',
+        'Access-Control-Max-Age' => '86400',
+    ]);
+})->where('path', '.*');
+
 Route::get('/storage/{path}', [App\Http\Controllers\Api\FileController::class, 'serve'])->where('path', '.*');
 
 // Push notification routes
