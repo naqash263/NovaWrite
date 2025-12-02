@@ -341,6 +341,12 @@ export default function UtilityTools() {
     (searchParams.get('tool') as ToolType) || 'password-generator'
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
+    productivity: true,
+    developer: true,
+    financial: true,
+    pdf: true,
+  });
 
   const selectedToolInfo = toolOptions.find(t => t.id === selectedTool);
   
@@ -489,30 +495,59 @@ export default function UtilityTools() {
               </div>
 
               {/* Tool List */}
-              <div className="space-y-2">
-                {Object.entries(groupedTools).map(([category, tools]) => (
-                  tools.length > 0 && (
-                    <div key={category} className="mb-4">
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                        {category === 'productivity' ? 'Productivity' : category === 'financial' ? 'Financial' : category === 'developer' ? 'Developer' : 'PDF Tools'}
-                      </h3>
-                      {tools.map((tool) => (
-                        <button
-                          key={tool.id}
-                          onClick={() => handleToolSelect(tool.id)}
-                          className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-colors text-sm ${
-                            selectedTool === tool.id
-                              ? 'bg-blue-100 text-blue-900 font-medium'
-                              : 'text-gray-700 hover:bg-gray-100'
-                          }`}
+              <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+                {Object.entries(groupedTools).map(([category, tools]) => {
+                  if (tools.length === 0) return null;
+                  
+                  const categoryNames: Record<string, string> = {
+                    productivity: '📦 Productivity Tools',
+                    developer: '💻 Developer Tools',
+                    financial: '💰 Financial Tools',
+                    pdf: '📄 PDF Tools',
+                  };
+                  
+                  const isExpanded = expandedCategories[category] ?? true;
+                  
+                  return (
+                    <div key={category} className="mb-3">
+                      <button
+                        onClick={() => setExpandedCategories(prev => ({
+                          ...prev,
+                          [category]: !prev[category]
+                        }))}
+                        className="w-full flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <span>{categoryNames[category] || category}</span>
+                        <svg
+                          className={`w-4 h-4 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
-                          <span className="mr-2">{tool.icon}</span>
-                          {tool.name}
-                        </button>
-                      ))}
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {isExpanded && (
+                        <div className="mt-1 space-y-1">
+                          {tools.map((tool) => (
+                            <button
+                              key={tool.id}
+                              onClick={() => handleToolSelect(tool.id)}
+                              className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${
+                                selectedTool === tool.id
+                                  ? 'bg-blue-100 text-blue-900 font-medium'
+                                  : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                            >
+                              <span className="mr-2">{tool.icon}</span>
+                              {tool.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

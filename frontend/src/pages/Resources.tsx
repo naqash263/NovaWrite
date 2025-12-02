@@ -103,6 +103,12 @@ const toolCategories = [
 export default function Resources() {
   const navigate = useNavigate();
   const [showCareerTools, setShowCareerTools] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
+    'career-tools': true,
+    'conversion-tools': true,
+    'utility-tools': true,
+    'ai-tools': true,
+  });
 
   useSEO({
     title: 'Free Tools & Resources - Career Tools, Conversion Tools, Utility Tools, AI Tools | Naqash Thaheem',
