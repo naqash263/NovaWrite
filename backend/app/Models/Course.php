@@ -99,4 +99,20 @@ class Course extends Model
     {
         return $this->hasManyThrough(File::class, CourseFile::class, 'course_id', 'id', 'id', 'file_id');
     }
+
+    /**
+     * Get all comments for this course
+     */
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    /**
+     * Get approved comments only
+     */
+    public function approvedComments()
+    {
+        return $this->comments()->where('is_approved', true);
+    }
 }

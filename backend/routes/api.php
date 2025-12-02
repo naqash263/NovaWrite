@@ -68,6 +68,9 @@ Route::prefix('utility-tools')->group(function () {
     Route::post('/text-to-image/generate', [App\Http\Controllers\Api\TextToImageController::class, 'generate']);
     Route::post('/image-compressor/compress', [App\Http\Controllers\Api\ImageCompressorController::class, 'compress']);
     Route::post('/document-converter/convert', [App\Http\Controllers\Api\DocumentConverterController::class, 'convert']);
+    Route::post('/excel-csv-converter/convert', [App\Http\Controllers\Api\ExcelCsvConverterController::class, 'convert']);
+    Route::post('/heic-jpg-converter/convert', [App\Http\Controllers\Api\HeicJpgConverterController::class, 'convert']);
+    Route::post('/audio-converter/convert', [App\Http\Controllers\Api\AudioConverterController::class, 'convert']);
 });
 
 // App analytics routes

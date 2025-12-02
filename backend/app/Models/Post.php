@@ -55,4 +55,20 @@ class Post extends Model
     {
         return $this->belongsToMany(Tag::class);
     }
+
+    /**
+     * Get all comments for this post
+     */
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    /**
+     * Get approved comments only
+     */
+    public function approvedComments()
+    {
+        return $this->comments()->where('is_approved', true);
+    }
 }

@@ -95,5 +95,21 @@ class Project extends Model
     {
         return $query->where('is_featured', true);
     }
+
+    /**
+     * Get all comments for this project
+     */
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    /**
+     * Get approved comments only
+     */
+    public function approvedComments()
+    {
+        return $this->comments()->where('is_approved', true);
+    }
 }
 

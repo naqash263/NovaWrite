@@ -117,4 +117,20 @@ class Workflow extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    /**
+     * Get all comments for this workflow
+     */
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    /**
+     * Get approved comments only
+     */
+    public function approvedComments()
+    {
+        return $this->comments()->where('is_approved', true);
+    }
 }

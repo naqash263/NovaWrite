@@ -33,6 +33,9 @@ import ColorPicker from '../../components/tools/ColorPicker';
 import MarkdownPreview from '../../components/tools/MarkdownPreview';
 import FileConverter from '../../components/tools/FileConverter';
 import DocumentConverter from '../../components/tools/DocumentConverter';
+import ExcelCsvConverter from '../../components/tools/ExcelCsvConverter';
+import HeicJpgConverter from '../../components/tools/HeicJpgConverter';
+import AudioConverter from '../../components/tools/AudioConverter';
 
 type ToolType = 
   | 'password-generator' | 'qr-code-generator' 
@@ -41,7 +44,8 @@ type ToolType =
   | 'tip-calculator' | 'compound-interest-calculator' | 'base64-encoder' | 'url-encoder'
   | 'regex-tester' | 'uuid-generator' | 'jwt-decoder' | 'text-to-image'
   | 'lorem-ipsum-generator' | 'text-case-converter' | 'hash-generator' | 'image-compressor'
-  | 'sql-formatter' | 'css-formatter' | 'html-formatter' | 'image-format-converter' | 'color-picker' | 'markdown-preview' | 'file-converter' | 'document-converter';
+  | 'sql-formatter' | 'css-formatter' | 'html-formatter' | 'image-format-converter' | 'color-picker' | 'markdown-preview' | 'file-converter' | 'document-converter'
+  | 'excel-csv-converter' | 'heic-jpg-converter' | 'audio-converter';
 
 interface ToolOption {
   id: ToolType;
@@ -486,6 +490,9 @@ export default function UtilityTools() {
       case 'markdown-preview': return <MarkdownPreview />;
       case 'file-converter': return <FileConverter />;
       case 'document-converter': return <DocumentConverter />;
+      case 'excel-csv-converter': return <ExcelCsvConverter />;
+      case 'heic-jpg-converter': return <HeicJpgConverter />;
+      case 'audio-converter': return <AudioConverter />;
       default: return <PasswordGenerator />;
     }
   };
