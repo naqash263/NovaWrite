@@ -153,12 +153,13 @@ const ApiKeyManager: React.FC = () => {
 
               <div className="space-y-3 sm:space-y-4">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
-                  <h4 className="font-semibold text-green-900 mb-1.5 sm:mb-2 text-sm sm:text-base">🚀 100 Daily AI Requests</h4>
+                  <h4 className="font-semibold text-green-900 mb-1.5 sm:mb-2 text-sm sm:text-base">🚀 Non-Stop AI Access</h4>
                   <ul className="text-xs sm:text-sm text-green-800 space-y-0.5 sm:space-y-1">
-                    <li>• Get 100 AI requests per day (resets daily)</li>
-                    <li>• Faster processing with dedicated resources</li>
-                    <li>• Free CV processing and tailoring</li>
-                    <li>• Your key is only used for your account</li>
+                    <li>• <strong>100 daily requests</strong> (resets every 24 hours)</li>
+                    <li>• <strong>No rate limits</strong> when using your own key</li>
+                    <li>• <strong>Faster processing</strong> with dedicated resources</li>
+                    <li>• <strong>Unlimited access</strong> to all AI tools</li>
+                    <li>• Your key is encrypted and only used for your account</li>
                   </ul>
                 </div>
 
@@ -184,8 +185,11 @@ const ApiKeyManager: React.FC = () => {
                     className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Get your free API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">Google AI Studio</a>
+                    Get your free API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-medium">Google AI Studio</a>
                   </p>
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                    <strong>Quick Steps:</strong> 1) Visit Google AI Studio 2) Sign in with Google 3) Click "Create API Key" 4) Copy and paste here
+                  </div>
                 </div>
 
                 {message && (
