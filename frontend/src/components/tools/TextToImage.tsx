@@ -403,8 +403,29 @@ export default function TextToImage() {
       if (summaryCurrentLine) summaryLines.push(summaryCurrentLine);
     }
 
+    // Check if heading-only mode (no summary)
+    const isHeadingOnly = heading.trim() && !summary.trim();
+    
+    // Enhance heading size and effects for heading-only mode
+    let effectiveHeadingSize = headingSize;
+    let enhancedShadow = textShadow;
+    let useTextOutline = false;
+    
+    if (isHeadingOnly) {
+      // Increase heading size by 1.5x for better impact
+      effectiveHeadingSize = Math.floor(headingSize * 1.5);
+      // Ensure it doesn't exceed canvas constraints
+      const maxSize = Math.min(width, height) / 8;
+      if (effectiveHeadingSize > maxSize) {
+        effectiveHeadingSize = Math.floor(maxSize);
+      }
+      // Enable enhanced shadow and outline
+      enhancedShadow = true;
+      useTextOutline = true;
+    }
+
     // Calculate total text height for vertical centering
-    const headingHeight = headingLines.length * headingSize * 1.2;
+    const headingHeight = headingLines.length * effectiveHeadingSize * 1.2;
     // Count actual lines in summary
     const summaryLineCount = useHtmlMode 
       ? summaryLines.filter(s => typeof s === 'object' && 'text' in s && s.text === '\n').length + 1
@@ -416,31 +437,72 @@ export default function TextToImage() {
     let startY = (height - totalTextHeight) / 2;
     let textY = startY;
 
-    // Draw heading with shadow
+    // Draw heading with enhanced effects
     if (headingLines.length > 0) {
-      ctx.font = `bold ${headingSize}px ${fontFamily}`;
+      ctx.font = `bold ${effectiveHeadingSize}px ${fontFamily}`;
       ctx.textAlign = textAlign;
       ctx.textBaseline = 'top';
       
-      if (textShadow) {
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-        ctx.shadowBlur = textShadowBlur;
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
-      } else {
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-      }
-
-      ctx.fillStyle = headingColor;
       headingLines.forEach((line, index) => {
         const x = textAlign === 'left' ? textX : textAlign === 'right' ? width - textX : width / 2;
-        ctx.fillText(line, x, textY + (index * headingSize * 1.2));
+        const y = textY + (index * effectiveHeadingSize * 1.2);
+        
+        if (enhancedShadow) {
+          // Enhanced multi-layer shadow for depth
+          ctx.save();
+          
+          // Outer shadow (darker, more blur)
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+          ctx.shadowBlur = textShadowBlur * 2;
+          ctx.shadowOffsetX = 4;
+          ctx.shadowOffsetY = 4;
+          ctx.fillStyle = headingColor;
+          ctx.fillText(line, x, y);
+          
+          // Middle shadow
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+          ctx.shadowBlur = textShadowBlur * 1.5;
+          ctx.shadowOffsetX = 3;
+          ctx.shadowOffsetY = 3;
+          ctx.fillText(line, x, y);
+          
+          // Inner shadow (closer to text)
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+          ctx.shadowBlur = textShadowBlur;
+          ctx.shadowOffsetX = 2;
+          ctx.shadowOffsetY = 2;
+          ctx.fillText(line, x, y);
+          
+          ctx.restore();
+        } else if (textShadow) {
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+          ctx.shadowBlur = textShadowBlur;
+          ctx.shadowOffsetX = 2;
+          ctx.shadowOffsetY = 2;
+        } else {
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+        }
+        
+        // Draw text outline/stroke for heading-only mode
+        if (useTextOutline) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+          ctx.lineWidth = 3;
+          ctx.lineJoin = 'round';
+          ctx.miterLimit = 2;
+          ctx.strokeText(line, x, y);
+          ctx.restore();
+        }
+        
+        // Draw main text
+        ctx.fillStyle = headingColor;
+        ctx.fillText(line, x, y);
       });
 
-      textY += headingLines.length * headingSize * 1.2 + headingSpacing;
+      textY += headingLines.length * effectiveHeadingSize * 1.2 + headingSpacing;
     }
 
     // Draw summary with shadow

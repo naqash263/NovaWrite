@@ -239,10 +239,31 @@ class TextToImageController extends Controller
                 }
             }
 
-            // Measure and wrap heading text
+            // Check if heading-only mode (no summary)
+            $isHeadingOnly = !empty(trim($heading)) && empty(trim($summary));
+            
+            // Enhance heading size and effects for heading-only mode
+            $effectiveHeadingSize = $headingSize;
+            $enhancedShadow = $textShadow;
+            $textOutline = false;
+            
+            if ($isHeadingOnly) {
+                // Increase heading size by 1.5x for better impact
+                $effectiveHeadingSize = (int)($headingSize * 1.5);
+                // Ensure it doesn't exceed canvas constraints
+                $maxSize = min($width, $height) / 8;
+                if ($effectiveHeadingSize > $maxSize) {
+                    $effectiveHeadingSize = (int)$maxSize;
+                }
+                // Enable enhanced shadow and outline
+                $enhancedShadow = true;
+                $textOutline = true;
+            }
+
+            // Measure and wrap heading text with effective size
             $headingLines = [];
             if (!empty(trim($heading))) {
-                $headingLines = $this->wrapText($heading, $fontFamily, $headingSize, $textAreaWidth, true, $fontPath);
+                $headingLines = $this->wrapText($heading, $fontFamily, $effectiveHeadingSize, $textAreaWidth, true, $fontPath);
             }
 
             // Measure and wrap summary text
@@ -252,7 +273,7 @@ class TextToImageController extends Controller
             }
 
             // Calculate total text height for vertical centering
-            $headingHeight = count($headingLines) * $headingSize * 1.2;
+            $headingHeight = count($headingLines) * $effectiveHeadingSize * 1.2;
             $summaryHeight = count($summaryLines) * $summarySize * $lineSpacing;
             $totalTextHeight = $headingHeight + (count($headingLines) > 0 && count($summaryLines) > 0 ? $headingSpacing : 0) + $summaryHeight;
             
@@ -260,20 +281,42 @@ class TextToImageController extends Controller
             $startY = ($height - $totalTextHeight) / 2;
             $textY = $startY;
 
-            // Draw heading with shadow
+            // Draw heading with enhanced effects
             if (count($headingLines) > 0) {
                 foreach ($headingLines as $index => $line) {
-                    $x = $this->getTextX($textAlign, $textX, $width, $line, $fontPath, $headingSize, true);
-                    $y = (int)($textY + ($index * $headingSize * 1.2));
+                    $x = $this->getTextX($textAlign, $textX, $width, $line, $fontPath, $effectiveHeadingSize, true);
+                    $y = (int)($textY + ($index * $effectiveHeadingSize * 1.2));
                     
-                    if ($textShadow) {
-                        // Draw shadow
-                        imagettftext($image, $headingSize, 0, $x + 2, $y + 2, $shadowColorAlloc, $fontPath, $line);
+                    if ($enhancedShadow) {
+                        // Enhanced multi-layer shadow for depth
+                        // Outer shadow (darker, more blur)
+                        $outerShadowColor = imagecolorallocatealpha($image, 0, 0, 0, 80);
+                        imagettftext($image, $effectiveHeadingSize, 0, $x + 4, $y + 4, $outerShadowColor, $fontPath, $line);
+                        // Middle shadow
+                        $middleShadowColor = imagecolorallocatealpha($image, 0, 0, 0, 60);
+                        imagettftext($image, $effectiveHeadingSize, 0, $x + 3, $y + 3, $middleShadowColor, $fontPath, $line);
+                        // Inner shadow (closer to text)
+                        imagettftext($image, $effectiveHeadingSize, 0, $x + 2, $y + 2, $shadowColorAlloc, $fontPath, $line);
                     }
-                    // Draw text
-                    imagettftext($image, $headingSize, 0, $x, $y, $headingColorAlloc, $fontPath, $line);
+                    
+                    // Draw text outline/stroke for heading-only mode
+                    if ($textOutline) {
+                        // Create outline by drawing text in multiple directions
+                        $outlineColor = imagecolorallocatealpha($image, 0, 0, 0, 100);
+                        $outlineWidth = 2;
+                        for ($ox = -$outlineWidth; $ox <= $outlineWidth; $ox++) {
+                            for ($oy = -$outlineWidth; $oy <= $outlineWidth; $oy++) {
+                                if ($ox != 0 || $oy != 0) {
+                                    imagettftext($image, $effectiveHeadingSize, 0, $x + $ox, $y + $oy, $outlineColor, $fontPath, $line);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Draw main text
+                    imagettftext($image, $effectiveHeadingSize, 0, $x, $y, $headingColorAlloc, $fontPath, $line);
                 }
-                $textY += count($headingLines) * $headingSize * 1.2 + $headingSpacing;
+                $textY += count($headingLines) * $effectiveHeadingSize * 1.2 + $headingSpacing;
             }
 
             // Draw summary with shadow
