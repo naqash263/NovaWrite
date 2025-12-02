@@ -447,33 +447,29 @@ export default function TextToImage() {
         const x = textAlign === 'left' ? textX : textAlign === 'right' ? width - textX : width / 2;
         const y = textY + (index * effectiveHeadingSize * 1.2);
         
+        ctx.save();
+        
         if (enhancedShadow) {
           // Enhanced multi-layer shadow for depth
-          ctx.save();
+          // Draw shadows first (behind text)
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
           
-          // Outer shadow (darker, more blur)
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-          ctx.shadowBlur = textShadowBlur * 2;
-          ctx.shadowOffsetX = 4;
-          ctx.shadowOffsetY = 4;
-          ctx.fillStyle = headingColor;
-          ctx.fillText(line, x, y);
+          // Outer shadow (darker, more blur) - draw as separate text
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+          ctx.filter = 'blur(4px)';
+          ctx.fillText(line, x + 4, y + 4);
+          ctx.filter = 'none';
           
           // Middle shadow
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-          ctx.shadowBlur = textShadowBlur * 1.5;
-          ctx.shadowOffsetX = 3;
-          ctx.shadowOffsetY = 3;
-          ctx.fillText(line, x, y);
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.filter = 'blur(2px)';
+          ctx.fillText(line, x + 3, y + 3);
+          ctx.filter = 'none';
           
           // Inner shadow (closer to text)
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-          ctx.shadowBlur = textShadowBlur;
-          ctx.shadowOffsetX = 2;
-          ctx.shadowOffsetY = 2;
-          ctx.fillText(line, x, y);
-          
-          ctx.restore();
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+          ctx.fillText(line, x + 2, y + 2);
         } else if (textShadow) {
           ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
           ctx.shadowBlur = textShadowBlur;
@@ -486,20 +482,20 @@ export default function TextToImage() {
           ctx.shadowOffsetY = 0;
         }
         
-        // Draw text outline/stroke for heading-only mode
+        // Draw text outline/stroke for heading-only mode (before main text)
         if (useTextOutline) {
-          ctx.save();
           ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
           ctx.lineWidth = 3;
           ctx.lineJoin = 'round';
           ctx.miterLimit = 2;
           ctx.strokeText(line, x, y);
-          ctx.restore();
         }
         
-        // Draw main text
+        // Draw main text (on top)
         ctx.fillStyle = headingColor;
         ctx.fillText(line, x, y);
+        
+        ctx.restore();
       });
 
       textY += headingLines.length * effectiveHeadingSize * 1.2 + headingSpacing;
