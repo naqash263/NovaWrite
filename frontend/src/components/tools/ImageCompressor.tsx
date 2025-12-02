@@ -188,12 +188,12 @@ export default function ImageCompressor() {
   };
 
   const downloadCompressed = () => {
-    if (!compressedFile) return;
+    if (!compressedFile || !originalFile) return;
 
     const url = URL.createObjectURL(compressedFile);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `compressed-${originalFile?.name || 'image'}.${format}`;
+    a.download = `compressed-${originalFile.name}.${format}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

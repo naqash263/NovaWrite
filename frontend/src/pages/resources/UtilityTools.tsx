@@ -256,6 +256,16 @@ const toolOptions: ToolOption[] = [
     seoDescription: 'Free online hash generator. Generate MD5, SHA-1, SHA-256, and SHA-512 hashes from text or files. Compare hashes, copy to clipboard. Perfect for developers and security professionals. No registration required.',
     keywords: ['hash generator', 'MD5 generator', 'SHA-256 generator', 'SHA-1 generator', 'SHA-512 generator', 'hash calculator', 'online hash tool']
   },
+  { 
+    id: 'image-compressor', 
+    name: 'Image Compressor', 
+    icon: '🗜️', 
+    category: 'productivity', 
+    description: 'Reduce image file size while maintaining quality with adjustable compression settings',
+    seoTitle: 'Free Image Compressor - Reduce Image File Size Online | Compress Images',
+    seoDescription: 'Free online image compressor. Reduce image file size while maintaining quality. Compress JPEG, PNG, WebP images. Adjust quality, resize dimensions. Download compressed images instantly. No registration required.',
+    keywords: ['image compressor', 'compress image', 'reduce image size', 'image file size reducer', 'online image compressor', 'free image compressor']
+  },
 ];
 
 export default function UtilityTools() {
