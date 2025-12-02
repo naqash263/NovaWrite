@@ -345,6 +345,16 @@ const toolOptions: ToolOption[] = [
     seoDescription: 'Free online file converter. Convert files between TXT, CSV, JSON, XML, YAML, and HTML formats. Automatic format detection. All processing happens in your browser. No registration required.',
     keywords: ['file converter', 'convert file format', 'TXT to JSON', 'CSV to JSON', 'JSON to XML', 'XML to YAML', 'file format converter']
   },
+  { 
+    id: 'document-converter', 
+    name: 'Document Converter', 
+    icon: '📄', 
+    category: 'productivity', 
+    description: 'Convert documents between PDF, Word (DOCX), and TXT formats',
+    seoTitle: 'Free Document Converter - Word to PDF, PDF to Word, DOCX Converter Online | Document Format Converter',
+    seoDescription: 'Free online document converter. Convert Word to PDF, PDF to Word, DOCX to PDF, PDF to DOCX, and more. All conversions happen securely on our server. No registration required.',
+    keywords: ['document converter', 'word to pdf', 'pdf to word', 'docx to pdf', 'pdf to docx', 'document format converter']
+  },
 ];
 
 export default function UtilityTools() {
