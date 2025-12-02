@@ -25,6 +25,9 @@ import LoremIpsumGenerator from '../../components/tools/LoremIpsumGenerator';
 import TextCaseConverter from '../../components/tools/TextCaseConverter';
 import HashGenerator from '../../components/tools/HashGenerator';
 import ImageCompressor from '../../components/tools/ImageCompressor';
+import SQLFormatter from '../../components/tools/SQLFormatter';
+import CSSFormatter from '../../components/tools/CSSFormatter';
+import HTMLFormatter from '../../components/tools/HTMLFormatter';
 
 type ToolType = 
   | 'password-generator' | 'qr-code-generator' 
@@ -32,7 +35,8 @@ type ToolType =
   | 'pdf-merger' | 'pdf-splitter' | 'pdf-compressor' | 'pdf-rotate'
   | 'tip-calculator' | 'compound-interest-calculator' | 'base64-encoder' | 'url-encoder'
   | 'regex-tester' | 'uuid-generator' | 'jwt-decoder' | 'text-to-image'
-  | 'lorem-ipsum-generator' | 'text-case-converter' | 'hash-generator' | 'image-compressor';
+  | 'lorem-ipsum-generator' | 'text-case-converter' | 'hash-generator' | 'image-compressor'
+  | 'sql-formatter' | 'css-formatter' | 'html-formatter';
 
 interface ToolOption {
   id: ToolType;
@@ -266,6 +270,36 @@ const toolOptions: ToolOption[] = [
     seoDescription: 'Free online image compressor. Reduce image file size while maintaining quality. Compress JPEG, PNG, WebP images. Adjust quality, resize dimensions. Download compressed images instantly. No registration required.',
     keywords: ['image compressor', 'compress image', 'reduce image size', 'image file size reducer', 'online image compressor', 'free image compressor']
   },
+  { 
+    id: 'sql-formatter', 
+    name: 'SQL Formatter', 
+    icon: '💾', 
+    category: 'developer', 
+    description: 'Format SQL queries with proper indentation, minify SQL, and support multiple database dialects',
+    seoTitle: 'Free SQL Formatter & Beautifier - Format SQL Queries Online | SQL Query Formatter',
+    seoDescription: 'Free online SQL formatter and beautifier. Format SQL queries with proper indentation, syntax highlighting, and validation. Supports MySQL, PostgreSQL, SQL Server, and more. No registration required.',
+    keywords: ['SQL formatter', 'SQL beautifier', 'format SQL', 'SQL query formatter', 'SQL prettifier', 'online SQL formatter']
+  },
+  { 
+    id: 'css-formatter', 
+    name: 'CSS Formatter', 
+    icon: '🎨', 
+    category: 'developer', 
+    description: 'Format CSS code with proper indentation, minify CSS, and validate syntax',
+    seoTitle: 'Free CSS Formatter & Beautifier - Format CSS Online | CSS Code Formatter',
+    seoDescription: 'Free online CSS formatter and beautifier. Format CSS code with proper indentation, minify CSS, and validate syntax. Perfect for developers and web designers. No registration required.',
+    keywords: ['CSS formatter', 'CSS beautifier', 'format CSS', 'CSS code formatter', 'CSS prettifier', 'CSS minifier']
+  },
+  { 
+    id: 'html-formatter', 
+    name: 'HTML Formatter', 
+    icon: '🌐', 
+    category: 'developer', 
+    description: 'Format HTML code with proper indentation, minify HTML, and validate syntax',
+    seoTitle: 'Free HTML Formatter & Beautifier - Format HTML Online | HTML Code Formatter',
+    seoDescription: 'Free online HTML formatter and beautifier. Format HTML code with proper indentation, minify HTML, and validate syntax. Perfect for developers and web designers. No registration required.',
+    keywords: ['HTML formatter', 'HTML beautifier', 'format HTML', 'HTML code formatter', 'HTML prettifier', 'HTML minifier']
+  },
 ];
 
 export default function UtilityTools() {
@@ -383,6 +417,9 @@ export default function UtilityTools() {
       case 'text-case-converter': return <TextCaseConverter />;
       case 'hash-generator': return <HashGenerator />;
       case 'image-compressor': return <ImageCompressor />;
+      case 'sql-formatter': return <SQLFormatter />;
+      case 'css-formatter': return <CSSFormatter />;
+      case 'html-formatter': return <HTMLFormatter />;
       default: return <PasswordGenerator />;
     }
   };

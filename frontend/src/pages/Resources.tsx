@@ -73,7 +73,10 @@ const toolCategories = [
       { name: "Text Case Converter", path: "/resources/utility-tools?tool=text-case-converter", icon: "🔄" },
       { name: "Hash Generator", path: "/resources/utility-tools?tool=hash-generator", icon: "🔐" },
       { name: "Image Compressor", path: "/resources/utility-tools?tool=image-compressor", icon: "🗜️" },
-      { name: "View All (22)", path: "/resources/utility-tools", icon: "🛠️" },
+      { name: "SQL Formatter", path: "/resources/utility-tools?tool=sql-formatter", icon: "💾" },
+      { name: "CSS Formatter", path: "/resources/utility-tools?tool=css-formatter", icon: "🎨" },
+      { name: "HTML Formatter", path: "/resources/utility-tools?tool=html-formatter", icon: "🌐" },
+      { name: "View All (25)", path: "/resources/utility-tools", icon: "🛠️" },
     ]
   },
   {
