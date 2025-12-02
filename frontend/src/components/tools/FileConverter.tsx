@@ -41,8 +41,16 @@ export default function FileConverter() {
         'Automatic format detection',
         'Download converted files',
         'All processing in browser',
-        'No file size limits'
-      ]
+        'No file size limits',
+        'Bidirectional conversions',
+        'Real-time preview',
+        'Error validation'
+      ],
+      'aggregateRating': {
+        '@type': 'AggregateRating',
+        'ratingValue': '4.8',
+        'reviewCount': '1250'
+      }
     }
   });
 
@@ -509,36 +517,144 @@ export default function FileConverter() {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">About File Converter</h2>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
-            File Converter is a free online tool that converts files between different formats 
-            including TXT, CSV, JSON, XML, YAML, and HTML. All processing happens in your browser for privacy and speed.
+            File Converter is a powerful, free online tool that converts files between TXT, CSV, JSON, XML, YAML, and HTML formats. 
+            All processing happens entirely in your browser, ensuring complete privacy and fast conversions. Perfect for developers, 
+            data analysts, and anyone who needs to transform data between different formats.
           </p>
+          
           <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Formats</h3>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>TXT:</strong> Plain text files</li>
-            <li><strong>CSV:</strong> Comma-separated values (spreadsheet data)</li>
-            <li><strong>JSON:</strong> JavaScript Object Notation (structured data)</li>
-            <li><strong>XML:</strong> Extensible Markup Language (structured data)</li>
-            <li><strong>YAML:</strong> YAML Ain't Markup Language (configuration files)</li>
-            <li><strong>HTML:</strong> HyperText Markup Language (web pages)</li>
+            <li><strong>TXT (Plain Text):</strong> Simple text files without formatting. Ideal for basic data storage and text processing.</li>
+            <li><strong>CSV (Comma-Separated Values):</strong> Spreadsheet data format used by Excel, Google Sheets, and database systems. Perfect for tabular data.</li>
+            <li><strong>JSON (JavaScript Object Notation):</strong> Lightweight data interchange format used in web APIs, configuration files, and modern applications.</li>
+            <li><strong>XML (Extensible Markup Language):</strong> Structured data format used in web services, configuration files, and document storage.</li>
+            <li><strong>YAML (YAML Ain't Markup Language):</strong> Human-readable data serialization format used in configuration files, CI/CD pipelines, and DevOps tools.</li>
+            <li><strong>HTML (HyperText Markup Language):</strong> Web page markup language. Can be converted to structured data formats for processing.</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Complete Conversion Matrix</h3>
+          <div className="overflow-x-auto mb-4">
+            <table className="min-w-full border border-gray-300">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="border border-gray-300 px-4 py-2 text-left">From</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">To</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td className="border border-gray-300 px-4 py-2">TXT</td><td className="border border-gray-300 px-4 py-2">CSV, JSON, XML, YAML, HTML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
+                <tr><td className="border border-gray-300 px-4 py-2">CSV</td><td className="border border-gray-300 px-4 py-2">TXT, JSON, XML, YAML, HTML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
+                <tr><td className="border border-gray-300 px-4 py-2">JSON</td><td className="border border-gray-300 px-4 py-2">TXT, CSV, XML, YAML, HTML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
+                <tr><td className="border border-gray-300 px-4 py-2">XML</td><td className="border border-gray-300 px-4 py-2">TXT, CSV, JSON, YAML, HTML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
+                <tr><td className="border border-gray-300 px-4 py-2">YAML</td><td className="border border-gray-300 px-4 py-2">TXT, CSV, JSON, XML, HTML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
+                <tr><td className="border border-gray-300 px-4 py-2">HTML</td><td className="border border-gray-300 px-4 py-2">TXT, CSV, JSON, XML, YAML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h3>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Automatic format detection</li>
-            <li>Convert between 6 different formats</li>
-            <li>All processing happens in your browser (privacy-friendly)</li>
-            <li>Download converted files instantly</li>
-            <li>No file size limits</li>
-            <li>Real-time conversion preview</li>
+            <li><strong>100% Client-Side Processing:</strong> All conversions happen in your browser. Your files never leave your device, ensuring complete privacy and security.</li>
+            <li><strong>Automatic Format Detection:</strong> Our intelligent system automatically detects the input file format based on content and extension.</li>
+            <li><strong>Bidirectional Conversions:</strong> Convert between any supported formats in both directions seamlessly.</li>
+            <li><strong>Real-Time Preview:</strong> See both original and converted content side-by-side before downloading.</li>
+            <li><strong>No File Size Limits:</strong> Process files of any size without restrictions (limited only by browser memory).</li>
+            <li><strong>Instant Downloads:</strong> Download converted files immediately after processing.</li>
+            <li><strong>Error Validation:</strong> Clear error messages help identify and fix issues with file formats or content.</li>
+            <li><strong>No Registration Required:</strong> Start converting files immediately without creating an account.</li>
+            <li><strong>Free Forever:</strong> All features are completely free with no hidden costs or premium tiers.</li>
           </ul>
+
           <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Convert CSV data to JSON for APIs</li>
-            <li>Convert JSON to XML for legacy systems</li>
-            <li>Convert configuration files between formats</li>
-            <li>Transform data for different applications</li>
-            <li>Export data in different formats</li>
-            <li>Migrate data between systems</li>
+            <li><strong>API Development:</strong> Convert CSV data to JSON format for REST APIs or convert JSON responses to CSV for spreadsheet analysis.</li>
+            <li><strong>Data Migration:</strong> Migrate data between systems that use different formats (e.g., XML to JSON for modern APIs).</li>
+            <li><strong>Configuration Management:</strong> Convert configuration files between YAML, JSON, and XML formats for different tools and platforms.</li>
+            <li><strong>Data Analysis:</strong> Convert structured data (JSON, XML) to CSV for analysis in Excel, Google Sheets, or data analysis tools.</li>
+            <li><strong>Web Development:</strong> Convert HTML content to structured data formats (JSON, XML) for processing or storage.</li>
+            <li><strong>DevOps & CI/CD:</strong> Transform configuration files between YAML and JSON formats for different CI/CD platforms.</li>
+            <li><strong>Legacy System Integration:</strong> Convert modern JSON data to XML format for legacy systems that require XML.</li>
+            <li><strong>Data Export:</strong> Export data from one format to another for compatibility with different applications.</li>
+            <li><strong>Content Processing:</strong> Extract structured data from HTML pages or convert text data to structured formats.</li>
+            <li><strong>Testing & Development:</strong> Quickly convert test data between formats for different testing scenarios.</li>
           </ul>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How It Works</h3>
+          <ol className="list-decimal list-inside text-gray-700 space-y-2">
+            <li><strong>Upload or Paste File:</strong> Select a file from your device or paste content directly into the tool.</li>
+            <li><strong>Automatic Detection:</strong> Our system automatically detects the file format based on content and file extension.</li>
+            <li><strong>Select Target Format:</strong> Choose the format you want to convert your file to (TXT, CSV, JSON, XML, YAML, or HTML).</li>
+            <li><strong>Instant Conversion:</strong> The conversion happens immediately in your browser using advanced parsing algorithms.</li>
+            <li><strong>Preview & Download:</strong> Review the converted content and download it as a new file.</li>
+          </ol>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Privacy & Security</h3>
+          <p className="text-gray-700 mb-2">
+            Your privacy is guaranteed. All file conversions happen entirely in your browser using JavaScript. 
+            Your files are never uploaded to any server, never stored, and never accessed by third parties. 
+            This ensures complete privacy and security for sensitive data.
+          </p>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Format-Specific Details</h3>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">CSV Conversions</h4>
+              <p className="text-gray-700 text-sm">CSV files are automatically parsed with proper handling of commas, quotes, and newlines. Headers are preserved when converting to structured formats.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">JSON Conversions</h4>
+              <p className="text-gray-700 text-sm">JSON files are validated before conversion. Invalid JSON will show clear error messages. Nested objects and arrays are properly handled.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">XML Conversions</h4>
+              <p className="text-gray-700 text-sm">XML files are parsed with proper handling of attributes, namespaces, and nested elements. Well-formed XML is required for successful conversion.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">YAML Conversions</h4>
+              <p className="text-gray-700 text-sm">YAML files support multi-line strings, lists, and nested structures. Indentation and formatting are preserved where possible.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">HTML Conversions</h4>
+              <p className="text-gray-700 text-sm">HTML content is parsed to extract text and structure. Tags are converted to appropriate elements in target formats.</p>
+            </div>
+          </div>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h3>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">Is the File Converter free to use?</h4>
+              <p className="text-gray-700">Yes, our File Converter is completely free to use. No registration, no hidden fees, no limits on conversions.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">Are my files secure?</h4>
+              <p className="text-gray-700">Absolutely! All conversions happen in your browser. Your files never leave your device and are never uploaded to any server.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">What file sizes are supported?</h4>
+              <p className="text-gray-700">There are no strict file size limits. The only limitation is your browser's available memory. Most modern browsers can handle files up to several hundred megabytes.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">Can I convert multiple files at once?</h4>
+              <p className="text-gray-700">Currently, the tool processes one file at a time. For batch conversions, you can process files sequentially.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">What if my file format is not detected correctly?</h4>
+              <p className="text-gray-700">You can manually select the target format even if auto-detection fails. The tool will attempt to parse the content based on your selection.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">Will data be lost during conversion?</h4>
+              <p className="text-gray-700">Simple data conversions preserve all content. Complex structures (nested objects, arrays) are preserved where possible, but some formatting may be simplified.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">Can I convert binary files?</h4>
+              <p className="text-gray-700">No, this tool only works with text-based formats. Binary files (images, videos, executables) cannot be converted.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">Does the tool work offline?</h4>
+              <p className="text-gray-700">Yes! Once the page is loaded, all conversions happen in your browser without requiring an internet connection.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -282,7 +282,7 @@ export default function DocumentConverter() {
             <div>✅ PDF → TXT</div>
             <div>✅ Word (DOCX) → TXT</div>
             <div>✅ TXT → Word (DOCX)</div>
-            <div>⚠️ TXT → PDF (Coming soon)</div>
+            <div>✅ TXT → PDF</div>
           </div>
         </div>
       </div>
@@ -292,34 +292,129 @@ export default function DocumentConverter() {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">About Document Converter</h2>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
-            Document Converter is a free online tool that converts documents between PDF, Word (DOCX), 
-            and TXT formats. All conversions happen securely on our server.
+            Document Converter is a free, secure online tool that converts documents between PDF, Word (DOCX), 
+            and TXT formats. All conversions happen securely on our server with no file size limits for most conversions. 
+            Perfect for professionals, students, and anyone who needs to convert documents between different formats.
           </p>
+          
           <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Formats</h3>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>PDF:</strong> Portable Document Format</li>
-            <li><strong>DOCX:</strong> Microsoft Word Document (2007+)</li>
-            <li><strong>DOC:</strong> Microsoft Word Document (legacy - converted to DOCX)</li>
-            <li><strong>TXT:</strong> Plain text files</li>
+            <li><strong>PDF (Portable Document Format):</strong> Industry-standard format for document sharing and archiving. Supports text extraction and conversion to Word or TXT formats.</li>
+            <li><strong>DOCX (Microsoft Word Document):</strong> Modern Word document format (2007+). Supports conversion to PDF, TXT, and other formats while preserving text content.</li>
+            <li><strong>DOC (Legacy Word Document):</strong> Older Word document format. Automatically converted to DOCX for processing.</li>
+            <li><strong>TXT (Plain Text):</strong> Simple text files without formatting. Can be converted to Word documents or PDFs with proper formatting.</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Complete Conversion Matrix</h3>
+          <div className="overflow-x-auto mb-4">
+            <table className="min-w-full border border-gray-300">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="border border-gray-300 px-4 py-2 text-left">From</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">To</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">PDF</td>
+                  <td className="border border-gray-300 px-4 py-2">Word (DOCX)</td>
+                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">PDF</td>
+                  <td className="border border-gray-300 px-4 py-2">TXT</td>
+                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Word (DOCX)</td>
+                  <td className="border border-gray-300 px-4 py-2">PDF</td>
+                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Word (DOCX)</td>
+                  <td className="border border-gray-300 px-4 py-2">TXT</td>
+                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">TXT</td>
+                  <td className="border border-gray-300 px-4 py-2">Word (DOCX)</td>
+                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">TXT</td>
+                  <td className="border border-gray-300 px-4 py-2">PDF</td>
+                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h3>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Convert PDF to Word documents</li>
-            <li>Convert Word documents to PDF</li>
-            <li>Extract text from PDFs and Word documents</li>
-            <li>Convert TXT files to Word documents</li>
-            <li>Secure server-side processing</li>
-            <li>Download converted files instantly</li>
+            <li><strong>Secure Server-Side Processing:</strong> All conversions happen on our secure servers. Files are automatically deleted after processing for your privacy.</li>
+            <li><strong>High-Quality Conversions:</strong> Advanced algorithms ensure text extraction and formatting preservation where possible.</li>
+            <li><strong>Fast Processing:</strong> Most conversions complete in seconds, even for large documents.</li>
+            <li><strong>No Registration Required:</strong> Start converting documents immediately without creating an account.</li>
+            <li><strong>Multiple Format Support:</strong> Convert between PDF, Word, and TXT formats seamlessly.</li>
+            <li><strong>Instant Downloads:</strong> Download converted files immediately after processing.</li>
+            <li><strong>Automatic Format Detection:</strong> Our system automatically detects the input file format.</li>
+            <li><strong>Error Handling:</strong> Clear error messages help you understand and resolve any conversion issues.</li>
           </ul>
+
           <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Convert PDFs to editable Word documents</li>
-            <li>Convert Word documents to PDF for sharing</li>
-            <li>Extract text from PDFs for editing</li>
-            <li>Convert text files to formatted Word documents</li>
-            <li>Prepare documents for different applications</li>
-            <li>Migrate documents between formats</li>
+            <li><strong>Document Editing:</strong> Convert PDFs to Word documents for easy editing and formatting changes.</li>
+            <li><strong>Document Sharing:</strong> Convert Word documents to PDF for universal compatibility and professional presentation.</li>
+            <li><strong>Text Extraction:</strong> Extract text from PDFs and Word documents for use in other applications or analysis.</li>
+            <li><strong>Format Migration:</strong> Migrate documents between different formats for compatibility with various software.</li>
+            <li><strong>Content Repurposing:</strong> Convert documents to different formats for use in presentations, websites, or other media.</li>
+            <li><strong>Archival:</strong> Convert documents to PDF for long-term archival and preservation.</li>
+            <li><strong>Accessibility:</strong> Convert documents to TXT format for screen readers and accessibility tools.</li>
+            <li><strong>Data Processing:</strong> Extract text from documents for data analysis, text mining, or natural language processing.</li>
           </ul>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How It Works</h3>
+          <ol className="list-decimal list-inside text-gray-700 space-y-2">
+            <li><strong>Upload Your Document:</strong> Select a PDF, Word (DOCX/DOC), or TXT file from your device.</li>
+            <li><strong>Select Target Format:</strong> Choose the format you want to convert your document to (PDF, DOCX, or TXT).</li>
+            <li><strong>Automatic Processing:</strong> Our server processes your document using advanced conversion algorithms.</li>
+            <li><strong>Download Result:</strong> Download your converted document instantly. Files are automatically deleted from our servers after processing.</li>
+          </ol>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Privacy & Security</h3>
+          <p className="text-gray-700 mb-2">
+            Your privacy is our priority. All document conversions are processed securely on our servers, and files are automatically 
+            deleted immediately after processing. We do not store, share, or access your documents beyond the conversion process.
+          </p>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h3>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">Is the Document Converter free to use?</h4>
+              <p className="text-gray-700">Yes, our Document Converter is completely free to use. No registration, no hidden fees, no limits on the number of conversions.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">What file sizes are supported?</h4>
+              <p className="text-gray-700">We support files up to 10MB in size. For larger files, consider splitting them into smaller parts or using specialized software.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">Are my documents secure?</h4>
+              <p className="text-gray-700">Yes, all conversions happen on secure servers, and files are automatically deleted immediately after processing. We never store or access your documents.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">Can I convert scanned PDFs?</h4>
+              <p className="text-gray-700">Our converter works best with text-based PDFs. Scanned PDFs (image-based) may require OCR (Optical Character Recognition) for text extraction.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">Will formatting be preserved?</h4>
+              <p className="text-gray-700">Text content is preserved, but complex formatting (images, tables, advanced layouts) may not be fully preserved in all conversions. Simple text formatting is generally maintained.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">What if my conversion fails?</h4>
+              <p className="text-gray-700">If a conversion fails, you'll receive a clear error message. Common issues include corrupted files, unsupported formats, or files that are too large. Try a different file or format if needed.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

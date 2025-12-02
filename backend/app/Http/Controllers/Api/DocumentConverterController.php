@@ -11,6 +11,8 @@ use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Shared\Html;
 use Smalot\PdfParser\Parser;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class DocumentConverterController extends Controller
 {
@@ -169,34 +171,49 @@ class DocumentConverterController extends Controller
             // Extract text from Word
             $text = $this->fileProcessingService->extractTextContent($file, 'docx');
             
-            // For now, create a simple PDF using basic HTML to PDF approach
-            // Note: This is a basic implementation. For better results, consider installing dompdf
+            // Convert text to HTML with proper formatting
             $html = '<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
-        p { margin: 10px 0; }
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 40px; 
+            line-height: 1.6; 
+            color: #333;
+        }
+        p { 
+            margin: 10px 0; 
+            text-align: justify;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: Arial, sans-serif;
+        }
     </style>
 </head>
 <body>
-    <pre>' . htmlspecialchars($text) . '</pre>
+    <div>' . nl2br(htmlspecialchars($text)) . '</div>
 </body>
 </html>';
             
-            // Use a simple approach: return HTML that can be converted to PDF client-side
-            // Or use a library like dompdf if available
-            // For now, we'll create a basic PDF structure
-            // Note: This requires dompdf or similar library for proper PDF generation
+            // Generate PDF using dompdf
+            $options = new Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $options->set('defaultFont', 'Arial');
             
-            // Temporary solution: Return text content and let frontend handle PDF generation
-            // Or use a service that can convert HTML to PDF
+            $dompdf = new Dompdf($options);
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
             
-            throw new \Exception('Word to PDF conversion requires additional setup. Please use PDF to Word or Word to TXT conversions.');
+            return $dompdf->output();
         } catch (\Exception $e) {
             \Log::error('Word to PDF conversion error: ' . $e->getMessage());
-            throw $e;
+            throw new \Exception('Failed to convert Word to PDF: ' . $e->getMessage());
         }
     }
 
@@ -268,21 +285,39 @@ class DocumentConverterController extends Controller
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
-        pre { white-space: pre-wrap; word-wrap: break-word; }
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 40px; 
+            line-height: 1.6; 
+            color: #333;
+        }
+        pre { 
+            white-space: pre-wrap; 
+            word-wrap: break-word; 
+            font-family: Arial, sans-serif;
+        }
     </style>
 </head>
 <body>
-    <pre>' . htmlspecialchars($text) . '</pre>
+    <div>' . nl2br(htmlspecialchars($text)) . '</div>
 </body>
 </html>';
             
-            // Note: For proper PDF generation, we'd need dompdf or similar
-            // For now, return HTML that can be converted client-side
-            throw new \Exception('TXT to PDF conversion requires additional setup. Please use TXT to Word conversion.');
+            // Generate PDF using dompdf
+            $options = new Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $options->set('defaultFont', 'Arial');
+            
+            $dompdf = new Dompdf($options);
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            
+            return $dompdf->output();
         } catch (\Exception $e) {
             \Log::error('TXT to PDF conversion error: ' . $e->getMessage());
-            throw $e;
+            throw new \Exception('Failed to convert TXT to PDF: ' . $e->getMessage());
         }
     }
 }
