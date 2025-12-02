@@ -7,9 +7,10 @@ import TextSummarizer from '../../components/tools/TextSummarizer';
 import ArticleRewriter from '../../components/tools/ArticleRewriter';
 import GrammarChecker from '../../components/tools/GrammarChecker';
 import LanguageTranslator from '../../components/tools/LanguageTranslator';
+import KeywordExtractor from '../../components/tools/KeywordExtractor';
 
 type AIToolType = 
-  | 'text-summarizer' | 'article-rewriter' | 'grammar-checker' | 'language-translator';
+  | 'text-summarizer' | 'article-rewriter' | 'grammar-checker' | 'language-translator' | 'keyword-extractor';
 
 interface AIToolOption {
   id: AIToolType;
@@ -161,6 +162,7 @@ export default function AITools() {
       case 'article-rewriter': return <ArticleRewriter />;
       case 'grammar-checker': return <GrammarChecker />;
       case 'language-translator': return <LanguageTranslator />;
+      case 'keyword-extractor': return <KeywordExtractor />;
       default: return <TextSummarizer />;
     }
   };

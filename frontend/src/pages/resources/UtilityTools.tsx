@@ -24,6 +24,7 @@ import TextToImage from '../../components/tools/TextToImage';
 import LoremIpsumGenerator from '../../components/tools/LoremIpsumGenerator';
 import TextCaseConverter from '../../components/tools/TextCaseConverter';
 import HashGenerator from '../../components/tools/HashGenerator';
+import ImageCompressor from '../../components/tools/ImageCompressor';
 
 type ToolType = 
   | 'password-generator' | 'qr-code-generator' 
@@ -31,7 +32,7 @@ type ToolType =
   | 'pdf-merger' | 'pdf-splitter' | 'pdf-compressor' | 'pdf-rotate'
   | 'tip-calculator' | 'compound-interest-calculator' | 'base64-encoder' | 'url-encoder'
   | 'regex-tester' | 'uuid-generator' | 'jwt-decoder' | 'text-to-image'
-  | 'lorem-ipsum-generator' | 'text-case-converter' | 'hash-generator';
+  | 'lorem-ipsum-generator' | 'text-case-converter' | 'hash-generator' | 'image-compressor';
 
 interface ToolOption {
   id: ToolType;
@@ -371,6 +372,7 @@ export default function UtilityTools() {
       case 'lorem-ipsum-generator': return <LoremIpsumGenerator />;
       case 'text-case-converter': return <TextCaseConverter />;
       case 'hash-generator': return <HashGenerator />;
+      case 'image-compressor': return <ImageCompressor />;
       default: return <PasswordGenerator />;
     }
   };

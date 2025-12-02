@@ -72,7 +72,8 @@ const toolCategories = [
       { name: "Lorem Ipsum Generator", path: "/resources/utility-tools?tool=lorem-ipsum-generator", icon: "📝" },
       { name: "Text Case Converter", path: "/resources/utility-tools?tool=text-case-converter", icon: "🔄" },
       { name: "Hash Generator", path: "/resources/utility-tools?tool=hash-generator", icon: "🔐" },
-      { name: "View All (21)", path: "/resources/utility-tools", icon: "🛠️" },
+      { name: "Image Compressor", path: "/resources/utility-tools?tool=image-compressor", icon: "🗜️" },
+      { name: "View All (22)", path: "/resources/utility-tools", icon: "🛠️" },
     ]
   },
   {
@@ -87,7 +88,8 @@ const toolCategories = [
       { name: "Article Rewriter", path: "/resources/ai-tools?tool=article-rewriter", icon: "✍️" },
       { name: "Grammar Checker", path: "/resources/ai-tools?tool=grammar-checker", icon: "✅" },
       { name: "Language Translator", path: "/resources/ai-tools?tool=language-translator", icon: "🌐" },
-      { name: "View All (4)", path: "/resources/ai-tools", icon: "🤖" },
+      { name: "Keyword Extractor", path: "/resources/ai-tools?tool=keyword-extractor", icon: "🔑" },
+      { name: "View All (5)", path: "/resources/ai-tools", icon: "🤖" },
     ]
   },
 ];

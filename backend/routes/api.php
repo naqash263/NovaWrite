@@ -58,6 +58,7 @@ Route::prefix('ai-tools')->group(function () {
     Route::post('/article-rewriter/rewrite', [App\Http\Controllers\Api\ArticleRewriterController::class, 'rewrite']);
     Route::post('/grammar-checker/check', [App\Http\Controllers\Api\GrammarCheckerController::class, 'check']);
     Route::post('/language-translator/translate', [App\Http\Controllers\Api\LanguageTranslatorController::class, 'translate']);
+    Route::post('/keyword-extractor/extract', [App\Http\Controllers\Api\KeywordExtractorController::class, 'extract']);
 });
 
 // Image Resizer API routes (public access)
@@ -65,6 +66,7 @@ Route::prefix('utility-tools')->group(function () {
     Route::post('/image-resizer/resize', [App\Http\Controllers\Api\ImageResizerController::class, 'resize']);
     Route::get('/image-resizer/presets', [App\Http\Controllers\Api\ImageResizerController::class, 'presets']);
     Route::post('/text-to-image/generate', [App\Http\Controllers\Api\TextToImageController::class, 'generate']);
+    Route::post('/image-compressor/compress', [App\Http\Controllers\Api\ImageCompressorController::class, 'compress']);
 });
 
 // App analytics routes
