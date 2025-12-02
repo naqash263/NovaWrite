@@ -76,7 +76,9 @@ const toolCategories = [
       { name: "SQL Formatter", path: "/resources/utility-tools?tool=sql-formatter", icon: "💾" },
       { name: "CSS Formatter", path: "/resources/utility-tools?tool=css-formatter", icon: "🎨" },
       { name: "HTML Formatter", path: "/resources/utility-tools?tool=html-formatter", icon: "🌐" },
-      { name: "View All (25)", path: "/resources/utility-tools", icon: "🛠️" },
+      { name: "Image Format Converter", path: "/resources/utility-tools?tool=image-format-converter", icon: "🔄" },
+      { name: "Color Picker", path: "/resources/utility-tools?tool=color-picker", icon: "🎨" },
+      { name: "View All (27)", path: "/resources/utility-tools", icon: "🛠️" },
     ]
   },
   {
