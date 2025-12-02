@@ -50,13 +50,12 @@ export default function HashGenerator() {
     
     let hashBuffer: ArrayBuffer;
     
+    // MD5 is not natively supported in Web Crypto API
+    if (algorithm === 'MD5') {
+      return Promise.resolve('MD5 is not natively supported in browsers. Please use SHA-256 or SHA-512 for better security.');
+    }
+
     switch (algorithm) {
-      case 'MD5':
-        // MD5 is not available in Web Crypto API, we'll use a library or show message
-        // For now, we'll use a workaround with a simple implementation
-        // Note: MD5 is deprecated for security, but still used for checksums
-        return await generateMD5(text);
-      
       case 'SHA-1':
         hashBuffer = await crypto.subtle.digest('SHA-1', data);
         break;
