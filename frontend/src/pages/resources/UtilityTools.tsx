@@ -334,6 +334,16 @@ const toolOptions: ToolOption[] = [
     seoDescription: 'Free online markdown preview and editor. Write markdown and see live preview. Convert markdown to HTML. Export HTML code. Perfect for developers and content creators. No registration required.',
     keywords: ['markdown preview', 'markdown editor', 'markdown to HTML', 'live markdown preview', 'markdown converter', 'markdown viewer']
   },
+  { 
+    id: 'file-converter', 
+    name: 'File Converter', 
+    icon: '📁', 
+    category: 'productivity', 
+    description: 'Convert files between TXT, CSV, JSON, XML, YAML, and HTML formats',
+    seoTitle: 'Free File Converter - Convert TXT, CSV, JSON, XML, YAML, HTML Online | File Format Converter',
+    seoDescription: 'Free online file converter. Convert files between TXT, CSV, JSON, XML, YAML, and HTML formats. Automatic format detection. All processing happens in your browser. No registration required.',
+    keywords: ['file converter', 'convert file format', 'TXT to JSON', 'CSV to JSON', 'JSON to XML', 'XML to YAML', 'file format converter']
+  },
 ];
 
 export default function UtilityTools() {
