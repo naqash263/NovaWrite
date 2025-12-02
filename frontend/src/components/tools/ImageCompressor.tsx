@@ -146,7 +146,11 @@ export default function ImageCompressor() {
         );
       };
       img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = originalImage;
+      if (originalImage) {
+        img.src = originalImage;
+      } else {
+        reject(new Error('No image to compress'));
+      }
     });
   };
 
