@@ -79,7 +79,8 @@ const toolCategories = [
       { name: "Image Format Converter", path: "/resources/utility-tools?tool=image-format-converter", icon: "🔄" },
       { name: "Color Picker", path: "/resources/utility-tools?tool=color-picker", icon: "🎨" },
       { name: "Markdown Preview", path: "/resources/utility-tools?tool=markdown-preview", icon: "📄" },
-      { name: "View All (28)", path: "/resources/utility-tools", icon: "🛠️" },
+      { name: "File Converter", path: "/resources/utility-tools?tool=file-converter", icon: "📁" },
+      { name: "View All (29)", path: "/resources/utility-tools", icon: "🛠️" },
     ]
   },
   {
