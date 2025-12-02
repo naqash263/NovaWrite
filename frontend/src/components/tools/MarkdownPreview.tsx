@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { marked } from 'marked';
 import { useSEO } from '../../utils/seo';
 
@@ -65,10 +65,19 @@ export default function MarkdownPreview() {
     setHtml('');
   };
 
-  // Initialize preview on mount
+  // Initialize preview on mount and when markdown changes
   useEffect(() => {
-    updatePreview(markdown);
-  }, []);
+    if (markdown) {
+      try {
+        const htmlContent = marked(markdown);
+        setHtml(htmlContent as string);
+      } catch (err) {
+        setHtml('<p class="text-red-600">Error parsing markdown</p>');
+      }
+    } else {
+      setHtml('');
+    }
+  }, [markdown]);
 
   return (
     <div className="max-w-7xl mx-auto p-6">

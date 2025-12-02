@@ -58,9 +58,7 @@ export default function SQLFormatter() {
       } else {
         const formatted = format(input, {
           language: language as any,
-          indent: ' '.repeat(indent),
-          uppercase: false,
-          linesBetweenQueries: 2,
+          tabWidth: indent,
         });
         setOutput(formatted);
       }

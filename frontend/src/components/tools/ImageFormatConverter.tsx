@@ -88,28 +88,22 @@ export default function ImageFormatConverter() {
         ctx.drawImage(img, 0, 0);
 
         let mimeType = 'image/jpeg';
-        let fileExtension = 'jpg';
 
         switch (targetFormat) {
           case 'jpeg':
             mimeType = 'image/jpeg';
-            fileExtension = 'jpg';
             break;
           case 'png':
             mimeType = 'image/png';
-            fileExtension = 'png';
             break;
           case 'webp':
             mimeType = 'image/webp';
-            fileExtension = 'webp';
             break;
           case 'gif':
             mimeType = 'image/gif';
-            fileExtension = 'gif';
             break;
           case 'bmp':
             mimeType = 'image/bmp';
-            fileExtension = 'bmp';
             break;
         }
 
