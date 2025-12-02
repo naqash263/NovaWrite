@@ -21,13 +21,17 @@ import RegexTester from '../../components/tools/RegexTester';
 import UUIDGenerator from '../../components/tools/UUIDGenerator';
 import JWTDecoder from '../../components/tools/JWTDecoder';
 import TextToImage from '../../components/tools/TextToImage';
+import LoremIpsumGenerator from '../../components/tools/LoremIpsumGenerator';
+import TextCaseConverter from '../../components/tools/TextCaseConverter';
+import HashGenerator from '../../components/tools/HashGenerator';
 
 type ToolType = 
   | 'password-generator' | 'qr-code-generator' 
   | 'image-resizer' | 'word-counter' | 'loan-calculator' | 'json-formatter'
   | 'pdf-merger' | 'pdf-splitter' | 'pdf-compressor' | 'pdf-rotate'
   | 'tip-calculator' | 'compound-interest-calculator' | 'base64-encoder' | 'url-encoder'
-  | 'regex-tester' | 'uuid-generator' | 'jwt-decoder' | 'text-to-image';
+  | 'regex-tester' | 'uuid-generator' | 'jwt-decoder' | 'text-to-image'
+  | 'lorem-ipsum-generator' | 'text-case-converter' | 'hash-generator';
 
 interface ToolOption {
   id: ToolType;
@@ -334,6 +338,9 @@ export default function UtilityTools() {
       case 'pdf-splitter': return <PDFSplitter />;
       case 'pdf-compressor': return <PDFCompressor />;
       case 'pdf-rotate': return <PDFRotate />;
+      case 'lorem-ipsum-generator': return <LoremIpsumGenerator />;
+      case 'text-case-converter': return <TextCaseConverter />;
+      case 'hash-generator': return <HashGenerator />;
       default: return <PasswordGenerator />;
     }
   };

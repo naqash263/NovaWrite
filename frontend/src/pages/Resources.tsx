@@ -46,7 +46,7 @@ const toolCategories = [
   {
     id: 'utility-tools',
     title: "Utility Tools",
-    description: "Free productivity tools: Password Generator, QR Code, Image Resizer, PDF tools, and more",
+    description: "Free productivity tools: Password Generator, QR Code, Image Resizer, PDF tools, Text tools, and more",
     icon: "🛠️",
     path: "/resources/utility-tools",
     color: "purple",
@@ -69,7 +69,10 @@ const toolCategories = [
       { name: "PDF Splitter", path: "/resources/utility-tools?tool=pdf-splitter", icon: "✂️" },
       { name: "PDF Compressor", path: "/resources/utility-tools?tool=pdf-compressor", icon: "📦" },
       { name: "PDF Rotate", path: "/resources/utility-tools?tool=pdf-rotate", icon: "🔄" },
-      { name: "View All (18)", path: "/resources/utility-tools", icon: "🛠️" },
+      { name: "Lorem Ipsum Generator", path: "/resources/utility-tools?tool=lorem-ipsum-generator", icon: "📝" },
+      { name: "Text Case Converter", path: "/resources/utility-tools?tool=text-case-converter", icon: "🔄" },
+      { name: "Hash Generator", path: "/resources/utility-tools?tool=hash-generator", icon: "🔐" },
+      { name: "View All (21)", path: "/resources/utility-tools", icon: "🛠️" },
     ]
   },
   {
