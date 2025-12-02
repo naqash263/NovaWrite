@@ -26,7 +26,7 @@ interface Comment {
 }
 
 interface CommentListProps {
-  commentableType: 'Post' | 'Workflow' | 'Project';
+  commentableType: 'Post' | 'Workflow' | 'Project' | 'Issue';
   commentableId: number;
   parentId?: number;
   onCommentUpdate?: () => void;

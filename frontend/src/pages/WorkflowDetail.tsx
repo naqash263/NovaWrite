@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/axios';
 import AdPlacement from '../components/AdPlacement';
+import CommentSection from '../components/comments/CommentSection';
 import { useSEO } from '../utils/seo';
 import { PageLoader } from '../components/LoadingComponents';
 import WorkflowDownloadModal from '../components/WorkflowDownloadModal';
@@ -520,6 +521,18 @@ export default function WorkflowDetail() {
             </div>
           </div>
         </article>
+
+        {/* Comments Section */}
+        {workflow && (
+          <div className="mt-8">
+            <CommentSection
+              commentableType="Workflow"
+              commentableId={workflow.id}
+              title="Comments"
+              showTitle={true}
+            />
+          </div>
+        )}
           </div>
         </div>
       </div>

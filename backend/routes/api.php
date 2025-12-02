@@ -623,6 +623,27 @@ Route::middleware('api.auth')->group(function () {
     Route::delete('comments/{id}', [App\Http\Controllers\Api\CommentController::class, 'destroy']);
 });
 
+// Issues routes (public read, authenticated write, admin for status/assign)
+Route::get('issues', [App\Http\Controllers\Api\IssueController::class, 'index']);
+Route::get('issues/stats', [App\Http\Controllers\Api\IssueController::class, 'stats']);
+Route::get('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'show']);
+Route::post('issues', [App\Http\Controllers\Api\IssueController::class, 'store']);
+Route::post('issues/{id}/upvote', [App\Http\Controllers\Api\IssueController::class, 'upvote']);
+
+// Issue Categories routes
+Route::get('issue-categories', [App\Http\Controllers\Api\IssueCategoryController::class, 'index']);
+
+Route::middleware('api.auth')->group(function () {
+    Route::put('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'update']);
+    Route::delete('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'destroy']);
+    
+    // Admin-only routes
+    Route::middleware('admin')->group(function () {
+        Route::post('issues/{id}/status', [App\Http\Controllers\Api\IssueController::class, 'updateStatus']);
+        Route::post('issues/{id}/assign', [App\Http\Controllers\Api\IssueController::class, 'assign']);
+    });
+});
+
 Route::get('files/{id}/download', [FileController::class, 'download']);
 
 // Public SEO file routes

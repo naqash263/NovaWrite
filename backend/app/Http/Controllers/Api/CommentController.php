@@ -21,7 +21,7 @@ class CommentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'commentable_type' => 'required|string|in:Post,Workflow,Project',
+            'commentable_type' => 'required|string|in:Post,Workflow,Project,Issue',
             'commentable_id' => 'required|integer',
             'parent_id' => 'nullable|integer|exists:comments,id',
             'approved_only' => 'nullable|boolean',
@@ -89,7 +89,7 @@ class CommentController extends Controller
         $user = Auth::user();
         
         $validator = Validator::make($request->all(), [
-            'commentable_type' => 'required|string|in:Post,Workflow,Project',
+            'commentable_type' => 'required|string|in:Post,Workflow,Project,Issue',
             'commentable_id' => 'required|integer',
             'parent_id' => 'nullable|integer|exists:comments,id',
             'content' => 'required|string|min:3|max:5000',

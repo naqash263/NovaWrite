@@ -81,6 +81,9 @@ const AITools = lazy(() => import('./pages/resources/AITools'));
 const N8nConfigurations = lazy(() => import('./pages/admin/N8nConfigurations'));
 const EmailQueue = lazy(() => import('./pages/admin/EmailQueue'));
 const EmailLogs = lazy(() => import('./pages/admin/EmailLogs'));
+const Issues = lazy(() => import('./pages/community/Issues'));
+const IssueDetail = lazy(() => import('./pages/community/IssueDetail'));
+const CreateIssue = lazy(() => import('./pages/community/CreateIssue'));
 
 // Enhanced loading with performance optimizations
 
@@ -152,8 +155,11 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />
-        <Route path="/resources" element={<Resources />} />
-        <Route path="/resources/cv-builder" element={<CVBuilder />} />
+              <Route path="/resources" element={<Resources />} />
+              <Route path="/resources/cv-builder" element={<CVBuilder />} />
+              <Route path="/community/issues" element={<Issues />} />
+              <Route path="/community/issues/create" element={<CreateIssue />} />
+              <Route path="/community/issues/:id" element={<IssueDetail />} />
         <Route path="/resources/linkedin-optimizer" element={<LinkedInOptimizer />} />
         <Route path="/resources/salary-negotiation" element={<SalaryNegotiation />} />
         <Route path="/resources/interview-prep" element={<InterviewPrep />} />

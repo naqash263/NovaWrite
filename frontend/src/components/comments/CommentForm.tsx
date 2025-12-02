@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import apiClient from '../../api/axios';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../ui/Button';
@@ -6,7 +6,7 @@ import Textarea from '../ui/Textarea';
 import Input from '../ui/Input';
 
 interface CommentFormProps {
-  commentableType: 'Post' | 'Workflow' | 'Project';
+  commentableType: 'Post' | 'Workflow' | 'Project' | 'Issue';
   commentableId: number;
   parentId?: number;
   onSuccess?: () => void;

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import apiClient from '../../api/axios';
 import { useAuth } from '../../hooks/useAuth';
-import Button from '../ui/Button';
 import CommentForm from './CommentForm';
 
 interface Comment {
@@ -50,7 +49,6 @@ export default function CommentItem({
   const [likesCount, setLikesCount] = useState(comment.likes_count);
 
   const authorName = comment.user?.name || comment.guest_name || 'Anonymous';
-  const canEdit = isAuthenticated && user?.id === comment.user?.id;
   const canDelete = isAuthenticated && (user?.role === 'admin' || user?.id === comment.user?.id);
   const canReply = depth < maxDepth;
 

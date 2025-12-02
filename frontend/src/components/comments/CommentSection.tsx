@@ -3,7 +3,7 @@ import CommentForm from './CommentForm';
 import CommentList from './CommentList';
 
 interface CommentSectionProps {
-  commentableType: 'Post' | 'Workflow' | 'Project';
+  commentableType: 'Post' | 'Workflow' | 'Project' | 'Issue';
   commentableId: number;
   title?: string;
   showTitle?: boolean;
