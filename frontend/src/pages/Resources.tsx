@@ -297,58 +297,74 @@ export default function Resources() {
                 className={`bg-white rounded-xl shadow-lg border-2 ${colors.border} overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300`}
               >
                 {/* Category Header */}
-                <div
-                  onClick={() => navigate(category.path)}
-                  className={`${colors.bg} p-6 cursor-pointer ${colors.hover} transition-colors`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                <div className={`${colors.bg} p-6 ${colors.hover} transition-colors`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-4 flex-1">
                       <div className="text-4xl">{category.icon}</div>
-                      <div>
+                      <div className="flex-1">
                         <h2 className="text-2xl font-bold text-gray-900 mb-1">{category.title}</h2>
                         <p className="text-sm text-gray-600">{category.description}</p>
                       </div>
                     </div>
-                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setExpandedCategories(prev => ({
+                        ...prev,
+                        [category.id]: !prev[category.id]
+                      }))}
+                      className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <span>{expandedCategories[category.id] ? 'Collapse' : 'Expand'}</span>
+                      <svg
+                        className={`w-4 h-4 transition-transform ${expandedCategories[category.id] ? 'transform rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (category.id === 'career-tools') {
+                          setShowCareerTools(true);
+                          setTimeout(() => {
+                            document.getElementById('career-tools-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }, 100);
+                        } else {
+                          navigate(category.path);
+                        }
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <span>View All</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
                 {/* Tools List */}
-                <div className="p-6">
-                  <div className="grid grid-cols-2 gap-3">
-                    {category.tools.map((tool, index) => (
-                      <button
-                        key={index}
-                        onClick={() => navigate(tool.path)}
-                        className="flex items-center gap-2 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left group"
-                      >
-                        <span className="text-xl">{tool.icon}</span>
-                        <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-                          {tool.name}
-                        </span>
-                      </button>
-                    ))}
+                {expandedCategories[category.id] && (
+                  <div className="p-6">
+                    <div className="grid grid-cols-2 gap-3">
+                      {category.tools.map((tool, index) => (
+                        <button
+                          key={index}
+                          onClick={() => navigate(tool.path)}
+                          className="flex items-center gap-2 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left group"
+                        >
+                          <span className="text-xl">{tool.icon}</span>
+                          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                            {tool.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  
-                  {/* View All Button */}
-                  <button 
-                    onClick={() => {
-                      if (category.id === 'career-tools') {
-                        setShowCareerTools(true);
-                        setTimeout(() => {
-                          document.getElementById('career-tools-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 100);
-                      } else {
-                        navigate(category.path);
-                      }
-                    }}
-                    className={`w-full mt-4 px-4 py-3 ${colors.bg} ${colors.text} rounded-lg font-semibold ${colors.hover} transition-colors border ${colors.border}`}
-                  >
-                    View All {category.title} →
-                  </button>
-                </div>
+                )}
               </div>
             );
           })}
