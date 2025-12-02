@@ -303,8 +303,11 @@ class FileController extends Controller
     public function serve($path)
     {
         try {
-            // The path already includes 'uploads/' from the route, so we use it directly
-            // Path format: uploads/filename.png
+            // Decode URL-encoded path
+            $path = urldecode($path);
+            
+            // The path should be relative to storage/app/public/
+            // Path format: converted-documents/filename.docx or uploads/filename.png
             $filePath = storage_path('app/public/' . $path);
             
             // Check if file exists
@@ -312,7 +315,9 @@ class FileController extends Controller
                 \Log::warning('File not found', [
                     'requested_path' => $path,
                     'full_path' => $filePath,
-                    'exists' => file_exists($filePath)
+                    'exists' => file_exists($filePath),
+                    'storage_path' => storage_path('app/public'),
+                    'directory_exists' => is_dir(dirname($filePath))
                 ]);
                 return response()->json(['message' => 'File not found'], 404);
             }
@@ -320,17 +325,31 @@ class FileController extends Controller
             // Get file info
             $mimeType = mime_content_type($filePath);
             $fileSize = filesize($filePath);
+            $filename = basename($path);
             
-            // Set appropriate headers
-            $headers = [
-                'Content-Type' => $mimeType,
-                'Content-Length' => $fileSize,
-                'Cache-Control' => 'public, max-age=31536000', // 1 year cache
-                'Last-Modified' => gmdate('D, d M Y H:i:s', filemtime($filePath)) . ' GMT',
-            ];
+            // Determine if this should be downloaded or displayed
+            // For converted files, always download. For images, display inline.
+            $isDownload = strpos($path, 'converted-') !== false || 
+                         strpos($path, 'converted_') !== false ||
+                         !in_array($mimeType, ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']);
             
-            // Return file response
-            return response()->file($filePath, $headers);
+            if ($isDownload) {
+                // Use download response with proper headers
+                return response()->download($filePath, $filename, [
+                    'Content-Type' => $mimeType,
+                    'Content-Length' => $fileSize,
+                    'Cache-Control' => 'public, max-age=3600', // 1 hour cache for downloads
+                ]);
+            } else {
+                // Use file response for images (display inline)
+                $headers = [
+                    'Content-Type' => $mimeType,
+                    'Content-Length' => $fileSize,
+                    'Cache-Control' => 'public, max-age=31536000', // 1 year cache
+                    'Last-Modified' => gmdate('D, d M Y H:i:s', filemtime($filePath)) . ' GMT',
+                ];
+                return response()->file($filePath, $headers);
+            }
             
         } catch (\Exception $e) {
             \Log::error('Error serving file', [

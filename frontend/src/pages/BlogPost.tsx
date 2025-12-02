@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import apiClient from '../api/axios';
 import { FileList } from '../components/FileList';
 import AdPlacement from '../components/AdPlacement';
+import CommentSection from '../components/comments/CommentSection';
 import { useSEO } from '../utils/seo';
 import { generateBlogPostSchema, generateBreadcrumbSchema, injectStructuredData } from '../utils/structuredData';
 import { API_CONFIG } from '../config/api';
@@ -362,6 +363,18 @@ export default function BlogPost() {
 
           </div>
         </article>
+
+        {/* Comments Section */}
+        {post && (
+          <div className="mt-8">
+            <CommentSection
+              commentableType="Post"
+              commentableId={post.id}
+              title="Comments"
+              showTitle={true}
+            />
+          </div>
+        )}
           </div>
         </div>
       </div>

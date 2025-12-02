@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/axios';
 import AdPlacement from '../components/AdPlacement';
+import CommentSection from '../components/comments/CommentSection';
 import { useSEO } from '../utils/seo';
 import { PageLoader } from '../components/LoadingComponents';
 import LazyImage from '../components/LazyImage';
@@ -328,6 +329,18 @@ export default function ProjectDetail() {
                 </div>
               </div>
             </article>
+
+            {/* Comments Section */}
+            {project && (
+              <div className="mt-8">
+                <CommentSection
+                  commentableType="Project"
+                  commentableId={project.id}
+                  title="Comments"
+                  showTitle={true}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
