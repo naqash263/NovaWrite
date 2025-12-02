@@ -66,6 +66,16 @@ const aiToolOptions: AIToolOption[] = [
     seoDescription: 'Free AI-powered language translator. Translate text between 30+ languages instantly. Preserve formatting, accurate translations. Perfect for students, travelers, and professionals. No registration required.',
     keywords: ['language translator', 'text translator', 'online translator', 'translate text', 'AI translator', 'free translator']
   },
+  { 
+    id: 'keyword-extractor', 
+    name: 'Keyword Extractor', 
+    icon: '🔑', 
+    category: 'text', 
+    description: 'Extract keywords from text using AI, generate SEO keywords, and find related terms',
+    seoTitle: 'Free Keyword Extractor - AI-Powered Keyword Extraction Tool | Extract Keywords from Text',
+    seoDescription: 'Free AI-powered keyword extractor. Extract keywords from text, articles, and documents. Generate SEO keywords, find related keywords, and analyze keyword density. Perfect for content creators and SEO professionals. No registration required.',
+    keywords: ['keyword extractor', 'extract keywords', 'keyword generator', 'SEO keywords', 'keyword finder', 'AI keyword extractor']
+  },
 ];
 
 export default function AITools() {
