@@ -303,6 +303,36 @@ const toolOptions: ToolOption[] = [
     seoDescription: 'Free online HTML formatter and beautifier. Format HTML code with proper indentation, minify HTML, and validate syntax. Perfect for developers and web designers. No registration required.',
     keywords: ['HTML formatter', 'HTML beautifier', 'format HTML', 'HTML code formatter', 'HTML prettifier', 'HTML minifier']
   },
+  { 
+    id: 'image-format-converter', 
+    name: 'Image Format Converter', 
+    icon: '🔄', 
+    category: 'productivity', 
+    description: 'Convert images between JPEG, PNG, GIF, WebP, and BMP formats',
+    seoTitle: 'Free Image Format Converter - Convert JPEG, PNG, GIF, WebP Online | Image Converter',
+    seoDescription: 'Free online image format converter. Convert images between JPEG, PNG, GIF, WebP, and BMP formats. Maintain quality, adjust compression. Download converted images instantly. No registration required.',
+    keywords: ['image format converter', 'convert image format', 'JPEG to PNG', 'PNG to JPEG', 'image converter', 'format converter']
+  },
+  { 
+    id: 'color-picker', 
+    name: 'Color Picker', 
+    icon: '🎨', 
+    category: 'developer', 
+    description: 'Pick colors visually and get RGB, HEX, HSL values with color palette generator',
+    seoTitle: 'Free Color Picker - RGB, HEX, HSL Color Picker Online | Color Palette Generator',
+    seoDescription: 'Free online color picker. Pick colors with visual color picker, get RGB, HEX, HSL values. Generate color palettes, extract colors from images. Perfect for designers and developers. No registration required.',
+    keywords: ['color picker', 'RGB color picker', 'HEX color picker', 'HSL color picker', 'color palette generator', 'color picker online']
+  },
+  { 
+    id: 'markdown-preview', 
+    name: 'Markdown Preview', 
+    icon: '📄', 
+    category: 'developer', 
+    description: 'Live markdown preview and HTML converter with dark/light themes',
+    seoTitle: 'Free Markdown Preview - Live Markdown Editor & Preview | Markdown to HTML Converter',
+    seoDescription: 'Free online markdown preview and editor. Write markdown and see live preview. Convert markdown to HTML. Export HTML code. Perfect for developers and content creators. No registration required.',
+    keywords: ['markdown preview', 'markdown editor', 'markdown to HTML', 'live markdown preview', 'markdown converter', 'markdown viewer']
+  },
 ];
 
 export default function UtilityTools() {
