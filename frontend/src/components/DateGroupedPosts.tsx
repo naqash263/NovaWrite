@@ -1,5 +1,4 @@
 import { PostCard } from './PostCard';
-import { generateDateBasedUrl } from '../utils/urlHelpers';
 
 interface Post {
   id: number;

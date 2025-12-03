@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/axios';
 import { PostCard } from '../components/PostCard';
-import { CategoryFilter } from '../components/CategoryFilter';
 import { PostCardSkeleton } from '../components/Skeleton';
 import Pagination from '../components/Pagination';
 import AdvancedFilters from '../components/AdvancedFilters';
