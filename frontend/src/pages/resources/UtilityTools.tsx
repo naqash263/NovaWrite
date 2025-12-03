@@ -36,6 +36,7 @@ import DocumentConverter from '../../components/tools/DocumentConverter';
 import ExcelCsvConverter from '../../components/tools/ExcelCsvConverter';
 import HeicJpgConverter from '../../components/tools/HeicJpgConverter';
 import AudioConverter from '../../components/tools/AudioConverter';
+import TokenCounter from '../../components/tools/TokenCounter';
 
 type ToolType = 
   | 'password-generator' | 'qr-code-generator' 
@@ -45,7 +46,7 @@ type ToolType =
   | 'regex-tester' | 'uuid-generator' | 'jwt-decoder' | 'text-to-image'
   | 'lorem-ipsum-generator' | 'text-case-converter' | 'hash-generator' | 'image-compressor'
   | 'sql-formatter' | 'css-formatter' | 'html-formatter' | 'image-format-converter' | 'color-picker' | 'markdown-preview' | 'file-converter' | 'document-converter'
-  | 'excel-csv-converter' | 'heic-jpg-converter' | 'audio-converter';
+  | 'excel-csv-converter' | 'heic-jpg-converter' | 'audio-converter' | 'token-counter';
 
 interface ToolOption {
   id: ToolType;
@@ -493,6 +494,7 @@ export default function UtilityTools() {
       case 'excel-csv-converter': return <ExcelCsvConverter />;
       case 'heic-jpg-converter': return <HeicJpgConverter />;
       case 'audio-converter': return <AudioConverter />;
+      case 'token-counter': return <TokenCounter />;
       default: return <PasswordGenerator />;
     }
   };
