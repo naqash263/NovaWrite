@@ -7,6 +7,7 @@ use App\Models\SmtpConfiguration;
 use App\Models\SystemEmailSetting;
 use App\Models\N8nConfiguration;
 use App\Models\EmailQueue;
+use App\Models\EmailUnsubscribe;
 use App\Jobs\SendN8nEmail;
 use App\Services\N8nEmailService;
 use Illuminate\Support\Facades\Mail;
@@ -77,6 +78,15 @@ class EmailService
     public function sendTemplateEmail(string $templateName, array $variables, string $to, ?string $toName = null): bool
     {
         try {
+            // Check if email is unsubscribed
+            if (EmailUnsubscribe::isUnsubscribed($to, $templateName)) {
+                Log::info("Email not sent - user unsubscribed", [
+                    'email' => $to,
+                    'template' => $templateName
+                ]);
+                return false;
+            }
+
             $config = N8nConfiguration::getActive();
             if (!$config) {
                 Log::error("No active N8n configuration found for template: {$templateName}");

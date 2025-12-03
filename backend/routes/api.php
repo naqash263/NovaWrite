@@ -639,9 +639,16 @@ Route::get('issues/stats', [App\Http\Controllers\Api\IssueController::class, 'st
 Route::get('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'show']);
 Route::post('issues', [App\Http\Controllers\Api\IssueController::class, 'store']);
 Route::post('issues/{id}/upvote', [App\Http\Controllers\Api\IssueController::class, 'upvote']);
+Route::post('issues/{id}/mark-solved', [App\Http\Controllers\Api\IssueController::class, 'markAsSolved']); // Public - creator can mark as solved
 
 // Issue Categories routes
 Route::get('issue-categories', [App\Http\Controllers\Api\IssueCategoryController::class, 'index']);
+
+// Email Unsubscribe routes (public)
+Route::get('email/unsubscribe/{token}', [App\Http\Controllers\Api\EmailUnsubscribeController::class, 'unsubscribeByToken']);
+Route::post('email/unsubscribe', [App\Http\Controllers\Api\EmailUnsubscribeController::class, 'unsubscribe']);
+Route::post('email/resubscribe', [App\Http\Controllers\Api\EmailUnsubscribeController::class, 'resubscribe']);
+Route::get('email/unsubscribe/status', [App\Http\Controllers\Api\EmailUnsubscribeController::class, 'status']);
 
 Route::middleware('api.auth')->group(function () {
     Route::put('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'update']);

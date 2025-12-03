@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\CommentLike;
 use App\Models\CommentReport;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -20,11 +21,20 @@ class CommentController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        // Normalize request data for validation
+        $requestData = $request->all();
+        if (isset($requestData['commentable_id'])) {
+            $requestData['commentable_id'] = (int) $requestData['commentable_id'];
+        }
+        if (isset($requestData['parent_id'])) {
+            $requestData['parent_id'] = (int) $requestData['parent_id'];
+        }
+
+        $validator = Validator::make($requestData, [
             'commentable_type' => 'required|string|in:Post,Workflow,Project,Issue',
             'commentable_id' => 'required|integer',
             'parent_id' => 'nullable|integer|exists:comments,id',
-            'approved_only' => 'nullable|boolean',
+            'approved_only' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -37,20 +47,24 @@ class CommentController extends Controller
 
         try {
             $query = Comment::with(['user', 'parent', 'replies.user'])
-                ->where('commentable_type', $request->commentable_type)
-                ->where('commentable_id', $request->commentable_id);
+                ->where('commentable_type', $requestData['commentable_type'])
+                ->where('commentable_id', $requestData['commentable_id']);
 
             // Filter by parent (for nested replies)
-            if ($request->has('parent_id')) {
-                $query->where('parent_id', $request->parent_id);
+            if (isset($requestData['parent_id'])) {
+                $query->where('parent_id', $requestData['parent_id']);
             } else {
                 // Top-level comments only
                 $query->whereNull('parent_id');
             }
 
             // Filter approved comments only (default: true)
-            $approvedOnly = $request->input('approved_only', true);
-            if ($approvedOnly) {
+            // Handle string boolean values from query parameters
+            $approvedOnly = $request->input('approved_only', 'true');
+            if (is_string($approvedOnly)) {
+                $approvedOnly = in_array(strtolower($approvedOnly), ['true', '1', 'yes'], true);
+            }
+            if ($approvedOnly !== false) {
                 $query->where('is_approved', true);
             }
 
@@ -181,6 +195,69 @@ class CommentController extends Controller
 
             // Load relationships
             $comment->load(['user', 'parent', 'commentable']);
+
+            // Send email notifications via N8n
+            try {
+                $emailService = app(EmailService::class);
+                $commentable = $comment->commentable;
+                
+                // 1. Notify parent comment author if this is a reply
+                if ($request->parent_id && $parent) {
+                    $parentAuthorEmail = $parent->user ? $parent->user->email : $parent->guest_email;
+                    $parentAuthorName = $parent->user ? $parent->user->name : $parent->guest_name;
+                    
+                    if ($parentAuthorEmail && $parentAuthorEmail !== ($user ? $user->email : $request->guest_email)) {
+                        // Don't notify if replying to own comment
+                        // Get unsubscribe token for email link
+                        $unsubscribeToken = $this->getUnsubscribeToken($parentAuthorEmail);
+                        
+                        $emailService->sendTemplateEmail('comment_reply', [
+                            'commenter_name' => $user ? $user->name : $request->guest_name,
+                            'comment_content' => substr(strip_tags($request->content), 0, 200),
+                            'parent_comment' => substr(strip_tags($parent->content), 0, 200),
+                            'resource_type' => strtolower($request->commentable_type),
+                            'resource_title' => $this->getResourceTitle($commentable),
+                            'resource_url' => $this->getResourceUrl($commentable, $request->commentable_type),
+                            'comment_url' => $this->getResourceUrl($commentable, $request->commentable_type) . '#comment-' . $comment->id,
+                            'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=comment_reply',
+                        ], $parentAuthorEmail, $parentAuthorName);
+                    }
+                }
+                
+                // 2. Notify resource owner (if different from commenter)
+                $resourceOwnerEmail = null;
+                $resourceOwnerName = null;
+                
+                if ($commentable) {
+                    if (method_exists($commentable, 'user') && $commentable->user) {
+                        $resourceOwnerEmail = $commentable->user->email;
+                        $resourceOwnerName = $commentable->user->name;
+                    } elseif (method_exists($commentable, 'guest_email') && $commentable->guest_email) {
+                        $resourceOwnerEmail = $commentable->guest_email;
+                        $resourceOwnerName = $commentable->guest_name ?? 'Guest';
+                    }
+                    
+                    // Only notify if owner is different from commenter and it's not a reply
+                    $commenterEmail = $user ? $user->email : $request->guest_email;
+                    if ($resourceOwnerEmail && $resourceOwnerEmail !== $commenterEmail && !$request->parent_id) {
+                        // Get unsubscribe token for email link
+                        $unsubscribeToken = $this->getUnsubscribeToken($resourceOwnerEmail);
+                        
+                        $emailService->sendTemplateEmail('new_comment', [
+                            'commenter_name' => $user ? $user->name : $request->guest_name,
+                            'comment_content' => substr(strip_tags($request->content), 0, 200),
+                            'resource_type' => strtolower($request->commentable_type),
+                            'resource_title' => $this->getResourceTitle($commentable),
+                            'resource_url' => $this->getResourceUrl($commentable, $request->commentable_type),
+                            'comment_url' => $this->getResourceUrl($commentable, $request->commentable_type) . '#comment-' . $comment->id,
+                            'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=new_comment',
+                        ], $resourceOwnerEmail, $resourceOwnerName);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log but don't fail the request if email fails
+                Log::warning('Failed to send comment email notification: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -467,5 +544,67 @@ class CommentController extends Controller
                 'message' => 'Failed to fetch replies'
             ], 500);
         }
+    }
+
+    /**
+     * Get resource title for email notifications
+     */
+    private function getResourceTitle($resource): string
+    {
+        if (!$resource) {
+            return 'Unknown Resource';
+        }
+        
+        if (isset($resource->title)) {
+            return $resource->title;
+        }
+        
+        if (isset($resource->name)) {
+            return $resource->name;
+        }
+        
+        return 'Resource';
+    }
+
+    /**
+     * Get resource URL for email notifications
+     */
+    private function getResourceUrl($resource, string $type): string
+    {
+        if (!$resource) {
+            return config('app.url');
+        }
+        
+        $baseUrl = config('app.url');
+        $slug = $resource->slug ?? $resource->id;
+        
+        return match(strtolower($type)) {
+            'post' => "{$baseUrl}/blog/{$slug}",
+            'workflow' => "{$baseUrl}/workflows/{$slug}",
+            'project' => "{$baseUrl}/projects/{$slug}",
+            'issue' => "{$baseUrl}/community/issues/{$slug}",
+            default => $baseUrl,
+        };
+    }
+
+    /**
+     * Get or create unsubscribe token for email
+     */
+    private function getUnsubscribeToken(string $email): string
+    {
+        $unsubscribe = \App\Models\EmailUnsubscribe::where('email', $email)->first();
+        
+        if ($unsubscribe) {
+            return $unsubscribe->token;
+        }
+
+        // Create new unsubscribe record with token
+        $unsubscribe = \App\Models\EmailUnsubscribe::create([
+            'email' => $email,
+            'unsubscribed_types' => [],
+            'unsubscribe_all' => false,
+        ]);
+
+        return $unsubscribe->token;
     }
 }

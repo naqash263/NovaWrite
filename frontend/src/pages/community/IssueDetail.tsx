@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../../api/axios';
+import { useAuth } from '../../hooks/useAuth';
 import CommentSection from '../../components/comments/CommentSection';
 import Button from '../../components/ui/Button';
+import Textarea from '../../components/ui/Textarea';
 import { useSEO } from '../../utils/seo';
 import AdPlacement from '../../components/AdPlacement';
 
@@ -28,6 +30,7 @@ interface Issue {
     name: string;
   };
   guest_name?: string;
+  guest_email?: string;
   category?: {
     id: number;
     name: string;
@@ -45,9 +48,15 @@ interface Issue {
 
 export default function IssueDetail() {
   const { id } = useParams<{ id: string }>();
+  const { isAuthenticated, user } = useAuth();
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
   const [upvoting, setUpvoting] = useState(false);
+  const [showSolutionModal, setShowSolutionModal] = useState(false);
+  const [solution, setSolution] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [submittingSolution, setSubmittingSolution] = useState(false);
+  const [solutionError, setSolutionError] = useState<string | null>(null);
 
   useSEO({
     title: issue ? `${issue.title} - Community Issue | Naqash Thaheem` : 'Issue Detail',
@@ -94,6 +103,51 @@ export default function IssueDetail() {
       setUpvoting(false);
     }
   };
+
+  const handleMarkAsSolved = async () => {
+    if (!issue || !solution.trim() || solution.trim().length < 10) {
+      setSolutionError('Solution must be at least 10 characters long');
+      return;
+    }
+
+    // For guest-created issues, require email
+    if (!isAuthenticated && issue?.guest_email && !guestEmail.trim()) {
+      setSolutionError('Email is required to verify ownership');
+      return;
+    }
+
+    setSubmittingSolution(true);
+    setSolutionError(null);
+
+    try {
+      const payload: any = {
+        solution: solution.trim()
+      };
+
+      // Include guest email if not authenticated and issue was created by guest
+      if (!isAuthenticated && issue?.guest_email) {
+        payload.guest_email = guestEmail.trim();
+      }
+
+      const response = await apiClient.post(`/issues/${issue.id}/mark-solved`, payload);
+
+      if (response.data.success) {
+        setIssue(response.data.data);
+        setShowSolutionModal(false);
+        setSolution('');
+        setGuestEmail('');
+      }
+    } catch (error: any) {
+      console.error('Error marking as solved:', error);
+      setSolutionError(error.response?.data?.message || 'Failed to mark issue as solved');
+    } finally {
+      setSubmittingSolution(false);
+    }
+  };
+
+  // Check if current user is the issue creator
+  const isIssueCreator = (isAuthenticated && user && issue?.user?.id === user.id) || 
+                         (!isAuthenticated && issue?.guest_email); // Guest can mark if they provide email
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -250,14 +304,31 @@ export default function IssueDetail() {
                   </div>
                 )}
 
+                {/* Mark as Solved Button - Only for issue creator when not resolved */}
+                {isIssueCreator && issue.status !== 'resolved' && issue.status !== 'closed' && (
+                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h3 className="font-semibold text-blue-900 mb-2">Found a Solution?</h3>
+                    <p className="text-blue-800 text-sm mb-4">
+                      If you've found a solution to this issue, you can mark it as solved and share how you resolved it.
+                    </p>
+                    <Button onClick={() => setShowSolutionModal(true)}>
+                      Mark as Solved
+                    </Button>
+                  </div>
+                )}
+
                 {/* Resolution Notes */}
                 {issue.status === 'resolved' && issue.resolution_notes && (
                   <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <h3 className="font-semibold text-green-900 mb-2">Resolution Notes</h3>
-                    <p className="text-green-800">{issue.resolution_notes}</p>
+                    <h3 className="font-semibold text-green-900 mb-2">Solution</h3>
+                    <p className="text-green-800 whitespace-pre-wrap">{issue.resolution_notes}</p>
                     {issue.resolver && (
                       <p className="text-sm text-green-700 mt-2">
-                        Resolved by {issue.resolver.name} on {issue.resolved_at ? new Date(issue.resolved_at).toLocaleDateString() : ''}
+                        Marked as solved by {issue.resolver.name} on {issue.resolved_at ? new Date(issue.resolved_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        }) : ''}
                       </p>
                     )}
                   </div>
@@ -286,6 +357,79 @@ export default function IssueDetail() {
           </div>
         </div>
       </div>
+
+      {/* Solution Modal */}
+      {showSolutionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">Mark Issue as Solved</h2>
+                <button
+                  onClick={() => {
+                    setShowSolutionModal(false);
+                    setSolution('');
+                    setGuestEmail('');
+                    setSolutionError(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <p className="text-gray-600 mb-4">
+                Please share how you solved this issue. This will help others who face the same problem.
+              </p>
+
+              {solutionError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                  {solutionError}
+                </div>
+              )}
+
+              <Textarea
+                label="Solution"
+                value={solution}
+                onChange={(e) => {
+                  setSolution(e.target.value);
+                  setSolutionError(null);
+                }}
+                placeholder="Describe how you solved this issue. Include steps, code snippets, or any relevant information that would help others."
+                rows={8}
+                minLength={10}
+                maxLength={2000}
+                disabled={submittingSolution}
+                helperText={`${solution.length}/2000 characters (minimum 10)`}
+              />
+
+              <div className="flex items-center justify-end gap-3 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowSolutionModal(false);
+                    setSolution('');
+                    setGuestEmail('');
+                    setSolutionError(null);
+                  }}
+                  disabled={submittingSolution}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleMarkAsSolved}
+                  loading={submittingSolution}
+                  disabled={submittingSolution || solution.trim().length < 10 || (!isAuthenticated && issue?.guest_email ? !guestEmail.trim() : false)}
+                >
+                  Mark as Solved
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

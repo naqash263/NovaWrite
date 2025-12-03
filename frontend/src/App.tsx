@@ -84,6 +84,7 @@ const EmailLogs = lazy(() => import('./pages/admin/EmailLogs'));
 const Issues = lazy(() => import('./pages/community/Issues'));
 const IssueDetail = lazy(() => import('./pages/community/IssueDetail'));
 const CreateIssue = lazy(() => import('./pages/community/CreateIssue'));
+const EmailUnsubscribe = lazy(() => import('./pages/EmailUnsubscribe'));
 
 // Enhanced loading with performance optimizations
 
@@ -160,6 +161,8 @@ function App() {
               <Route path="/community/issues" element={<Issues />} />
               <Route path="/community/issues/create" element={<CreateIssue />} />
               <Route path="/community/issues/:id" element={<IssueDetail />} />
+              <Route path="/email/unsubscribe/:token" element={<EmailUnsubscribe />} />
+              <Route path="/email/unsubscribe" element={<EmailUnsubscribe />} />
         <Route path="/resources/linkedin-optimizer" element={<LinkedInOptimizer />} />
         <Route path="/resources/salary-negotiation" element={<SalaryNegotiation />} />
         <Route path="/resources/interview-prep" element={<InterviewPrep />} />

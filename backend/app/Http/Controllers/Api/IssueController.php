@@ -8,6 +8,7 @@ use App\Models\IssueCategory;
 use App\Models\IssueUpvote;
 use App\Models\IssueLabel;
 use App\Models\IssueAssignment;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -196,6 +197,29 @@ class IssueController extends Controller
 
             // Load relationships
             $issue->load(['user', 'category']);
+
+            // Send confirmation email via N8n
+            try {
+                $emailService = app(EmailService::class);
+                $recipientEmail = $user ? $user->email : $request->guest_email;
+                $recipientName = $user ? $user->name : $request->guest_name;
+
+                if ($recipientEmail) {
+                    // Get unsubscribe token
+                    $unsubscribeToken = $this->getUnsubscribeToken($recipientEmail);
+                    
+                    $emailService->sendTemplateEmail('issue_created', [
+                        'issue_title' => $issue->title,
+                        'issue_url' => config('app.url') . '/community/issues/' . ($issue->slug ?? $issue->id),
+                        'issue_description' => substr(strip_tags($issue->description), 0, 200) . '...',
+                        'created_at' => $issue->created_at->format('F j, Y \a\t g:i A'),
+                        'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=issue_created',
+                    ], $recipientEmail, $recipientName);
+                }
+            } catch (\Exception $e) {
+                // Log but don't fail the request if email fails
+                Log::warning('Failed to send issue created email notification: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -429,6 +453,32 @@ class IssueController extends Controller
             $issue->update($updateData);
             $issue->load(['resolver']);
 
+            // Send email notification via N8n when status changes
+            try {
+                $emailService = app(EmailService::class);
+                $recipientEmail = $issue->user ? $issue->user->email : $issue->guest_email;
+                $recipientName = $issue->user ? $issue->user->name : $issue->guest_name;
+
+                if ($recipientEmail && in_array($request->status, ['resolved', 'closed', 'in_progress'])) {
+                    // Get unsubscribe token
+                    $unsubscribeToken = $this->getUnsubscribeToken($recipientEmail);
+                    
+                    $emailService->sendTemplateEmail('issue_status_changed', [
+                        'issue_title' => $issue->title,
+                        'issue_url' => config('app.url') . '/community/issues/' . ($issue->slug ?? $issue->id),
+                        'old_status' => $issue->getOriginal('status'),
+                        'new_status' => $request->status,
+                        'changed_by' => $user->name,
+                        'resolution_notes' => $request->resolution_notes ?? null,
+                        'changed_at' => now()->format('F j, Y \a\t g:i A'),
+                        'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=issue_status_changed',
+                    ], $recipientEmail, $recipientName);
+                }
+            } catch (\Exception $e) {
+                // Log but don't fail the request if email fails
+                Log::warning('Failed to send issue status change email notification: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Issue status updated successfully',
@@ -439,6 +489,112 @@ class IssueController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update issue status'
+            ], 500);
+        }
+    }
+
+    /**
+     * Mark issue as resolved by the creator (user can mark their own issue as solved)
+     */
+    public function markAsSolved(Request $request, string $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'solution' => 'required|string|min:10|max:2000',
+            'guest_email' => 'nullable|email|max:255', // Required for guest users
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $issue = Issue::findOrFail($id);
+            $user = Auth::user();
+
+            // Check if user is the creator (authenticated or guest)
+            $isOwner = false;
+            
+            if ($user && $issue->user_id === $user->id) {
+                // Authenticated user owns the issue
+                $isOwner = true;
+            } elseif (!$user && $issue->guest_email) {
+                // For guest users, verify email matches
+                if (!$request->guest_email) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Email is required to verify ownership for guest-created issues'
+                    ], 422);
+                }
+                
+                if (strtolower($request->guest_email) === strtolower($issue->guest_email)) {
+                    $isOwner = true;
+                }
+            }
+
+            if (!$isOwner) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only the issue creator can mark it as solved. Please provide the correct email if you created this issue as a guest.'
+                ], 403);
+            }
+
+            // Check if already resolved
+            if ($issue->status === 'resolved' || $issue->status === 'closed') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This issue is already marked as resolved'
+                ], 400);
+            }
+
+            // Mark as resolved
+            $updateData = [
+                'status' => 'resolved',
+                'resolved_at' => now(),
+                'resolved_by' => $user?->id,
+                'resolution_notes' => $request->solution,
+            ];
+
+            $issue->update($updateData);
+            $issue->load(['resolver']);
+
+            // Send email notification via N8n
+            try {
+                $emailService = app(EmailService::class);
+                $recipientEmail = $issue->user ? $issue->user->email : $issue->guest_email;
+                $recipientName = $issue->user ? $issue->user->name : $issue->guest_name;
+
+                if ($recipientEmail) {
+                    // Get unsubscribe token
+                    $unsubscribeToken = $this->getUnsubscribeToken($recipientEmail);
+                    
+                    $emailService->sendTemplateEmail('issue_solved', [
+                        'issue_title' => $issue->title,
+                        'issue_url' => config('app.url') . '/community/issues/' . ($issue->slug ?? $issue->id),
+                        'solution' => $request->solution,
+                        'resolved_by' => $user ? $user->name : ($issue->guest_name ?? 'You'),
+                        'resolved_at' => now()->format('F j, Y \a\t g:i A'),
+                        'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=issue_solved',
+                    ], $recipientEmail, $recipientName);
+                }
+            } catch (\Exception $e) {
+                // Log but don't fail the request if email fails
+                Log::warning('Failed to send issue solved email notification: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Issue marked as solved successfully',
+                'data' => $issue
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error marking issue as solved: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark issue as solved'
             ], 500);
         }
     }
@@ -533,5 +689,26 @@ class IssueController extends Controller
                 'message' => 'Failed to fetch statistics'
             ], 500);
         }
+    }
+
+    /**
+     * Get or create unsubscribe token for email
+     */
+    private function getUnsubscribeToken(string $email): string
+    {
+        $unsubscribe = \App\Models\EmailUnsubscribe::where('email', $email)->first();
+        
+        if ($unsubscribe) {
+            return $unsubscribe->token;
+        }
+
+        // Create new unsubscribe record with token
+        $unsubscribe = \App\Models\EmailUnsubscribe::create([
+            'email' => $email,
+            'unsubscribed_types' => [],
+            'unsubscribe_all' => false,
+        ]);
+
+        return $unsubscribe->token;
     }
 }
