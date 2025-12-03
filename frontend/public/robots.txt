@@ -8,6 +8,14 @@ Sitemap: https://naqashthaheem.com/sitemap-ntw2024.xml
 Disallow: /admin/
 Disallow: /api/
 Disallow: /cgi-bin/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /auth/
+Disallow: /my-courses
+Disallow: /email/unsubscribe
 
 # Allow important pages
 Allow: /
@@ -15,17 +23,33 @@ Allow: /about
 Allow: /workflows
 Allow: /blog
 Allow: /contact
-Allow: /courses
 Allow: /resources
+Allow: /projects
+Allow: /privacy-policy
+Allow: /terms-of-service
+Allow: /cookie-policy
+
+# Allow Career Tools
 Allow: /resources/cv-builder
-Allow: /resources/watermark-remover
 Allow: /resources/linkedin-optimizer
 Allow: /resources/cover-letter-generator
 Allow: /resources/job-search-optimizer
 Allow: /resources/skills-assessment
-Allow: /privacy-policy
-Allow: /terms-of-service
-Allow: /cookie-policy
+Allow: /resources/interview-prep
+Allow: /resources/salary-negotiation
+Allow: /resources/career-path-planner
+
+# Allow Conversion Tools
+Allow: /resources/conversion-tools
+
+# Allow Utility Tools
+Allow: /resources/utility-tools
+
+# Allow AI Tools
+Allow: /resources/ai-tools
+
+# Allow Community
+Allow: /community/issues
 
 # Crawl delay (optional)
 Crawl-delay: 1

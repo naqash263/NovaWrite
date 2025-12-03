@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Models\Workflow;
-use App\Models\Course;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
@@ -62,8 +61,9 @@ class SitemapController extends Controller
         $xml .= $this->addUrl($baseUrl, '/workflows', $today, 'daily', '0.9');
         $xml .= $this->addUrl($baseUrl, '/blog', $today, 'daily', '0.9');
         $xml .= $this->addUrl($baseUrl, '/contact', $today, 'monthly', '0.7');
-        $xml .= $this->addUrl($baseUrl, '/courses', $today, 'weekly', '0.8');
         $xml .= $this->addUrl($baseUrl, '/resources', $today, 'weekly', '0.8');
+        
+        // Career Tools
         $xml .= $this->addUrl($baseUrl, '/resources/cv-builder', $today, 'monthly', '0.7');
         $xml .= $this->addUrl($baseUrl, '/resources/linkedin-optimizer', $today, 'monthly', '0.7');
         $xml .= $this->addUrl($baseUrl, '/resources/cover-letter-generator', $today, 'monthly', '0.7');
@@ -72,6 +72,18 @@ class SitemapController extends Controller
         $xml .= $this->addUrl($baseUrl, '/resources/interview-prep', $today, 'monthly', '0.7');
         $xml .= $this->addUrl($baseUrl, '/resources/salary-negotiation', $today, 'monthly', '0.7');
         $xml .= $this->addUrl($baseUrl, '/resources/career-path-planner', $today, 'monthly', '0.7');
+        
+        // Conversion Tools
+        $xml .= $this->addUrl($baseUrl, '/resources/conversion-tools', $today, 'weekly', '0.8');
+        
+        // Utility Tools
+        $xml .= $this->addUrl($baseUrl, '/resources/utility-tools', $today, 'weekly', '0.8');
+        
+        // AI Tools
+        $xml .= $this->addUrl($baseUrl, '/resources/ai-tools', $today, 'weekly', '0.8');
+        
+        // Projects
+        $xml .= $this->addUrl($baseUrl, '/projects', $today, 'weekly', '0.8');
         $xml .= $this->addUrl($baseUrl, '/privacy-policy', $today, 'yearly', '0.3');
         $xml .= $this->addUrl($baseUrl, '/terms-of-service', $today, 'yearly', '0.3');
         $xml .= $this->addUrl($baseUrl, '/cookie-policy', $today, 'yearly', '0.3');
@@ -120,24 +132,26 @@ class SitemapController extends Controller
             \Log::warning('Error fetching workflows for sitemap: ' . $e->getMessage());
         }
 
-        // Courses
+        // Projects (if Project model exists)
         try {
-            $courses = Course::published()
-                ->select('slug', 'updated_at', 'created_at', 'image_url')
-                ->orderBy('created_at', 'desc')
-                ->get();
+            if (class_exists(\App\Models\Project::class)) {
+                $projects = \App\Models\Project::where('status', 'published')
+                    ->select('slug', 'updated_at', 'created_at', 'image_url')
+                    ->orderBy('created_at', 'desc')
+                    ->get();
 
-            foreach ($courses as $course) {
-                $lastmod = $course->updated_at 
-                    ? Carbon::parse($course->updated_at)->format('Y-m-d')
-                    : ($course->created_at 
-                        ? Carbon::parse($course->created_at)->format('Y-m-d')
-                        : $today);
-                
-                $xml .= $this->addUrl($baseUrl, '/courses/' . $course->slug, $lastmod, 'monthly', '0.7', $course->image_url);
+                foreach ($projects as $project) {
+                    $lastmod = $project->updated_at 
+                        ? Carbon::parse($project->updated_at)->format('Y-m-d')
+                        : ($project->created_at 
+                            ? Carbon::parse($project->created_at)->format('Y-m-d')
+                            : $today);
+                    
+                    $xml .= $this->addUrl($baseUrl, '/projects/' . $project->slug, $lastmod, 'monthly', '0.7', $project->image_url);
+                }
             }
         } catch (\Exception $e) {
-            \Log::warning('Error fetching courses for sitemap: ' . $e->getMessage());
+            \Log::warning('Error fetching projects for sitemap: ' . $e->getMessage());
         }
 
         $xml .= '</urlset>';

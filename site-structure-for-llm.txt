@@ -1,0 +1,316 @@
+SITE STRUCTURE FOR LLM - Naqash Thaheem Portfolio Website
+===========================================================
+
+Website URL: https://naqashthaheem.com
+Owner: Naqash Thaheem
+Role: Systems Analyst & AI Automation Specialist
+Location: Ajman, UAE
+
+MAIN SECTIONS
+=============
+
+1. HOME (/)
+   - Landing page showcasing services and expertise
+   - AI automation, CRM integration, Power BI dashboards
+   - Featured blog posts
+   - Contact form
+
+2. ABOUT (/about)
+   - Professional background and experience
+   - Skills and expertise
+   - Services offered
+
+3. BLOG (/blog)
+   - Blog listing page with categories and filters
+   - Individual blog posts at /blog/{slug}
+   - Topics: AI automation, CRM integration, Power BI, business intelligence, workflow automation
+
+4. WORKFLOWS (/workflows)
+   - Automation workflow listings
+   - Individual workflows at /workflows/{slug}
+   - n8n, Make.com, OpenAI integrations
+
+5. PROJECTS (/projects)
+   - Portfolio projects showcase
+   - Individual projects at /projects/{slug}
+   - Web applications and automation solutions
+
+6. CONTACT (/contact)
+   - Contact form
+   - Business inquiries
+
+7. RESOURCES (/resources)
+   - Main resources hub with 4 categories:
+     a) Career Tools
+     b) Conversion Tools
+     c) Utility Tools
+     d) AI-Powered Tools
+
+CAREER TOOLS (8 tools)
+======================
+
+1. CV Builder (/resources/cv-builder)
+   - AI-powered CV/resume builder
+   - Multiple templates
+   - Export to PDF
+
+2. LinkedIn Optimizer (/resources/linkedin-optimizer)
+   - Optimize LinkedIn profile
+   - Improve visibility and connections
+
+3. Interview Prep (/resources/interview-prep)
+   - Interview preparation tools
+   - Common questions and answers
+
+4. Salary Negotiation (/resources/salary-negotiation)
+   - Salary negotiation strategies
+   - Calculator and guides
+
+5. Cover Letter Generator (/resources/cover-letter-generator)
+   - AI-powered cover letter creation
+   - Customizable templates
+
+6. Career Path Planner (/resources/career-path-planner)
+   - Plan career progression
+   - Skill development roadmap
+
+7. Job Search Optimizer (/resources/job-search-optimizer)
+   - Optimize job search strategy
+   - Application tracking
+
+8. Skills Assessment (/resources/skills-assessment)
+   - Assess professional skills
+   - Gap analysis
+
+CONVERSION TOOLS (15+ tools)
+============================
+
+Main page: /resources/conversion-tools
+
+1. Length Converter
+   - Meters, feet, inches, kilometers, miles, yards
+
+2. Weight Converter
+   - Kilograms, pounds, ounces, grams, tons
+
+3. Volume Converter
+   - Liters, gallons, cups, milliliters, fluid ounces
+
+4. Temperature Converter
+   - Celsius, Fahrenheit, Kelvin
+
+5. Area Converter
+   - Square meters, square feet, acres, hectares
+
+6. Speed Converter
+   - km/h, mph, m/s, knots
+
+7. Currency Converter
+   - Real-time exchange rates
+   - Multiple currencies
+
+8. Time Zone Converter
+   - Convert between time zones
+   - World clock
+
+9. Date Calculator
+   - Date arithmetic
+   - Age calculator
+
+10. Number System Converter
+    - Binary, decimal, hexadecimal, octal
+
+11. Text Converter
+    - Text encoding/decoding
+    - Character conversion
+
+12. Color Converter
+    - RGB, HEX, HSL, CMYK
+
+13. File Size Converter
+    - Bytes, KB, MB, GB, TB
+
+14. Percentage Calculator
+    - Percentage calculations
+    - Percentage increase/decrease
+
+15. BMI Calculator
+    - Body Mass Index calculator
+    - Health metrics
+
+UTILITY TOOLS (30+ tools)
+==========================
+
+Main page: /resources/utility-tools
+
+Productivity Tools:
+1. Password Generator - Strong random passwords
+2. QR Code Generator - Generate QR codes for URLs, text, WiFi
+3. Image Resizer - Resize images online
+4. Text to Image - Create images from text
+5. Word Counter - Count words, characters, sentences
+6. Lorem Ipsum Generator - Generate placeholder text
+7. Text Case Converter - Uppercase, lowercase, camelCase, etc.
+
+Financial Tools:
+8. Loan Calculator - Mortgage, auto, personal loans
+9. Tip Calculator - Calculate tips and split bills
+10. Compound Interest Calculator - Investment growth calculator
+
+Developer Tools:
+11. JSON Formatter - Format, validate, beautify JSON
+12. Base64 Encoder - Encode/decode Base64
+13. URL Encoder - Encode/decode URLs
+14. Regex Tester - Test regular expressions
+15. UUID Generator - Generate UUIDs (v1, v4)
+16. JWT Decoder - Decode JWT tokens
+17. SQL Formatter - Format SQL queries
+18. CSS Formatter - Format CSS code
+19. HTML Formatter - Format HTML code
+20. Hash Generator - Generate MD5, SHA1, SHA256 hashes
+
+PDF Tools:
+21. PDF Merger - Combine multiple PDFs
+22. PDF Splitter - Split PDF into pages
+23. PDF Compressor - Reduce PDF file size
+24. PDF Rotate - Rotate PDF pages
+
+Image Tools:
+25. Image Compressor - Compress images
+26. Image Format Converter - Convert image formats
+27. Color Picker - Pick colors from images
+
+File Tools:
+28. File Converter - Convert file formats
+29. Document Converter - Convert documents (DOCX, PDF, etc.)
+30. Excel CSV Converter - Convert Excel to CSV
+31. HEIC JPG Converter - Convert HEIC to JPG
+32. Audio Converter - Convert audio formats
+
+Other Tools:
+33. Markdown Preview - Preview markdown text
+34. Text Case Converter - Various text case formats
+
+AI-POWERED TOOLS (5 tools)
+===========================
+
+Main page: /resources/ai-tools
+
+1. Text Summarizer (/resources/ai-tools?tool=text-summarizer)
+   - Summarize long articles and documents
+   - Short, medium, long summaries
+
+2. Article Rewriter (/resources/ai-tools?tool=article-rewriter)
+   - Rewrite articles while maintaining meaning
+   - Multiple writing styles
+
+3. Grammar Checker (/resources/ai-tools?tool=grammar-checker)
+   - Check spelling, grammar, style
+   - AI-powered corrections
+
+4. Language Translator (/resources/ai-tools?tool=language-translator)
+   - Translate between 30+ languages
+   - Preserve formatting
+
+5. Keyword Extractor (/resources/ai-tools?tool=keyword-extractor)
+   - Extract keywords from text
+   - Generate SEO keywords
+
+LEGAL PAGES
+===========
+
+- Privacy Policy (/privacy-policy)
+- Terms of Service (/terms-of-service)
+- Cookie Policy (/cookie-policy)
+
+COMMUNITY
+=========
+
+- Issues (/community/issues)
+- Create Issue (/community/issues/create)
+- Issue Detail (/community/issues/{id})
+
+TECHNICAL DETAILS
+=================
+
+- Framework: React (Frontend), Laravel (Backend)
+- Hosting: Production server
+- Domain: naqashthaheem.com
+- SSL: Enabled
+- PWA: Progressive Web App support
+- Push Notifications: Enabled
+- AdSense: Integrated
+
+TOOL FEATURES
+=============
+
+All tools are:
+- Completely free
+- No registration required
+- Work instantly in browser
+- Privacy-focused (most process locally)
+- Mobile-responsive
+- AI-powered where applicable
+
+CONTENT TYPES
+=============
+
+1. Blog Posts - Published articles on AI, automation, CRM, Power BI
+2. Workflows - Automation workflow templates and guides
+3. Projects - Portfolio projects and case studies
+4. Tools - 50+ free utility tools across 4 categories
+
+SEO OPTIMIZATION
+================
+
+- Structured data (Schema.org)
+- Open Graph tags
+- Meta descriptions
+- Sitemap: /sitemap-ntw2024.xml
+- Robots.txt configured
+- Mobile-friendly
+- Fast loading times
+
+CONTACT INFORMATION
+===================
+
+- Email: naqash263@gmail.com
+- Location: Ajman, UAE
+- Services: AI Automation, CRM Integration, Power BI, Web Development
+
+SERVICES OFFERED
+================
+
+1. AI Automation Workflows
+   - n8n, Make.com integrations
+   - OpenAI/GPT integrations
+   - Custom automation solutions
+
+2. CRM Integration
+   - Zoho CRM
+   - HubSpot
+   - Custom API integrations
+
+3. Power BI Dashboards
+   - Business intelligence
+   - Data visualization
+   - Analytics dashboards
+
+4. Web Development
+   - React applications
+   - Laravel backends
+   - Full-stack solutions
+
+TECHNOLOGIES
+============
+
+- Frontend: React, TypeScript, Tailwind CSS
+- Backend: Laravel, PHP, PostgreSQL
+- Automation: n8n, Make.com
+- AI: OpenAI, Gemini
+- CRM: Zoho, HubSpot
+- BI: Power BI
+- Cloud: Various cloud platforms
+
+Last Updated: January 2025
+
