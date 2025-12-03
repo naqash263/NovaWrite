@@ -4,6 +4,8 @@ import apiClient from '../api/axios';
 import { FileList } from '../components/FileList';
 import AdPlacement from '../components/AdPlacement';
 import CommentSection from '../components/comments/CommentSection';
+import TableOfContents from '../components/TableOfContents';
+import KeyTakeaways from '../components/KeyTakeaways';
 import { useSEO } from '../utils/seo';
 import { generateBlogPostSchema, generateBreadcrumbSchema, injectStructuredData } from '../utils/structuredData';
 import { API_CONFIG } from '../config/api';
@@ -191,15 +193,15 @@ export default function BlogPost() {
     <main className="bg-gray-50 py-16" role="main">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <aside className="lg:col-span-1 hidden lg:block">
-            <div className="sticky top-4">
+          {/* Sidebar - Hidden on mobile, shown at bottom */}
+          <aside className="lg:col-span-1 order-2 lg:order-1">
+            <div className="lg:sticky lg:top-4">
               <AdPlacement position="sidebar" />
             </div>
           </aside>
 
           {/* Main Content */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 order-1 lg:order-2">
             <article className="bg-white rounded-lg shadow-md overflow-hidden" itemScope itemType="https://schema.org/BlogPosting">
           
           {/* Featured Image */}
@@ -324,6 +326,17 @@ export default function BlogPost() {
                 {post.excerpt}
               </p>
             )}
+
+            {/* Table of Contents - Show for long articles */}
+            <TableOfContents content={post.content} minLength={2000} />
+
+            {/* Key Takeaways - Can be added manually via meta field or extracted */}
+            {/* Example: Add key_takeaways field to Post model and display here */}
+            {/* Uncomment when key_takeaways field is added to Post model:
+            {post.key_takeaways && (
+              <KeyTakeaways takeaways={post.key_takeaways} />
+            )}
+            */}
 
             {/* Ad: Content Top */}
             <AdPlacement position="content-top" className="my-6" />

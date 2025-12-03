@@ -6,6 +6,7 @@ import AdPlacement from '../components/AdPlacement';
 // Removed LazyImage for faster image loading
 import { useSEO } from '../utils/seo';
 import { generateAISearchSchema, generateKnowledgeGraphSchema, generateFAQSchema, injectAISearchOptimizations } from '../utils/aiSearchOptimization';
+import { generateOrganizationSchema, injectStructuredData } from '../utils/structuredData';
 
 interface Post {
   id: number;
@@ -109,6 +110,7 @@ export default function Home() {
     // Add additional structured data for AI search engines
     const knowledgeGraphSchema = generateKnowledgeGraphSchema();
     const faqSchema = generateFAQSchema();
+    const organizationSchema = generateOrganizationSchema();
     
     // Inject knowledge graph schema
     const kgScript = document.createElement('script');
@@ -121,6 +123,9 @@ export default function Home() {
     faqScript.type = 'application/ld+json';
     faqScript.textContent = JSON.stringify(faqSchema);
     document.head.appendChild(faqScript);
+    
+    // Inject Organization schema for better SEO
+    injectStructuredData(organizationSchema);
     
     // Add scroll animation observer with fallback
     const observer = new IntersectionObserver(
