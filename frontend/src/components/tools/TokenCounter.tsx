@@ -125,9 +125,6 @@ export default function TokenCounter() {
     // Character count (including spaces)
     setCharCount(cleaned.length);
     
-    // Character count (excluding spaces)
-    const charsNoSpaces = cleaned.replace(/\s/g, '').length;
-    
     // Word count
     const words = cleaned.split(/\s+/).filter(word => word.length > 0);
     setWordCount(words.length);
