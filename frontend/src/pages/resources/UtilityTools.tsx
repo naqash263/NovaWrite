@@ -360,6 +360,46 @@ const toolOptions: ToolOption[] = [
     seoDescription: 'Free online document converter. Convert Word to PDF, PDF to Word, DOCX to PDF, PDF to DOCX, and more. All conversions happen securely on our server. No registration required.',
     keywords: ['document converter', 'word to pdf', 'pdf to word', 'docx to pdf', 'pdf to docx', 'document format converter']
   },
+  { 
+    id: 'excel-csv-converter', 
+    name: 'Excel CSV Converter', 
+    icon: '📊', 
+    category: 'productivity', 
+    description: 'Convert Excel spreadsheets (XLSX, XLS) to CSV format and vice versa',
+    seoTitle: 'Free Excel to CSV Converter - Convert XLSX to CSV Online | CSV to Excel Converter',
+    seoDescription: 'Free online Excel to CSV converter. Convert XLSX, XLS files to CSV format and vice versa. Perfect for data import/export, spreadsheet compatibility, and database migration. No registration required.',
+    keywords: ['excel to csv', 'csv to excel', 'xlsx to csv', 'csv to xlsx', 'excel converter', 'csv converter']
+  },
+  { 
+    id: 'heic-jpg-converter', 
+    name: 'HEIC JPG Converter', 
+    icon: '📷', 
+    category: 'productivity', 
+    description: 'Convert iPhone HEIC photos to JPG format for better compatibility',
+    seoTitle: 'Free HEIC to JPG Converter - Convert iPhone Photos Online | HEIC Image Converter',
+    seoDescription: 'Free online HEIC to JPG converter. Convert iPhone HEIC photos to JPG format for better compatibility. All conversions happen securely on our server. No registration required.',
+    keywords: ['heic to jpg', 'heic converter', 'iphone photo converter', 'heic to jpeg', 'convert heic']
+  },
+  { 
+    id: 'audio-converter', 
+    name: 'Audio Converter', 
+    icon: '🎵', 
+    category: 'productivity', 
+    description: 'Convert audio files between MP3, WAV, and other formats',
+    seoTitle: 'Free Audio Converter - MP3 to WAV, WAV to MP3 Online | Audio Format Converter',
+    seoDescription: 'Free online audio converter. Convert MP3 to WAV, WAV to MP3, and other audio formats. Perfect for audio editing, compatibility, and professional use. No registration required.',
+    keywords: ['mp3 to wav', 'wav to mp3', 'audio converter', 'mp3 converter', 'wav converter', 'audio format converter']
+  },
+  { 
+    id: 'token-counter', 
+    name: 'Token Counter', 
+    icon: '🔢', 
+    category: 'developer', 
+    description: 'Count tokens for AI models (GPT, Claude, Gemini) and estimate API costs',
+    seoTitle: 'Free Token Counter - Count Tokens for AI Models (GPT, Claude, Gemini) | Token Calculator',
+    seoDescription: 'Free online token counter for AI models. Count tokens for GPT-3.5, GPT-4, Claude, Gemini, and other AI models. Estimate API costs and track token usage. No registration required.',
+    keywords: ['token counter', 'token calculator', 'gpt token counter', 'claude token counter', 'ai token counter', 'openai token counter']
+  },
 ];
 
 export default function UtilityTools() {
