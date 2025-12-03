@@ -5,7 +5,8 @@ import { FileList } from '../components/FileList';
 import AdPlacement from '../components/AdPlacement';
 import CommentSection from '../components/comments/CommentSection';
 import TableOfContents from '../components/TableOfContents';
-import KeyTakeaways from '../components/KeyTakeaways';
+// KeyTakeaways component available for future use when key_takeaways field is added to Post model
+// import KeyTakeaways from '../components/KeyTakeaways';
 import { useSEO } from '../utils/seo';
 import { generateBlogPostSchema, generateBreadcrumbSchema, injectStructuredData } from '../utils/structuredData';
 import { API_CONFIG } from '../config/api';
@@ -202,7 +203,7 @@ export default function BlogPost() {
 
           {/* Main Content */}
           <div className="lg:col-span-3 order-1 lg:order-2">
-            <article className="bg-white rounded-lg shadow-md overflow-hidden" itemScope itemType="https://schema.org/BlogPosting">
+        <article className="bg-white rounded-lg shadow-md overflow-hidden" itemScope itemType="https://schema.org/BlogPosting">
           
           {/* Featured Image */}
           {post.featured_image && (
