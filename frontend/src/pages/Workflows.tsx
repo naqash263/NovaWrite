@@ -7,6 +7,7 @@ import { WorkflowCardSkeleton } from '../components/Skeleton';
 import WorkflowDownloadModal from '../components/WorkflowDownloadModal';
 import LazyImage from '../components/LazyImage';
 import { useHomeSettings } from '../hooks/useHomeSettings';
+import { generateDateBasedUrl } from '../utils/urlHelpers';
 
 interface WorkflowCategory {
   id: number;
