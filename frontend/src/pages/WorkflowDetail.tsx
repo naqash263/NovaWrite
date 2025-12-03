@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/axios';
+import { extractSlugFromUrl } from '../utils/urlHelpers';
 import AdPlacement from '../components/AdPlacement';
 import CommentSection from '../components/comments/CommentSection';
 import { useSEO } from '../utils/seo';
@@ -47,10 +48,13 @@ interface Workflow {
   image_url?: string;
   created_at: string;
   updated_at: string;
+  published_at?: string;
 }
 
 export default function WorkflowDetail() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, year, month, day } = useParams<{ slug?: string; year?: string; month?: string; day?: string }>();
+  // Extract slug from URL (handles both date-based and old format)
+  const actualSlug = slug || (year && month && day ? extractSlugFromUrl(window.location.pathname) : '');
   const navigate = useNavigate();
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,7 +140,14 @@ export default function WorkflowDetail() {
       '@type': ['SoftwareApplication', 'Product'],
       'name': workflow.title,
       'description': workflow.product_description || workflow.meta_description || workflow.description || workflow.summary || '',
-      'url': `https://naqashthaheem.com/workflows/${slug}`,
+      'url': workflow ? (() => {
+        const date = (workflow.published_at || workflow.created_at || new Date().toISOString());
+        const publishDate = new Date(date);
+        const year = publishDate.getFullYear();
+        const month = String(publishDate.getMonth() + 1).padStart(2, '0');
+        const day = String(publishDate.getDate()).padStart(2, '0');
+        return `https://naqashthaheem.com/workflows/${year}/${month}/${day}/${workflow.slug}`;
+      })() : `https://naqashthaheem.com/workflows/${actualSlug}`,
       'image': workflow.image_url ? `https://naqashthaheem.com${workflow.image_url}` : 'https://naqashthaheem.com/images/workflows-og.jpg',
       'applicationCategory': 'Automation Tool',
       'applicationSubCategory': 'Business Process Automation',
@@ -203,7 +214,7 @@ export default function WorkflowDetail() {
   }, [isImageModalOpen]);
 
   const fetchWorkflow = async () => {
-    if (!slug) {
+    if (!actualSlug) {
       setError('No workflow slug provided');
       setLoading(false);
       return;
@@ -212,7 +223,7 @@ export default function WorkflowDetail() {
     try {
       setLoading(true);
       setError('');
-      const response = await apiClient.get(`/workflows/${slug}`);
+      const response = await apiClient.get(`/workflows/${actualSlug}`);
       setWorkflow(response.data);
     } catch (err: any) {
       console.error('Failed to fetch workflow:', err);

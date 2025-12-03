@@ -100,12 +100,14 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/workflows" element={<Workflows />} />
-              <Route path="/workflows/:slug" element={<WorkflowDetail />} />
+              <Route path="/workflows/:year/:month/:day/:slug" element={<WorkflowDetail />} />
+              <Route path="/workflows/:slug" element={<WorkflowDetail />} /> {/* Backward compatibility */}
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/:slug" element={<ProjectDetail />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:slug" element={<BlogPost />} />
+              <Route path="/blog/:year/:month/:day/:slug" element={<BlogPost />} />
+              <Route path="/blog/:slug" element={<BlogPost />} /> {/* Backward compatibility */}
               <Route path="/login" element={<UserLogin />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />

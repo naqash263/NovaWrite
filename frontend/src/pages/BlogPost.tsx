@@ -9,11 +9,13 @@ import TableOfContents from '../components/TableOfContents';
 // import KeyTakeaways from '../components/KeyTakeaways';
 import { useSEO } from '../utils/seo';
 import { generateBlogPostSchema, generateBreadcrumbSchema, injectStructuredData } from '../utils/structuredData';
+import { extractSlugFromUrl } from '../utils/urlHelpers';
 import { API_CONFIG } from '../config/api';
 
 interface Post {
   id: number;
   title: string;
+  slug: string;
   content: string;
   excerpt?: string;
   featured_image?: string;
@@ -37,7 +39,9 @@ interface Post {
 }
 
 export default function BlogPost() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, year, month, day } = useParams<{ slug?: string; year?: string; month?: string; day?: string }>();
+  // Extract slug from URL (handles both date-based and old format)
+  const actualSlug = slug || (year && month && day ? extractSlugFromUrl(window.location.pathname) : '');
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -69,7 +73,7 @@ export default function BlogPost() {
     description: getDescription(),
     type: 'article',
     image: getFeaturedImageUrl(),
-    url: `/blog/${slug}`,
+    url: post ? (post.published_at ? `/blog/${new Date(post.published_at).getFullYear()}/${String(new Date(post.published_at).getMonth() + 1).padStart(2, '0')}/${String(new Date(post.published_at).getDate()).padStart(2, '0')}/${post.slug}` : `/blog/${post.slug}`) : `/blog/${actualSlug}`,
     author: post?.user?.name || 'Naqash Thaheem',
     publishedTime: post?.published_at,
     modifiedTime: post?.updated_at,
@@ -95,7 +99,7 @@ export default function BlogPost() {
   });
 
   useEffect(() => {
-    if (post && slug) {
+    if (post && actualSlug) {
       // Inject structured data for the article
       const description = post.meta_description || post.excerpt || (post.content ? post.content.substring(0, 160).replace(/<[^>]+>/g, '') : '');
       const featuredImageUrl = post.featured_image 
@@ -135,7 +139,7 @@ export default function BlogPost() {
 
   const fetchPost = async () => {
     try {
-      const response = await apiClient.get(`/posts/${slug}`);
+      const response = await apiClient.get(`/posts/${actualSlug}`);
       setPost(response.data);
     } catch (err: any) {
       console.error('Error fetching post:', err);
@@ -146,11 +150,11 @@ export default function BlogPost() {
   };
 
   useEffect(() => {
-    if (slug) {
+    if (actualSlug) {
       fetchPost();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
+  }, [actualSlug]);
 
   // Handle ESC key to close modal
   useEffect(() => {

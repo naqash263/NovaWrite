@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { API_CONFIG } from '../config/api';
+import { generateDateBasedUrl } from '../utils/urlHelpers';
 
 interface Post {
   id: number;
@@ -35,7 +36,7 @@ export function PostCard({ post }: PostCardProps) {
   
   return (
     <article className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow group" itemScope itemType="https://schema.org/BlogPosting">
-      <Link to={`/blog/${post.slug}`} aria-label={`Read article: ${post.title}`} className="block overflow-hidden">
+      <Link to={generateDateBasedUrl('blog', post.slug, post.published_at)} aria-label={`Read article: ${post.title}`} className="block overflow-hidden">
         <div className="relative w-full h-48 overflow-hidden bg-gray-100">
           <img
             src={post.featured_image 
@@ -70,7 +71,7 @@ export function PostCard({ post }: PostCardProps) {
           </time>
         </div>
         <h2 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600">
-          <Link to={`/blog/${post.slug}`} itemProp="headline">
+          <Link to={generateDateBasedUrl('blog', post.slug, post.published_at)} itemProp="headline">
             {post.title}
           </Link>
         </h2>
@@ -83,7 +84,7 @@ export function PostCard({ post }: PostCardProps) {
             <span aria-label={`Article by ${post.user.name}`}>By {post.user.name}</span>
           </div>
           <Link
-            to={`/blog/${post.slug}`}
+            to={generateDateBasedUrl('blog', post.slug, post.published_at)}
             className="text-blue-600 font-semibold hover:text-blue-700"
             aria-label={`Read full article: ${post.title}`}
           >
@@ -93,7 +94,7 @@ export function PostCard({ post }: PostCardProps) {
       </div>
       
       {/* Hidden metadata for Schema.org */}
-      <meta itemProp="url" content={`https://naqashthaheem.com/blog/${post.slug}`} />
+      <meta itemProp="url" content={`https://naqashthaheem.com${generateDateBasedUrl('blog', post.slug, post.published_at)}`} />
       <div itemProp="publisher" itemScope itemType="https://schema.org/Organization" className="hidden">
         <meta itemProp="name" content="Naqash Thaheem" />
       </div>

@@ -40,6 +40,8 @@ interface Workflow {
   is_premium: boolean;
   category?: WorkflowCategory;
   files: WorkflowFile[];
+  created_at?: string;
+  published_at?: string;
 }
 
 export default function Workflows() {
@@ -286,7 +288,10 @@ export default function Workflows() {
                         </button>
                       )}
                       <button
-                        onClick={() => window.location.href = `/workflows/${workflow.slug}`}
+                        onClick={() => {
+                          const date = workflow.published_at || workflow.created_at || new Date().toISOString();
+                          window.location.href = generateDateBasedUrl('workflows', workflow.slug, date);
+                        }}
                         className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                       >
                         View Full Details →

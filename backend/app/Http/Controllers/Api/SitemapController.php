@@ -129,7 +129,13 @@ class SitemapController extends Controller
                         ? Carbon::parse($post->published_at)->format('Y-m-d')
                         : $today);
                 
-                $xml .= $this->addUrl($baseUrl, '/blog/' . $post->slug, $lastmod, 'weekly', '0.8', $post->featured_image);
+                // Generate date-based URL: /blog/YYYY/MM/DD/slug
+                $publishDate = $post->published_at 
+                    ? Carbon::parse($post->published_at)
+                    : Carbon::parse($post->updated_at ?? $today);
+                $datePath = $publishDate->format('Y/m/d');
+                
+                $xml .= $this->addUrl($baseUrl, '/blog/' . $datePath . '/' . $post->slug, $lastmod, 'weekly', '0.8', $post->featured_image);
             }
         } catch (\Exception $e) {
             \Log::warning('Error fetching posts for sitemap: ' . $e->getMessage());
@@ -150,7 +156,13 @@ class SitemapController extends Controller
                         ? Carbon::parse($workflow->published_at)->format('Y-m-d')
                         : $today);
                 
-                $xml .= $this->addUrl($baseUrl, '/workflows/' . $workflow->slug, $lastmod, 'weekly', '0.8', $workflow->image_url);
+                // Generate date-based URL: /workflows/YYYY/MM/DD/slug
+                $publishDate = $workflow->published_at 
+                    ? Carbon::parse($workflow->published_at)
+                    : Carbon::parse($workflow->updated_at ?? $today);
+                $datePath = $publishDate->format('Y/m/d');
+                
+                $xml .= $this->addUrl($baseUrl, '/workflows/' . $datePath . '/' . $workflow->slug, $lastmod, 'weekly', '0.8', $workflow->image_url);
             }
         } catch (\Exception $e) {
             \Log::warning('Error fetching workflows for sitemap: ' . $e->getMessage());
