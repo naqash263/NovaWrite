@@ -75,12 +75,36 @@ class SitemapController extends Controller
         
         // Conversion Tools
         $xml .= $this->addUrl($baseUrl, '/resources/conversion-tools', $today, 'weekly', '0.8');
+        // Individual Conversion Tools
+        $conversionTools = ['length', 'weight', 'volume', 'temperature', 'area', 'speed', 'currency', 'timezone', 'date', 'number', 'text', 'color', 'filesize', 'percentage', 'bmi'];
+        foreach ($conversionTools as $tool) {
+            $xml .= $this->addUrl($baseUrl, '/resources/conversion-tools?tool=' . $tool, $today, 'monthly', '0.7');
+        }
         
         // Utility Tools
         $xml .= $this->addUrl($baseUrl, '/resources/utility-tools', $today, 'weekly', '0.8');
+        // Individual Utility Tools
+        $utilityTools = [
+            'password-generator', 'qr-code-generator', 'image-resizer', 'text-to-image', 'word-counter',
+            'loan-calculator', 'tip-calculator', 'compound-interest-calculator', 'json-formatter',
+            'base64-encoder', 'url-encoder', 'regex-tester', 'uuid-generator', 'jwt-decoder',
+            'pdf-merger', 'pdf-splitter', 'pdf-compressor', 'pdf-rotate', 'lorem-ipsum-generator',
+            'text-case-converter', 'hash-generator', 'image-compressor', 'sql-formatter',
+            'css-formatter', 'html-formatter', 'image-format-converter', 'color-picker',
+            'markdown-preview', 'file-converter', 'document-converter', 'excel-csv-converter',
+            'heic-jpg-converter', 'audio-converter'
+        ];
+        foreach ($utilityTools as $tool) {
+            $xml .= $this->addUrl($baseUrl, '/resources/utility-tools?tool=' . $tool, $today, 'monthly', '0.7');
+        }
         
         // AI Tools
         $xml .= $this->addUrl($baseUrl, '/resources/ai-tools', $today, 'weekly', '0.8');
+        // Individual AI Tools
+        $aiTools = ['text-summarizer', 'article-rewriter', 'grammar-checker', 'language-translator', 'keyword-extractor'];
+        foreach ($aiTools as $tool) {
+            $xml .= $this->addUrl($baseUrl, '/resources/ai-tools?tool=' . $tool, $today, 'monthly', '0.7');
+        }
         
         // Projects
         $xml .= $this->addUrl($baseUrl, '/projects', $today, 'weekly', '0.8');
