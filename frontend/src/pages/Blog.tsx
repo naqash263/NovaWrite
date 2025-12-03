@@ -9,6 +9,10 @@ import Pagination from '../components/Pagination';
 import AdvancedFilters from '../components/AdvancedFilters';
 import AdPlacement from '../components/AdPlacement';
 import { useSEO } from '../utils/seo';
+import DateGroupedPosts from '../components/DateGroupedPosts';
+import RecentPosts from '../components/RecentPosts';
+import EnhancedTagFilter from '../components/EnhancedTagFilter';
+import EnhancedCategoryFilter from '../components/EnhancedCategoryFilter';
 
 interface Post {
   id: number;
@@ -53,6 +57,8 @@ export default function Blog() {
   const [dateTo, setDateTo] = useState(searchParams.get('dateTo') || '');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'grid' | 'grouped'>('grid');
+  const [showSidebar, setShowSidebar] = useState(false);
 
   useSEO({
     title: 'Blog - AI Automation & Business Intelligence | Naqash Thaheem',
@@ -233,6 +239,19 @@ export default function Blog() {
     setSearchParams(searchParams);
   };
 
+  // Handle tag changes from EnhancedTagFilter
+  const handleTagsChange = (tagIds: number[]) => {
+    setSelectedTags(tagIds);
+    setCurrentPage(1);
+    const newParams = new URLSearchParams(searchParams);
+    if (tagIds.length > 0) {
+      newParams.set('tags', tagIds.join(','));
+    } else {
+      newParams.delete('tags');
+    }
+    setSearchParams(newParams);
+  };
+
   const handleClearAllFilters = () => {
     setSelectedCategory(null);
     setSelectedTags([]);
@@ -248,103 +267,232 @@ export default function Blog() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-8">Blog</h1>
 
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 mb-6">
-            <form onSubmit={handleSearchSubmit} className="flex-1">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Search posts..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                />
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Search
-                </button>
-              </div>
-            </form>
-            
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        {/* Mobile Sidebar Toggle */}
+        <div className="lg:hidden mb-4">
+          <button
+            onClick={() => setShowSidebar(!showSidebar)}
+            className="w-full flex items-center justify-between px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <span className="font-medium text-gray-700">Filters & Recent Posts</span>
+            <svg
+              className={`w-5 h-5 text-gray-500 transition-transform ${showSidebar ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
-              </svg>
-              Filters
-            </button>
-          </div>
-
-          <CategoryFilter
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelect={handleCategorySelect}
-          />
-
-          {showFilters && (
-            <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
-              <AdvancedFilters
-                filters={filters}
-                onFiltersChange={handleFiltersChange}
-                filterConfigs={filterConfigs}
-                onClearAll={handleClearAllFilters}
-                onApply={() => setShowFilters(false)}
-                onToggle={() => setShowFilters(!showFilters)}
-                isOpen={showFilters}
-                resultsCount={pagination.total}
-              />
-            </div>
-          )}
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
 
-        {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <PostCardSkeleton key={index} />
-            ))}
-          </div>
-        ) : posts.length > 0 ? (
-          <>
-            {/* Ad: Content Top */}
-            <AdPlacement position="content-top" className="mb-8" />
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-              {posts.map((post: Post, index: number) => (
-                <div key={post.id}>
-                  <PostCard post={post} />
-                  {/* Ad: Between Posts - Show after every 6 posts */}
-                  {(index + 1) % 6 === 0 && (index + 1) < posts.length && (
-                    <div className="col-span-full mt-8">
-                      <AdPlacement position="between-posts" />
-                    </div>
-                  )}
-                </div>
-              ))}
+        {/* Main Layout: Sidebar + Content */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar - Filters & Recent Posts */}
+          <aside className={`lg:w-80 flex-shrink-0 space-y-6 ${showSidebar ? 'block' : 'hidden lg:block'}`}>
+            {/* Enhanced Category Filter */}
+            <EnhancedCategoryFilter
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelect={handleCategorySelect}
+              maxVisible={6}
+            />
+
+            {/* Enhanced Tag Filter */}
+            <EnhancedTagFilter
+              tags={tags}
+              selectedTags={selectedTags}
+              onTagsChange={handleTagsChange}
+              maxVisible={10}
+            />
+
+            {/* Recent Posts */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <RecentPosts limit={5} />
             </div>
 
-            {/* Ad: Content Bottom */}
-            <AdPlacement position="content-bottom" className="mb-8" />
+            {/* Ad: Sidebar */}
+            <div className="hidden lg:block">
+              <AdPlacement position="sidebar" />
+            </div>
+          </aside>
 
-            {pagination.lastPage > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                lastPage={pagination.lastPage}
-                total={pagination.total}
-                perPage={pagination.perPage}
-                onPageChange={setCurrentPage}
-                loading={loading}
-              />
+          {/* Main Content Area */}
+          <main className="flex-1 min-w-0">
+            {/* Search and View Mode Toggle */}
+            <div className="mb-6">
+              <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <form onSubmit={handleSearchSubmit} className="flex-1">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Search posts..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Search
+                    </button>
+                  </div>
+                </form>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+                    </svg>
+                    Filters
+                  </button>
+                  
+                  {/* View Mode Toggle */}
+                  <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`px-4 py-2 transition-colors ${
+                        viewMode === 'grid'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                      title="Grid View"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('grouped')}
+                      className={`px-4 py-2 transition-colors ${
+                        viewMode === 'grouped'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                      title="Date Grouped View"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Advanced Filters Panel */}
+              {showFilters && (
+                <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200">
+                  <AdvancedFilters
+                    filters={filters}
+                    onFiltersChange={handleFiltersChange}
+                    filterConfigs={filterConfigs}
+                    onClearAll={handleClearAllFilters}
+                    onApply={() => setShowFilters(false)}
+                    onToggle={() => setShowFilters(!showFilters)}
+                    isOpen={showFilters}
+                    resultsCount={pagination.total}
+                  />
+                </div>
+              )}
+
+              {/* Active Filters Summary */}
+              {(selectedCategory || selectedTags.length > 0 || dateFrom || dateTo) && (
+                <div className="mb-4 flex flex-wrap gap-2 items-center">
+                  <span className="text-sm text-gray-600 font-medium">Active filters:</span>
+                  {selectedCategory && (
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                      Category: {categories.find(c => c.id === selectedCategory)?.name}
+                    </span>
+                  )}
+                  {selectedTags.length > 0 && (
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                      {selectedTags.length} tag{selectedTags.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {(dateFrom || dateTo) && (
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                      Date range
+                    </span>
+                  )}
+                  <button
+                    onClick={handleClearAllFilters}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Posts Display */}
+            {loading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <PostCardSkeleton key={index} />
+                ))}
+              </div>
+            ) : posts.length > 0 ? (
+              <>
+                {/* Ad: Content Top */}
+                <AdPlacement position="content-top" className="mb-8" />
+                
+                {/* Grid View */}
+                {viewMode === 'grid' ? (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                    {posts.map((post: Post, index: number) => (
+                      <div key={post.id}>
+                        <PostCard post={post} />
+                        {/* Ad: Between Posts - Show after every 6 posts */}
+                        {(index + 1) % 6 === 0 && (index + 1) < posts.length && (
+                          <div className="col-span-full mt-8">
+                            <AdPlacement position="between-posts" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* Date Grouped View */
+                  <DateGroupedPosts posts={posts} />
+                )}
+
+                {/* Ad: Content Bottom */}
+                <AdPlacement position="content-bottom" className="mb-8" />
+
+                {pagination.lastPage > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    lastPage={pagination.lastPage}
+                    total={pagination.total}
+                    perPage={pagination.perPage}
+                    onPageChange={setCurrentPage}
+                    loading={loading}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="text-center py-12 bg-white rounded-lg">
+                <p className="text-gray-600">No posts found.</p>
+                {(selectedCategory || selectedTags.length > 0 || dateFrom || dateTo || debouncedSearch) && (
+                  <button
+                    onClick={handleClearAllFilters}
+                    className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
             )}
-          </>
-        ) : (
-          <div className="text-center py-12 bg-white rounded-lg">
-            <p className="text-gray-600">No posts found.</p>
-          </div>
-        )}
+          </main>
+        </div>
+
+        {/* Mobile Ad: Sidebar (shown at bottom on mobile) */}
+        <div className="lg:hidden mt-8">
+          <AdPlacement position="sidebar" />
+        </div>
       </div>
     </div>
   );
