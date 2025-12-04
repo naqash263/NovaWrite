@@ -266,7 +266,7 @@ class TextToImageController extends Controller
             // Enhance heading size and effects for heading-only mode
             $effectiveHeadingSize = $headingSize;
             $enhancedShadow = $textShadow;
-            $textOutline = false;
+            $effectiveOutlineWidth = $textOutlineWidth;
             
             if ($isHeadingOnly) {
                 // Increase heading size by 1.5x for better impact
@@ -276,9 +276,11 @@ class TextToImageController extends Controller
                 if ($effectiveHeadingSize > $maxSize) {
                     $effectiveHeadingSize = (int)$maxSize;
                 }
-                // Enable enhanced shadow and outline
+                // Enable enhanced shadow and outline if not explicitly set
                 $enhancedShadow = true;
-                $textOutline = true;
+                if ($effectiveOutlineWidth == 0) {
+                    $effectiveOutlineWidth = 2; // Default outline for heading-only
+                }
             }
 
             // Measure and wrap heading text with effective size
