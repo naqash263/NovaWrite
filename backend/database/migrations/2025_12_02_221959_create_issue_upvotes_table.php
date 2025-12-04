@@ -12,9 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         if (!Schema::hasTable('issue_upvotes')) {
+            // Check if issues table exists first
+            if (!Schema::hasTable('issues')) {
+                throw new \Exception('The issues table must be created before issue_upvotes table');
+            }
+            
             Schema::create('issue_upvotes', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('issue_id')->constrained('issues')->onDelete('cascade');
+                $table->unsignedBigInteger('issue_id');
                 $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
                 $table->string('guest_ip')->nullable();
                 $table->timestamps();
@@ -22,6 +27,11 @@ return new class extends Migration
                 // Unique constraint handled in application logic
                 $table->index('issue_id');
                 $table->index('user_id');
+            });
+            
+            // Add foreign key constraint after table creation
+            Schema::table('issue_upvotes', function (Blueprint $table) {
+                $table->foreign('issue_id')->references('id')->on('issues')->onDelete('cascade');
             });
         }
     }

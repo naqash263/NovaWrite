@@ -20,7 +20,7 @@ return new class extends Migration
                 $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
                 $table->string('guest_name')->nullable();
                 $table->string('guest_email')->nullable();
-                $table->foreignId('category_id')->nullable()->constrained('issue_categories')->onDelete('set null');
+                $table->unsignedBigInteger('category_id')->nullable();
                 $table->enum('status', ['open', 'in_progress', 'resolved', 'closed', 'duplicate'])->default('open');
                 $table->enum('priority', ['low', 'medium', 'high', 'critical'])->default('medium');
                 $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null');
@@ -43,6 +43,13 @@ return new class extends Migration
                 $table->index('created_at');
                 $table->index('slug');
             });
+            
+            // Add foreign key constraint for category_id if issue_categories table exists
+            if (Schema::hasTable('issue_categories')) {
+                Schema::table('issues', function (Blueprint $table) {
+                    $table->foreign('category_id')->references('id')->on('issue_categories')->onDelete('set null');
+                });
+            }
         }
     }
 
