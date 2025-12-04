@@ -84,13 +84,26 @@ export default function Issues() {
   const fetchCategories = async () => {
     try {
       const response = await apiClient.get('/issue-categories');
+      console.log('Categories API response:', response.data);
+      
+      // Handle different response formats
       if (response.data.success && response.data.data) {
         setCategories(response.data.data);
+        console.log('Categories set:', response.data.data);
+      } else if (Array.isArray(response.data)) {
+        // Handle direct array response
+        setCategories(response.data);
+        console.log('Categories set (array):', response.data);
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        setCategories(response.data.data);
+        console.log('Categories set (nested):', response.data.data);
       } else {
+        console.warn('Unexpected categories response format:', response.data);
         setCategories([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching categories:', error);
+      console.error('Error response:', error.response?.data);
       setCategories([]);
     }
   };
@@ -233,30 +246,36 @@ export default function Issues() {
                 </div>
 
                 {/* Category Filter */}
-                {categories.length > 0 && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                    <select
-                      value={categoryFilter}
-                      onChange={(e) => {
-                        setCategoryFilter(e.target.value);
-                        setCurrentPage(1);
-                        setSearchParams(prev => {
-                          if (e.target.value) prev.set('category_id', e.target.value);
-                          else prev.delete('category_id');
-                          prev.delete('page');
-                          return prev;
-                        });
-                      }}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                    >
-                      <option value="">All Categories</option>
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                    
-                    {/* Category Pills for Quick Filter */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                    {categories.length === 0 && (
+                      <span className="text-xs text-gray-500 ml-2">(Loading...)</span>
+                    )}
+                  </label>
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => {
+                      setCategoryFilter(e.target.value);
+                      setCurrentPage(1);
+                      setSearchParams(prev => {
+                        if (e.target.value) prev.set('category_id', e.target.value);
+                        else prev.delete('category_id');
+                        prev.delete('page');
+                        return prev;
+                      });
+                    }}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                    disabled={categories.length === 0}
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                  
+                  {/* Category Pills for Quick Filter */}
+                  {categories.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {categories.map(cat => (
                         <button
@@ -283,8 +302,8 @@ export default function Issues() {
                         </button>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Sort By */}
                 <div className="mb-4">
