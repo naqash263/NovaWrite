@@ -35,8 +35,8 @@ export default function CreateIssue() {
   const [labelInput, setLabelInput] = useState('');
 
   useSEO({
-    title: 'Create Issue - Community Issue Tracker | Naqash Thaheem',
-    description: 'Report bugs, request features, or share feedback with our community issue tracker.',
+    title: 'Ask a Question - IT Community Forum | Naqash Thaheem',
+    description: 'Ask technical questions, get programming help, or discuss IT topics with our community.',
     url: '/community/issues/create'
   });
 
@@ -47,11 +47,14 @@ export default function CreateIssue() {
   const fetchCategories = async () => {
     try {
       const response = await apiClient.get('/issue-categories');
-      if (response.data.success) {
-        setCategories(response.data.data || []);
+      if (response.data.success && response.data.data) {
+        setCategories(response.data.data);
+      } else {
+        setCategories([]);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategories([]);
     }
   };
 
@@ -145,7 +148,7 @@ export default function CreateIssue() {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Create New Issue</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Ask a Question</h1>
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-6">
@@ -179,23 +182,23 @@ export default function CreateIssue() {
             )}
 
             <Input
-              label="Issue Title"
+              label="Question Title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               error={errors.title}
               required
-              placeholder="Brief, descriptive title"
+              placeholder="Brief, descriptive question title"
               disabled={loading}
               helperText="Be specific and concise"
             />
 
             <Textarea
-              label="Description"
+              label="Question Details"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               error={errors.description}
               required
-              placeholder="Describe the issue in detail. Include steps to reproduce if it's a bug, or explain the feature request."
+              placeholder="Describe your question or problem in detail. Include any relevant code, error messages, or context that might help others understand and answer your question."
               minLength={10}
               maxLength={10000}
               rows={10}
@@ -297,7 +300,7 @@ export default function CreateIssue() {
                 loading={loading}
                 disabled={loading || !formData.title.trim() || !formData.description.trim()}
               >
-                Create Issue
+                Ask a Question
               </Button>
             </div>
           </form>

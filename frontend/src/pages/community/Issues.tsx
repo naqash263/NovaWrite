@@ -62,9 +62,9 @@ export default function Issues() {
   });
 
   useSEO({
-    title: 'Community Issues - Report Bugs & Request Features | Naqash Thaheem',
-    description: 'Report bugs, request features, and track issues in our community issue tracker. Help improve our platform by sharing your feedback.',
-    keywords: ['issue tracker', 'bug report', 'feature request', 'community', 'feedback'],
+    title: 'IT Community Forum - Ask Questions & Get Help | Naqash Thaheem',
+    description: 'Join our IT community forum to ask technical questions, get programming help, discuss system administration, and connect with other IT professionals.',
+    keywords: ['IT forum', 'programming help', 'technical support', 'IT community', 'tech questions', 'system administration', 'devops', 'cloud services'],
     url: '/community/issues'
   });
 
@@ -84,9 +84,14 @@ export default function Issues() {
   const fetchCategories = async () => {
     try {
       const response = await apiClient.get('/issue-categories');
-      setCategories(response.data.data || []);
+      if (response.data.success && response.data.data) {
+        setCategories(response.data.data);
+      } else {
+        setCategories([]);
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategories([]);
     }
   };
 
@@ -335,11 +340,11 @@ export default function Issues() {
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Community Issues</h1>
-                  <p className="text-gray-600 mt-2">Report bugs, request features, and help improve our platform</p>
+                  <h1 className="text-3xl font-bold text-gray-900">IT Community Forum</h1>
+                  <p className="text-gray-600 mt-2">Ask technical questions, get programming help, and connect with IT professionals</p>
                 </div>
                 <Link to="/community/issues/create">
-                  <Button>Create Issue</Button>
+                  <Button>Ask a Question</Button>
                 </Link>
               </div>
 
@@ -377,9 +382,9 @@ export default function Issues() {
               </div>
             ) : issues.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-12 text-center">
-                <p className="text-gray-600 mb-4">No issues found. Be the first to create one!</p>
+                <p className="text-gray-600 mb-4">No questions found. Be the first to ask a question!</p>
                 <Link to="/community/issues/create">
-                  <Button>Create Issue</Button>
+                  <Button>Ask a Question</Button>
                 </Link>
               </div>
             ) : (
