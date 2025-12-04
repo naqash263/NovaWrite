@@ -6,7 +6,6 @@ interface EmailQueueItem {
   action: string;
   recipient_email: string;
   recipient_name: string | null;
-  details?: any;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   attempts: number;
   max_attempts: number;
@@ -358,7 +357,6 @@ const EmailQueue: React.FC = () => {
                 />
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Type</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attempts</th>
@@ -380,9 +378,6 @@ const EmailQueue: React.FC = () => {
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                   {item.action}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                  {item.details?.order_type || item.details?.type || item.details?.email_type || '-'}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                   <div>

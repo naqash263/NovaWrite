@@ -35,7 +35,6 @@ class ContactController extends Controller
             'subject' => 'required|string|max:255',
             'message' => 'required|string|min:10|max:5000',
             'inquiry_type' => 'nullable|string|in:general,consultation,project,partnership,other',
-            'order_type' => 'nullable|string|max:255',
             'file_id' => 'nullable|integer|exists:files,id',
         ]);
 
@@ -64,7 +63,6 @@ class ContactController extends Controller
                 'subject' => $request->subject,
                 'message' => $request->message,
                 'inquiry_type' => $inquiryType,
-                'order_type' => $request->order_type,
                 'file_id' => $request->file_id,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
@@ -79,7 +77,6 @@ class ContactController extends Controller
                 'contact_subject' => $contact->subject,
                 'contact_message' => $contact->message,
                 'inquiry_type' => ucfirst($contact->inquiry_type),
-                'order_type' => $contact->order_type ?? 'Not specified',
                 'submission_date' => $contact->created_at->format('F j, Y \a\t g:i A'),
                 'app_name' => config('app.name'),
                 'app_url' => config('app.url'),

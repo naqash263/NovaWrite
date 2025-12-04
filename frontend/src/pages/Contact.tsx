@@ -13,7 +13,6 @@ interface FormData {
   subject: string;
   message: string;
   inquiry_type: 'general' | 'consultation' | 'project' | 'partnership' | 'other';
-  order_type?: string;
   file_id: number | null;
 }
 
@@ -31,7 +30,6 @@ export default function Contact() {
     subject: '',
     message: '',
     inquiry_type: 'general',
-    order_type: '',
     file_id: null,
   });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -439,7 +437,6 @@ export default function Contact() {
         subject: '',
         message: '',
         inquiry_type: 'general',
-        order_type: '',
         file_id: null,
       });
       setCharCount(0);
