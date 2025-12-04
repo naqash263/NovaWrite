@@ -726,7 +726,7 @@ export default function Posts() {
                       )}
                     </div>
                   </td>
-                <td className="px-6 py-4 text-right space-x-2">
+                <td className="px-3 py-2 text-right space-x-2">
                   <button
                     onClick={() => handleEdit(post)}
                       className="text-blue-600 hover:text-blue-800 text-sm"
