@@ -600,6 +600,24 @@ class TextToImageController extends Controller
     }
 
     /**
+     * Split multibyte string into characters (fallback for PHP < 7.4)
+     */
+    private function mbStrSplit($string): array
+    {
+        if (function_exists('mb_str_split')) {
+            return mb_str_split($string);
+        }
+        
+        // Fallback for older PHP versions
+        $chars = [];
+        $len = mb_strlen($string, 'UTF-8');
+        for ($i = 0; $i < $len; $i++) {
+            $chars[] = mb_substr($string, $i, 1, 'UTF-8');
+        }
+        return $chars;
+    }
+
+    /**
      * Get X position for text based on alignment
      */
     private function getTextX($align, $textX, $width, $text, $fontPath, $fontSize, $isBold): int
