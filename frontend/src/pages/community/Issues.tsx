@@ -51,9 +51,9 @@ export default function Issues() {
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [priorityFilter, setPriorityFilter] = useState(searchParams.get('priority') || '');
-  const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category') || '');
+  const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category_id') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'created_at');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
   const [pagination, setPagination] = useState({
     current_page: 1,
     last_page: 1,
@@ -73,8 +73,13 @@ export default function Issues() {
   }, []);
 
   useEffect(() => {
+    setCurrentPage(1); // Reset to page 1 when filters change
     fetchIssues();
-  }, [search, statusFilter, priorityFilter, categoryFilter, sortBy, currentPage]);
+  }, [search, statusFilter, priorityFilter, categoryFilter, sortBy]);
+
+  useEffect(() => {
+    fetchIssues();
+  }, [currentPage]);
 
   const fetchCategories = async () => {
     try {
@@ -99,8 +104,9 @@ export default function Issues() {
       if (categoryFilter) params.category_id = categoryFilter;
       if (sortBy) {
         params.sort_by = sortBy;
-        params.sort_order = sortBy === 'created_at' ? 'desc' : 'desc';
+        params.sort_order = 'desc';
       }
+      params.page = currentPage;
 
       const response = await apiClient.get('/issues', { params });
       
@@ -167,8 +173,6 @@ export default function Issues() {
           {/* Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-4 space-y-6">
-              <AdPlacement position="sidebar" />
-              
               {/* Filters */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Filters</h3>
@@ -180,9 +184,11 @@ export default function Issues() {
                     value={statusFilter}
                     onChange={(e) => {
                       setStatusFilter(e.target.value);
+                      setCurrentPage(1);
                       setSearchParams(prev => {
                         if (e.target.value) prev.set('status', e.target.value);
                         else prev.delete('status');
+                        prev.delete('page');
                         return prev;
                       });
                     }}
@@ -203,9 +209,11 @@ export default function Issues() {
                     value={priorityFilter}
                     onChange={(e) => {
                       setPriorityFilter(e.target.value);
+                      setCurrentPage(1);
                       setSearchParams(prev => {
                         if (e.target.value) prev.set('priority', e.target.value);
                         else prev.delete('priority');
+                        prev.delete('page');
                         return prev;
                       });
                     }}
@@ -227,9 +235,11 @@ export default function Issues() {
                       value={categoryFilter}
                       onChange={(e) => {
                         setCategoryFilter(e.target.value);
+                        setCurrentPage(1);
                         setSearchParams(prev => {
-                          if (e.target.value) prev.set('category', e.target.value);
-                          else prev.delete('category');
+                          if (e.target.value) prev.set('category_id', e.target.value);
+                          else prev.delete('category_id');
+                          prev.delete('page');
                           return prev;
                         });
                       }}
@@ -240,18 +250,48 @@ export default function Issues() {
                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                       ))}
                     </select>
+                    
+                    {/* Category Pills for Quick Filter */}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {categories.map(cat => (
+                        <button
+                          key={cat.id}
+                          onClick={() => {
+                            const newValue = categoryFilter === String(cat.id) ? '' : String(cat.id);
+                            setCategoryFilter(newValue);
+                            setCurrentPage(1);
+                            setSearchParams(prev => {
+                              if (newValue) prev.set('category_id', newValue);
+                              else prev.delete('category_id');
+                              prev.delete('page');
+                              return prev;
+                            });
+                          }}
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                            categoryFilter === String(cat.id)
+                              ? 'text-white shadow-md'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                          style={categoryFilter === String(cat.id) ? { backgroundColor: cat.color } : {}}
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 {/* Sort By */}
-                <div>
+                <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
                   <select
                     value={sortBy}
                     onChange={(e) => {
                       setSortBy(e.target.value);
+                      setCurrentPage(1);
                       setSearchParams(prev => {
                         prev.set('sort_by', e.target.value);
+                        prev.delete('page');
                         return prev;
                       });
                     }}
@@ -261,9 +301,31 @@ export default function Issues() {
                     <option value="upvotes_count">Most Upvoted</option>
                     <option value="comments_count">Most Comments</option>
                     <option value="priority">Priority</option>
+                    <option value="updated_at">Recently Updated</option>
                   </select>
                 </div>
+
+                {/* Clear Filters Button */}
+                {(statusFilter || priorityFilter || categoryFilter || search) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setStatusFilter('');
+                      setPriorityFilter('');
+                      setCategoryFilter('');
+                      setSearch('');
+                      setSortBy('created_at');
+                      setCurrentPage(1);
+                      setSearchParams({});
+                    }}
+                    className="w-full"
+                  >
+                    Clear All Filters
+                  </Button>
+                )}
               </div>
+
+              <AdPlacement position="sidebar" />
             </div>
           </aside>
 
@@ -287,9 +349,11 @@ export default function Issues() {
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
+                  setCurrentPage(1);
                   setSearchParams(prev => {
                     if (e.target.value) prev.set('search', e.target.value);
                     else prev.delete('search');
+                    prev.delete('page');
                     return prev;
                   });
                 }}
@@ -339,23 +403,38 @@ export default function Issues() {
                           {issue.description.replace(/<[^>]+>/g, '').substring(0, 200)}...
                         </p>
 
-                        <div className="flex items-center gap-4 flex-wrap">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(issue.status)}`}>
-                            {issue.status.replace('_', ' ')}
+                            {issue.status.replace('_', ' ').toUpperCase()}
                           </span>
                           <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getPriorityColor(issue.priority)}`}>
-                            {issue.priority}
+                            {issue.priority.toUpperCase()}
                           </span>
                           {issue.category && (
                             <span 
-                              className="px-3 py-1 rounded-full text-sm font-semibold text-white"
+                              className="px-3 py-1 rounded-full text-sm font-semibold text-white shadow-sm"
                               style={{ backgroundColor: issue.category.color }}
                             >
                               {issue.category.name}
                             </span>
                           )}
+                          {issue.labels && issue.labels.length > 0 && (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {issue.labels.slice(0, 3).map((label, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700"
+                                >
+                                  {label}
+                                </span>
+                              ))}
+                              {issue.labels.length > 3 && (
+                                <span className="text-xs text-gray-500">+{issue.labels.length - 3}</span>
+                              )}
+                            </div>
+                          )}
                           <span className="text-sm text-gray-500">
-                            {issue.user?.name || issue.guest_name || 'Anonymous'}
+                            by {issue.user?.name || issue.guest_name || 'Anonymous'}
                           </span>
                           <span className="text-sm text-gray-500">
                             {formatDate(issue.created_at)}
@@ -392,20 +471,34 @@ export default function Issues() {
 
             {/* Pagination */}
             {pagination.last_page > 1 && (
-              <div className="mt-6 flex justify-center gap-2">
+              <div className="mt-6 flex justify-center items-center gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  onClick={() => {
+                    const newPage = Math.max(1, currentPage - 1);
+                    setCurrentPage(newPage);
+                    setSearchParams(prev => {
+                      prev.set('page', String(newPage));
+                      return prev;
+                    });
+                  }}
                   disabled={currentPage === 1}
                 >
                   Previous
                 </Button>
-                <span className="flex items-center px-4">
-                  Page {pagination.current_page} of {pagination.last_page}
+                <span className="flex items-center px-4 text-sm text-gray-600">
+                  Page {pagination.current_page} of {pagination.last_page} ({pagination.total} total)
                 </span>
                 <Button
                   variant="outline"
-                  onClick={() => setCurrentPage(p => Math.min(pagination.last_page, p + 1))}
+                  onClick={() => {
+                    const newPage = Math.min(pagination.last_page, currentPage + 1);
+                    setCurrentPage(newPage);
+                    setSearchParams(prev => {
+                      prev.set('page', String(newPage));
+                      return prev;
+                    });
+                  }}
                   disabled={currentPage === pagination.last_page}
                 >
                   Next
