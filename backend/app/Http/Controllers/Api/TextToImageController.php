@@ -35,6 +35,9 @@ class TextToImageController extends Controller
             'textShadowBlur' => 'nullable|integer|min:0|max:20',
             'lineSpacing' => 'nullable|numeric|min:1.0|max:3.0',
             'headingSpacing' => 'nullable|integer|min:20|max:100',
+            'letterSpacing' => 'nullable|numeric|min:-2.0|max:5.0',
+            'fontWeight' => 'nullable|string|in:normal,bold,black',
+            'textOutlineWidth' => 'nullable|integer|min:0|max:5',
             'useBackgroundImage' => 'nullable|boolean',
             'backgroundImage' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:10240',
             'backgroundImageUrl' => 'nullable|url|max:2048',
@@ -83,6 +86,9 @@ class TextToImageController extends Controller
             $textShadowBlur = $request->input('textShadowBlur', 8);
             $lineSpacing = $request->input('lineSpacing', 1.5);
             $headingSpacing = $request->input('headingSpacing', 50);
+            $letterSpacing = $request->input('letterSpacing', 0);
+            $fontWeight = $request->input('fontWeight', 'normal');
+            $textOutlineWidth = $request->input('textOutlineWidth', 0);
             $useBackgroundImage = $request->input('useBackgroundImage', false);
             $backgroundImageUrl = $request->input('backgroundImageUrl');
             $backgroundOverlay = $request->input('backgroundOverlay', true);
@@ -222,20 +228,35 @@ class TextToImageController extends Controller
             $textAreaWidth = $width - ($padding * 2);
             $textX = $padding;
 
+            // Handle font weight - append to font family name if needed
+            $fontFamilyWithWeight = $fontFamily;
+            if ($fontWeight === 'bold' && stripos($fontFamily, 'bold') === false && stripos($fontFamily, 'black') === false) {
+                // Try to find bold variant
+                $fontFamilyWithWeight = $fontFamily . ' Bold';
+            } elseif ($fontWeight === 'black' && stripos($fontFamily, 'black') === false) {
+                // Try to find black/bold variant
+                $fontFamilyWithWeight = $fontFamily . ' Black';
+            }
+            
             // Get font path first (needed for text wrapping and rendering)
             try {
-                $fontPath = $this->getFontPath($fontFamily);
+                $fontPath = $this->getFontPath($fontFamilyWithWeight);
             } catch (\Exception $e) {
-                // If font not found, try to use a default
-                \Log::warning('Font not found: ' . $fontFamily . ' - ' . $e->getMessage());
+                // If font not found, try original font family
                 try {
-                    $fontPath = $this->getFontPath('Arial');
+                    $fontPath = $this->getFontPath($fontFamily);
                 } catch (\Exception $e2) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Font system error: ' . $e2->getMessage() . '. Please contact administrator to install TTF fonts on the server.',
-                        'error' => 'FONT_NOT_FOUND'
-                    ], 500);
+                    // If still not found, try to use a default
+                    \Log::warning('Font not found: ' . $fontFamilyWithWeight . ' / ' . $fontFamily . ' - ' . $e2->getMessage());
+                    try {
+                        $fontPath = $this->getFontPath('Arial');
+                    } catch (\Exception $e3) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Font system error: ' . $e3->getMessage() . '. Please contact administrator to install TTF fonts on the server.',
+                            'error' => 'FONT_NOT_FOUND'
+                        ], 500);
+                    }
                 }
             }
 
@@ -284,37 +305,95 @@ class TextToImageController extends Controller
             // Draw heading with enhanced effects
             if (count($headingLines) > 0) {
                 foreach ($headingLines as $index => $line) {
+                    // Apply letter spacing by rendering each character separately
                     $x = $this->getTextX($textAlign, $textX, $width, $line, $fontPath, $effectiveHeadingSize, true);
                     $y = (int)($textY + ($index * $effectiveHeadingSize * 1.2));
                     
-                    if ($enhancedShadow) {
-                        // Enhanced multi-layer shadow for depth
-                        // Outer shadow (darker, more blur)
-                        $outerShadowColor = imagecolorallocatealpha($image, 0, 0, 0, 80);
-                        imagettftext($image, $effectiveHeadingSize, 0, $x + 4, $y + 4, $outerShadowColor, $fontPath, $line);
-                        // Middle shadow
-                        $middleShadowColor = imagecolorallocatealpha($image, 0, 0, 0, 60);
-                        imagettftext($image, $effectiveHeadingSize, 0, $x + 3, $y + 3, $middleShadowColor, $fontPath, $line);
-                        // Inner shadow (closer to text)
-                        imagettftext($image, $effectiveHeadingSize, 0, $x + 2, $y + 2, $shadowColorAlloc, $fontPath, $line);
-                    }
+                    // Calculate letter spacing offset
+                    $letterSpacingOffset = $letterSpacing * ($effectiveHeadingSize / 20);
                     
-                    // Draw text outline/stroke for heading-only mode
-                    if ($textOutline) {
-                        // Create outline by drawing text in multiple directions
-                        $outlineColor = imagecolorallocatealpha($image, 0, 0, 0, 100);
-                        $outlineWidth = 2;
-                        for ($ox = -$outlineWidth; $ox <= $outlineWidth; $ox++) {
-                            for ($oy = -$outlineWidth; $oy <= $outlineWidth; $oy++) {
-                                if ($ox != 0 || $oy != 0) {
-                                    imagettftext($image, $effectiveHeadingSize, 0, $x + $ox, $y + $oy, $outlineColor, $fontPath, $line);
+                    // Determine outline width
+                    $outlineWidth = $effectiveOutlineWidth;
+                    
+                    // Draw text with letter spacing
+                    if ($letterSpacing != 0) {
+                        // Render character by character for letter spacing
+                        $currentX = $x;
+                        $chars = mb_str_split($line);
+                        foreach ($chars as $char) {
+                            $charX = $currentX;
+                            
+                            // Draw shadows first (if enabled)
+                            if ($enhancedShadow || $textShadow) {
+                                // Multi-layer shadow for depth and style
+                                $shadowLayers = [
+                                    ['offset' => 4, 'alpha' => 90], // Deepest shadow
+                                    ['offset' => 3, 'alpha' => 70], // Middle shadow
+                                    ['offset' => 2, 'alpha' => 50], // Close shadow
+                                ];
+                                
+                                foreach ($shadowLayers as $layer) {
+                                    $shadowColor = imagecolorallocatealpha($image, 0, 0, 0, $layer['alpha']);
+                                    imagettftext($image, $effectiveHeadingSize, 0, $charX + $layer['offset'], $y + $layer['offset'], $shadowColor, $fontPath, $char);
+                                }
+                            }
+                            
+                            // Draw outline/stroke
+                            if ($outlineWidth > 0) {
+                                $outlineColor = imagecolorallocatealpha($image, 0, 0, 0, 100);
+                                for ($ox = -$outlineWidth; $ox <= $outlineWidth; $ox++) {
+                                    for ($oy = -$outlineWidth; $oy <= $outlineWidth; $oy++) {
+                                        if ($ox != 0 || $oy != 0) {
+                                            imagettftext($image, $effectiveHeadingSize, 0, $charX + $ox, $y + $oy, $outlineColor, $fontPath, $char);
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Draw main text character
+                            imagettftext($image, $effectiveHeadingSize, 0, $charX, $y, $headingColorAlloc, $fontPath, $char);
+                            
+                            // Move to next character position with letter spacing
+                            $bbox = imagettfbbox($effectiveHeadingSize, 0, $fontPath, $char);
+                            if ($bbox !== false) {
+                                $charWidth = $bbox[4] - $bbox[0];
+                            } else {
+                                $charWidth = $effectiveHeadingSize * 0.6;
+                            }
+                            $currentX += $charWidth + $letterSpacingOffset;
+                        }
+                    } else {
+                        // Standard rendering without letter spacing
+                        // Draw shadows first (if enabled)
+                        if ($enhancedShadow || $textShadow) {
+                            // Multi-layer shadow for depth and style
+                            $shadowLayers = [
+                                ['offset' => 4, 'alpha' => 90], // Deepest shadow
+                                ['offset' => 3, 'alpha' => 70], // Middle shadow
+                                ['offset' => 2, 'alpha' => 50], // Close shadow
+                            ];
+                            
+                            foreach ($shadowLayers as $layer) {
+                                $shadowColor = imagecolorallocatealpha($image, 0, 0, 0, $layer['alpha']);
+                                imagettftext($image, $effectiveHeadingSize, 0, $x + $layer['offset'], $y + $layer['offset'], $shadowColor, $fontPath, $line);
+                            }
+                        }
+                        
+                        // Draw outline/stroke
+                        if ($outlineWidth > 0) {
+                            $outlineColor = imagecolorallocatealpha($image, 0, 0, 0, 100);
+                            for ($ox = -$outlineWidth; $ox <= $outlineWidth; $ox++) {
+                                for ($oy = -$outlineWidth; $oy <= $outlineWidth; $oy++) {
+                                    if ($ox != 0 || $oy != 0) {
+                                        imagettftext($image, $effectiveHeadingSize, 0, $x + $ox, $y + $oy, $outlineColor, $fontPath, $line);
+                                    }
                                 }
                             }
                         }
+                        
+                        // Draw main text
+                        imagettftext($image, $effectiveHeadingSize, 0, $x, $y, $headingColorAlloc, $fontPath, $line);
                     }
-                    
-                    // Draw main text
-                    imagettftext($image, $effectiveHeadingSize, 0, $x, $y, $headingColorAlloc, $fontPath, $line);
                 }
                 $textY += count($headingLines) * $effectiveHeadingSize * 1.2 + $headingSpacing;
             }
