@@ -35,6 +35,7 @@ class ContactController extends Controller
             'subject' => 'required|string|max:255',
             'message' => 'required|string|min:10|max:5000',
             'inquiry_type' => 'nullable|string|in:general,consultation,project,partnership,other',
+            'order_type' => 'nullable|string|max:255',
             'file_id' => 'nullable|integer|exists:files,id',
         ]);
 

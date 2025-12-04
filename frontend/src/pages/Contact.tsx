@@ -694,6 +694,21 @@ export default function Contact() {
                 </div>
 
                 <div>
+                  <label htmlFor="order_type" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Order Type
+                  </label>
+                  <input
+                    type="text"
+                    id="order_type"
+                    name="order_type"
+                    value={formData.order_type || ''}
+                    onChange={handleChange}
+                    placeholder="e.g., Standard, Express, Custom"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                  />
+                </div>
+
+                <div>
                   <label htmlFor="subject" className="block text-sm font-semibold text-gray-700 mb-2">
                     Subject <span className="text-red-500">*</span>
                   </label>
