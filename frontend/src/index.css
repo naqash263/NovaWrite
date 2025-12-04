@@ -30,6 +30,34 @@ table {
   }
 }
 
+/* Compact table styles for order/item lists */
+table.compact-table th,
+table.compact-table td {
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.875rem;
+}
+
+table.compact-table th {
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
+/* Make all admin tables more compact by default */
+.admin-table th,
+.admin-table td {
+  padding: 0.5rem 0.75rem !important;
+}
+
+.admin-table th {
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+  font-size: 0.75rem;
+}
+
+.admin-table td {
+  font-size: 0.875rem;
+}
+
 /* Prevent flex items from causing overflow */
 .flex, .flex-row, .flex-col {
   min-width: 0;

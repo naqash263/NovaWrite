@@ -662,23 +662,23 @@ export default function Posts() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 admin-table">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured Image</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured Image</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
+              <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
                 {filteredPosts.map((post) => (
               <tr key={post.id}>
-                  <td className="px-6 py-4 font-medium text-gray-900 max-w-xs truncate" title={post.title}>
+                  <td className="px-3 py-2 font-medium text-gray-900 max-w-xs truncate" title={post.title}>
                     {post.title}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-2">
                     {post.featured_image ? (
                       <img
                         src={post.featured_image}
@@ -691,12 +691,12 @@ export default function Posts() {
                       </div>
                     )}
                   </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-2">
                   <span className={`px-2 py-1 text-xs rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                     {post.is_published ? 'Published' : 'Draft'}
                   </span>
                 </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-2">
                     <div className="flex items-center space-x-2">
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         post.approval_status === 'approved' ? 'bg-green-100 text-green-800' :
