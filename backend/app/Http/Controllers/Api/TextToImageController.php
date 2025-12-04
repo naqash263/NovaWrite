@@ -318,8 +318,24 @@ class TextToImageController extends Controller
                     // Draw text with letter spacing
                     if ($letterSpacing != 0) {
                         // Render character by character for letter spacing
-                        $currentX = $x;
-                        $chars = mb_str_split($line);
+                        // Calculate total width with letter spacing for proper alignment
+                        $totalWidth = 0;
+                        $chars = $this->mbStrSplit($line);
+                        foreach ($chars as $char) {
+                            $bbox = imagettfbbox($effectiveHeadingSize, 0, $fontPath, $char);
+                            $charWidth = $bbox !== false ? ($bbox[4] - $bbox[0]) : ($effectiveHeadingSize * 0.6);
+                            $totalWidth += $charWidth + $letterSpacingOffset;
+                        }
+                        $totalWidth -= $letterSpacingOffset; // Remove last spacing
+                        
+                        // Recalculate X position for alignment with letter spacing
+                        if ($textAlign === 'center') {
+                            $currentX = (int)(($width - $totalWidth) / 2);
+                        } elseif ($textAlign === 'right') {
+                            $currentX = $width - $textX - $totalWidth;
+                        } else {
+                            $currentX = $x;
+                        }
                         foreach ($chars as $char) {
                             $charX = $currentX;
                             
