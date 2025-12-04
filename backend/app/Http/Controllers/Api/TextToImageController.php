@@ -414,18 +414,75 @@ class TextToImageController extends Controller
                 $textY += count($headingLines) * $effectiveHeadingSize * 1.2 + $headingSpacing;
             }
 
-            // Draw summary with shadow
+            // Draw summary with enhanced styling
             if (count($summaryLines) > 0) {
                 foreach ($summaryLines as $index => $line) {
                     $x = $this->getTextX($textAlign, $textX, $width, $line, $fontPath, $summarySize, false);
                     $y = (int)($textY + ($index * $summarySize * $lineSpacing));
                     
+                    // Apply letter spacing to summary if specified
+                    $summaryLetterSpacingOffset = $letterSpacing * ($summarySize / 20);
+                    
                     if ($textShadow) {
-                        // Draw shadow
-                        imagettftext($image, $summarySize, 0, $x + 1, $y + 1, $shadowColorAlloc, $fontPath, $line);
+                        // Enhanced shadow for summary
+                        $summaryShadowLayers = [
+                            ['offset' => 2, 'alpha' => 70],
+                            ['offset' => 1, 'alpha' => 50],
+                        ];
+                        
+                        if ($summaryLetterSpacingOffset != 0) {
+                            // Render with letter spacing
+                            // Calculate total width with letter spacing for proper alignment
+                            $summaryTotalWidth = 0;
+                            $chars = $this->mbStrSplit($line);
+                            foreach ($chars as $char) {
+                                $bbox = imagettfbbox($summarySize, 0, $fontPath, $char);
+                                $charWidth = $bbox !== false ? ($bbox[4] - $bbox[0]) : ($summarySize * 0.6);
+                                $summaryTotalWidth += $charWidth + $summaryLetterSpacingOffset;
+                            }
+                            $summaryTotalWidth -= $summaryLetterSpacingOffset; // Remove last spacing
+                            
+                            // Recalculate X position for alignment with letter spacing
+                            if ($textAlign === 'center') {
+                                $currentX = (int)(($width - $summaryTotalWidth) / 2);
+                            } elseif ($textAlign === 'right') {
+                                $currentX = $width - $textX - $summaryTotalWidth;
+                            } else {
+                                $currentX = $x;
+                            }
+                            
+                            foreach ($summaryShadowLayers as $layer) {
+                                $shadowColor = imagecolorallocatealpha($image, 0, 0, 0, $layer['alpha']);
+                                $charX = $currentX;
+                                foreach ($chars as $char) {
+                                    imagettftext($image, $summarySize, 0, $charX + $layer['offset'], $y + $layer['offset'], $shadowColor, $fontPath, $char);
+                                    $bbox = imagettfbbox($summarySize, 0, $fontPath, $char);
+                                    $charWidth = $bbox !== false ? ($bbox[4] - $bbox[0]) : ($summarySize * 0.6);
+                                    $charX += $charWidth + $summaryLetterSpacingOffset;
+                                }
+                            }
+                        } else {
+                            foreach ($summaryShadowLayers as $layer) {
+                                $shadowColor = imagecolorallocatealpha($image, 0, 0, 0, $layer['alpha']);
+                                imagettftext($image, $summarySize, 0, $x + $layer['offset'], $y + $layer['offset'], $shadowColor, $fontPath, $line);
+                            }
+                        }
                     }
-                    // Draw text
-                    imagettftext($image, $summarySize, 0, $x, $y, $summaryColorAlloc, $fontPath, $line);
+                    
+                    // Draw summary text
+                    if ($summaryLetterSpacingOffset != 0) {
+                        // Render with letter spacing
+                        $chars = $this->mbStrSplit($line);
+                        $charX = $currentX;
+                        foreach ($chars as $char) {
+                            imagettftext($image, $summarySize, 0, $charX, $y, $summaryColorAlloc, $fontPath, $char);
+                            $bbox = imagettfbbox($summarySize, 0, $fontPath, $char);
+                            $charWidth = $bbox !== false ? ($bbox[4] - $bbox[0]) : ($summarySize * 0.6);
+                            $charX += $charWidth + $summaryLetterSpacingOffset;
+                        }
+                    } else {
+                        imagettftext($image, $summarySize, 0, $x, $y, $summaryColorAlloc, $fontPath, $line);
+                    }
                 }
             }
 
