@@ -46,14 +46,27 @@ export default function CreateIssue() {
 
   const fetchCategories = async () => {
     try {
+      console.log('Fetching issue categories...');
       const response = await apiClient.get('/issue-categories');
+      console.log('Categories API response:', response.data);
+      
+      // Handle different response formats
       if (response.data.success && response.data.data) {
+        console.log('Categories loaded:', response.data.data);
+        setCategories(response.data.data);
+      } else if (Array.isArray(response.data)) {
+        console.log('Categories loaded (direct array):', response.data);
+        setCategories(response.data);
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        console.log('Categories loaded (nested):', response.data.data);
         setCategories(response.data.data);
       } else {
+        console.warn('Unexpected categories response format:', response.data);
         setCategories([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching categories:', error);
+      console.error('Error response:', error.response?.data);
       setCategories([]);
     }
   };
@@ -207,24 +220,29 @@ export default function CreateIssue() {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {categories.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={formData.category_id}
-                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
-                    disabled={loading}
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category {categories.length === 0 && <span className="text-gray-400 text-xs">(Loading...)</span>}
+                </label>
+                <select
+                  value={formData.category_id}
+                  onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
+                  disabled={loading || categories.length === 0}
+                >
+                  <option value="">
+                    {categories.length === 0 ? 'Loading categories...' : 'Select a category (optional)'}
+                  </option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                {categories.length === 0 && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Categories are loading. If this persists, please refresh the page.
+                  </p>
+                )}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
