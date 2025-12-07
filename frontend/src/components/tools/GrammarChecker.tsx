@@ -21,13 +21,14 @@ export default function GrammarChecker() {
   } | null>(null);
 
   useSEO({
-    title: 'Free Grammar Checker & Corrector - AI-Powered Grammar Check Tool | Online Grammar Checker',
-    description: 'Free AI-powered grammar checker and corrector. Check spelling, grammar, and style errors instantly. Get suggestions for improvements. Perfect for writers, students, and professionals. No registration required.',
+    title: 'Free Grammar Checker Online - AI-Powered Grammar Check | No Signup',
+    description: 'Free grammar checker online - no signup required. AI-powered grammar checker and corrector. Check spelling, grammar, and style errors instantly. Get suggestions for improvements. AI grammar checker free. Perfect for writers, students, and professionals.',
     url: '/resources/ai-tools/grammar-checker',
     keywords: [
-      'grammar checker', 'grammar corrector', 'spell checker', 'grammar check',
-      'AI grammar checker', 'online grammar checker', 'free grammar checker', 'grammar tool',
-      'spelling checker', 'grammar correction', 'writing checker', 'text checker'
+      'free grammar checker online', 'grammar checker', 'free grammar checker', 'grammar checker online', 'AI grammar checker free',
+      'grammar corrector', 'spell checker', 'grammar check',
+      'AI grammar checker', 'online grammar checker', 'grammar tool',
+      'spelling checker', 'grammar correction', 'writing checker', 'text checker', 'grammar corrector free online', 'free online grammar checker'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -139,10 +140,10 @@ export default function GrammarChecker() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          ✅ Grammar Checker & Corrector
+          ✅ Free Grammar Checker Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Check spelling, grammar, and style errors instantly. Get AI-powered corrections and suggestions for better writing.
+          Free grammar checker online - no signup required. Check spelling, grammar, and style errors instantly. Get AI-powered corrections and suggestions for better writing. AI grammar checker free. Perfect for writers, students, and professionals.
         </p>
 
         {/* Options */}

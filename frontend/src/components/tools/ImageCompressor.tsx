@@ -21,13 +21,14 @@ export default function ImageCompressor() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free Image Compressor - Reduce Image File Size Online | Compress Images',
-    description: 'Free online image compressor. Reduce image file size while maintaining quality. Compress JPEG, PNG, WebP images. Adjust quality, resize dimensions. Download compressed images instantly. No registration required.',
+    title: 'Free Image Compressor Online - Reduce Image File Size | No Signup',
+    description: 'Free image compressor online - no signup required. Reduce image file size while maintaining quality instantly. Compress JPEG, PNG, WebP images. Adjust quality, resize dimensions. Download compressed images. All processing in your browser.',
     url: '/resources/utility-tools/image-compressor',
     keywords: [
-      'image compressor', 'compress image', 'reduce image size', 'image file size reducer',
-      'online image compressor', 'free image compressor', 'compress JPEG', 'compress PNG',
-      'compress WebP', 'image optimizer', 'photo compressor'
+      'free image compressor online', 'image compressor', 'free image compressor', 'image compressor online', 'compress image online free',
+      'compress image', 'reduce image size', 'image file size reducer',
+      'online image compressor', 'compress JPEG', 'compress PNG',
+      'compress WebP', 'image optimizer', 'photo compressor', 'free online image compressor'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -228,9 +229,9 @@ export default function ImageCompressor() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Image Compressor</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Image Compressor Online</h1>
         <p className="text-gray-600 mb-6">
-          Reduce image file size while maintaining quality. Compress JPEG, PNG, and WebP images instantly.
+          Free image compressor online - no signup required. Reduce image file size while maintaining quality instantly. Compress JPEG, PNG, and WebP images. Adjust quality, resize dimensions. Download compressed images. All processing in your browser.
         </p>
 
         <div className="space-y-6">

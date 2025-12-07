@@ -19,13 +19,14 @@ export default function ArticleRewriter() {
   } | null>(null);
 
   useSEO({
-    title: 'Free Article Rewriter & Paraphrase Tool - AI-Powered Text Rewriting | Online Paraphrasing Tool',
-    description: 'Free AI-powered article rewriter and paraphrase tool. Rewrite articles, essays, and text while maintaining meaning. Multiple writing styles and tones. Plagiarism-free rewriting. No registration required.',
+    title: 'Free Article Rewriter Online - AI-Powered Paraphrase Tool | No Signup',
+    description: 'Free article rewriter online - no signup required. AI-powered article rewriter and paraphrase tool. Rewrite articles, essays, and text while maintaining meaning instantly. Multiple writing styles and tones. Paraphrase tool free online. Plagiarism-free rewriting.',
     url: '/resources/ai-tools/article-rewriter',
     keywords: [
-      'article rewriter', 'paraphrase tool', 'text rewriter', 'rewrite article',
-      'AI rewriter', 'online rewriter', 'free article rewriter', 'paraphrasing tool',
-      'text paraphrasing', 'content rewriter', 'essay rewriter', 'plagiarism free rewriter'
+      'free article rewriter online', 'article rewriter', 'free article rewriter', 'article rewriter online', 'paraphrase tool free online',
+      'paraphrase tool', 'text rewriter', 'rewrite article',
+      'AI rewriter', 'online rewriter', 'paraphrasing tool',
+      'text paraphrasing', 'content rewriter', 'essay rewriter', 'plagiarism free rewriter', 'AI rewriter free', 'free online article rewriter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -134,10 +135,10 @@ export default function ArticleRewriter() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          ✍️ Article Rewriter & Paraphrase Tool
+          ✍️ Free Article Rewriter Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Rewrite articles, essays, and text while maintaining meaning. Choose from multiple writing styles and tones. Get plagiarism-free, unique content instantly.
+          Free article rewriter online - no signup required. Rewrite articles, essays, and text while maintaining meaning instantly. Choose from multiple writing styles and tones. Paraphrase tool free online. Get plagiarism-free, unique content. Perfect for content creators.
         </p>
 
         {/* Options */}

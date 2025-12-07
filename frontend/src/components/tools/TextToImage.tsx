@@ -36,13 +36,14 @@ export default function TextToImage() {
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free Text to Image Generator - Create Images from Text Online | Text Image Maker',
-    description: 'Free online text to image generator. Create beautiful images from text with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics.',
+    title: 'Free Text to Image Generator Online - Create Images from Text | No Signup',
+    description: 'Free text to image generator online - no signup required. Create beautiful images from text instantly with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics. All processing in your browser.',
     url: '/resources/utility-tools/text-to-image',
     keywords: [
-      'text to image', 'text image generator', 'create image from text', 'text image maker',
+      'free text to image generator', 'text to image', 'free text to image generator online', 'text image generator', 'create image from text free',
+      'text image generator', 'create image from text', 'text image maker',
       'quote image generator', 'social media image maker', 'text graphics', 'image from text',
-      'online text to image', 'free text image generator', 'text design tool'
+      'online text to image', 'free text image generator', 'text design tool', 'free online text to image generator'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -693,10 +694,10 @@ export default function TextToImage() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          ✨ Text to Image Generator
+          ✨ Free Text to Image Generator Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Create beautiful images from text with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics.
+          Free text to image generator online - no signup required. Create beautiful images from text instantly with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics. All processing in your browser.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

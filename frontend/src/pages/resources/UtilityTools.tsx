@@ -34,7 +34,6 @@ import MarkdownPreview from '../../components/tools/MarkdownPreview';
 import FileConverter from '../../components/tools/FileConverter';
 import DocumentConverter from '../../components/tools/DocumentConverter';
 import ExcelCsvConverter from '../../components/tools/ExcelCsvConverter';
-import HeicJpgConverter from '../../components/tools/HeicJpgConverter';
 import AudioConverter from '../../components/tools/AudioConverter';
 import TokenCounter from '../../components/tools/TokenCounter';
 
@@ -46,7 +45,7 @@ type ToolType =
   | 'regex-tester' | 'uuid-generator' | 'jwt-decoder' | 'text-to-image'
   | 'lorem-ipsum-generator' | 'text-case-converter' | 'hash-generator' | 'image-compressor'
   | 'sql-formatter' | 'css-formatter' | 'html-formatter' | 'image-format-converter' | 'color-picker' | 'markdown-preview' | 'file-converter' | 'document-converter'
-  | 'excel-csv-converter' | 'heic-jpg-converter' | 'audio-converter' | 'token-counter';
+  | 'excel-csv-converter' | 'audio-converter' | 'token-counter';
 
 interface ToolOption {
   id: ToolType;
@@ -371,16 +370,6 @@ const toolOptions: ToolOption[] = [
     keywords: ['excel to csv', 'csv to excel', 'xlsx to csv', 'csv to xlsx', 'excel converter', 'csv converter']
   },
   { 
-    id: 'heic-jpg-converter', 
-    name: 'HEIC JPG Converter', 
-    icon: '📷', 
-    category: 'productivity', 
-    description: 'Convert iPhone HEIC photos to JPG format for better compatibility',
-    seoTitle: 'Free HEIC to JPG Converter - Convert iPhone Photos Online | HEIC Image Converter',
-    seoDescription: 'Free online HEIC to JPG converter. Convert iPhone HEIC photos to JPG format for better compatibility. All conversions happen securely on our server. No registration required.',
-    keywords: ['heic to jpg', 'heic converter', 'iphone photo converter', 'heic to jpeg', 'convert heic']
-  },
-  { 
     id: 'audio-converter', 
     name: 'Audio Converter', 
     icon: '🎵', 
@@ -532,7 +521,6 @@ export default function UtilityTools() {
       case 'file-converter': return <FileConverter />;
       case 'document-converter': return <DocumentConverter />;
       case 'excel-csv-converter': return <ExcelCsvConverter />;
-      case 'heic-jpg-converter': return <HeicJpgConverter />;
       case 'audio-converter': return <AudioConverter />;
       case 'token-counter': return <TokenCounter />;
       default: return <PasswordGenerator />;

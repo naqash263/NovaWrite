@@ -14,12 +14,13 @@ export default function PDFRotate() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free PDF Rotate - Rotate PDF Pages Online | Rotate PDF 90, 180, 270 Degrees',
-    description: 'Free online PDF rotator. Rotate PDF pages 90°, 180°, or 270°. Rotate all pages or selected pages. All processing happens in your browser. No registration required.',
+    title: 'Free PDF Rotator Online - Rotate PDF Pages 90, 180, 270 | No Signup',
+    description: 'Free PDF rotator online - no signup required. Rotate PDF pages 90°, 180°, or 270° instantly. Rotate all pages or selected pages. Fix PDF orientation issues. All processing happens in your browser. Perfect for document management.',
     url: '/resources/utility-tools/pdf-rotate',
     keywords: [
-      'PDF rotate', 'rotate PDF', 'rotate PDF pages', 'PDF page rotator',
-      'online PDF rotate', 'free PDF rotate', 'rotate PDF 90 degrees', 'fix PDF orientation'
+      'free PDF rotator online', 'PDF rotate', 'free PDF rotator', 'PDF rotator online', 'rotate PDF pages free',
+      'rotate PDF', 'rotate PDF pages', 'PDF page rotator',
+      'online PDF rotate', 'free PDF rotate', 'rotate PDF 90 degrees', 'fix PDF orientation', 'free online PDF rotator'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -179,10 +180,10 @@ export default function PDFRotate() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔄 PDF Rotate
+          🔄 Free PDF Rotator Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Rotate PDF pages to fix orientation. Rotate all pages or selected pages. All processing happens in your browser.
+          Free PDF rotator online - no signup required. Rotate PDF pages 90°, 180°, or 270° to fix orientation instantly. Rotate all pages or selected pages. All processing happens in your browser. Perfect for document management.
         </p>
 
         {/* Stats */}

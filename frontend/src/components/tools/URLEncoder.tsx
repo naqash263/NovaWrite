@@ -8,12 +8,13 @@ export default function URLEncoder() {
   const [error, setError] = useState<string>('');
 
   useSEO({
-    title: 'Free URL Encoder & Decoder - Encode Decode URL Online | URL Percent Encoding',
-    description: 'Free online URL encoder and decoder. Encode URLs for safe transmission or decode URL-encoded strings. Percent encoding, instant conversion, copy to clipboard.',
+    title: 'Free URL Encoder Decoder Online - Encode Decode URL | No Signup',
+    description: 'Free URL encoder decoder online - no signup required. Encode URLs for safe transmission or decode URL-encoded strings instantly. Percent encoding, instant conversion, copy to clipboard. Perfect for developers. All processing in your browser.',
     url: '/resources/utility-tools/url-encoder',
     keywords: [
-      'URL encoder', 'URL decoder', 'URL encode', 'URL decode', 'percent encoding',
-      'URL encoding', 'URL percent encoding', 'encode URL', 'decode URL', 'online URL encoder'
+      'free URL encoder decoder', 'URL encoder', 'free URL encoder decoder', 'URL encoder decoder online', 'URL encode decode online',
+      'URL decoder', 'URL encode', 'URL decode', 'percent encoding',
+      'URL encoding', 'URL percent encoding', 'encode URL', 'decode URL', 'online URL encoder', 'free online URL encoder'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -112,10 +113,10 @@ export default function URLEncoder() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔗 URL Encoder & Decoder
+          🔗 Free URL Encoder Decoder Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Encode URLs for safe transmission or decode URL-encoded strings. Percent encoding (URL encoding) support.
+          Free URL encoder decoder online - no signup required. Encode URLs for safe transmission or decode URL-encoded strings instantly. Percent encoding (URL encoding) support, instant conversion, copy to clipboard. Perfect for developers. All processing in your browser.
         </p>
 
         {/* Mode Selector */}

@@ -22,13 +22,14 @@ export default function LoanCalculator() {
   } | null>(null);
 
   useSEO({
-    title: 'Free Loan Calculator - Mortgage, Auto, Personal Loan Calculator | Amortization Calculator',
-    description: 'Free online loan calculator. Calculate monthly payments, total interest, and amortization schedule for mortgages, auto loans, and personal loans. No registration required.',
+    title: 'Free Loan Calculator Online - Mortgage, Auto, Personal Loan | No Signup',
+    description: 'Free loan calculator online - no signup required. Calculate monthly payments, total interest, and amortization schedule for mortgages, auto loans, and personal loans instantly. Multiple payment frequencies. Perfect for financial planning.',
     url: '/resources/utility-tools/loan-calculator',
     keywords: [
-      'loan calculator', 'mortgage calculator', 'auto loan calculator', 'personal loan calculator',
+      'free loan calculator online', 'loan calculator', 'free loan calculator', 'loan calculator online', 'mortgage calculator free online',
+      'mortgage calculator', 'auto loan calculator', 'personal loan calculator',
       'amortization calculator', 'loan payment calculator', 'interest calculator', 'loan amortization',
-      'mortgage payment calculator', 'loan tool', 'financial calculator'
+      'mortgage payment calculator', 'loan tool', 'financial calculator', 'free online loan calculator'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -124,10 +125,10 @@ export default function LoanCalculator() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          💰 Loan Calculator
+          💰 Free Loan Calculator Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Calculate monthly payments, total interest, and view the complete amortization schedule for any loan.
+          Free loan calculator online - no signup required. Calculate monthly payments, total interest, and view the complete amortization schedule for mortgages, auto loans, and personal loans instantly. Multiple payment frequencies. Perfect for financial planning.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

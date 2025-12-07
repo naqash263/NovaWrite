@@ -9,12 +9,13 @@ export default function TipCalculator() {
   const [roundUp, setRoundUp] = useState<boolean>(false);
 
   useSEO({
-    title: 'Free Tip Calculator - Calculate Tip Amount & Split Bill | Online Tip Calculator',
-    description: 'Free online tip calculator. Calculate tip amount, split bill, and total per person. Multiple tip percentages, round up option. Perfect for restaurants and services.',
+    title: 'Free Tip Calculator Online - Calculate Tip & Split Bill | No Signup',
+    description: 'Free tip calculator online - no signup required. Calculate tip amount, split bill, and total per person instantly. Multiple tip percentages, round up option. Perfect for restaurants and services. All calculations in your browser.',
     url: '/resources/utility-tools/tip-calculator',
     keywords: [
-      'tip calculator', 'calculate tip', 'split bill calculator', 'restaurant tip calculator',
-      'tip percentage calculator', 'bill splitter', 'gratuity calculator', 'tip amount calculator'
+      'free tip calculator online', 'tip calculator', 'free tip calculator', 'tip calculator online', 'tip calculator free',
+      'calculate tip', 'split bill calculator', 'restaurant tip calculator',
+      'tip percentage calculator', 'bill splitter', 'gratuity calculator', 'tip amount calculator', 'free online tip calculator'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -67,10 +68,10 @@ export default function TipCalculator() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          💵 Tip Calculator
+          💵 Free Tip Calculator Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Calculate tip amount and split the bill among multiple people. Perfect for restaurants and services.
+          Free tip calculator online - no signup required. Calculate tip amount and split the bill among multiple people instantly. Multiple tip percentages, round up option. Perfect for restaurants and services. All calculations in your browser.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

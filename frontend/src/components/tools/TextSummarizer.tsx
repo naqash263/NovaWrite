@@ -17,13 +17,14 @@ export default function TextSummarizer() {
   } | null>(null);
 
   useSEO({
-    title: 'Free Text Summarizer - AI-Powered Text Summary Tool | Summarize Articles Online',
-    description: 'Free AI-powered text summarizer. Summarize long articles, documents, and text instantly. Choose from short, medium, or long summaries. No registration required.',
+    title: 'Free Text Summarizer Online - AI-Powered Text Summary | No Signup',
+    description: 'Free text summarizer online - no signup required. AI-powered text summarizer. Summarize long articles, documents, and text instantly. Choose from short, medium, or long summaries. AI text summarizer free. Perfect for students and professionals.',
     url: '/resources/ai-tools/text-summarizer',
     keywords: [
-      'text summarizer', 'article summarizer', 'text summary', 'summarize text',
-      'AI summarizer', 'online summarizer', 'free text summarizer', 'text summarization',
-      'document summarizer', 'article summary tool'
+      'free text summarizer online', 'text summarizer', 'free text summarizer', 'text summarizer online', 'AI text summarizer free',
+      'article summarizer', 'text summary', 'summarize text',
+      'AI summarizer', 'online summarizer', 'text summarization',
+      'document summarizer', 'article summary tool', 'article summarizer free online', 'free online text summarizer'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -130,10 +131,10 @@ export default function TextSummarizer() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          📝 Text Summarizer
+          📝 Free Text Summarizer Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Summarize long articles, documents, and text instantly using AI. Choose your preferred summary length and focus.
+          Free text summarizer online - no signup required. Summarize long articles, documents, and text instantly using AI. Choose your preferred summary length and focus. AI text summarizer free. Perfect for students and professionals.
         </p>
 
         {/* Options */}

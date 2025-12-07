@@ -92,7 +92,7 @@ class SitemapController extends Controller
             'text-case-converter', 'hash-generator', 'image-compressor', 'sql-formatter',
             'css-formatter', 'html-formatter', 'image-format-converter', 'color-picker',
             'markdown-preview', 'file-converter', 'document-converter', 'excel-csv-converter',
-            'heic-jpg-converter', 'audio-converter'
+            'audio-converter'
         ];
         foreach ($utilityTools as $tool) {
             $xml .= $this->addUrl($baseUrl, '/resources/utility-tools?tool=' . $tool, $today, 'monthly', '0.7');

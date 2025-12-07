@@ -10,12 +10,13 @@ export default function CompoundInterestCalculator() {
   const [contributionFrequency, setContributionFrequency] = useState<'monthly' | 'yearly'>('monthly');
 
   useSEO({
-    title: 'Free Compound Interest Calculator - Investment Growth Calculator | Future Value Calculator',
-    description: 'Free online compound interest calculator. Calculate future value, investment growth, and returns. Supports multiple compounding frequencies and additional contributions.',
+    title: 'Free Compound Interest Calculator Online - Investment Growth | No Signup',
+    description: 'Free compound interest calculator online - no signup required. Calculate future value, investment growth, and returns instantly. Supports multiple compounding frequencies and additional contributions. Perfect for financial planning. All calculations in your browser.',
     url: '/resources/utility-tools/compound-interest-calculator',
     keywords: [
-      'compound interest calculator', 'investment calculator', 'future value calculator',
-      'compound interest', 'investment growth calculator', 'savings calculator', 'interest calculator'
+      'free compound interest calculator', 'compound interest calculator', 'free compound interest calculator online', 'compound interest calculator online', 'investment calculator free',
+      'investment calculator', 'future value calculator',
+      'compound interest', 'investment growth calculator', 'savings calculator', 'interest calculator', 'free online compound interest calculator'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -106,10 +107,10 @@ export default function CompoundInterestCalculator() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          📈 Compound Interest Calculator
+          📈 Free Compound Interest Calculator Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Calculate how your investments grow with compound interest. See the power of compounding over time.
+          Free compound interest calculator online - no signup required. Calculate how your investments grow with compound interest instantly. See the power of compounding over time. Supports multiple compounding frequencies and additional contributions. Perfect for financial planning. All calculations in your browser.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

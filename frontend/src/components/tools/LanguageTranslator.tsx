@@ -52,11 +52,12 @@ export default function LanguageTranslator() {
   } | null>(null);
 
   useSEO({
-    title: 'Free Language Translator - AI-Powered Translation Tool | Translate Text Online',
-    description: 'Free AI-powered language translator. Translate text between 30+ languages instantly. Preserve formatting, accurate translations. Perfect for students, travelers, and professionals. No registration required.',
+    title: 'Free Language Translator Online - AI-Powered Translation | No Signup',
+    description: 'Free language translator online - no signup required. AI-powered language translator. Translate text between 30+ languages instantly. Preserve formatting, accurate translations. AI translator free online. Perfect for students, travelers, and professionals.',
     url: '/resources/ai-tools/language-translator',
     keywords: [
-      'language translator', 'text translator', 'online translator', 'translate text',
+      'free language translator online', 'language translator', 'free language translator', 'language translator online', 'AI translator free online',
+      'text translator', 'online translator', 'translate text',
       'AI translator', 'free translator', 'translate language', 'translation tool',
       'multilingual translator', 'document translator', 'real-time translation'
     ],
@@ -175,10 +176,10 @@ export default function LanguageTranslator() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🌐 Language Translator
+          🌐 Free Language Translator Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Translate text between 30+ languages instantly. Get accurate, natural translations with AI-powered technology.
+          Free language translator online - no signup required. Translate text between 30+ languages instantly. Get accurate, natural translations with AI-powered technology. AI translator free online. Preserve formatting. Perfect for students, travelers, and professionals.
         </p>
 
         {/* Language Selection */}

@@ -9,13 +9,14 @@ export default function JSONFormatter() {
   const [isMinified, setIsMinified] = useState<boolean>(false);
 
   useSEO({
-    title: 'Free JSON Formatter & Validator - Beautify, Minify, Validate JSON | Online JSON Tool',
-    description: 'Free online JSON formatter and validator. Beautify, minify, validate, and format JSON data. Includes syntax highlighting and error detection. No registration required.',
+    title: 'Free JSON Formatter Online - Beautify, Minify, Validate JSON | No Signup',
+    description: 'Free JSON formatter online - no signup required. Beautify, minify, validate, and format JSON data instantly. Includes syntax highlighting and error detection. JSON beautifier free online. Perfect for developers. All processing in your browser.',
     url: '/resources/utility-tools/json-formatter',
     keywords: [
-      'JSON formatter', 'JSON validator', 'JSON beautifier', 'JSON minifier',
+      'free JSON formatter online', 'JSON formatter', 'free JSON formatter', 'JSON formatter online', 'JSON beautifier free online',
+      'JSON validator', 'JSON beautifier', 'JSON minifier',
       'format JSON', 'validate JSON', 'JSON tool', 'JSON parser',
-      'online JSON formatter', 'free JSON tool', 'JSON editor'
+      'online JSON formatter', 'free JSON tool', 'JSON editor', 'JSON validator online free', 'free online JSON formatter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -150,10 +151,10 @@ export default function JSONFormatter() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          📋 JSON Formatter & Validator
+          📋 Free JSON Formatter Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Format, validate, beautify, and minify JSON data. Includes syntax validation and error detection.
+          Free JSON formatter online - no signup required. Format, validate, beautify, and minify JSON data instantly. Includes syntax validation and error detection. JSON beautifier free online. Perfect for developers. All processing in your browser.
         </p>
 
         {/* Controls */}
