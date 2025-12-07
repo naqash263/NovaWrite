@@ -208,17 +208,48 @@ class IssueController extends Controller
                     // Get unsubscribe token
                     $unsubscribeToken = $this->getUnsubscribeToken($recipientEmail);
                     
-                    $emailService->sendTemplateEmail('issue_created', [
+                    Log::info('Attempting to send issue_created email notification', [
+                        'recipient' => $recipientEmail,
+                        'issue_id' => $issue->id,
+                        'issue_title' => $issue->title,
+                    ]);
+                    
+                    $result = $emailService->sendTemplateEmail('issue_created', [
                         'issue_title' => $issue->title,
                         'issue_url' => config('app.url') . '/community/issues/' . ($issue->slug ?? $issue->id),
                         'issue_description' => substr(strip_tags($issue->description), 0, 200) . '...',
                         'created_at' => $issue->created_at->format('F j, Y \a\t g:i A'),
                         'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=issue_created',
                     ], $recipientEmail, $recipientName);
+                    
+                    if ($result) {
+                        Log::info('Issue created email notification sent successfully', [
+                            'recipient' => $recipientEmail,
+                            'issue_id' => $issue->id,
+                        ]);
+                    } else {
+                        Log::warning('Issue created email notification failed to send', [
+                            'recipient' => $recipientEmail,
+                            'issue_id' => $issue->id,
+                            'check_n8n_config' => 'Verify N8n configuration is active and webhook URL is correct',
+                            'check_template' => 'Verify issue_created template exists in N8n',
+                        ]);
+                    }
+                } else {
+                    Log::warning('Cannot send issue created email - no recipient email', [
+                        'issue_id' => $issue->id,
+                        'user_id' => $user?->id,
+                        'guest_email' => $request->guest_email,
+                    ]);
                 }
             } catch (\Exception $e) {
                 // Log but don't fail the request if email fails
-                Log::warning('Failed to send issue created email notification: ' . $e->getMessage());
+                Log::error('Failed to send issue created email notification', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'issue_id' => $issue->id,
+                    'recipient' => $user ? $user->email : $request->guest_email,
+                ]);
             }
 
             return response()->json([
