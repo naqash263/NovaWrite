@@ -55,10 +55,15 @@ const LinkedInOptimizer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useSEO({
-    title: 'Free LinkedIn Profile Optimizer - Boost Your Professional Visibility',
-    description: 'Optimize your LinkedIn profile for maximum visibility with AI-powered analysis. Get keyword suggestions, headline improvements, and engagement strategies.',
+    title: 'Free LinkedIn Optimizer Tool - Optimize LinkedIn Profile Online | No Signup',
+    description: 'Free LinkedIn optimizer tool - no signup required. Optimize your LinkedIn profile for maximum visibility instantly with AI-powered analysis. Get keyword suggestions, headline improvements, and engagement strategies. LinkedIn profile optimizer free. Perfect for job seekers.',
     url: '/resources/linkedin-optimizer',
-    keywords: ['LinkedIn optimization', 'professional profile', 'career tools', 'AI analysis', 'profile optimization']
+    keywords: [
+      'free LinkedIn optimizer tool', 'LinkedIn optimizer', 'free LinkedIn optimizer', 'LinkedIn optimizer tool', 'LinkedIn profile optimizer free',
+      'LinkedIn optimization', 'online LinkedIn optimizer', 'LinkedIn profile optimization tool free',
+      'professional profile', 'career tools', 'AI analysis', 'profile optimization',
+      'free LinkedIn headline optimizer', 'optimize LinkedIn profile'
+    ]
   });
 
   const steps = [
@@ -656,11 +661,10 @@ const LinkedInOptimizer: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            LinkedIn Profile Optimizer
+            Free LinkedIn Optimizer Tool
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Boost your LinkedIn visibility with AI-powered analysis and optimization recommendations.
-            We only ask for essential profile information - no personal details required!
+            Free LinkedIn optimizer tool - no signup required. Boost your LinkedIn visibility instantly with AI-powered analysis and optimization recommendations. LinkedIn profile optimizer free. We only ask for essential profile information - no personal details required! Perfect for job seekers.
           </p>
           
           {/* API Key Manager */}

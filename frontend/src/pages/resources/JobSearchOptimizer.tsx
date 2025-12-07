@@ -29,10 +29,14 @@ const JobSearchOptimizer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useSEO({
-    title: 'Free Job Search Optimizer - AI-Powered Job Search Strategy',
-    description: 'Optimize your job search with AI-powered strategies. Get personalized job recommendations, application tips, and networking strategies.',
+    title: 'Job Search Optimizer Free Online - AI-Powered Job Search | No Signup',
+    description: 'Job search optimizer free online - no signup required. Optimize your job search instantly with AI-powered strategies. Get personalized job recommendations, application tips, and networking strategies. Perfect for job seekers.',
     url: '/resources/job-search-optimizer',
-    keywords: ['job search', 'career tools', 'job recommendations', 'application tips', 'networking', 'AI guidance']
+    keywords: [
+      'job search optimizer free', 'job search', 'free job search optimizer', 'job search optimizer online', 'career tools',
+      'job recommendations', 'application tips', 'networking', 'AI guidance',
+      'free online job search optimizer', 'job search tool free'
+    ]
   });
 
   const steps = [
@@ -629,10 +633,10 @@ const JobSearchOptimizer: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Job Search Optimizer
+            Job Search Optimizer Free Online
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Optimize your job search with AI-powered strategies. We only ask for essential job search information - no personal details required!
+            Job search optimizer free online - no signup required. Optimize your job search instantly with AI-powered strategies. Get personalized job recommendations, application tips, and networking strategies. Perfect for job seekers. We only ask for essential job search information - no personal details required!
           </p>
           
           {/* API Key Manager */}

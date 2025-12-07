@@ -2066,10 +2066,15 @@ const PreviewStep = ({ data, style, onDownload, selectedTemplate }: { data: CVDa
 
 export default function CVBuilder() {
   useSEO({
-    title: 'Free CV Builder - Create Professional Resumes | Naqash Thaheem',
-    description: 'Build professional CVs and resumes with our free CV builder. AI-powered parsing, multiple templates, and instant PDF download.',
+    title: 'Free AI-Powered CV Builder - Create Professional Resumes Online | No Signup',
+    description: 'Free AI-powered CV builder - no signup required. Build professional CVs and resumes instantly. AI-powered parsing, multiple templates, ATS-friendly format, and instant PDF download. Free resume builder no signup. Perfect for job seekers.',
     url: '/resources/cv-builder',
-    keywords: ['cv builder', 'resume builder', 'free cv maker', 'professional resume', 'cv templates', 'ai cv builder']
+    keywords: [
+      'free AI-powered CV builder', 'CV builder', 'free CV builder', 'AI-powered CV builder', 'ATS-friendly resume builder free',
+      'resume builder', 'free resume builder no signup', 'online CV builder free',
+      'free cv maker', 'professional resume', 'cv templates', 'ai cv builder',
+      'free professional CV builder', 'resume builder with AI suggestions', 'free CV template builder online'
+    ]
   });
 
   const [cvData, setCvData] = useState<CVData>(defaultCVData);
@@ -2925,11 +2930,10 @@ export default function CVBuilder() {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         <div className="text-center mb-4 sm:mb-6 md:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4">
-            AI-Powered CV Builder
+            Free AI-Powered CV Builder
           </h1>
           <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-2">
-            Create professional, ATS-optimized resumes with our intelligent CV builder. 
-            Get AI-powered suggestions and templates tailored to your industry.
+            Free AI-powered CV builder - no signup required. Create professional, ATS-optimized resumes instantly with our intelligent CV builder. Get AI-powered suggestions and templates tailored to your industry. Free resume builder no signup. Perfect for job seekers.
           </p>
       </div>
 

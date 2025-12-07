@@ -43,10 +43,14 @@ const CoverLetterGenerator: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useSEO({
-    title: 'Free AI Cover Letter Generator - Create Professional Cover Letters',
-    description: 'Generate personalized, ATS-friendly cover letters with AI. Tailor your cover letter to specific job postings and increase your chances of getting interviews.',
+    title: 'Cover Letter Generator Free Online - AI-Powered Cover Letters | No Signup',
+    description: 'Cover letter generator free online - no signup required. Generate personalized, ATS-friendly cover letters instantly with AI. Tailor your cover letter to specific job postings and increase your chances of getting interviews. Perfect for job seekers.',
     url: '/resources/cover-letter-generator',
-    keywords: ['cover letter generator', 'AI cover letter', 'job application', 'career tools', 'professional writing', 'ATS optimization']
+    keywords: [
+      'cover letter generator free online', 'cover letter generator', 'free cover letter generator', 'cover letter generator online', 'AI cover letter',
+      'job application', 'career tools', 'professional writing', 'ATS optimization',
+      'free online cover letter generator', 'cover letter maker free'
+    ]
   });
 
   const steps = [
@@ -442,11 +446,10 @@ const CoverLetterGenerator: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            AI Cover Letter Generator
+            Cover Letter Generator Free Online
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Create personalized, ATS-friendly cover letters with AI. 
-            <span className="text-blue-600 font-semibold"> We only ask for job-relevant information - no personal details required!</span>
+            Cover letter generator free online - no signup required. Create personalized, ATS-friendly cover letters instantly with AI. Tailor your cover letter to specific job postings and increase your chances of getting interviews. Perfect for job seekers. We only ask for job-relevant information - no personal details required!
           </p>
           
           {/* API Key Manager */}

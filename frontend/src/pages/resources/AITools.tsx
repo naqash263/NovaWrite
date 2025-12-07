@@ -32,9 +32,9 @@ const aiToolOptions: AIToolOption[] = [
     icon: '📝', 
     category: 'text', 
     description: 'Summarize long articles, documents, and text instantly using AI',
-    seoTitle: 'Free Text Summarizer - AI-Powered Text Summary Tool | Summarize Articles Online',
-    seoDescription: 'Free AI-powered text summarizer. Summarize long articles, documents, and text instantly. Choose from short, medium, or long summaries. No registration required.',
-    keywords: ['text summarizer', 'article summarizer', 'text summary', 'summarize text', 'AI summarizer', 'online summarizer']
+    seoTitle: 'Free Text Summarizer Online - AI-Powered Text Summary | No Signup',
+    seoDescription: 'Free text summarizer online - no signup required. AI-powered text summarizer. Summarize long articles, documents, and text instantly. Choose from short, medium, or long summaries. AI text summarizer free. Perfect for students and professionals.',
+    keywords: ['free text summarizer online', 'text summarizer', 'AI text summarizer free', 'article summarizer free online', 'text summary', 'summarize text', 'AI summarizer', 'online summarizer']
   },
   { 
     id: 'article-rewriter', 
@@ -42,9 +42,9 @@ const aiToolOptions: AIToolOption[] = [
     icon: '✍️', 
     category: 'writing', 
     description: 'Rewrite articles and text while maintaining meaning with multiple styles',
-    seoTitle: 'Free Article Rewriter & Paraphrase Tool - AI-Powered Text Rewriting | Online Paraphrasing Tool',
-    seoDescription: 'Free AI-powered article rewriter and paraphrase tool. Rewrite articles, essays, and text while maintaining meaning. Multiple writing styles and tones. Plagiarism-free rewriting. No registration required.',
-    keywords: ['article rewriter', 'paraphrase tool', 'text rewriter', 'rewrite article', 'AI rewriter', 'online rewriter', 'paraphrasing tool']
+    seoTitle: 'Free Article Rewriter Online - AI-Powered Paraphrase Tool | No Signup',
+    seoDescription: 'Free article rewriter online - no signup required. AI-powered article rewriter and paraphrase tool. Rewrite articles, essays, and text while maintaining meaning instantly. Multiple writing styles and tones. Paraphrase tool free online. Plagiarism-free rewriting.',
+    keywords: ['free article rewriter online', 'article rewriter', 'paraphrase tool free online', 'text rewriter', 'rewrite article', 'AI rewriter free', 'online rewriter', 'paraphrasing tool']
   },
   { 
     id: 'grammar-checker', 
@@ -52,9 +52,9 @@ const aiToolOptions: AIToolOption[] = [
     icon: '✅', 
     category: 'writing', 
     description: 'Check spelling, grammar, and style errors with AI-powered corrections',
-    seoTitle: 'Free Grammar Checker & Corrector - AI-Powered Grammar Check Tool | Online Grammar Checker',
-    seoDescription: 'Free AI-powered grammar checker and corrector. Check spelling, grammar, and style errors instantly. Get suggestions for improvements. Perfect for writers, students, and professionals. No registration required.',
-    keywords: ['grammar checker', 'grammar corrector', 'spell checker', 'grammar check', 'AI grammar checker', 'online grammar checker']
+    seoTitle: 'Free Grammar Checker Online - AI-Powered Grammar Check | No Signup',
+    seoDescription: 'Free grammar checker online - no signup required. AI-powered grammar checker and corrector. Check spelling, grammar, and style errors instantly. Get suggestions for improvements. AI grammar checker free. Perfect for writers, students, and professionals.',
+    keywords: ['free grammar checker online', 'grammar checker', 'AI grammar checker free', 'grammar corrector free online', 'spell checker', 'grammar check', 'AI grammar checker', 'online grammar checker']
   },
   { 
     id: 'language-translator', 
@@ -62,9 +62,9 @@ const aiToolOptions: AIToolOption[] = [
     icon: '🌐', 
     category: 'text', 
     description: 'Translate text between 30+ languages with AI-powered accuracy',
-    seoTitle: 'Free Language Translator - AI-Powered Translation Tool | Translate Text Online',
-    seoDescription: 'Free AI-powered language translator. Translate text between 30+ languages instantly. Preserve formatting, accurate translations. Perfect for students, travelers, and professionals. No registration required.',
-    keywords: ['language translator', 'text translator', 'online translator', 'translate text', 'AI translator', 'free translator']
+    seoTitle: 'Free Language Translator Online - AI-Powered Translation | No Signup',
+    seoDescription: 'Free language translator online - no signup required. AI-powered language translator. Translate text between 30+ languages instantly. Preserve formatting, accurate translations. AI translator free online. Perfect for students, travelers, and professionals.',
+    keywords: ['free language translator online', 'language translator', 'AI translator free online', 'text translator', 'online translator', 'translate text', 'AI translator', 'free translator']
   },
   { 
     id: 'keyword-extractor', 
@@ -72,9 +72,9 @@ const aiToolOptions: AIToolOption[] = [
     icon: '🔑', 
     category: 'text', 
     description: 'Extract keywords from text using AI, generate SEO keywords, and find related terms',
-    seoTitle: 'Free Keyword Extractor - AI-Powered Keyword Extraction Tool | Extract Keywords from Text',
-    seoDescription: 'Free AI-powered keyword extractor. Extract keywords from text, articles, and documents. Generate SEO keywords, find related keywords, and analyze keyword density. Perfect for content creators and SEO professionals. No registration required.',
-    keywords: ['keyword extractor', 'extract keywords', 'keyword generator', 'SEO keywords', 'keyword finder', 'AI keyword extractor']
+    seoTitle: 'Free Keyword Extractor Online - AI-Powered Keyword Extraction | No Signup',
+    seoDescription: 'Free keyword extractor online - no signup required. AI-powered keyword extractor. Extract keywords from text, articles, and documents instantly. Generate SEO keywords, find related keywords, analyze keyword density. Perfect for content creators and SEO professionals.',
+    keywords: ['free keyword extractor online', 'keyword extractor', 'extract keywords online', 'keyword generator', 'SEO keywords', 'keyword finder', 'AI keyword extractor free']
   },
 ];
 

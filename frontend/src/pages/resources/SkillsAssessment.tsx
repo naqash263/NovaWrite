@@ -30,10 +30,14 @@ const SkillsAssessment: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useSEO({
-    title: 'Free Skills Assessment Tool - AI-Powered Skill Analysis',
-    description: 'Assess your professional skills with AI-powered analysis. Get personalized skill recommendations, learning paths, and career development insights.',
+    title: 'Free Skills Assessment Tool Online - AI-Powered Skill Analysis | No Signup',
+    description: 'Free skills assessment tool online - no signup required. Assess your professional skills instantly with AI-powered analysis. Get personalized skill recommendations, learning paths, and career development insights. Perfect for career development.',
     url: '/resources/skills-assessment',
-    keywords: ['skills assessment', 'career tools', 'skill analysis', 'professional development', 'learning paths', 'AI guidance']
+    keywords: [
+      'free skills assessment tool', 'skills assessment', 'free skills assessment tool online', 'skill analysis', 'career tools',
+      'professional development', 'learning paths', 'AI guidance',
+      'free online skills assessment', 'skills test free'
+    ]
   });
 
   const skillCategories = [
@@ -835,10 +839,10 @@ const SkillsAssessment: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Skills Assessment Tool
+            Free Skills Assessment Tool Online
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Assess your professional skills across ALL industries with AI-powered analysis. Whether you're in healthcare, finance, education, marketing, or any other field - get personalized skill recommendations and career insights. We only ask for essential skill information - no personal details required!
+            Free skills assessment tool online - no signup required. Assess your professional skills across ALL industries instantly with AI-powered analysis. Whether you're in healthcare, finance, education, marketing, or any other field - get personalized skill recommendations and career insights. Perfect for career development. We only ask for essential skill information - no personal details required!
           </p>
           
           {/* API Key Manager */}

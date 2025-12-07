@@ -43,9 +43,9 @@ const converterOptions: ConverterOption[] = [
     icon: '📏', 
     category: 'measurement', 
     description: 'Convert between meters, feet, inches, kilometers, miles, and more',
-    seoTitle: 'Free Length Converter - Meters to Feet, Inches, Kilometers, Miles | Online Unit Converter',
-    seoDescription: 'Free online length converter. Convert meters to feet, inches to centimeters, kilometers to miles, and more. Instant, accurate conversions for all length units.',
-    keywords: ['length converter', 'meters to feet', 'inches to cm', 'km to miles', 'unit converter', 'distance converter']
+    seoTitle: 'Free Length Converter Online - Meters to Feet, Inches, Kilometers | No Signup',
+    seoDescription: 'Free length converter online - no signup required. Convert meters to feet, inches to centimeters, kilometers to miles instantly. Instant, accurate conversions for all length units. All calculations in your browser.',
+    keywords: ['free length converter online', 'length converter', 'meter to feet converter free', 'meters to feet', 'inches to cm', 'km to miles', 'unit converter', 'distance converter']
   },
   { 
     id: 'weight', 
@@ -53,9 +53,9 @@ const converterOptions: ConverterOption[] = [
     icon: '⚖️', 
     category: 'measurement', 
     description: 'Convert between kilograms, pounds, ounces, grams, and tons',
-    seoTitle: 'Free Weight Converter - Kilograms to Pounds, Ounces, Grams | Online Unit Converter',
-    seoDescription: 'Free online weight converter. Convert kilograms to pounds, ounces to grams, tons to kilograms, and more. Accurate weight conversions for all units.',
-    keywords: ['weight converter', 'kg to lbs', 'pounds to kg', 'ounces to grams', 'weight calculator']
+    seoTitle: 'Free Weight Converter Online - Kilograms to Pounds, Ounces, Grams | No Signup',
+    seoDescription: 'Free weight converter online - no signup required. Convert kilograms to pounds, ounces to grams, tons to kilograms instantly. Accurate weight conversions for all units. All calculations in your browser.',
+    keywords: ['free weight converter online', 'weight converter', 'kg to lbs converter free', 'kg to lbs', 'pounds to kg', 'ounces to grams', 'weight calculator']
   },
   { 
     id: 'volume', 
@@ -63,9 +63,9 @@ const converterOptions: ConverterOption[] = [
     icon: '🧪', 
     category: 'measurement', 
     description: 'Convert between liters, gallons, cups, milliliters, and fluid ounces',
-    seoTitle: 'Free Volume Converter - Liters to Gallons, Cups, Milliliters | Online Unit Converter',
-    seoDescription: 'Free online volume converter. Convert liters to gallons, cups to milliliters, fluid ounces to liters, and more. Accurate volume conversions for cooking and science.',
-    keywords: ['volume converter', 'liters to gallons', 'cups to ml', 'fluid ounces converter', 'volume calculator']
+    seoTitle: 'Free Volume Converter Online - Liters to Gallons, Cups, Milliliters | No Signup',
+    seoDescription: 'Free volume converter online - no signup required. Convert liters to gallons, cups to milliliters, fluid ounces to liters instantly. Accurate volume conversions for cooking and science. All calculations in your browser.',
+    keywords: ['free volume converter online', 'volume converter', 'liters to gallons converter free', 'liters to gallons', 'cups to ml', 'fluid ounces converter', 'volume calculator']
   },
   { 
     id: 'temperature', 
@@ -73,9 +73,9 @@ const converterOptions: ConverterOption[] = [
     icon: '🌡️', 
     category: 'measurement', 
     description: 'Convert between Celsius, Fahrenheit, and Kelvin',
-    seoTitle: 'Free Temperature Converter - Celsius to Fahrenheit, Kelvin | Online Unit Converter',
-    seoDescription: 'Free online temperature converter. Convert Celsius to Fahrenheit, Fahrenheit to Celsius, Kelvin conversions, and more. Accurate temperature conversions with reference points.',
-    keywords: ['temperature converter', 'celsius to fahrenheit', 'fahrenheit to celsius', 'kelvin converter', 'temp converter']
+    seoTitle: 'Free Temperature Converter Online - Celsius to Fahrenheit, Kelvin | No Signup',
+    seoDescription: 'Free temperature converter online - no signup required. Convert Celsius to Fahrenheit, Fahrenheit to Celsius, Kelvin conversions instantly. Accurate temperature conversions with reference points. All calculations in your browser.',
+    keywords: ['free temperature converter', 'temperature converter', 'celsius fahrenheit converter free', 'celsius to fahrenheit', 'fahrenheit to celsius', 'kelvin converter', 'temp converter']
   },
   { 
     id: 'area', 
@@ -83,9 +83,9 @@ const converterOptions: ConverterOption[] = [
     icon: '📐', 
     category: 'measurement', 
     description: 'Convert between square meters, square feet, acres, hectares, and more',
-    seoTitle: 'Free Area Converter - Square Meters to Square Feet, Acres, Hectares | Online Unit Converter',
-    seoDescription: 'Free online area converter. Convert square meters to square feet, acres to hectares, square yards to square meters, and more. Accurate area conversions for real estate and construction.',
-    keywords: ['area converter', 'square meters to square feet', 'acres to hectares', 'area calculator', 'square feet converter']
+    seoTitle: 'Free Area Converter Online - Square Meters to Square Feet, Acres | No Signup',
+    seoDescription: 'Free area converter online - no signup required. Convert square meters to square feet, acres to hectares, square yards to square meters instantly. Accurate area conversions for real estate and construction. All calculations in your browser.',
+    keywords: ['free area converter online', 'area converter', 'square meters to feet converter', 'square meters to square feet', 'acres to hectares', 'area calculator', 'square feet converter']
   },
   { 
     id: 'speed', 
@@ -93,9 +93,9 @@ const converterOptions: ConverterOption[] = [
     icon: '🚗', 
     category: 'measurement', 
     description: 'Convert between km/h, mph, m/s, knots, and more',
-    seoTitle: 'Free Speed Converter - KM/H to MPH, M/S, Knots | Online Unit Converter',
-    seoDescription: 'Free online speed converter. Convert km/h to mph, meters per second to miles per hour, knots to km/h, and more. Accurate speed conversions for travel and science.',
-    keywords: ['speed converter', 'kmh to mph', 'mph to kmh', 'knots converter', 'speed calculator']
+    seoTitle: 'Free Speed Converter Online - KM/H to MPH, M/S, Knots | No Signup',
+    seoDescription: 'Free speed converter online - no signup required. Convert km/h to mph, meters per second to miles per hour, knots to km/h instantly. Accurate speed conversions for travel and science. All calculations in your browser.',
+    keywords: ['free speed converter online', 'speed converter', 'kmh to mph converter free', 'kmh to mph', 'mph to kmh', 'knots converter', 'speed calculator']
   },
   
   // Utility Converters
@@ -105,9 +105,9 @@ const converterOptions: ConverterOption[] = [
     icon: '💱', 
     category: 'utility', 
     description: 'Convert between different currencies with real-time exchange rates',
-    seoTitle: 'Free Currency Converter - Real-Time Exchange Rates | 60+ Currencies Worldwide',
-    seoDescription: 'Free online currency converter with real-time exchange rates. Convert between 60+ currencies including USD, EUR, GBP, JPY, CNY, INR, AED, SAR, BRL, KRW, and more. Live exchange rates updated automatically every 5 minutes.',
-    keywords: ['currency converter', 'exchange rate', 'usd to eur', 'gbp to usd', 'currency calculator', 'forex converter', '60 currencies', 'world currencies', 'real-time exchange rates', 'currency conversion tool']
+    seoTitle: 'Free Currency Converter Online - Real-Time Exchange Rates | No Signup',
+    seoDescription: 'Free currency converter online - no signup required. Convert between 60+ currencies instantly with real-time exchange rates including USD, EUR, GBP, JPY, CNY, INR, AED, SAR, BRL, KRW, and more. Currency exchange calculator free. Live exchange rates updated automatically every 5 minutes.',
+    keywords: ['free currency converter online', 'currency converter', 'currency exchange calculator free', 'exchange rate', 'usd to eur', 'gbp to usd', 'currency calculator', 'forex converter', '60 currencies', 'world currencies', 'real-time exchange rates']
   },
   { 
     id: 'timezone', 
@@ -115,9 +115,9 @@ const converterOptions: ConverterOption[] = [
     icon: '🌍', 
     category: 'utility', 
     description: 'Convert time between different time zones around the world',
-    seoTitle: 'Free Time Zone Converter - Convert Time Between Time Zones | UTC, EST, PST, GMT',
-    seoDescription: 'Free online time zone converter. Convert time between UTC, EST, PST, GMT, IST, JST, and 18+ time zones. Perfect for scheduling meetings and travel planning.',
-    keywords: ['time zone converter', 'utc converter', 'est to pst', 'time converter', 'world clock']
+    seoTitle: 'Free Time Zone Converter Online - Convert Time Between Zones | No Signup',
+    seoDescription: 'Free time zone converter online - no signup required. Convert time between UTC, EST, PST, GMT, IST, JST, and 18+ time zones instantly. Time zone calculator free. Perfect for scheduling meetings and travel planning. All calculations in your browser.',
+    keywords: ['free time zone converter', 'time zone converter', 'time zone calculator free', 'utc converter', 'est to pst', 'time converter', 'world clock']
   },
   { 
     id: 'date', 
@@ -125,9 +125,9 @@ const converterOptions: ConverterOption[] = [
     icon: '📅', 
     category: 'utility', 
     description: 'Calculate age, date differences, and time durations',
-    seoTitle: 'Free Date Calculator - Age Calculator, Date Difference, Add/Subtract Days',
-    seoDescription: 'Free online date calculator. Calculate age from birth date, find date differences, add or subtract days from dates. Perfect for planning and age calculations.',
-    keywords: ['date calculator', 'age calculator', 'date difference', 'add days to date', 'date tool']
+    seoTitle: 'Free Date Calculator Online - Age Calculator, Date Difference | No Signup',
+    seoDescription: 'Free date calculator online - no signup required. Calculate age from birth date, find date differences, add or subtract days from dates instantly. Age calculator free online. Perfect for planning and age calculations. All calculations in your browser.',
+    keywords: ['free date calculator online', 'date calculator', 'age calculator free online', 'age calculator', 'date difference', 'add days to date', 'date tool']
   },
   
   // Technical Converters
@@ -137,9 +137,9 @@ const converterOptions: ConverterOption[] = [
     icon: '🔢', 
     category: 'technical', 
     description: 'Convert between binary, decimal, hexadecimal, and octal',
-    seoTitle: 'Free Number System Converter - Binary to Decimal, Hex to Decimal, Octal Converter',
-    seoDescription: 'Free online number system converter. Convert binary to decimal, hexadecimal to decimal, octal to binary, and more. Perfect for programming and computer science.',
-    keywords: ['number system converter', 'binary to decimal', 'hex to decimal', 'octal converter', 'base converter']
+    seoTitle: 'Free Number System Converter Online - Binary to Decimal, Hex | No Signup',
+    seoDescription: 'Free number system converter online - no signup required. Convert binary to decimal, hexadecimal to decimal, octal to binary instantly. Binary to decimal converter free. Perfect for programming and computer science. All calculations in your browser.',
+    keywords: ['free number system converter', 'number system converter', 'binary to decimal converter free', 'binary to decimal', 'hex to decimal', 'octal converter', 'base converter']
   },
   { 
     id: 'text', 
@@ -147,9 +147,9 @@ const converterOptions: ConverterOption[] = [
     icon: '📝', 
     category: 'technical', 
     description: 'Case converter, URL encoder/decoder, Base64, and text transformations',
-    seoTitle: 'Free Text Converter - Case Converter, URL Encoder, Base64 Encoder/Decoder',
-    seoDescription: 'Free online text converter. Convert text case (uppercase, lowercase, title case), URL encode/decode, Base64 encode/decode, text to binary, and more. Essential web development tools.',
-    keywords: ['text converter', 'case converter', 'url encoder', 'base64 encoder', 'text to binary']
+    seoTitle: 'Free Text Converter Online - Case Converter, URL Encoder | No Signup',
+    seoDescription: 'Free text converter online - no signup required. Convert text case (uppercase, lowercase, title case), URL encode/decode, Base64 encode/decode, text to binary instantly. Essential web development tools. All processing in your browser.',
+    keywords: ['free text converter online', 'text converter', 'case converter', 'url encoder', 'base64 encoder', 'text to binary']
   },
   { 
     id: 'color', 
@@ -157,9 +157,9 @@ const converterOptions: ConverterOption[] = [
     icon: '🎨', 
     category: 'technical', 
     description: 'Convert between RGB, HEX, HSL, and other color formats',
-    seoTitle: 'Free Color Converter - RGB to HEX, HEX to RGB, HSL Color Converter',
-    seoDescription: 'Free online color converter. Convert RGB to HEX, HEX to RGB, HSL to RGB, and more. Live color preview with interactive color picker. Perfect for web design and graphics.',
-    keywords: ['color converter', 'rgb to hex', 'hex to rgb', 'hsl converter', 'color picker']
+    seoTitle: 'Free Color Converter Online - RGB to HEX, HEX to RGB, HSL | No Signup',
+    seoDescription: 'Free color converter online - no signup required. Convert RGB to HEX, HEX to RGB, HSL to RGB instantly. RGB to HEX converter free. Live color preview with interactive color picker. Perfect for web design and graphics. All processing in your browser.',
+    keywords: ['free color converter online', 'color converter', 'RGB to HEX converter free', 'rgb to hex', 'hex to rgb', 'hsl converter', 'color picker']
   },
   { 
     id: 'filesize', 
@@ -167,9 +167,9 @@ const converterOptions: ConverterOption[] = [
     icon: '💾', 
     category: 'technical', 
     description: 'Convert between bytes, KB, MB, GB, TB, and PB',
-    seoTitle: 'Free File Size Converter - Bytes to KB, MB to GB, TB Converter',
-    seoDescription: 'Free online file size converter. Convert bytes to KB, MB to GB, GB to TB, and more. Accurate file size conversions with examples. Perfect for storage calculations.',
-    keywords: ['file size converter', 'bytes to kb', 'mb to gb', 'gb to tb', 'file size calculator']
+    seoTitle: 'Free File Size Converter Online - Bytes to KB, MB to GB, TB | No Signup',
+    seoDescription: 'Free file size converter online - no signup required. Convert bytes to KB, MB to GB, GB to TB instantly. MB to GB converter free. Accurate file size conversions with examples. Perfect for storage calculations. All calculations in your browser.',
+    keywords: ['free file size converter', 'file size converter', 'MB to GB converter free', 'bytes to kb', 'mb to gb', 'gb to tb', 'file size calculator']
   },
   
   // Health & Life Calculators
@@ -179,9 +179,9 @@ const converterOptions: ConverterOption[] = [
     icon: '📊', 
     category: 'health', 
     description: 'Calculate percentages, increases, decreases, and discounts',
-    seoTitle: 'Free Percentage Calculator - Calculate Percentages, Discounts, Increases',
-    seoDescription: 'Free online percentage calculator. Calculate what percentage is X of Y, percentage increase/decrease, discounts, and more. Perfect for math, finance, and shopping.',
-    keywords: ['percentage calculator', 'discount calculator', 'percentage increase', 'percentage decrease', 'percent calculator']
+    seoTitle: 'Free Percentage Calculator Online - Calculate Percentages, Discounts | No Signup',
+    seoDescription: 'Free percentage calculator online - no signup required. Calculate what percentage is X of Y, percentage increase/decrease, discounts instantly. Perfect for math, finance, and shopping. All calculations in your browser.',
+    keywords: ['free percentage calculator online', 'percentage calculator', 'discount calculator', 'percentage increase', 'percentage decrease', 'percent calculator']
   },
   { 
     id: 'bmi', 
@@ -189,9 +189,9 @@ const converterOptions: ConverterOption[] = [
     icon: '🏥', 
     category: 'health', 
     description: 'Calculate Body Mass Index and health recommendations',
-    seoTitle: 'Free BMI Calculator - Calculate Body Mass Index with Health Categories',
-    seoDescription: 'Free online BMI calculator. Calculate your Body Mass Index (BMI) using metric or imperial units. Get health category recommendations and understand your BMI score.',
-    keywords: ['bmi calculator', 'body mass index', 'bmi calculator metric', 'bmi calculator imperial', 'health calculator']
+    seoTitle: 'Free BMI Calculator Online - Calculate Body Mass Index | No Signup',
+    seoDescription: 'Free BMI calculator online - no signup required. Calculate your Body Mass Index (BMI) instantly using metric or imperial units. BMI calculator free. Get health category recommendations and understand your BMI score. All calculations in your browser.',
+    keywords: ['free BMI calculator online', 'BMI calculator', 'BMI calculator free', 'body mass index', 'bmi calculator metric', 'bmi calculator imperial', 'health calculator']
   },
 ];
 

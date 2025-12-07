@@ -28,10 +28,14 @@ const InterviewPrep: React.FC = () => {
   const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
 
   useSEO({
-    title: 'Interview Preparation Tool - AI-Powered Practice & Guidance | Naqash Thaheem',
-    description: 'Ace your next interview with AI-powered preparation. Get practice questions, STAR method guidance, company research, and personalized feedback.',
+    title: 'Free Interview Prep Tool Online - AI-Powered Practice & Guidance | No Signup',
+    description: 'Free interview prep tool online - no signup required. Ace your next interview instantly with AI-powered preparation. Get practice questions, STAR method guidance, company research, and personalized feedback. Perfect for job seekers.',
     url: '/resources/interview-prep',
-    keywords: ['interview preparation', 'practice questions', 'STAR method', 'career tools', 'AI guidance', 'job interview']
+    keywords: [
+      'free interview prep tool', 'interview preparation', 'free interview prep tool online', 'online interview preparation tool', 'practice questions',
+      'STAR method', 'career tools', 'AI guidance', 'job interview',
+      'free online interview prep', 'interview practice tool free'
+    ]
   });
 
   const steps = [
@@ -503,10 +507,10 @@ const InterviewPrep: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Interview Preparation Tool
+            Free Interview Prep Tool Online
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Ace your next interview with AI-powered preparation. Get practice questions, 
+            Free interview prep tool online - no signup required. Ace your next interview instantly with AI-powered preparation. Get practice questions, 
             STAR method guidance, company research, and personalized feedback.
           </p>
           

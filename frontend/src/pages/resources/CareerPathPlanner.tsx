@@ -29,10 +29,14 @@ const CareerPathPlanner: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useSEO({
-    title: 'Career Path Planner - AI-Powered Career Guidance | Naqash Thaheem',
-    description: 'Plan your career journey with AI-powered guidance. Get personalized career paths, skill recommendations, and strategic advice for professional growth.',
+    title: 'Free Career Path Planner Online - AI-Powered Career Guidance | No Signup',
+    description: 'Free career path planner online - no signup required. Plan your career journey instantly with AI-powered guidance. Get personalized career paths, skill recommendations, and strategic advice for professional growth. Perfect for career development.',
     url: '/resources/career-path-planner',
-    keywords: ['career planning', 'career path', 'professional development', 'career guidance', 'AI tools', 'career growth']
+    keywords: [
+      'free career path planner', 'career planning', 'free career path planner online', 'career path', 'professional development',
+      'career guidance', 'AI tools', 'career growth',
+      'free online career planner', 'career planning tool free'
+    ]
   });
 
   const steps = [
@@ -532,10 +536,10 @@ const CareerPathPlanner: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Career Path Planner
+            Free Career Path Planner Online
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Plan your career journey with AI-powered guidance. Get personalized career paths, 
+            Free career path planner online - no signup required. Plan your career journey instantly with AI-powered guidance. Get personalized career paths, 
             skill recommendations, and strategic advice for professional growth.
           </p>
           

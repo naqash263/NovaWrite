@@ -29,10 +29,14 @@ const SalaryNegotiation: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useSEO({
-    title: 'Salary Negotiation Tool - AI-Powered Negotiation Guidance | Naqash Thaheem',
-    description: 'Master salary negotiations with AI-powered guidance. Get market research, negotiation scripts, and industry-specific strategies to maximize your earning potential.',
+    title: 'Free Salary Negotiation Calculator Online - AI-Powered Guidance | No Signup',
+    description: 'Free salary negotiation calculator online - no signup required. Master salary negotiations instantly with AI-powered guidance. Get market research, negotiation scripts, and industry-specific strategies to maximize your earning potential. Perfect for job seekers.',
     url: '/resources/salary-negotiation',
-    keywords: ['salary negotiation', 'career tools', 'AI guidance', 'negotiation scripts', 'market research', 'career advancement']
+    keywords: [
+      'free salary negotiation calculator', 'salary negotiation', 'free salary negotiation calculator online', 'salary negotiation tool', 'career tools',
+      'AI guidance', 'negotiation scripts', 'market research', 'career advancement',
+      'free online salary negotiation', 'salary calculator free'
+    ]
   });
 
   const steps = [
@@ -427,10 +431,10 @@ const SalaryNegotiation: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Salary Negotiation Tool
+            Free Salary Negotiation Calculator Online
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Master salary negotiations with AI-powered guidance. Get market research, 
+            Free salary negotiation calculator online - no signup required. Master salary negotiations instantly with AI-powered guidance. Get market research, 
             negotiation scripts, and industry-specific strategies to maximize your earning potential.
           </p>
           
