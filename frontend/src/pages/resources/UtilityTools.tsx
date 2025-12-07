@@ -34,7 +34,6 @@ import MarkdownPreview from '../../components/tools/MarkdownPreview';
 import FileConverter from '../../components/tools/FileConverter';
 import DocumentConverter from '../../components/tools/DocumentConverter';
 import ExcelCsvConverter from '../../components/tools/ExcelCsvConverter';
-import AudioConverter from '../../components/tools/AudioConverter';
 import TokenCounter from '../../components/tools/TokenCounter';
 
 type ToolType = 
@@ -45,7 +44,7 @@ type ToolType =
   | 'regex-tester' | 'uuid-generator' | 'jwt-decoder' | 'text-to-image'
   | 'lorem-ipsum-generator' | 'text-case-converter' | 'hash-generator' | 'image-compressor'
   | 'sql-formatter' | 'css-formatter' | 'html-formatter' | 'image-format-converter' | 'color-picker' | 'markdown-preview' | 'file-converter' | 'document-converter'
-  | 'excel-csv-converter' | 'audio-converter' | 'token-counter';
+  | 'excel-csv-converter' | 'token-counter';
 
 interface ToolOption {
   id: ToolType;
@@ -370,16 +369,6 @@ const toolOptions: ToolOption[] = [
     keywords: ['free excel csv converter online', 'excel csv converter', 'excel to csv converter', 'csv to excel', 'xlsx to csv', 'csv to xlsx', 'excel converter', 'csv converter']
   },
   { 
-    id: 'audio-converter', 
-    name: 'Audio Converter', 
-    icon: '🎵', 
-    category: 'productivity', 
-    description: 'Convert audio files between MP3, WAV, and other formats',
-    seoTitle: 'Free Audio Converter MP3 WAV Online - Convert Audio Files | No Signup',
-    seoDescription: 'Free audio converter mp3 wav online - no signup required. Convert MP3 to WAV, WAV to MP3, and other audio formats instantly. Perfect for audio editing, compatibility, and professional use. Secure server-side processing, download converted files.',
-    keywords: ['free audio converter mp3 wav', 'audio converter', 'mp3 to wav converter', 'wav to mp3', 'mp3 converter', 'wav converter', 'audio format converter']
-  },
-  { 
     id: 'token-counter', 
     name: 'Token Counter', 
     icon: '🔢', 
@@ -521,7 +510,6 @@ export default function UtilityTools() {
       case 'file-converter': return <FileConverter />;
       case 'document-converter': return <DocumentConverter />;
       case 'excel-csv-converter': return <ExcelCsvConverter />;
-      case 'audio-converter': return <AudioConverter />;
       case 'token-counter': return <TokenCounter />;
       default: return <PasswordGenerator />;
     }
