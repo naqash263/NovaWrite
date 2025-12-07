@@ -3,7 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Models\IssueCategory;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 return new class extends Migration
 {
@@ -12,8 +13,15 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Check if table exists first
+        if (!Schema::hasTable('issue_categories')) {
+            Log::warning('issue_categories table does not exist, skipping category seeding');
+            return;
+        }
+
         // Only seed if categories don't exist
-        if (IssueCategory::count() === 0) {
+        $existingCount = DB::table('issue_categories')->count();
+        if ($existingCount === 0) {
             $categories = [
                 [
                     'name' => 'Technical Support',
@@ -99,8 +107,26 @@ return new class extends Migration
             ];
 
             foreach ($categories as $categoryData) {
-                IssueCategory::create($categoryData);
+                DB::table('issue_categories')->insert([
+                    'name' => $categoryData['name'],
+                    'slug' => $categoryData['slug'],
+                    'description' => $categoryData['description'],
+                    'color' => $categoryData['color'],
+                    'icon' => $categoryData['icon'],
+                    'is_active' => $categoryData['is_active'],
+                    'sort_order' => $categoryData['sort_order'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
             }
+            
+            Log::info('Issue categories seeded successfully', [
+                'count' => count($categories)
+            ]);
+        } else {
+            Log::info('Issue categories already exist, skipping seed', [
+                'existing_count' => $existingCount
+            ]);
         }
     }
 
