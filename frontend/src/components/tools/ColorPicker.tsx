@@ -8,13 +8,14 @@ export default function ColorPicker() {
   const [hex, setHex] = useState<string>('#3b82f6');
 
   useSEO({
-    title: 'Free Color Picker - RGB, HEX, HSL Color Picker Online | Color Palette Generator',
-    description: 'Free online color picker. Pick colors with visual color picker, get RGB, HEX, HSL values. Generate color palettes, extract colors from images. Perfect for designers and developers. No registration required.',
+    title: 'Free Color Picker Online - RGB, HEX, HSL Picker | No Signup',
+    description: 'Free color picker online - no signup required. Pick colors with visual color picker, get RGB, HEX, HSL values instantly. Generate color palettes, extract colors from images. Perfect for designers and developers. All processing in your browser.',
     url: '/resources/utility-tools/color-picker',
     keywords: [
-      'color picker', 'RGB color picker', 'HEX color picker', 'HSL color picker',
-      'color palette generator', 'color picker online', 'free color picker',
-      'color picker tool', 'web color picker', 'color selector'
+      'free color picker online', 'color picker', 'free color picker', 'color picker online', 'online color picker',
+      'RGB color picker', 'HEX color picker', 'HSL color picker',
+      'color palette generator', 'free color picker tool', 'web color picker', 'color selector',
+      'RGB HEX color picker', 'free online color picker'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -143,9 +144,9 @@ export default function ColorPicker() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Color Picker</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Color Picker Online</h1>
         <p className="text-gray-600 mb-6">
-          Pick colors visually and get RGB, HEX, and HSL values. Generate color palettes and copy color codes.
+          Free color picker online - no signup required. Pick colors visually and get RGB, HEX, and HSL values instantly. Generate color palettes, extract colors from images, copy color codes. Perfect for designers and developers. All processing in your browser.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

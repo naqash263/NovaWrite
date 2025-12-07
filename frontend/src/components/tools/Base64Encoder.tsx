@@ -8,12 +8,13 @@ export default function Base64Encoder() {
   const [error, setError] = useState<string>('');
 
   useSEO({
-    title: 'Free Base64 Encoder & Decoder - Encode Decode Base64 Online | Base64 Converter',
-    description: 'Free online Base64 encoder and decoder. Encode text to Base64 or decode Base64 to text. Instant conversion, copy to clipboard. Perfect for developers and data encoding.',
+    title: 'Free Base64 Encoder Decoder Online - Encode Decode Base64 | No Signup',
+    description: 'Free base64 encoder decoder online - no signup required. Encode text to Base64 or decode Base64 to text instantly. UTF-8 support, real-time conversion, copy to clipboard. Perfect for developers and data encoding. All processing in your browser.',
     url: '/resources/utility-tools/base64-encoder',
     keywords: [
+      'free base64 encoder decoder online', 'base64 encoder decoder', 'free base64 encoder decoder', 'base64 encoder decoder online',
       'Base64 encoder', 'Base64 decoder', 'Base64 converter', 'encode Base64',
-      'decode Base64', 'Base64 encode decode', 'Base64 tool', 'online Base64'
+      'decode Base64', 'Base64 encode decode', 'Base64 tool', 'online Base64', 'free base64 encoder', 'free base64 decoder'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -112,10 +113,10 @@ export default function Base64Encoder() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔐 Base64 Encoder & Decoder
+          🔐 Free Base64 Encoder Decoder Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Encode text to Base64 or decode Base64 to text. Instant conversion with UTF-8 support.
+          Free base64 encoder decoder online - no signup required. Encode text to Base64 or decode Base64 to text instantly. Real-time conversion with UTF-8 support. All processing happens in your browser for maximum security.
         </p>
 
         {/* Mode Selector */}

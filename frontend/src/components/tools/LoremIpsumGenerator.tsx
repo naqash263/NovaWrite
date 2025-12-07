@@ -44,13 +44,14 @@ export default function LoremIpsumGenerator() {
   const [startWithLorem, setStartWithLorem] = useState<boolean>(true);
 
   useSEO({
-    title: 'Free Lorem Ipsum Generator - Generate Placeholder Text Online | Lorem Ipsum Text Generator',
-    description: 'Free online Lorem Ipsum generator. Generate placeholder text in paragraphs, words, or sentences. Multiple text types: Lorem Ipsum, Bacon Ipsum, Cupcake Ipsum, Hipster Ipsum. Copy to clipboard. No registration required.',
+    title: 'Free Online Lorem Ipsum Generator - Generate Placeholder Text | No Download Required',
+    description: 'Free online lorem ipsum generator - no download required. Generate placeholder text in paragraphs, words, or sentences. Multiple text types: Lorem Ipsum, Bacon Ipsum, Cupcake Ipsum, Hipster Ipsum. Copy to clipboard instantly. No registration required.',
     url: '/resources/utility-tools/lorem-ipsum-generator',
     keywords: [
-      'lorem ipsum generator', 'lorem ipsum', 'placeholder text generator', 'dummy text generator',
+      'free online lorem ipsum generator', 'lorem ipsum generator', 'free lorem ipsum generator', 'online lorem ipsum generator',
+      'lorem ipsum generator no download', 'placeholder text generator', 'dummy text generator',
       'lorem ipsum text', 'generate lorem ipsum', 'bacon ipsum', 'cupcake ipsum', 'hipster ipsum',
-      'placeholder text', 'dummy text', 'text generator', 'online lorem ipsum'
+      'placeholder text', 'dummy text', 'text generator', 'online lorem ipsum', 'free placeholder text generator'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -163,9 +164,9 @@ export default function LoremIpsumGenerator() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Lorem Ipsum Generator</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Online Lorem Ipsum Generator</h1>
         <p className="text-gray-600 mb-6">
-          Generate placeholder text for your designs, mockups, and prototypes. Choose from multiple text types and formats.
+          Free online lorem ipsum generator - no download required. Generate placeholder text for your designs, mockups, and prototypes. Choose from multiple text types and formats. Perfect for web designers and developers.
         </p>
 
         <div className="space-y-6">

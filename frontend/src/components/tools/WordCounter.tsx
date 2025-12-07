@@ -14,13 +14,14 @@ export default function WordCounter() {
   });
 
   useSEO({
-    title: 'Free Word Counter & Text Analyzer - Character Count, Word Count Tool | Online Text Counter',
-    description: 'Free online word counter and text analyzer. Count characters, words, sentences, paragraphs. Calculate reading time and speaking time. Perfect for writers, students, and content creators.',
+    title: 'Free Word Counter Online - Character Count, Word Count Tool | No Signup',
+    description: 'Free word counter online - no signup required. Count characters, words, sentences, paragraphs instantly. Calculate reading time and speaking time. Text analyzer with comprehensive statistics. Perfect for writers, students, and content creators. All processing in your browser.',
     url: '/resources/utility-tools/word-counter',
     keywords: [
-      'word counter', 'character counter', 'text analyzer', 'word count',
+      'free word counter online', 'word counter', 'free word counter', 'word counter online', 'character counter free online',
+      'character counter', 'text analyzer online free', 'word count',
       'character count', 'text counter', 'reading time calculator', 'text statistics',
-      'online word counter', 'free word counter', 'text analysis tool'
+      'online word counter', 'text analysis tool', 'free online word counter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -121,10 +122,10 @@ export default function WordCounter() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          📊 Word Counter & Text Analyzer
+          📊 Free Word Counter Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Count characters, words, sentences, and paragraphs. Analyze your text with detailed statistics and insights.
+          Free word counter online - no signup required. Count characters, words, sentences, and paragraphs instantly. Analyze your text with detailed statistics, reading time, and speaking time. Perfect for writers, students, and content creators. All processing in your browser.
         </p>
 
         {/* Stats Grid */}

@@ -12,13 +12,14 @@ export default function ImageFormatConverter() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free Image Format Converter - Convert JPEG, PNG, GIF, WebP Online | Image Converter',
-    description: 'Free online image format converter. Convert images between JPEG, PNG, GIF, WebP, and BMP formats. Maintain quality, adjust compression. Download converted images instantly. No registration required.',
+    title: 'Free Image Format Converter Online - Convert JPEG, PNG, GIF, WebP | No Signup',
+    description: 'Free image format converter online - no signup required. Convert images between JPEG, PNG, GIF, WebP, and BMP formats instantly. Maintain quality, adjust compression, download converted images. All processing in your browser.',
     url: '/resources/utility-tools/image-format-converter',
     keywords: [
-      'image format converter', 'convert image format', 'JPEG to PNG', 'PNG to JPEG',
+      'free image format converter online', 'image format converter', 'free image format converter', 'image format converter online', 'convert image format online',
+      'convert image format', 'JPEG to PNG', 'PNG to JPEG',
       'image converter', 'format converter', 'online image converter', 'free image converter',
-      'convert image', 'image format changer'
+      'convert image', 'image format changer', 'free online image converter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -166,9 +167,9 @@ export default function ImageFormatConverter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Image Format Converter</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Image Format Converter Online</h1>
         <p className="text-gray-600 mb-6">
-          Convert images between different formats: JPEG, PNG, GIF, WebP, and BMP. All processing happens in your browser.
+          Free image format converter online - no signup required. Convert images between JPEG, PNG, GIF, WebP, and BMP formats instantly. Maintain quality, adjust compression, download converted images. All processing happens in your browser.
         </p>
 
         {/* File Upload */}

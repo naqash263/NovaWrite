@@ -16,13 +16,14 @@ export default function DocumentConverter() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free Document Converter - Word to PDF, PDF to Word, DOCX Converter Online | Document Format Converter',
-    description: 'Free online document converter. Convert Word to PDF, PDF to Word, DOCX to PDF, PDF to DOCX, and more. All conversions happen securely on our server. No registration required.',
+    title: 'Free Document Converter Word PDF - Convert Word to PDF Online | No Signup',
+    description: 'Free document converter word pdf - no signup required. Convert Word to PDF, PDF to Word, DOCX to PDF, PDF to DOCX instantly. Secure server-side processing, download converted files. Perfect for document management.',
     url: '/resources/utility-tools/document-converter',
     keywords: [
-      'document converter', 'word to pdf', 'pdf to word', 'docx to pdf', 'pdf to docx',
+      'free document converter word pdf', 'document converter', 'free document converter', 'document converter word pdf', 'word to pdf converter',
+      'word to pdf', 'pdf to word', 'docx to pdf', 'pdf to docx',
       'word converter', 'pdf converter', 'document format converter', 'online document converter',
-      'free document converter', 'docx converter', 'file converter'
+      'docx converter', 'file converter', 'free online document converter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -168,9 +169,9 @@ export default function DocumentConverter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Document Converter</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Document Converter Word PDF</h1>
         <p className="text-gray-600 mb-6">
-          Convert documents between PDF, Word (DOCX), and TXT formats. Secure server-side processing.
+          Free document converter word pdf - no signup required. Convert Word to PDF, PDF to Word, DOCX to PDF, PDF to DOCX instantly. Secure server-side processing, download converted files. Perfect for document management and sharing.
         </p>
 
         {/* File Upload */}

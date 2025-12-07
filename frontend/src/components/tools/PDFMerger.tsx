@@ -17,12 +17,13 @@ export default function PDFMerger() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free PDF Merger - Combine Multiple PDFs Online | Merge PDF Files',
-    description: 'Free online PDF merger. Combine multiple PDF files into one document. Drag and drop reordering, preview before merging. No registration required. All processing happens in your browser.',
+    title: 'Free PDF Merger Online - Combine Multiple PDFs | No Signup',
+    description: 'Free PDF merger online - no signup required. Combine multiple PDF files into one document instantly. Drag and drop reordering, preview before merging. All processing happens in your browser. Perfect for document management.',
     url: '/resources/utility-tools/pdf-merger',
     keywords: [
-      'PDF merger', 'merge PDF', 'combine PDF', 'PDF combiner', 'merge PDF files',
-      'online PDF merger', 'free PDF merger', 'PDF joiner', 'combine PDF documents'
+      'free PDF merger online', 'PDF merger', 'free PDF merger', 'PDF merger online', 'merge PDF files free online',
+      'merge PDF', 'combine PDF', 'PDF combiner', 'merge PDF files',
+      'online PDF merger', 'PDF joiner', 'combine PDF documents', 'free online PDF merger'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -164,10 +165,10 @@ export default function PDFMerger() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔗 PDF Merger
+          🔗 Free PDF Merger Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Combine multiple PDF files into one document. All processing happens in your browser - your files never leave your device.
+          Free PDF merger online - no signup required. Combine multiple PDF files into one document instantly. Drag and drop reordering, preview before merging. All processing happens in your browser - your files never leave your device.
         </p>
 
         {/* Stats */}

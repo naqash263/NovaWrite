@@ -72,12 +72,13 @@ export default function TokenCounter() {
   const [sentenceCount, setSentenceCount] = useState<number>(0);
 
   useSEO({
-    title: 'Free Token Counter - Count Tokens for AI Models (GPT, Claude, Gemini) | Token Calculator',
-    description: 'Free online token counter for AI models. Count tokens for GPT-3.5, GPT-4, Claude, Gemini, and other AI models. Estimate API costs and track token usage. No registration required.',
+    title: 'Free Token Counter AI Models - Count GPT, Claude, Gemini Tokens | No Signup',
+    description: 'Free token counter AI models - no signup required. Count tokens for GPT-3.5, GPT-4, Claude, Gemini, and other AI models instantly. Estimate API costs and track token usage. Perfect for AI developers. All processing in your browser.',
     url: '/resources/utility-tools/token-counter',
     keywords: [
-      'token counter', 'token calculator', 'gpt token counter', 'claude token counter',
-      'ai token counter', 'openai token counter', 'token count', 'gpt-4 tokens',
+      'free token counter AI models', 'token counter', 'free token counter', 'token counter AI models', 'AI token counter',
+      'token calculator', 'gpt token counter', 'claude token counter',
+      'openai token counter', 'token count', 'gpt-4 tokens',
       'claude tokens', 'gemini tokens', 'llm token counter', 'api token calculator'
     ],
     structuredData: 'custom',
@@ -175,10 +176,9 @@ export default function TokenCounter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Token Counter</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Token Counter AI Models</h1>
         <p className="text-gray-600 mb-6">
-          Count tokens for AI models like GPT-3.5, GPT-4, Claude, Gemini, and more. 
-          Estimate API costs and track token usage for your AI applications.
+          Free token counter AI models - no signup required. Count tokens for GPT-3.5, GPT-4, Claude, Gemini, and other AI models instantly. Estimate API costs and track token usage. Perfect for AI developers. All processing in your browser.
         </p>
 
         {/* Model Selection */}

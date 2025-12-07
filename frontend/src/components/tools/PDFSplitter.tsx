@@ -13,12 +13,13 @@ export default function PDFSplitter() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free PDF Splitter - Split PDF Pages Online | Extract PDF Pages',
-    description: 'Free online PDF splitter. Extract specific pages from PDF, split PDF into multiple files, or extract page ranges. All processing happens in your browser. No registration required.',
+    title: 'Free PDF Splitter Online - Split PDF Pages | No Signup',
+    description: 'Free PDF splitter online - no signup required. Extract specific pages from PDF, split PDF into multiple files, or extract page ranges instantly. All processing happens in your browser. Perfect for document management.',
     url: '/resources/utility-tools/pdf-splitter',
     keywords: [
-      'PDF splitter', 'split PDF', 'extract PDF pages', 'PDF page extractor',
-      'split PDF online', 'free PDF splitter', 'PDF page remover', 'extract pages from PDF'
+      'free PDF splitter online', 'PDF splitter', 'free PDF splitter', 'PDF splitter online', 'split PDF pages free',
+      'split PDF', 'extract PDF pages', 'PDF page extractor',
+      'split PDF online', 'PDF page remover', 'extract pages from PDF', 'free online PDF splitter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -221,10 +222,10 @@ export default function PDFSplitter() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          ✂️ PDF Splitter
+          ✂️ Free PDF Splitter Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Split PDF files into individual pages or extract specific pages. All processing happens in your browser.
+          Free PDF splitter online - no signup required. Split PDF files into individual pages or extract specific pages instantly. Extract page ranges, split by pages. All processing happens in your browser. Perfect for document management.
         </p>
 
         {/* Stats */}

@@ -15,12 +15,13 @@ export default function JWTDecoder() {
   const [error, setError] = useState<string>('');
 
   useSEO({
-    title: 'Free JWT Decoder - Decode JWT Tokens Online | JWT Token Decoder',
-    description: 'Free online JWT decoder. Decode JWT tokens to view header and payload. Pretty print JSON, validate structure. Perfect for debugging JWT tokens.',
+    title: 'Free JWT Decoder Online - Decode JWT Tokens | No Signup Required',
+    description: 'Free JWT decoder online - no signup required. Decode JWT tokens to view header and payload instantly. Pretty print JSON, validate structure, view token claims. Perfect for debugging JWT tokens. All processing in your browser.',
     url: '/resources/utility-tools/jwt-decoder',
     keywords: [
-      'JWT decoder', 'decode JWT', 'JWT token decoder', 'JWT parser',
-      'online JWT decoder', 'JWT header payload', 'decode JWT token', 'JWT tool'
+      'free JWT decoder online', 'JWT decoder', 'free JWT decoder', 'JWT decoder online', 'decode JWT online',
+      'decode JWT', 'JWT token decoder', 'JWT parser',
+      'online JWT decoder', 'JWT header payload', 'decode JWT token', 'JWT tool', 'free JWT token decoder'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -122,10 +123,10 @@ export default function JWTDecoder() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔓 JWT Decoder
+          🔓 Free JWT Decoder Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Decode JWT tokens to view header and payload. Perfect for debugging and understanding JWT structure.
+          Free JWT decoder online - no signup required. Decode JWT tokens to view header and payload instantly. Pretty print JSON, view token claims, and validate structure. Perfect for debugging and understanding JWT structure. All processing in your browser.
         </p>
 
         {/* Input */}

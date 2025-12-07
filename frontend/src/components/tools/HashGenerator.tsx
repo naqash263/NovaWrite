@@ -12,13 +12,14 @@ export default function HashGenerator() {
   const [fileName, setFileName] = useState<string>('');
 
   useSEO({
-    title: 'Free Hash Generator - MD5, SHA-1, SHA-256, SHA-512 Hash Generator | Online Hash Tool',
-    description: 'Free online hash generator. Generate MD5, SHA-1, SHA-256, and SHA-512 hashes from text or files. Compare hashes, copy to clipboard. Perfect for developers and security professionals. No registration required.',
+    title: 'Free Hash Generator Online - MD5, SHA-256, SHA-512 Generator | No Signup',
+    description: 'Free hash generator online - no signup required. Generate SHA-1, SHA-256, and SHA-512 hashes from text or files. Compare hashes, copy to clipboard instantly. Perfect for developers and security professionals. All processing happens in your browser.',
     url: '/resources/utility-tools/hash-generator',
     keywords: [
-      'hash generator', 'MD5 generator', 'SHA-256 generator', 'SHA-1 generator', 'SHA-512 generator',
+      'free hash generator online', 'hash generator', 'free hash generator', 'hash generator online',
+      'MD5 generator', 'SHA-256 generator', 'SHA-1 generator', 'SHA-512 generator',
       'hash calculator', 'online hash tool', 'text hash', 'file hash', 'hash converter',
-      'cryptographic hash', 'hash function', 'checksum generator'
+      'cryptographic hash', 'hash function', 'checksum generator', 'free online hash tool'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -158,9 +159,9 @@ export default function HashGenerator() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Hash Generator</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Hash Generator Online</h1>
         <p className="text-gray-600 mb-6">
-          Generate cryptographic hashes from text or files. Supports SHA-1, SHA-256, and SHA-512 algorithms.
+          Free hash generator online - no signup required. Generate cryptographic hashes from text or files. Supports SHA-1, SHA-256, and SHA-512 algorithms. All processing happens in your browser for maximum security.
         </p>
 
         <div className="space-y-6">

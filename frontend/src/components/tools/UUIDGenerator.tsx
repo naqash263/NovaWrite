@@ -7,12 +7,13 @@ export default function UUIDGenerator() {
   const [uuidVersion, setUuidVersion] = useState<'v4' | 'v1'>('v4');
 
   useSEO({
-    title: 'Free UUID Generator - Generate UUIDs Online | UUID v1 v4 Generator',
-    description: 'Free online UUID generator. Generate UUIDs (v1, v4), multiple UUIDs, validate UUIDs, and copy to clipboard. Perfect for developers and database IDs.',
+    title: 'Free UUID Generator v4 - Generate UUIDs Online | No Signup Required',
+    description: 'Free UUID generator v4 - no signup required. Generate UUIDs (v1, v4), multiple UUIDs up to 100, validate UUIDs, and copy to clipboard instantly. Perfect for developers and database IDs. All processing in your browser.',
     url: '/resources/utility-tools/uuid-generator',
     keywords: [
-      'UUID generator', 'generate UUID', 'UUID v4', 'UUID v1', 'GUID generator',
-      'online UUID generator', 'random UUID', 'UUID tool', 'unique identifier generator'
+      'free UUID generator v4', 'UUID generator', 'free UUID generator', 'UUID generator v4', 'generate UUID v4',
+      'generate UUID', 'UUID v4', 'UUID v1', 'GUID generator',
+      'online UUID generator', 'random UUID', 'UUID tool', 'unique identifier generator', 'free UUID generator online'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -97,10 +98,10 @@ export default function UUIDGenerator() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🆔 UUID Generator
+          🆔 Free UUID Generator v4
         </h1>
         <p className="text-gray-600 mb-6">
-          Generate unique identifiers (UUIDs). Supports UUID v1 and v4. Perfect for database IDs and unique keys.
+          Free UUID generator v4 - no signup required. Generate unique identifiers (UUIDs). Supports UUID v1 and v4. Generate up to 100 UUIDs at once. Perfect for database IDs and unique keys. All processing in your browser.
         </p>
 
         {/* Controls */}

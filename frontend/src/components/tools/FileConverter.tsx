@@ -14,13 +14,14 @@ export default function FileConverter() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free File Converter - Convert TXT, CSV, JSON, XML, YAML, HTML Online | File Format Converter',
-    description: 'Free online file converter. Convert files between TXT, CSV, JSON, XML, YAML, and HTML formats. All processing happens in your browser. No registration required.',
+    title: 'Free File Converter Online - Convert TXT, CSV, JSON, XML, YAML, HTML | No Signup',
+    description: 'Free file converter online - no signup required. Convert files between TXT, CSV, JSON, XML, YAML, and HTML formats instantly. Automatic format detection, bidirectional conversions. All processing happens in your browser.',
     url: '/resources/utility-tools/file-converter',
     keywords: [
-      'file converter', 'convert file format', 'TXT to JSON', 'CSV to JSON',
+      'free file converter online', 'file converter', 'free file converter', 'file converter online', 'convert file format online',
+      'convert file format', 'TXT to JSON', 'CSV to JSON',
       'JSON to XML', 'XML to YAML', 'file format converter', 'online file converter',
-      'free file converter', 'text file converter', 'data converter'
+      'text file converter', 'data converter', 'free online file converter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -387,9 +388,9 @@ export default function FileConverter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">File Converter</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free File Converter Online</h1>
         <p className="text-gray-600 mb-6">
-          Convert files between different formats: TXT, CSV, JSON, XML, YAML, and HTML. All processing happens in your browser.
+          Free file converter online - no signup required. Convert files between TXT, CSV, JSON, XML, YAML, and HTML formats instantly. Automatic format detection, bidirectional conversions, real-time preview. All processing happens in your browser.
         </p>
 
         {/* File Upload */}

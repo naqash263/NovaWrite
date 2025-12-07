@@ -8,13 +8,14 @@ export default function MarkdownPreview() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useSEO({
-    title: 'Free Markdown Preview - Live Markdown Editor & Preview | Markdown to HTML Converter',
-    description: 'Free online markdown preview and editor. Write markdown and see live preview. Convert markdown to HTML. Export HTML code. Perfect for developers and content creators. No registration required.',
+    title: 'Free Markdown Preview Editor Online - Live Preview | No Signup',
+    description: 'Free markdown preview editor online - no signup required. Write markdown and see live preview instantly. Convert markdown to HTML, export HTML code. Dark and light themes. Perfect for developers and content creators. All processing in your browser.',
     url: '/resources/utility-tools/markdown-preview',
     keywords: [
-      'markdown preview', 'markdown editor', 'markdown to HTML', 'live markdown preview',
+      'free markdown preview editor', 'markdown preview', 'free markdown preview editor online', 'markdown preview editor', 'markdown editor online',
+      'markdown editor', 'markdown to HTML', 'live markdown preview',
       'markdown converter', 'markdown viewer', 'online markdown editor', 'free markdown tool',
-      'markdown preview online', 'markdown HTML converter'
+      'markdown HTML converter', 'free online markdown preview'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -82,9 +83,9 @@ export default function MarkdownPreview() {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Markdown Preview</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Markdown Preview Editor Online</h1>
         <p className="text-gray-600 mb-6">
-          Write markdown and see live preview. Convert markdown to HTML and export the code.
+          Free markdown preview editor online - no signup required. Write markdown and see live preview instantly. Convert markdown to HTML, export HTML code. Dark and light themes. Perfect for developers and content creators. All processing in your browser.
         </p>
 
         {/* Options */}

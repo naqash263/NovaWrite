@@ -9,13 +9,14 @@ export default function HTMLFormatter() {
   const [isMinified, setIsMinified] = useState<boolean>(false);
 
   useSEO({
-    title: 'Free HTML Formatter & Beautifier - Format HTML Online | HTML Code Formatter',
-    description: 'Free online HTML formatter and beautifier. Format HTML code with proper indentation, minify HTML, and validate syntax. Perfect for developers and web designers. No registration required.',
+    title: 'Free HTML Formatter Online - Format HTML Code | No Signup',
+    description: 'Free HTML formatter online - no signup required. Format HTML code with proper indentation, minify HTML, and validate syntax. Beautify or minify HTML instantly. Perfect for developers and web designers. All processing in your browser.',
     url: '/resources/utility-tools/html-formatter',
     keywords: [
-      'HTML formatter', 'HTML beautifier', 'format HTML', 'HTML code formatter',
+      'free HTML formatter online', 'HTML formatter', 'free HTML formatter', 'HTML formatter online', 'format HTML online',
+      'HTML beautifier', 'format HTML', 'HTML code formatter',
       'HTML prettifier', 'HTML minifier', 'online HTML formatter', 'free HTML tool',
-      'HTML formatter online', 'beautify HTML', 'minify HTML'
+      'beautify HTML', 'minify HTML', 'free online HTML formatter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -125,9 +126,9 @@ export default function HTMLFormatter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">HTML Formatter</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free HTML Formatter Online</h1>
         <p className="text-gray-600 mb-6">
-          Format and beautify your HTML code with proper indentation, or minify it for production.
+          Free HTML formatter online - no signup required. Format and beautify your HTML code with proper indentation, or minify it for production. Validate syntax, preserve comments, copy to clipboard. Perfect for developers and web designers. All processing in your browser.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

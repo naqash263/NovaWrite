@@ -17,13 +17,14 @@ export default function PasswordGenerator() {
   });
 
   useSEO({
-    title: 'Free Password Generator - Strong Random Password Creator | Secure Password Tool',
-    description: 'Generate strong, secure, random passwords instantly. Customize length, character types, and complexity. Includes password strength meter. Free, no registration required.',
+    title: 'Free Password Generator Online - Strong Random Password Creator | No Signup',
+    description: 'Free password generator online - no signup required. Generate strong, secure, random passwords instantly. Customize length, character types, and complexity. Includes password strength meter. All processing in your browser for maximum security.',
     url: '/resources/utility-tools/password-generator',
     keywords: [
-      'password generator', 'random password', 'strong password', 'secure password',
+      'free password generator online', 'password generator', 'free password generator', 'password generator online', 'random password generator free',
+      'random password', 'strong password', 'secure password generator online',
       'password creator', 'password tool', 'password maker', 'random password generator',
-      'secure password generator', 'password strength', 'password checker'
+      'secure password generator', 'password strength', 'password checker', 'strong password generator free'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -139,10 +140,10 @@ export default function PasswordGenerator() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔐 Password Generator
+          🔐 Free Password Generator Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Generate strong, secure, random passwords with customizable options. Includes password strength meter.
+          Free password generator online - no signup required. Generate strong, secure, random passwords instantly with customizable options. Includes password strength meter. All processing in your browser for maximum security.
         </p>
 
         {/* Password Display */}

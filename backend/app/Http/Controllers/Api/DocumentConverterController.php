@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\FileProcessingService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
@@ -23,9 +25,9 @@ class DocumentConverterController extends Controller
         $this->fileProcessingService = $fileProcessingService;
     }
 
-    public function convert(Request $request)
+    public function convert(Request $request): JsonResponse
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'file' => 'required|file|mimes:pdf,doc,docx,txt|max:10240',
             'target_format' => 'required|string|in:pdf,docx,txt',
         ], [
@@ -34,6 +36,14 @@ class DocumentConverterController extends Controller
             'file.max' => 'File size must not exceed 10MB.',
             'target_format.required' => 'Please select target format.',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         try {
             $file = $request->file('file');

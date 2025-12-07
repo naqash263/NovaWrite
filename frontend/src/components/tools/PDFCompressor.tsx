@@ -13,12 +13,13 @@ export default function PDFCompressor() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free PDF Compressor - Reduce PDF File Size Online | Compress PDF Files',
-    description: 'Free online PDF compressor. Reduce PDF file size while maintaining quality. Choose compression level (low, medium, high). All processing happens in your browser. No registration required.',
+    title: 'Free PDF Compressor Online - Reduce PDF File Size | No Signup',
+    description: 'Free PDF compressor online - no signup required. Reduce PDF file size while maintaining quality instantly. Choose compression level (low, medium, high). All processing happens in your browser. Perfect for file sharing and storage.',
     url: '/resources/utility-tools/pdf-compressor',
     keywords: [
-      'PDF compressor', 'compress PDF', 'reduce PDF size', 'PDF file size reducer',
-      'online PDF compressor', 'free PDF compressor', 'PDF optimizer', 'shrink PDF'
+      'free PDF compressor online', 'PDF compressor', 'free PDF compressor', 'PDF compressor online', 'compress PDF free online',
+      'compress PDF', 'reduce PDF size', 'PDF file size reducer',
+      'online PDF compressor', 'PDF optimizer', 'shrink PDF', 'free online PDF compressor'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -148,10 +149,10 @@ export default function PDFCompressor() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          📦 PDF Compressor
+          📦 Free PDF Compressor Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Reduce PDF file size while maintaining quality. All processing happens in your browser.
+          Free PDF compressor online - no signup required. Reduce PDF file size while maintaining quality instantly. Choose compression level (low, medium, high). All processing happens in your browser. Perfect for file sharing and storage.
         </p>
 
         {/* Stats */}

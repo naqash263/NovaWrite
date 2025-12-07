@@ -11,13 +11,14 @@ export default function SQLFormatter() {
   const [isMinified, setIsMinified] = useState<boolean>(false);
 
   useSEO({
-    title: 'Free SQL Formatter & Beautifier - Format SQL Queries Online | SQL Query Formatter',
-    description: 'Free online SQL formatter and beautifier. Format SQL queries with proper indentation, syntax highlighting, and validation. Supports MySQL, PostgreSQL, SQL Server, and more. No registration required.',
+    title: 'Free SQL Formatter Online - Format SQL Queries | No Signup',
+    description: 'Free SQL formatter online - no signup required. Format SQL queries with proper indentation, syntax highlighting, and validation. Supports MySQL, PostgreSQL, SQL Server, and more. Minify SQL, copy to clipboard. All processing in your browser.',
     url: '/resources/utility-tools/sql-formatter',
     keywords: [
-      'SQL formatter', 'SQL beautifier', 'format SQL', 'SQL query formatter',
+      'free SQL formatter online', 'SQL formatter', 'free SQL formatter', 'SQL formatter online', 'format SQL online',
+      'SQL beautifier', 'format SQL', 'SQL query formatter',
       'SQL prettifier', 'SQL validator', 'online SQL formatter', 'free SQL tool',
-      'SQL formatter online', 'beautify SQL', 'SQL code formatter'
+      'beautify SQL', 'SQL code formatter', 'free online SQL formatter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -96,9 +97,9 @@ export default function SQLFormatter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">SQL Formatter</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free SQL Formatter Online</h1>
         <p className="text-gray-600 mb-6">
-          Format and beautify your SQL queries with proper indentation and syntax highlighting.
+          Free SQL formatter online - no signup required. Format and beautify your SQL queries with proper indentation and syntax highlighting. Supports MySQL, PostgreSQL, SQL Server, and more. Minify SQL for production. All processing in your browser.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

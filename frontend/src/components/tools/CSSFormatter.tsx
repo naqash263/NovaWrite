@@ -9,13 +9,14 @@ export default function CSSFormatter() {
   const [isMinified, setIsMinified] = useState<boolean>(false);
 
   useSEO({
-    title: 'Free CSS Formatter & Beautifier - Format CSS Online | CSS Code Formatter',
-    description: 'Free online CSS formatter and beautifier. Format CSS code with proper indentation, minify CSS, and validate syntax. Perfect for developers and web designers. No registration required.',
+    title: 'Free CSS Formatter Beautifier Online - Format CSS | No Signup',
+    description: 'Free CSS formatter beautifier online - no signup required. Format CSS code with proper indentation, minify CSS, and validate syntax. Beautify or minify CSS instantly. Perfect for developers and web designers. All processing in your browser.',
     url: '/resources/utility-tools/css-formatter',
     keywords: [
-      'CSS formatter', 'CSS beautifier', 'format CSS', 'CSS code formatter',
+      'free CSS formatter beautifier', 'CSS formatter', 'free CSS formatter', 'CSS formatter beautifier', 'CSS formatter online',
+      'CSS beautifier', 'format CSS', 'CSS code formatter',
       'CSS prettifier', 'CSS minifier', 'online CSS formatter', 'free CSS tool',
-      'CSS formatter online', 'beautify CSS', 'minify CSS'
+      'beautify CSS', 'minify CSS', 'free online CSS formatter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -127,9 +128,9 @@ export default function CSSFormatter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">CSS Formatter</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free CSS Formatter Beautifier Online</h1>
         <p className="text-gray-600 mb-6">
-          Format and beautify your CSS code with proper indentation, or minify it for production.
+          Free CSS formatter beautifier online - no signup required. Format and beautify your CSS code with proper indentation, or minify it for production. Validate syntax, copy to clipboard. Perfect for developers and web designers. All processing in your browser.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

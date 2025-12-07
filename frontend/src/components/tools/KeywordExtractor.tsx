@@ -12,13 +12,14 @@ export default function KeywordExtractor() {
   const [error, setError] = useState<string>('');
 
   useSEO({
-    title: 'Free Keyword Extractor - AI-Powered Keyword Extraction Tool | Extract Keywords from Text',
-    description: 'Free AI-powered keyword extractor. Extract keywords from text, articles, and documents. Generate SEO keywords, find related keywords, and analyze keyword density. Perfect for content creators and SEO professionals. No registration required.',
+    title: 'Free Keyword Extractor Online - AI-Powered Keyword Extraction | No Signup',
+    description: 'Free keyword extractor online - no signup required. AI-powered keyword extractor. Extract keywords from text, articles, and documents instantly. Generate SEO keywords, find related keywords, analyze keyword density. Perfect for content creators and SEO professionals.',
     url: '/resources/ai-tools/keyword-extractor',
     keywords: [
-      'keyword extractor', 'extract keywords', 'keyword generator', 'SEO keywords',
+      'free keyword extractor online', 'keyword extractor', 'free keyword extractor', 'keyword extractor online', 'extract keywords online',
+      'extract keywords', 'keyword generator', 'SEO keywords',
       'keyword finder', 'keyword analysis', 'AI keyword extractor', 'online keyword extractor',
-      'keyword density', 'related keywords', 'long-tail keywords'
+      'keyword density', 'related keywords', 'long-tail keywords', 'free online keyword extractor'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -113,9 +114,9 @@ export default function KeywordExtractor() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Keyword Extractor</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Keyword Extractor Online</h1>
         <p className="text-gray-600 mb-6">
-          Extract keywords from your text using AI. Perfect for SEO, content analysis, and keyword research.
+          Free keyword extractor online - no signup required. Extract keywords from your text using AI instantly. Generate SEO keywords, find related keywords, analyze keyword density. Perfect for SEO, content analysis, and keyword research.
         </p>
 
         <div className="space-y-6">

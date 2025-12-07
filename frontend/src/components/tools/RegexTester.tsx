@@ -10,12 +10,13 @@ export default function RegexTester() {
   const [error, setError] = useState<string>('');
 
   useSEO({
-    title: 'Free Regex Tester - Test Regular Expressions Online | Regex Pattern Tester',
-    description: 'Free online regex tester. Test regular expressions with real-time matching, highlighting, and explanation. Supports all regex flags and common patterns.',
+    title: 'Free Regex Tester Online - Test Regular Expressions | No Signup',
+    description: 'Free regex tester online - no signup required. Test regular expressions with real-time matching, highlighting, and explanation. Supports all regex flags and common patterns. Perfect for developers. All processing in your browser.',
     url: '/resources/utility-tools/regex-tester',
     keywords: [
-      'regex tester', 'regular expression tester', 'regex test', 'regex pattern tester',
-      'online regex', 'regex validator', 'regex matcher', 'test regex online'
+      'free regex tester online', 'regex tester', 'free regex tester', 'regex tester online', 'test regex online',
+      'regular expression tester', 'regex test', 'regex pattern tester',
+      'online regex', 'regex validator', 'regex matcher', 'free online regex tester'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -235,10 +236,10 @@ export default function RegexTester() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔍 Regex Tester
+          🔍 Free Regex Tester Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Test regular expressions with real-time matching and highlighting. Supports all regex flags and common patterns.
+          Free regex tester online - no signup required. Test regular expressions with real-time matching and highlighting. Supports all regex flags and common patterns. Perfect for developers. All processing in your browser.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

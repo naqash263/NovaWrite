@@ -122,15 +122,16 @@ export default function ImageResizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useSEO({
-    title: 'Free Image Resizer - Resize Images Online | Social Media Image Resizer',
-    description: 'Resize images online for free with social media presets. Instagram, Facebook, Twitter, LinkedIn, YouTube, and Pinterest sizes. Adjust dimensions, maintain aspect ratio, change format, and adjust quality.',
+    title: 'Free Image Resizer Online - Resize Images | No Signup',
+    description: 'Free image resizer online - no signup required. Resize images online instantly with social media presets. Instagram, Facebook, Twitter, LinkedIn, YouTube, and Pinterest sizes. Adjust dimensions, maintain aspect ratio, change format, and adjust quality. All processing in your browser.',
     url: '/resources/utility-tools/image-resizer',
     keywords: [
-      'image resizer', 'resize image', 'image size converter', 'resize photo',
+      'free image resizer online', 'image resizer', 'free image resizer', 'image resizer online', 'resize image online free',
+      'resize image', 'image size converter', 'resize photo',
       'social media image resizer', 'instagram image size', 'facebook image size',
       'twitter image size', 'linkedin image size', 'youtube thumbnail', 'pinterest image size',
       'image compressor', 'photo resizer', 'image editor', 'resize picture',
-      'online image resizer', 'free image resizer', 'image tool'
+      'online image resizer', 'image tool', 'free online image resizer'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -414,10 +415,10 @@ export default function ImageResizer() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🖼️ Image Resizer
+          🖼️ Free Image Resizer Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Resize images online for free. Choose from social media presets or custom dimensions. Adjust format and quality.
+          Free image resizer online - no signup required. Resize images online instantly. Choose from social media presets or custom dimensions. Adjust format and quality. All processing in your browser.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

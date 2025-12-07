@@ -16,13 +16,14 @@ export default function ExcelCsvConverter() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free Excel to CSV Converter - Convert XLSX to CSV Online | CSV to Excel Converter',
-    description: 'Free online Excel to CSV converter. Convert XLSX, XLS files to CSV format and vice versa. Perfect for data import/export, spreadsheet compatibility, and database migration. No registration required.',
+    title: 'Free Excel CSV Converter Online - Convert XLSX to CSV | No Signup',
+    description: 'Free excel csv converter online - no signup required. Convert XLSX, XLS files to CSV format and vice versa instantly. Preserve data integrity, perfect for data import/export and database migration. Secure server-side processing.',
     url: '/resources/utility-tools/excel-csv-converter',
     keywords: [
+      'free excel csv converter online', 'excel csv converter', 'free excel csv converter', 'excel csv converter online', 'excel to csv converter',
       'excel to csv', 'csv to excel', 'xlsx to csv', 'csv to xlsx', 'excel converter',
-      'csv converter', 'spreadsheet converter', 'excel csv converter', 'online excel converter',
-      'free excel converter', 'xls to csv', 'convert excel to csv'
+      'csv converter', 'spreadsheet converter', 'online excel converter',
+      'free excel converter', 'xls to csv', 'convert excel to csv', 'free online excel converter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -173,9 +174,9 @@ export default function ExcelCsvConverter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Excel ↔ CSV Converter</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Excel CSV Converter Online</h1>
         <p className="text-gray-600 mb-6">
-          Convert Excel spreadsheets (XLSX, XLS) to CSV format and vice versa. Perfect for data migration, 
+          Free excel csv converter online - no signup required. Convert Excel spreadsheets (XLSX, XLS) to CSV format and vice versa instantly. Preserve data integrity, perfect for data migration, spreadsheet compatibility, and database import/export. Secure server-side processing. 
           import/export, and compatibility with different applications.
         </p>
 

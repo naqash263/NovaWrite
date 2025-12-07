@@ -16,13 +16,14 @@ export default function AudioConverter() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free Audio Converter - MP3 to WAV, WAV to MP3 Online | Audio Format Converter',
-    description: 'Free online audio converter. Convert MP3 to WAV, WAV to MP3, and other audio formats. Perfect for audio editing, compatibility, and professional use. No registration required.',
+    title: 'Free Audio Converter MP3 WAV Online - Convert Audio Files | No Signup',
+    description: 'Free audio converter mp3 wav online - no signup required. Convert MP3 to WAV, WAV to MP3, and other audio formats instantly. Perfect for audio editing, compatibility, and professional use. Secure server-side processing.',
     url: '/resources/utility-tools/audio-converter',
     keywords: [
-      'mp3 to wav', 'wav to mp3', 'audio converter', 'mp3 converter', 'wav converter',
-      'audio format converter', 'online audio converter', 'free audio converter',
-      'convert mp3', 'convert wav', 'audio file converter'
+      'free audio converter mp3 wav', 'audio converter', 'free audio converter', 'audio converter mp3 wav', 'mp3 to wav converter',
+      'mp3 to wav', 'wav to mp3', 'mp3 converter', 'wav converter',
+      'audio format converter', 'online audio converter',
+      'convert mp3', 'convert wav', 'audio file converter', 'free online audio converter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -153,9 +154,9 @@ export default function AudioConverter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Audio Converter</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Audio Converter MP3 WAV Online</h1>
         <p className="text-gray-600 mb-6">
-          Convert audio files between MP3, WAV, and other formats. Perfect for audio editing, 
+          Free audio converter mp3 wav online - no signup required. Convert audio files between MP3, WAV, and other formats instantly. Perfect for audio editing, compatibility, and professional use. Secure server-side processing, download converted files. 
           compatibility, and professional audio production.
         </p>
 

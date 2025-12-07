@@ -13,13 +13,14 @@ export default function QRCodeGenerator() {
   const [errorCorrectionLevel, setErrorCorrectionLevel] = useState<'L' | 'M' | 'Q' | 'H'>('M');
 
   useSEO({
-    title: 'Free QR Code Generator - Create QR Codes Online | QR Code Maker',
-    description: 'Generate QR codes instantly for URLs, text, WiFi, contact info, and more. Customize colors, size, and error correction. Download as PNG or SVG. Free, no registration required.',
+    title: 'Free QR Code Generator Online - Create QR Codes | No Signup',
+    description: 'Free QR code generator online - no signup required. Generate QR codes instantly for URLs, text, WiFi, contact info, and more. Customize colors, size, and error correction. Download as PNG or SVG. All processing in your browser.',
     url: '/resources/utility-tools/qr-code-generator',
     keywords: [
-      'QR code generator', 'QR code maker', 'QR code creator', 'generate QR code',
+      'free QR code generator online', 'QR code generator', 'free QR code generator', 'QR code generator online', 'QR code maker free online',
+      'QR code maker', 'QR code creator', 'generate QR code',
       'QR code online', 'free QR code', 'QR code tool', 'QR code scanner',
-      'QR code generator online', 'create QR code'
+      'create QR code', 'free online QR code generator'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -131,10 +132,10 @@ export default function QRCodeGenerator() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          📱 QR Code Generator
+          📱 Free QR Code Generator Online
         </h1>
         <p className="text-gray-600 mb-6">
-          Generate QR codes instantly for URLs, text, WiFi, contact info, and more. Customize colors, size, and download.
+          Free QR code generator online - no signup required. Generate QR codes instantly for URLs, text, WiFi, contact info, and more. Customize colors, size, and error correction. Download as PNG or SVG. All processing in your browser.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

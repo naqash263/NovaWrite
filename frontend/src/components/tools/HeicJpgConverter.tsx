@@ -16,13 +16,14 @@ export default function HeicJpgConverter() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
-    title: 'Free HEIC to JPG Converter - Convert iPhone Photos Online | HEIC Image Converter',
-    description: 'Free online HEIC to JPG converter. Convert iPhone HEIC photos to JPG format for better compatibility. All conversions happen securely on our server. No registration required.',
+    title: 'Free HEIC to JPG Converter Online - Convert iPhone Photos | No Signup',
+    description: 'Free heic to jpg converter online - no signup required. Convert iPhone HEIC photos to JPG format instantly for better compatibility. Secure server-side processing, download converted images. Perfect for iPhone users.',
     url: '/resources/utility-tools/heic-jpg-converter',
     keywords: [
-      'heic to jpg', 'heic converter', 'iphone photo converter', 'heic to jpeg',
+      'free heic to jpg converter', 'heic to jpg', 'free heic to jpg converter online', 'heic to jpg converter', 'convert heic to jpg',
+      'heic converter', 'iphone photo converter', 'heic to jpeg',
       'convert heic', 'heic image converter', 'online heic converter', 'free heic converter',
-      'heif to jpg', 'iphone image converter'
+      'heif to jpg', 'iphone image converter', 'free online heic converter'
     ],
     structuredData: 'custom',
     customStructuredData: {
@@ -153,9 +154,9 @@ export default function HeicJpgConverter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">HEIC ↔ JPG Converter</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free HEIC to JPG Converter Online</h1>
         <p className="text-gray-600 mb-6">
-          Convert iPhone HEIC photos to JPG format for better compatibility with all devices and applications.
+          Free heic to jpg converter online - no signup required. Convert iPhone HEIC photos to JPG format instantly for better compatibility with all devices and applications. Secure server-side processing, download converted images. Perfect for iPhone users.
         </p>
 
         {/* Server Limitation Notice */}
