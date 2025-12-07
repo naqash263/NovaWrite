@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../api/axios';
 import { useSEO } from '../../utils/seo';
-import { useAuth } from '../../hooks/useAuth';
 
 interface Issue {
   id: number;
@@ -57,7 +56,6 @@ interface User {
 
 export default function Issues() {
   useSEO({ title: 'Manage Issues | Admin' });
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   
   const [filters, setFilters] = useState({
