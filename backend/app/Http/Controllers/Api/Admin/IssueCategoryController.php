@@ -20,25 +20,6 @@ class IssueCategoryController extends Controller
         try {
             $query = IssueCategory::query();
 
-            // Check if issues table exists before trying to count
-            $hasIssuesTable = false;
-            try {
-                \DB::select('SELECT 1 FROM issues LIMIT 1');
-                $hasIssuesTable = true;
-            } catch (\Exception $e) {
-                // Issues table doesn't exist or not accessible
-                Log::debug('Issues table not accessible: ' . $e->getMessage());
-            }
-
-            // Only add withCount if issues table exists
-            if ($hasIssuesTable) {
-                try {
-                    $query->withCount('issues');
-                } catch (\Exception $e) {
-                    Log::warning('Could not add issue count: ' . $e->getMessage());
-                }
-            }
-
             // Search filter
             if ($request->has('search')) {
                 $search = $request->search;
@@ -56,18 +37,15 @@ class IssueCategoryController extends Controller
             // Order by sort_order, then name
             $categories = $query->orderBy('sort_order')->orderBy('name')->get();
 
-            // Manually add issue count if withCount wasn't used or failed
-            if (!$hasIssuesTable || !isset($categories[0]->issues_count)) {
-                foreach ($categories as $category) {
-                    if ($hasIssuesTable) {
-                        try {
-                            $category->issues_count = $category->issues()->count();
-                        } catch (\Exception $e) {
-                            $category->issues_count = 0;
-                        }
-                    } else {
-                        $category->issues_count = 0;
-                    }
+            // Try to add issue count for each category
+            foreach ($categories as $category) {
+                try {
+                    // Try to get count using the relationship
+                    $category->issues_count = $category->issues()->count();
+                } catch (\Exception $e) {
+                    // If relationship fails (table doesn't exist, foreign key issue, etc.), set to 0
+                    Log::debug('Could not get issue count for category ' . $category->id . ': ' . $e->getMessage());
+                    $category->issues_count = 0;
                 }
             }
 
