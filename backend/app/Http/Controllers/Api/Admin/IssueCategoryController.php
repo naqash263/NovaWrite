@@ -17,7 +17,15 @@ class IssueCategoryController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = IssueCategory::withCount('issues');
+            $query = IssueCategory::query();
+
+            // Try to add issue count, but handle if issues table doesn't exist yet
+            try {
+                $query->withCount('issues');
+            } catch (\Exception $e) {
+                Log::warning('Could not load issue count: ' . $e->getMessage());
+                // Continue without count
+            }
 
             // Search filter
             if ($request->has('search')) {
@@ -36,15 +44,32 @@ class IssueCategoryController extends Controller
             // Order by sort_order, then name
             $categories = $query->orderBy('sort_order')->orderBy('name')->get();
 
+            // Manually add issue count if withCount failed
+            if (!isset($categories[0]->issues_count)) {
+                foreach ($categories as $category) {
+                    try {
+                        $category->issues_count = $category->issues()->count();
+                    } catch (\Exception $e) {
+                        $category->issues_count = 0;
+                    }
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $categories
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching issue categories: ' . $e->getMessage());
+            Log::error('Error fetching issue categories', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch categories'
+                'message' => 'Failed to fetch categories',
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
@@ -101,13 +126,25 @@ class IssueCategoryController extends Controller
     public function show(string $id): JsonResponse
     {
         try {
-            $category = IssueCategory::withCount('issues')->findOrFail($id);
+            $category = IssueCategory::findOrFail($id);
+            
+            // Try to add issue count
+            try {
+                $category->loadCount('issues');
+            } catch (\Exception $e) {
+                // If issues table doesn't exist, set count to 0
+                $category->issues_count = 0;
+            }
             
             return response()->json([
                 'success' => true,
                 'data' => $category
             ]);
         } catch (\Exception $e) {
+            Log::error('Error fetching issue category', [
+                'id' => $id,
+                'message' => $e->getMessage()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Category not found'
