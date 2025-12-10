@@ -389,6 +389,9 @@ export default function Issues() {
               />
             </div>
 
+            {/* Ad: Content Top */}
+            <AdPlacement position="content-top" className="mb-6" />
+
             {/* Issues List */}
             {loading ? (
               <div className="space-y-4">
@@ -408,7 +411,7 @@ export default function Issues() {
               </div>
             ) : (
               <div className="space-y-4">
-                {issues.map(issue => (
+                {issues.map((issue, index) => (
                   <div key={issue.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -489,9 +492,19 @@ export default function Issues() {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Ad: Between Issues - Show after every 5 issues */}
+                  {(index + 1) % 5 === 0 && (index + 1) < issues.length && (
+                    <div className="my-6">
+                      <AdPlacement position="between-posts" />
+                    </div>
+                  )}
                 ))}
               </div>
             )}
+
+            {/* Ad: Content Bottom */}
+            <AdPlacement position="content-bottom" className="mt-6" />
 
             {/* Pagination */}
             {pagination.last_page > 1 && (

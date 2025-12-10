@@ -338,6 +338,9 @@ export default function IssueDetail() {
               </div>
             </div>
 
+            {/* Ad: Before Comments */}
+            <AdPlacement position="content-middle" className="my-6" />
+
             {/* Comments Section */}
             <CommentSection
               commentableType="Issue"
@@ -345,6 +348,9 @@ export default function IssueDetail() {
               title="Discussion"
               showTitle={true}
             />
+
+            {/* Ad: After Comments */}
+            <AdPlacement position="content-bottom" className="my-6" />
 
             {/* Back Button */}
             <div className="mt-8">

@@ -272,10 +272,31 @@ class IssueController extends Controller
     public function show(Request $request, string $id): JsonResponse
     {
         try {
-            $issue = Issue::with(['user', 'category', 'assignee', 'resolver', 'upvotes'])
-                ->where('id', $id)
-                ->orWhere('slug', $id)
-                ->firstOrFail();
+            // Try to find by ID first (if numeric), then by slug
+            $issue = null;
+            if (is_numeric($id)) {
+                $issue = Issue::with(['user', 'category', 'assignee', 'resolver', 'upvotes'])
+                    ->where('id', $id)
+                    ->first();
+            }
+            
+            // If not found by ID or ID is not numeric, try slug
+            if (!$issue) {
+                $issue = Issue::with(['user', 'category', 'assignee', 'resolver', 'upvotes'])
+                    ->where('slug', $id)
+                    ->first();
+            }
+            
+            if (!$issue) {
+                Log::warning('Issue not found', [
+                    'id_or_slug' => $id,
+                    'is_numeric' => is_numeric($id),
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Issue not found'
+                ], 404);
+            }
 
             // Increment views
             $issue->incrementViews();
@@ -304,10 +325,25 @@ class IssueController extends Controller
     {
         try {
             $issue = Issue::findOrFail($id);
-            $user = Auth::user();
+            
+            // Get user from API guard or default guard
+            $user = Auth::guard('api')->user() ?? Auth::user();
 
             // Check permissions (owner or admin)
-            if (!$user || ($issue->user_id !== $user->id && $user->role !== 'admin')) {
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required'
+                ], 401);
+            }
+
+            if ($issue->user_id !== $user->id && $user->role !== 'admin') {
+                Log::warning('Issue update denied', [
+                    'user_id' => $user->id,
+                    'user_role' => $user->role,
+                    'issue_id' => $issue->id,
+                    'issue_user_id' => $issue->user_id,
+                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'You do not have permission to update this issue'
@@ -358,10 +394,24 @@ class IssueController extends Controller
     {
         try {
             $issue = Issue::findOrFail($id);
-            $user = Auth::user();
+            
+            // Get user from API guard or default guard
+            $user = Auth::guard('api')->user() ?? Auth::user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required'
+                ], 401);
+            }
 
             // Only admin can delete issues
-            if (!$user || $user->role !== 'admin') {
+            if ($user->role !== 'admin') {
+                Log::warning('Issue delete denied', [
+                    'user_id' => $user->id,
+                    'user_role' => $user->role,
+                    'issue_id' => $issue->id,
+                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Only administrators can delete issues'
