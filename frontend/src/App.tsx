@@ -85,6 +85,7 @@ const Issues = lazy(() => import('./pages/community/Issues'));
 const IssueDetail = lazy(() => import('./pages/community/IssueDetail'));
 const CreateIssue = lazy(() => import('./pages/community/CreateIssue'));
 const AdminIssues = lazy(() => import('./pages/admin/Issues'));
+const IssueCategories = lazy(() => import('./pages/admin/IssueCategories'));
 const EmailUnsubscribe = lazy(() => import('./pages/EmailUnsubscribe'));
 
 // Enhanced loading with performance optimizations
@@ -133,6 +134,7 @@ function App() {
               <Route path="/admin/test-workflows" element={<ProtectedRoute requireAdmin><TestWorkflows /></ProtectedRoute>} />
               <Route path="/admin/projects" element={<ProtectedRoute requireAdmin><AdminProjects /></ProtectedRoute>} />
               <Route path="/admin/issues" element={<ProtectedRoute requireAdmin><AdminIssues /></ProtectedRoute>} />
+              <Route path="/admin/issue-categories" element={<ProtectedRoute requireAdmin><IssueCategories /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute requireAdmin><Users /></ProtectedRoute>} />
               <Route path="/admin/user-groups" element={<ProtectedRoute requireAdmin><UserGroups /></ProtectedRoute>} />
               <Route path="/admin/api-tokens" element={<ProtectedRoute requireAdmin><ApiTokens /></ProtectedRoute>} />

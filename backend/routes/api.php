@@ -711,6 +711,13 @@ Route::middleware('api.auth')->group(function () {
 });
 
 Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->group(function () {
+    // Issue Categories Management
+    Route::get('issue-categories', [App\Http\Controllers\Api\Admin\IssueCategoryController::class, 'index']);
+    Route::post('issue-categories', [App\Http\Controllers\Api\Admin\IssueCategoryController::class, 'store']);
+    Route::get('issue-categories/{id}', [App\Http\Controllers\Api\Admin\IssueCategoryController::class, 'show']);
+    Route::put('issue-categories/{id}', [App\Http\Controllers\Api\Admin\IssueCategoryController::class, 'update']);
+    Route::delete('issue-categories/{id}', [App\Http\Controllers\Api\Admin\IssueCategoryController::class, 'destroy']);
+
     // User Activities
     Route::get('user-activities', [\App\Http\Controllers\Api\Admin\UserActivityController::class, 'index']);
     Route::get('user-activities/statistics', [\App\Http\Controllers\Api\Admin\UserActivityController::class, 'statistics']);

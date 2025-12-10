@@ -123,6 +123,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       { path: '/admin/workflows', label: 'Workflows', icon: '⚡' },
       { path: '/admin/projects', label: 'My Projects', icon: '📁' },
       { path: '/admin/issues', label: 'Issues', icon: '🐛' },
+      { path: '/admin/issue-categories', label: 'Issue Categories', icon: '📂' },
       { path: '/admin/courses', label: 'Courses', icon: '📚' },
       { path: '/admin/files', label: 'Files', icon: '📁' },
           { path: '/admin/cv-templates', label: 'CV Templates', icon: '📄' },
