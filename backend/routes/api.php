@@ -650,12 +650,12 @@ Route::get('email/unsubscribe/status', [App\Http\Controllers\Api\EmailUnsubscrib
 
 Route::middleware('api.auth')->group(function () {
     Route::put('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'update']);
-    Route::delete('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'destroy']);
     
     // Admin-only routes
     Route::middleware('admin')->group(function () {
         Route::post('issues/{id}/status', [App\Http\Controllers\Api\IssueController::class, 'updateStatus']);
         Route::post('issues/{id}/assign', [App\Http\Controllers\Api\IssueController::class, 'assign']);
+        Route::delete('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'destroy']);
     });
 });
 
