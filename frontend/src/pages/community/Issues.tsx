@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import apiClient from '../../api/axios';
 import Button from '../../components/ui/Button';
@@ -412,93 +412,95 @@ export default function Issues() {
             ) : (
               <div className="space-y-4">
                 {issues.map((issue, index) => (
-                  <div key={issue.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          {issue.is_pinned && (
-                            <span className="text-yellow-500">📌</span>
-                          )}
-                          <Link to={`/community/issues/${issue.slug || issue.id}`}>
-                            <h3 className="text-xl font-semibold text-gray-900 hover:text-blue-600">
-                              {issue.title}
-                            </h3>
-                          </Link>
-                        </div>
-                        
-                        <p className="text-gray-600 mb-4 line-clamp-2">
-                          {issue.description.replace(/<[^>]+>/g, '').substring(0, 200)}...
-                        </p>
+                  <React.Fragment key={issue.id}>
+                    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            {issue.is_pinned && (
+                              <span className="text-yellow-500">📌</span>
+                            )}
+                            <Link to={`/community/issues/${issue.slug || issue.id}`}>
+                              <h3 className="text-xl font-semibold text-gray-900 hover:text-blue-600">
+                                {issue.title}
+                              </h3>
+                            </Link>
+                          </div>
+                          
+                          <p className="text-gray-600 mb-4 line-clamp-2">
+                            {issue.description.replace(/<[^>]+>/g, '').substring(0, 200)}...
+                          </p>
 
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(issue.status)}`}>
-                            {issue.status.replace('_', ' ').toUpperCase()}
-                          </span>
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getPriorityColor(issue.priority)}`}>
-                            {issue.priority.toUpperCase()}
-                          </span>
-                          {issue.category && (
-                            <span 
-                              className="px-3 py-1 rounded-full text-sm font-semibold text-white shadow-sm"
-                              style={{ backgroundColor: issue.category.color }}
-                            >
-                              {issue.category.name}
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(issue.status)}`}>
+                              {issue.status.replace('_', ' ').toUpperCase()}
                             </span>
-                          )}
-                          {issue.labels && issue.labels.length > 0 && (
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {issue.labels.slice(0, 3).map((label, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700"
-                                >
-                                  {label}
-                                </span>
-                              ))}
-                              {issue.labels.length > 3 && (
-                                <span className="text-xs text-gray-500">+{issue.labels.length - 3}</span>
-                              )}
-                            </div>
-                          )}
-                          <span className="text-sm text-gray-500">
-                            by {issue.user?.name || issue.guest_name || 'Anonymous'}
-                          </span>
-                          <span className="text-sm text-gray-500">
-                            {formatDate(issue.created_at)}
-                          </span>
+                            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getPriorityColor(issue.priority)}`}>
+                              {issue.priority.toUpperCase()}
+                            </span>
+                            {issue.category && (
+                              <span 
+                                className="px-3 py-1 rounded-full text-sm font-semibold text-white shadow-sm"
+                                style={{ backgroundColor: issue.category.color }}
+                              >
+                                {issue.category.name}
+                              </span>
+                            )}
+                            {issue.labels && issue.labels.length > 0 && (
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {issue.labels.slice(0, 3).map((label, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700"
+                                  >
+                                    {label}
+                                  </span>
+                                ))}
+                                {issue.labels.length > 3 && (
+                                  <span className="text-xs text-gray-500">+{issue.labels.length - 3}</span>
+                                )}
+                              </div>
+                            )}
+                            <span className="text-sm text-gray-500">
+                              by {issue.user?.name || issue.guest_name || 'Anonymous'}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              {formatDate(issue.created_at)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex flex-col items-end gap-2 ml-4">
-                        <button
-                          onClick={() => handleUpvote(issue.id)}
-                          className={`flex items-center gap-1 px-3 py-1 rounded-lg transition-colors ${
-                            issue.is_upvoted
-                              ? 'bg-blue-100 text-blue-600'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
-                        >
-                          <svg className="w-5 h-5" fill={issue.is_upvoted ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                          </svg>
-                          <span>{issue.upvotes_count}</span>
-                        </button>
-                        <div className="flex items-center gap-1 text-sm text-gray-500">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                          <span>{issue.comments_count}</span>
+                        <div className="flex flex-col items-end gap-2 ml-4">
+                          <button
+                            onClick={() => handleUpvote(issue.id)}
+                            className={`flex items-center gap-1 px-3 py-1 rounded-lg transition-colors ${
+                              issue.is_upvoted
+                                ? 'bg-blue-100 text-blue-600'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            <svg className="w-5 h-5" fill={issue.is_upvoted ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                            </svg>
+                            <span>{issue.upvotes_count}</span>
+                          </button>
+                          <div className="flex items-center gap-1 text-sm text-gray-500">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <span>{issue.comments_count}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Ad: Between Issues - Show after every 5 issues */}
-                  {(index + 1) % 5 === 0 && (index + 1) < issues.length && (
-                    <div className="my-6">
-                      <AdPlacement position="between-posts" />
-                    </div>
-                  )}
+                    
+                    {/* Ad: Between Issues - Show after every 5 issues */}
+                    {(index + 1) % 5 === 0 && (index + 1) < issues.length && (
+                      <div className="my-6">
+                        <AdPlacement position="between-posts" />
+                      </div>
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
             )}
