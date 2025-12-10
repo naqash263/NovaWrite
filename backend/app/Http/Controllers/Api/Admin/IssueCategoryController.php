@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class IssueCategoryController extends Controller
 {
@@ -19,12 +20,23 @@ class IssueCategoryController extends Controller
         try {
             $query = IssueCategory::query();
 
-            // Try to add issue count, but handle if issues table doesn't exist yet
+            // Check if issues table exists before trying to count
+            $hasIssuesTable = false;
             try {
-                $query->withCount('issues');
+                \DB::select('SELECT 1 FROM issues LIMIT 1');
+                $hasIssuesTable = true;
             } catch (\Exception $e) {
-                Log::warning('Could not load issue count: ' . $e->getMessage());
-                // Continue without count
+                // Issues table doesn't exist or not accessible
+                Log::debug('Issues table not accessible: ' . $e->getMessage());
+            }
+
+            // Only add withCount if issues table exists
+            if ($hasIssuesTable) {
+                try {
+                    $query->withCount('issues');
+                } catch (\Exception $e) {
+                    Log::warning('Could not add issue count: ' . $e->getMessage());
+                }
             }
 
             // Search filter
@@ -44,12 +56,16 @@ class IssueCategoryController extends Controller
             // Order by sort_order, then name
             $categories = $query->orderBy('sort_order')->orderBy('name')->get();
 
-            // Manually add issue count if withCount failed
-            if (!isset($categories[0]->issues_count)) {
+            // Manually add issue count if withCount wasn't used or failed
+            if (!$hasIssuesTable || !isset($categories[0]->issues_count)) {
                 foreach ($categories as $category) {
-                    try {
-                        $category->issues_count = $category->issues()->count();
-                    } catch (\Exception $e) {
+                    if ($hasIssuesTable) {
+                        try {
+                            $category->issues_count = $category->issues()->count();
+                        } catch (\Exception $e) {
+                            $category->issues_count = 0;
+                        }
+                    } else {
                         $category->issues_count = 0;
                     }
                 }
