@@ -69,6 +69,7 @@ export default function Issues() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [statusForm, setStatusForm] = useState({
     status: 'open' as Issue['status'],
     resolution_notes: '',
@@ -77,6 +78,14 @@ export default function Issues() {
     user_id: '',
     notes: '',
   });
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    category_id: '',
+    priority: 'medium' as Issue['priority'],
+    labels: [] as string[],
+  });
+  const [labelInput, setLabelInput] = useState('');
 
   // Fetch issues
   const { data: issuesData, isLoading } = useQuery({
@@ -142,6 +151,19 @@ export default function Issues() {
     },
   });
 
+  // Update issue mutation
+  const updateIssueMutation = useMutation({
+    mutationFn: async ({ id, ...data }: { id: number; title: string; description: string; category_id?: number; priority: string; labels?: string[] }) => {
+      const response = await apiClient.put(`/issues/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-issues'] });
+      setShowEditModal(false);
+      setSelectedIssue(null);
+    },
+  });
+
   // Delete issue mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -161,6 +183,19 @@ export default function Issues() {
     setShowStatusModal(true);
   };
 
+  const handleEdit = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setEditForm({
+      title: issue.title,
+      description: issue.description,
+      category_id: issue.category_id?.toString() || '',
+      priority: issue.priority,
+      labels: issue.labels || [],
+    });
+    setLabelInput('');
+    setShowEditModal(true);
+  };
+
   const handleAssign = (issue: Issue) => {
     setSelectedIssue(issue);
     setAssignForm({
@@ -168,6 +203,23 @@ export default function Issues() {
       notes: '',
     });
     setShowAssignModal(true);
+  };
+
+  const addLabel = () => {
+    if (labelInput.trim() && !editForm.labels.includes(labelInput.trim())) {
+      setEditForm({
+        ...editForm,
+        labels: [...editForm.labels, labelInput.trim()],
+      });
+      setLabelInput('');
+    }
+  };
+
+  const removeLabel = (label: string) => {
+    setEditForm({
+      ...editForm,
+      labels: editForm.labels.filter(l => l !== label),
+    });
   };
 
   const handleDelete = async (id: number) => {
@@ -371,6 +423,12 @@ export default function Issues() {
                       <td className="px-6 py-4">
                         <div className="flex space-x-2">
                           <button
+                            onClick={() => handleEdit(issue)}
+                            className="text-purple-600 hover:text-purple-800 text-sm"
+                          >
+                            Edit
+                          </button>
+                          <button
                             onClick={() => handleUpdateStatus(issue)}
                             className="text-blue-600 hover:text-blue-800 text-sm"
                           >
@@ -544,6 +602,148 @@ export default function Issues() {
                 <button
                   onClick={() => {
                     setShowAssignModal(false);
+                    setSelectedIssue(null);
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedIssue && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">Edit Issue</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  rows={6}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <select
+                    value={editForm.category_id}
+                    onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">No Category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Priority
+                  </label>
+                  <select
+                    value={editForm.priority}
+                    onChange={(e) => setEditForm({ ...editForm, priority: e.target.value as Issue['priority'] })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Labels
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={labelInput}
+                    onChange={(e) => setLabelInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addLabel();
+                      }
+                    }}
+                    placeholder="Add a label and press Enter"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={addLabel}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                  >
+                    Add
+                  </button>
+                </div>
+                {editForm.labels.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {editForm.labels.map((label, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                      >
+                        {label}
+                        <button
+                          type="button"
+                          onClick={() => removeLabel(label)}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => {
+                    updateIssueMutation.mutate({
+                      id: selectedIssue.id,
+                      title: editForm.title,
+                      description: editForm.description,
+                      category_id: editForm.category_id ? parseInt(editForm.category_id) : undefined,
+                      priority: editForm.priority,
+                      labels: editForm.labels.length > 0 ? editForm.labels : undefined,
+                    });
+                  }}
+                  disabled={updateIssueMutation.isPending || !editForm.title.trim() || !editForm.description.trim()}
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {updateIssueMutation.isPending ? 'Updating...' : 'Update Issue'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
                     setSelectedIssue(null);
                   }}
                   className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
