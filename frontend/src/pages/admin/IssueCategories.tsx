@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../api/axios';
 import { useSEO } from '../../utils/seo';
@@ -54,7 +54,7 @@ export default function IssueCategories() {
         return response.data;
       }
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-issue-categories'] });
       queryClient.invalidateQueries({ queryKey: ['issue-categories'] }); // Invalidate public endpoint too
       resetForm();

@@ -14,9 +14,8 @@ export default function JSONFormatter() {
   const [input, setInput] = useState<string>('');
   const [output, setOutput] = useState<string>('');
   const [error, setError] = useState<ErrorInfo | null>(null);
-  const [indent, setIndent] = useState<number>(2);
+  const [indent, setIndent] = useState<number | 'tab'>(2);
   const [isMinified, setIsMinified] = useState<boolean>(false);
-  const [highlightedInput, setHighlightedInput] = useState<string>('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useSEO({
@@ -162,22 +161,12 @@ export default function JSONFormatter() {
     return fixed;
   };
 
-  // Highlight error in input
+  // Highlight error in input (currently returns text as-is, can be enhanced later)
   const highlightError = (text: string, errorInfo: ErrorInfo | null): string => {
     if (!errorInfo || errorInfo.position === undefined) {
       return text;
     }
-
-    const pos = errorInfo.position;
-    const before = text.substring(0, pos);
-    const atError = text.substring(pos, Math.min(pos + 20, text.length));
-    const after = text.substring(Math.min(pos + 20, text.length));
-
-    // Find word boundaries around error
-    const start = Math.max(0, pos - 30);
-    const end = Math.min(text.length, pos + 50);
-    const context = text.substring(start, end);
-    
+    // Error highlighting can be implemented here if needed
     return text;
   };
 
@@ -185,7 +174,6 @@ export default function JSONFormatter() {
     setError(null);
     if (!input.trim()) {
       setOutput('');
-      setHighlightedInput('');
       return;
     }
 
@@ -195,15 +183,14 @@ export default function JSONFormatter() {
       if (isMinified) {
         setOutput(JSON.stringify(parsed));
       } else {
-        const indentStr = indent === 'tab' ? '\t' : ' '.repeat(indent);
+        const indentStr = indent === 'tab' ? '\t' : (typeof indent === 'number' ? ' '.repeat(indent) : '  ');
         setOutput(JSON.stringify(parsed, null, indentStr));
       }
-      setHighlightedInput('');
     } catch (err) {
       const errorInfo = parseError(err instanceof Error ? err : new Error('Invalid JSON'), input);
       setError(errorInfo);
       setOutput('');
-      setHighlightedInput(highlightError(input, errorInfo));
+      highlightError(input, errorInfo);
     }
   };
 
@@ -220,12 +207,11 @@ export default function JSONFormatter() {
     try {
       JSON.parse(input);
       setError(null);
-      setHighlightedInput('');
       alert('✅ Valid JSON!');
     } catch (err) {
       const errorInfo = parseError(err instanceof Error ? err : new Error('Invalid JSON'), input);
       setError(errorInfo);
-      setHighlightedInput(highlightError(input, errorInfo));
+      highlightError(input, errorInfo);
     }
   };
 
@@ -233,7 +219,6 @@ export default function JSONFormatter() {
     setError(null);
     if (!input.trim()) {
       setOutput('');
-      setHighlightedInput('');
       return;
     }
 
@@ -241,12 +226,11 @@ export default function JSONFormatter() {
       const parsed = JSON.parse(input);
       setOutput(JSON.stringify(parsed));
       setIsMinified(true);
-      setHighlightedInput('');
     } catch (err) {
       const errorInfo = parseError(err instanceof Error ? err : new Error('Invalid JSON'), input);
       setError(errorInfo);
       setOutput('');
-      setHighlightedInput(highlightError(input, errorInfo));
+      highlightError(input, errorInfo);
     }
   };
 
@@ -280,7 +264,6 @@ export default function JSONFormatter() {
     setInput('');
     setOutput('');
     setError(null);
-    setHighlightedInput('');
   };
 
   const loadExample = () => {
@@ -378,7 +361,10 @@ export default function JSONFormatter() {
             <label className="text-sm text-gray-700">Indent:</label>
             <select
               value={indent}
-              onChange={(e) => setIndent(e.target.value === 'tab' ? 'tab' : parseInt(e.target.value))}
+              onChange={(e) => {
+                const value = e.target.value;
+                setIndent(value === 'tab' ? 'tab' : parseInt(value));
+              }}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             >
               <option value="2">2 spaces</option>
