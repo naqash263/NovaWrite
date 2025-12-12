@@ -211,22 +211,13 @@ class CommentController extends Controller
                 }
             }
 
-            // Load relationships
-            $comment->load(['user', 'parent', 'commentable']);
-
             // Send email notifications via N8n
             try {
                 $emailService = app(EmailService::class);
-                $commentable = $comment->commentable;
                 
-                // If commentable is null, skip email notifications
-                if (!$commentable) {
-                    Log::warning('Commentable resource not found for comment', [
-                        'comment_id' => $comment->id,
-                        'commentable_type' => $request->commentable_type,
-                        'commentable_id' => $request->commentable_id
-                    ]);
-                }
+                // Load commentable separately to avoid relationship loading issues
+                $commentableClass = 'App\\Models\\' . $request->commentable_type;
+                $commentable = $commentableClass::find($request->commentable_id);
                 
                 // Only send email notifications if commentable exists
                 if ($commentable) {
