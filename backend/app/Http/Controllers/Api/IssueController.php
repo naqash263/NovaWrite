@@ -306,9 +306,6 @@ class IssueController extends Controller
                 'ip_address' => $ipAddress,
             ]);
 
-            // Load relationships
-            $issue->load(['user', 'category']);
-
             // Send confirmation email via N8n
             try {
                 $emailService = app(EmailService::class);
@@ -363,10 +360,30 @@ class IssueController extends Controller
                 ]);
             }
 
+            // Return only the created issue data (without relationships)
             return response()->json([
                 'success' => true,
                 'message' => 'Issue created successfully',
-                'data' => $issue
+                'data' => [
+                    'id' => $issue->id,
+                    'title' => $issue->title,
+                    'slug' => $issue->slug,
+                    'description' => $issue->description,
+                    'category_id' => $issue->category_id,
+                    'priority' => $issue->priority,
+                    'status' => $issue->status,
+                    'labels' => $issue->labels,
+                    'user_id' => $issue->user_id,
+                    'guest_name' => $issue->guest_name,
+                    'guest_email' => $issue->guest_email,
+                    'views_count' => $issue->views_count,
+                    'upvotes_count' => $issue->upvotes_count,
+                    'comments_count' => $issue->comments_count,
+                    'is_pinned' => $issue->is_pinned,
+                    'is_locked' => $issue->is_locked,
+                    'created_at' => $issue->created_at,
+                    'updated_at' => $issue->updated_at,
+                ]
             ], 201);
         } catch (\Exception $e) {
             Log::error('Error creating issue: ' . $e->getMessage());
