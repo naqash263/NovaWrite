@@ -145,16 +145,6 @@ class CommentController extends Controller
             ], 422);
         }
 
-        // If not authenticated, require guest name and email
-        if (!$user) {
-            if (!$request->guest_name || !$request->guest_email) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Guest name and email are required for unauthenticated users'
-                ], 422);
-            }
-        }
-
         try {
             // Verify the commentable resource exists
             $commentableClass = 'App\\Models\\' . $request->commentable_type;
