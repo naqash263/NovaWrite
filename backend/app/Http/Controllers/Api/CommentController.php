@@ -232,7 +232,7 @@ class CommentController extends Controller
                         $unsubscribeToken = $this->getUnsubscribeToken($parentAuthorEmail);
                         
                         $emailService->sendTemplateEmail('comment_reply', [
-                            'commenter_name' => $user ? $user->name : $request->guest_name,
+                            'commenter_name' => $user->name,
                             'comment_content' => substr(strip_tags($request->content), 0, 200),
                             'parent_comment' => substr(strip_tags($parent->content), 0, 200),
                             'resource_type' => strtolower($request->commentable_type),
