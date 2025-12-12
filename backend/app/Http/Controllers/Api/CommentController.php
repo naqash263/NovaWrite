@@ -406,12 +406,20 @@ class CommentController extends Controller
         try {
             $comment = Comment::findOrFail($id);
             $user = Auth::user();
+            
+            // Require authentication
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required to delete comments'
+                ], 401);
+            }
 
-            // Check permissions
+            // Check permissions - only comment creator can delete
             if (!$comment->canBeDeletedBy($user)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You do not have permission to delete this comment'
+                    'message' => 'You can only delete your own comments'
                 ], 403);
             }
 
