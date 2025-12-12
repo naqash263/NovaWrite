@@ -220,11 +220,13 @@ class CommentController extends Controller
                 $commentable = $comment->commentable;
                 
                 // 1. Notify parent comment author if this is a reply
-                if ($request->parent_id && $parent) {
-                    $parentAuthorEmail = $parent->user ? $parent->user->email : $parent->guest_email;
-                    $parentAuthorName = $parent->user ? $parent->user->name : $parent->guest_name;
-                    
-                    if ($parentAuthorEmail && $parentAuthorEmail !== ($user ? $user->email : $request->guest_email)) {
+                if ($request->parent_id) {
+                    $parent = Comment::find($request->parent_id);
+                    if ($parent) {
+                        $parentAuthorEmail = $parent->user ? $parent->user->email : $parent->guest_email;
+                        $parentAuthorName = $parent->user ? $parent->user->name : $parent->guest_name;
+                        
+                        if ($parentAuthorEmail && $parentAuthorEmail !== $user->email) {
                         // Don't notify if replying to own comment
                         // Get unsubscribe token for email link
                         $unsubscribeToken = $this->getUnsubscribeToken($parentAuthorEmail);
