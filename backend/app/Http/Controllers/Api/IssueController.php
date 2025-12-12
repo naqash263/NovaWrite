@@ -136,7 +136,21 @@ class IssueController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // Try to authenticate user if token is provided (optional authentication)
         $user = Auth::user();
+        
+        // If no user from Auth, try to authenticate with API token manually
+        if (!$user) {
+            $token = $request->bearerToken();
+            if ($token) {
+                $apiToken = \App\Models\ApiToken::where('token', $token)->first();
+                if ($apiToken && !$apiToken->isExpired()) {
+                    $apiToken->update(['last_used_at' => now()]);
+                    $user = $apiToken->user;
+                    Auth::guard('api')->setUser($user);
+                }
+            }
+        }
         
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|min:5|max:255',
