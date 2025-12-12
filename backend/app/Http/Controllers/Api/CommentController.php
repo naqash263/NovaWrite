@@ -166,15 +166,6 @@ class CommentController extends Controller
                     'message' => ucfirst($resourceName) . ' not found. Comments must be created against an existing ' . $resourceName . '.'
                 ], 404);
             }
-            
-            // Additional validation: Ensure comment is tied to the specific resource
-            // This ensures comments are properly associated with the issue/resource
-            if ($commentable->id != $request->commentable_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Commentable resource mismatch'
-                ], 422);
-            }
 
             // Check if parent comment exists (for replies)
             if ($request->parent_id) {
