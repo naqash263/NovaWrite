@@ -288,10 +288,23 @@ class CommentController extends Controller
                 Log::warning('Failed to send comment email notification: ' . $e->getMessage());
             }
 
+            // Return only the created comment data (without relationships)
             return response()->json([
                 'success' => true,
                 'message' => 'Comment posted successfully',
-                'data' => $comment
+                'data' => [
+                    'id' => $comment->id,
+                    'commentable_type' => $comment->commentable_type,
+                    'commentable_id' => $comment->commentable_id,
+                    'parent_id' => $comment->parent_id,
+                    'content' => $comment->content,
+                    'user_id' => $comment->user_id,
+                    'is_approved' => $comment->is_approved,
+                    'likes_count' => $comment->likes_count ?? 0,
+                    'replies_count' => $comment->replies_count ?? 0,
+                    'created_at' => $comment->created_at,
+                    'updated_at' => $comment->updated_at,
+                ]
             ], 201);
         } catch (\Exception $e) {
             Log::error('Error creating comment', [
