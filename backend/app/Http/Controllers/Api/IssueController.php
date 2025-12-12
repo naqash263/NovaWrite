@@ -142,7 +142,7 @@ class IssueController extends Controller
             'title' => 'required|string|min:5|max:255',
             'description' => 'required|string|min:10|max:10000',
             'category_id' => 'nullable|integer|exists:issue_categories,id|required_without:category_name',
-            'category_name' => 'nullable|string|exists:issue_categories,name|required_without:category_id',
+            'category_name' => 'nullable|string|max:255|required_without:category_id',
             'priority' => 'nullable|string|in:low,medium,high,critical',
             'labels' => 'nullable|array',
             'labels.*' => 'string|max:50',
