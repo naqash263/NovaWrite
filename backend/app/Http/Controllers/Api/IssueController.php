@@ -151,10 +151,20 @@ class IssueController extends Controller
         ]);
 
         if ($validator->fails()) {
+            Log::warning('Issue creation validation failed', [
+                'errors' => $validator->errors()->toArray(),
+                'request_data' => $request->all()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
+                'debug' => [
+                    'received_data' => $request->all(),
+                    'labels_type' => gettype($request->labels),
+                    'labels_value' => $request->labels
+                ]
             ], 422);
         }
 
