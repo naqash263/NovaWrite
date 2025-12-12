@@ -172,14 +172,32 @@ class IssueController extends Controller
             // Resolve category_id from category_name if provided
             $categoryId = $request->category_id;
             if ($request->category_name && !$categoryId) {
+                // Try exact match first
                 $category = IssueCategory::where('name', $request->category_name)->first();
+                
+                // If not found, try case-insensitive match
+                if (!$category) {
+                    $category = IssueCategory::whereRaw('LOWER(name) = ?', [strtolower($request->category_name)])->first();
+                }
+                
                 if ($category) {
                     $categoryId = $category->id;
                 } else {
+                    // Get available categories for better error message
+                    $availableCategories = IssueCategory::where('is_active', true)
+                        ->orderBy('sort_order')
+                        ->pluck('name')
+                        ->toArray();
+                    
                     return response()->json([
                         'success' => false,
                         'message' => 'Category not found',
-                        'errors' => ['category_name' => ['The selected category name is invalid.']]
+                        'errors' => [
+                            'category_name' => [
+                                'The selected category name is invalid.',
+                                'Available categories: ' . implode(', ', $availableCategories)
+                            ]
+                        ]
                     ], 422);
                 }
             }
