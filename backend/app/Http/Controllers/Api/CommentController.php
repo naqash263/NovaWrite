@@ -101,7 +101,7 @@ class CommentController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            // Try to authenticate user if token is provided (optional authentication)
+            // Try to authenticate user if token is provided
             $user = Auth::user();
             
             // If no user from Auth, try to authenticate with API token manually
@@ -122,29 +122,25 @@ class CommentController extends Controller
                             'error' => $e->getMessage(),
                             'trace' => $e->getTraceAsString()
                         ]);
-                        // Continue without authentication (guest user)
                     }
                 }
             }
             
-            // Build validation rules based on whether user is authenticated
-            $validationRules = [
+            // Require authentication - no guest comments allowed
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required. Please login or use an API token to create comments.'
+                ], 401);
+            }
+            
+            // Validation rules (no guest fields needed since authentication is required)
+            $validator = Validator::make($request->all(), [
                 'commentable_type' => 'required|string|in:Post,Workflow,Project,Issue',
                 'commentable_id' => 'required|integer',
                 'parent_id' => 'nullable|integer|exists:comments,id',
                 'content' => 'required|string|min:3|max:5000',
-            ];
-            
-            // Only require guest fields if user is not authenticated
-            if (!$user) {
-                $validationRules['guest_name'] = 'required|string|max:255';
-                $validationRules['guest_email'] = 'required|email|max:255';
-            } else {
-                $validationRules['guest_name'] = 'nullable|string|max:255';
-                $validationRules['guest_email'] = 'nullable|email|max:255';
-            }
-            
-            $validator = Validator::make($request->all(), $validationRules);
+            ]);
 
             if ($validator->fails()) {
                 return response()->json([
@@ -181,30 +177,29 @@ class CommentController extends Controller
                 }
             }
 
-            // Rate limiting: max 10 comments per hour per IP
-            $ipAddress = $request->ip();
-            $recentComments = Comment::where('ip_address', $ipAddress)
+            // Rate limiting: max 50 comments per hour per user (user-based, not IP-based)
+            $recentComments = Comment::where('user_id', $user->id)
                 ->where('created_at', '>=', now()->subHour())
                 ->count();
 
-            if ($recentComments >= 10) {
+            if ($recentComments >= 50) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Rate limit exceeded. Please wait before posting another comment.'
+                    'message' => 'Rate limit exceeded. Maximum 50 comments per hour. Please wait before posting another comment.'
                 ], 429);
             }
 
-            // Create comment
+            // Create comment (only authenticated users)
             $comment = Comment::create([
                 'commentable_type' => $request->commentable_type,
                 'commentable_id' => $request->commentable_id,
-                'user_id' => $user?->id,
+                'user_id' => $user->id,
                 'parent_id' => $request->parent_id,
                 'content' => $request->content,
-                'guest_name' => $request->guest_name,
-                'guest_email' => $request->guest_email,
-                'is_approved' => $user ? true : false, // Auto-approve authenticated users
-                'ip_address' => $ipAddress,
+                'guest_name' => null, // No guest comments
+                'guest_email' => null, // No guest comments
+                'is_approved' => true, // Auto-approve authenticated users
+                'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
 
@@ -261,13 +256,12 @@ class CommentController extends Controller
                     }
                     
                     // Only notify if owner is different from commenter and it's not a reply
-                    $commenterEmail = $user ? $user->email : $request->guest_email;
-                    if ($resourceOwnerEmail && $resourceOwnerEmail !== $commenterEmail && !$request->parent_id) {
+                    if ($resourceOwnerEmail && $resourceOwnerEmail !== $user->email && !$request->parent_id) {
                         // Get unsubscribe token for email link
                         $unsubscribeToken = $this->getUnsubscribeToken($resourceOwnerEmail);
                         
                         $emailService->sendTemplateEmail('new_comment', [
-                            'commenter_name' => $user ? $user->name : $request->guest_name,
+                            'commenter_name' => $user->name,
                             'comment_content' => substr(strip_tags($request->content), 0, 200),
                             'resource_type' => strtolower($request->commentable_type),
                             'resource_title' => $this->getResourceTitle($commentable),
@@ -284,7 +278,7 @@ class CommentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $user ? 'Comment posted successfully' : 'Comment submitted for review',
+                'message' => 'Comment posted successfully',
                 'data' => $comment
             ], 201);
         } catch (\Exception $e) {
