@@ -107,13 +107,21 @@ class CommentController extends Controller
         if (!$user) {
             $token = $request->bearerToken();
             if ($token) {
-                $apiToken = \App\Models\ApiToken::where('token', $token)->first();
-                if ($apiToken && !$apiToken->isExpired()) {
-                    $apiToken->update(['last_used_at' => now()]);
-                    $user = $apiToken->user;
-                    if ($user) {
-                        Auth::guard('api')->setUser($user);
+                try {
+                    $apiToken = \App\Models\ApiToken::where('token', $token)->first();
+                    if ($apiToken && !$apiToken->isExpired()) {
+                        $apiToken->update(['last_used_at' => now()]);
+                        $user = $apiToken->user;
+                        if ($user) {
+                            Auth::guard('api')->setUser($user);
+                        }
                     }
+                } catch (\Exception $e) {
+                    Log::warning('API token authentication failed in comment creation', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    // Continue without authentication (guest user)
                 }
             }
         }
