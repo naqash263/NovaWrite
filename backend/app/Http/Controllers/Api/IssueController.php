@@ -143,11 +143,42 @@ class IssueController extends Controller
         if (!$user) {
             $token = $request->bearerToken();
             if ($token) {
+                Log::info('Attempting API token authentication for issue creation', [
+                    'token_prefix' => substr($token, 0, 20)
+                ]);
+                
                 $apiToken = \App\Models\ApiToken::where('token', $token)->first();
-                if ($apiToken && !$apiToken->isExpired()) {
-                    $apiToken->update(['last_used_at' => now()]);
-                    $user = $apiToken->user;
-                    Auth::guard('api')->setUser($user);
+                
+                if ($apiToken) {
+                    Log::info('API token found', [
+                        'token_id' => $apiToken->id,
+                        'user_id' => $apiToken->user_id,
+                        'is_expired' => $apiToken->isExpired()
+                    ]);
+                    
+                    if (!$apiToken->isExpired()) {
+                        $apiToken->update(['last_used_at' => now()]);
+                        $user = $apiToken->user;
+                        
+                        if ($user) {
+                            Auth::guard('api')->setUser($user);
+                            Log::info('API token authentication successful', [
+                                'user_id' => $user->id,
+                                'user_email' => $user->email
+                            ]);
+                        } else {
+                            Log::warning('API token found but user is null', [
+                                'token_id' => $apiToken->id,
+                                'user_id' => $apiToken->user_id
+                            ]);
+                        }
+                    } else {
+                        Log::warning('API token is expired', ['token_id' => $apiToken->id]);
+                    }
+                } else {
+                    Log::warning('API token not found in database', [
+                        'token_prefix' => substr($token, 0, 20)
+                    ]);
                 }
             }
         }
