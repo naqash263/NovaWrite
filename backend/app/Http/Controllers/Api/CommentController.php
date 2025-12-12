@@ -288,10 +288,17 @@ class CommentController extends Controller
                 'data' => $comment
             ], 201);
         } catch (\Exception $e) {
-            Log::error('Error creating comment: ' . $e->getMessage());
+            Log::error('Error creating comment', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create comment'
+                'message' => 'Failed to create comment',
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
