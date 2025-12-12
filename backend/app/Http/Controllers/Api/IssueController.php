@@ -145,7 +145,7 @@ class IssueController extends Controller
             'category_name' => 'nullable|string|max:255|required_without:category_id',
             'priority' => 'nullable|string|in:low,medium,high,critical',
             'labels' => 'nullable|array',
-            'labels.*' => 'string|max:50',
+            'labels.*' => 'required|string|max:50',
             'guest_name' => 'nullable|required_without:user_id|string|max:255',
             'guest_email' => 'nullable|required_without:user_id|email|max:255',
         ]);
