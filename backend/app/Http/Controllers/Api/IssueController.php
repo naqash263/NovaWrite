@@ -141,7 +141,8 @@ class IssueController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|min:5|max:255',
             'description' => 'required|string|min:10|max:10000',
-            'category_id' => 'nullable|integer|exists:issue_categories,id',
+            'category_id' => 'nullable|integer|exists:issue_categories,id|required_without:category_name',
+            'category_name' => 'nullable|string|exists:issue_categories,name|required_without:category_id',
             'priority' => 'nullable|string|in:low,medium,high,critical',
             'labels' => 'nullable|array',
             'labels.*' => 'string|max:50',
@@ -168,6 +169,21 @@ class IssueController extends Controller
         }
 
         try {
+            // Resolve category_id from category_name if provided
+            $categoryId = $request->category_id;
+            if ($request->category_name && !$categoryId) {
+                $category = IssueCategory::where('name', $request->category_name)->first();
+                if ($category) {
+                    $categoryId = $category->id;
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Category not found',
+                        'errors' => ['category_name' => ['The selected category name is invalid.']]
+                    ], 422);
+                }
+            }
+
             // Rate limiting: max 5 issues per hour per IP
             $ipAddress = $request->ip();
             $recentIssues = Issue::where('ip_address', $ipAddress)
@@ -188,7 +204,7 @@ class IssueController extends Controller
                 'user_id' => $user?->id,
                 'guest_name' => $request->guest_name,
                 'guest_email' => $request->guest_email,
-                'category_id' => $request->category_id,
+                'category_id' => $categoryId,
                 'priority' => $request->priority ?? 'medium',
                 'labels' => $request->labels ?? [],
                 'status' => 'open',
