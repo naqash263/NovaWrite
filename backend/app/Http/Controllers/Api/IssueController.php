@@ -215,6 +215,18 @@ class IssueController extends Controller
                 ], 429);
             }
 
+            // Normalize labels - ensure they're strings and filter out empty values
+            $labels = [];
+            if ($request->has('labels') && is_array($request->labels)) {
+                $labels = array_filter(
+                    array_map('trim', $request->labels),
+                    function($label) {
+                        return !empty($label) && is_string($label) && strlen($label) <= 50;
+                    }
+                );
+                $labels = array_values($labels); // Re-index array
+            }
+
             // Create issue
             $issue = Issue::create([
                 'title' => $request->title,
@@ -224,7 +236,7 @@ class IssueController extends Controller
                 'guest_email' => $request->guest_email,
                 'category_id' => $categoryId,
                 'priority' => $request->priority ?? 'medium',
-                'labels' => $request->labels ?? [],
+                'labels' => $labels,
                 'status' => 'open',
                 'ip_address' => $ipAddress,
             ]);
