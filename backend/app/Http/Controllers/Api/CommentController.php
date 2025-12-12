@@ -219,37 +219,46 @@ class CommentController extends Controller
                 $emailService = app(EmailService::class);
                 $commentable = $comment->commentable;
                 
-                // 1. Notify parent comment author if this is a reply
-                if ($request->parent_id) {
-                    $parent = Comment::find($request->parent_id);
-                    if ($parent) {
-                        $parentAuthorEmail = $parent->user ? $parent->user->email : $parent->guest_email;
-                        $parentAuthorName = $parent->user ? $parent->user->name : $parent->guest_name;
-                        
-                        if ($parentAuthorEmail && $parentAuthorEmail !== $user->email) {
-                            // Don't notify if replying to own comment
-                            // Get unsubscribe token for email link
-                            $unsubscribeToken = $this->getUnsubscribeToken($parentAuthorEmail);
-                            
-                            $emailService->sendTemplateEmail('comment_reply', [
-                                'commenter_name' => $user->name,
-                                'comment_content' => substr(strip_tags($request->content), 0, 200),
-                                'parent_comment' => substr(strip_tags($parent->content), 0, 200),
-                                'resource_type' => strtolower($request->commentable_type),
-                                'resource_title' => $this->getResourceTitle($commentable),
-                                'resource_url' => $this->getResourceUrl($commentable, $request->commentable_type),
-                                'comment_url' => $this->getResourceUrl($commentable, $request->commentable_type) . '#comment-' . $comment->id,
-                                'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=comment_reply',
-                            ], $parentAuthorEmail, $parentAuthorName);
-                        }
-                    }
+                // If commentable is null, skip email notifications
+                if (!$commentable) {
+                    Log::warning('Commentable resource not found for comment', [
+                        'comment_id' => $comment->id,
+                        'commentable_type' => $request->commentable_type,
+                        'commentable_id' => $request->commentable_id
+                    ]);
                 }
                 
-                // 2. Notify resource owner (if different from commenter)
-                $resourceOwnerEmail = null;
-                $resourceOwnerName = null;
-                
+                // Only send email notifications if commentable exists
                 if ($commentable) {
+                    // 1. Notify parent comment author if this is a reply
+                    if ($request->parent_id) {
+                        $parent = Comment::find($request->parent_id);
+                        if ($parent) {
+                            $parentAuthorEmail = $parent->user ? $parent->user->email : $parent->guest_email;
+                            $parentAuthorName = $parent->user ? $parent->user->name : $parent->guest_name;
+                            
+                            if ($parentAuthorEmail && $parentAuthorEmail !== $user->email) {
+                                // Don't notify if replying to own comment
+                                // Get unsubscribe token for email link
+                                $unsubscribeToken = $this->getUnsubscribeToken($parentAuthorEmail);
+                                
+                                $emailService->sendTemplateEmail('comment_reply', [
+                                    'commenter_name' => $user->name,
+                                    'comment_content' => substr(strip_tags($request->content), 0, 200),
+                                    'parent_comment' => substr(strip_tags($parent->content), 0, 200),
+                                    'resource_type' => strtolower($request->commentable_type),
+                                    'resource_title' => $this->getResourceTitle($commentable),
+                                    'resource_url' => $this->getResourceUrl($commentable, $request->commentable_type),
+                                    'comment_url' => $this->getResourceUrl($commentable, $request->commentable_type) . '#comment-' . $comment->id,
+                                    'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=comment_reply',
+                                ], $parentAuthorEmail, $parentAuthorName);
+                            }
+                        }
+                    }
+                    
+                    // 2. Notify resource owner (if different from commenter)
+                    $resourceOwnerEmail = null;
+                    $resourceOwnerName = null;
                     if (method_exists($commentable, 'user') && $commentable->user) {
                         $resourceOwnerEmail = $commentable->user->email;
                         $resourceOwnerName = $commentable->user->name;
