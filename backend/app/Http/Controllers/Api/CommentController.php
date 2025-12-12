@@ -100,60 +100,59 @@ class CommentController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        // Try to authenticate user if token is provided (optional authentication)
-        $user = Auth::user();
-        
-        // If no user from Auth, try to authenticate with API token manually
-        if (!$user) {
-            $token = $request->bearerToken();
-            if ($token) {
-                try {
-                    $apiToken = \App\Models\ApiToken::where('token', $token)->first();
-                    if ($apiToken && !$apiToken->isExpired()) {
-                        $apiToken->update(['last_used_at' => now()]);
-                        $user = $apiToken->user;
-                        if ($user) {
-                            Auth::guard('api')->setUser($user);
+        try {
+            // Try to authenticate user if token is provided (optional authentication)
+            $user = Auth::user();
+            
+            // If no user from Auth, try to authenticate with API token manually
+            if (!$user) {
+                $token = $request->bearerToken();
+                if ($token) {
+                    try {
+                        $apiToken = \App\Models\ApiToken::where('token', $token)->first();
+                        if ($apiToken && !$apiToken->isExpired()) {
+                            $apiToken->update(['last_used_at' => now()]);
+                            $user = $apiToken->user;
+                            if ($user) {
+                                Auth::guard('api')->setUser($user);
+                            }
                         }
+                    } catch (\Exception $e) {
+                        Log::warning('API token authentication failed in comment creation', [
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                        // Continue without authentication (guest user)
                     }
-                } catch (\Exception $e) {
-                    Log::warning('API token authentication failed in comment creation', [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                    // Continue without authentication (guest user)
                 }
             }
-        }
-        
-        // Build validation rules based on whether user is authenticated
-        $validationRules = [
-            'commentable_type' => 'required|string|in:Post,Workflow,Project,Issue',
-            'commentable_id' => 'required|integer',
-            'parent_id' => 'nullable|integer|exists:comments,id',
-            'content' => 'required|string|min:3|max:5000',
-        ];
-        
-        // Only require guest fields if user is not authenticated
-        if (!$user) {
-            $validationRules['guest_name'] = 'required|string|max:255';
-            $validationRules['guest_email'] = 'required|email|max:255';
-        } else {
-            $validationRules['guest_name'] = 'nullable|string|max:255';
-            $validationRules['guest_email'] = 'nullable|email|max:255';
-        }
-        
-        $validator = Validator::make($request->all(), $validationRules);
+            
+            // Build validation rules based on whether user is authenticated
+            $validationRules = [
+                'commentable_type' => 'required|string|in:Post,Workflow,Project,Issue',
+                'commentable_id' => 'required|integer',
+                'parent_id' => 'nullable|integer|exists:comments,id',
+                'content' => 'required|string|min:3|max:5000',
+            ];
+            
+            // Only require guest fields if user is not authenticated
+            if (!$user) {
+                $validationRules['guest_name'] = 'required|string|max:255';
+                $validationRules['guest_email'] = 'required|email|max:255';
+            } else {
+                $validationRules['guest_name'] = 'nullable|string|max:255';
+                $validationRules['guest_email'] = 'nullable|email|max:255';
+            }
+            
+            $validator = Validator::make($request->all(), $validationRules);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
             // Verify the commentable resource exists
             $commentableClass = 'App\\Models\\' . $request->commentable_type;
             if (!class_exists($commentableClass)) {
