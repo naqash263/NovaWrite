@@ -183,7 +183,8 @@ class IssueController extends Controller
             }
         }
         
-        $validator = Validator::make($request->all(), [
+        // Build validation rules based on whether user is authenticated
+        $validationRules = [
             'title' => 'required|string|min:5|max:255',
             'description' => 'required|string|min:10|max:10000',
             'category_id' => 'nullable|integer|exists:issue_categories,id|required_without:category_name',
@@ -191,9 +192,18 @@ class IssueController extends Controller
             'priority' => 'nullable|string|in:low,medium,high,critical',
             'labels' => 'nullable|array',
             'labels.*' => 'required|string|max:50',
-            'guest_name' => 'nullable|required_without:user_id|string|max:255',
-            'guest_email' => 'nullable|required_without:user_id|email|max:255',
-        ]);
+        ];
+        
+        // Only require guest fields if user is not authenticated
+        if (!$user) {
+            $validationRules['guest_name'] = 'required|string|max:255';
+            $validationRules['guest_email'] = 'required|email|max:255';
+        } else {
+            $validationRules['guest_name'] = 'nullable|string|max:255';
+            $validationRules['guest_email'] = 'nullable|email|max:255';
+        }
+        
+        $validator = Validator::make($request->all(), $validationRules);
 
         if ($validator->fails()) {
             Log::warning('Issue creation validation failed', [
