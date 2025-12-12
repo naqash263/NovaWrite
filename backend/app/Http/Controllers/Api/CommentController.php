@@ -227,20 +227,21 @@ class CommentController extends Controller
                         $parentAuthorName = $parent->user ? $parent->user->name : $parent->guest_name;
                         
                         if ($parentAuthorEmail && $parentAuthorEmail !== $user->email) {
-                        // Don't notify if replying to own comment
-                        // Get unsubscribe token for email link
-                        $unsubscribeToken = $this->getUnsubscribeToken($parentAuthorEmail);
-                        
-                        $emailService->sendTemplateEmail('comment_reply', [
-                            'commenter_name' => $user->name,
-                            'comment_content' => substr(strip_tags($request->content), 0, 200),
-                            'parent_comment' => substr(strip_tags($parent->content), 0, 200),
-                            'resource_type' => strtolower($request->commentable_type),
-                            'resource_title' => $this->getResourceTitle($commentable),
-                            'resource_url' => $this->getResourceUrl($commentable, $request->commentable_type),
-                            'comment_url' => $this->getResourceUrl($commentable, $request->commentable_type) . '#comment-' . $comment->id,
-                            'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=comment_reply',
-                        ], $parentAuthorEmail, $parentAuthorName);
+                            // Don't notify if replying to own comment
+                            // Get unsubscribe token for email link
+                            $unsubscribeToken = $this->getUnsubscribeToken($parentAuthorEmail);
+                            
+                            $emailService->sendTemplateEmail('comment_reply', [
+                                'commenter_name' => $user->name,
+                                'comment_content' => substr(strip_tags($request->content), 0, 200),
+                                'parent_comment' => substr(strip_tags($parent->content), 0, 200),
+                                'resource_type' => strtolower($request->commentable_type),
+                                'resource_title' => $this->getResourceTitle($commentable),
+                                'resource_url' => $this->getResourceUrl($commentable, $request->commentable_type),
+                                'comment_url' => $this->getResourceUrl($commentable, $request->commentable_type) . '#comment-' . $comment->id,
+                                'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=comment_reply',
+                            ], $parentAuthorEmail, $parentAuthorName);
+                        }
                     }
                 }
                 
