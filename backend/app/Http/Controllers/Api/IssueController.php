@@ -811,7 +811,7 @@ class IssueController extends Controller
     public function markAsSolved(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'solution' => 'required|string|min:10|max:2000',
+            'solution' => 'required|string|min:10|max:10000', // Increased limit for detailed solutions
             'guest_email' => 'nullable|email|max:255', // Required for guest users
         ]);
 
