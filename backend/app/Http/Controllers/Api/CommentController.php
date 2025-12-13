@@ -200,10 +200,6 @@ class CommentController extends Controller
             try {
                 $emailService = app(EmailService::class);
                 
-                // Load commentable separately to avoid relationship loading issues
-                $commentableClass = 'App\\Models\\' . $request->commentable_type;
-                $commentable = $commentableClass::find($request->commentable_id);
-                
                 // Only send email notifications if commentable exists
                 if ($commentable) {
                     // 1. Notify parent comment author if this is a reply
