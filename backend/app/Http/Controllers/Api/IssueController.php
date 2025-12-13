@@ -131,13 +131,19 @@ class IssueController extends Controller
                     try {
                         $actualCount = $issue->comments()->count();
                         if ($actualCount > 0) {
-                            // Count is wrong, update it
+                            // Count is wrong, update it immediately in the response
                             $issue->comments_count = $actualCount;
+                            // Update in database asynchronously
                             $issue->updateQuietly(['comments_count' => $actualCount]);
                         }
                     } catch (\Exception $e) {
-                        // If check fails, just use stored value
+                        // If check fails, try to get count anyway for the response
                         Log::debug('Could not verify comments count for issue ' . $issue->id . ': ' . $e->getMessage());
+                        try {
+                            $issue->comments_count = $issue->comments()->count();
+                        } catch (\Exception $e2) {
+                            // Keep 0 if we can't get count
+                        }
                     }
                 }
                 
