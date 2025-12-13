@@ -152,7 +152,7 @@ class Comment extends Model
 
     /**
      * Check if comment can be deleted by user
-     * Only the comment creator can delete their own comments
+     * Only admins can delete comments
      */
     public function canBeDeletedBy(?User $user): bool
     {
@@ -160,8 +160,8 @@ class Comment extends Model
             return false;
         }
 
-        // Only the comment creator can delete their own comments
-        return $this->user_id === $user->id;
+        // Only admins can delete comments
+        return $user->role === 'admin';
     }
 
     /**

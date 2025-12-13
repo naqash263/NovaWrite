@@ -49,7 +49,7 @@ export default function CommentItem({
   const [likesCount, setLikesCount] = useState(comment.likes_count);
 
   const authorName = comment.user?.name || comment.guest_name || 'Anonymous';
-  const canDelete = isAuthenticated && (user?.role === 'admin' || user?.id === comment.user?.id);
+  const canDelete = isAuthenticated && user?.role === 'admin'; // Only admins can delete comments
   const canReply = depth < maxDepth;
 
   const handleLike = async () => {
