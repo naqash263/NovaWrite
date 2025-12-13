@@ -112,8 +112,16 @@ class IssueController extends Controller
                 
                 // Ensure comments_count is not negative (recalculate if needed)
                 if ($issue->comments_count < 0) {
-                    $issue->recalculateCommentsCount();
-                    $issue->refresh();
+                    try {
+                        $actualCount = $issue->comments()->count();
+                        $issue->comments_count = max(0, $actualCount);
+                        // Update in database asynchronously (don't block the response)
+                        $issue->updateQuietly(['comments_count' => $issue->comments_count]);
+                    } catch (\Exception $e) {
+                        // If recalculation fails, just set to 0
+                        Log::warning('Failed to recalculate comments count for issue ' . $issue->id . ': ' . $e->getMessage());
+                        $issue->comments_count = 0;
+                    }
                 }
                 
                 return $issue;
