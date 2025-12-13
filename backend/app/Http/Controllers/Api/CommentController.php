@@ -101,30 +101,9 @@ class CommentController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            // Try to authenticate user if token is provided
-            $user = Auth::user();
-            
-            // If no user from Auth, try to authenticate with API token manually
-            if (!$user) {
-                $token = $request->bearerToken();
-                if ($token) {
-                    try {
-                        $apiToken = \App\Models\ApiToken::where('token', $token)->first();
-                        if ($apiToken && !$apiToken->isExpired()) {
-                            $apiToken->update(['last_used_at' => now()]);
-                            $user = $apiToken->user;
-                            if ($user) {
-                                Auth::guard('api')->setUser($user);
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        Log::warning('API token authentication failed in comment creation', [
-                            'error' => $e->getMessage(),
-                            'trace' => $e->getTraceAsString()
-                        ]);
-                    }
-                }
-            }
+            // Get authenticated user (handled by api.auth middleware)
+            // Middleware supports both JWT tokens and API tokens
+            $user = Auth::guard('api')->user();
             
             // Require authentication - no guest comments allowed
             if (!$user) {

@@ -622,11 +622,11 @@ Route::middleware('api.auth')->group(function () {
 Route::get('comments', [App\Http\Controllers\Api\CommentController::class, 'index']);
 Route::get('comments/{id}', [App\Http\Controllers\Api\CommentController::class, 'show']);
 Route::get('comments/{id}/replies', [App\Http\Controllers\Api\CommentController::class, 'replies']);
-Route::post('comments', [App\Http\Controllers\Api\CommentController::class, 'store']);
 Route::post('comments/{id}/like', [App\Http\Controllers\Api\CommentController::class, 'like']);
 Route::post('comments/{id}/report', [App\Http\Controllers\Api\CommentController::class, 'report']);
 
 Route::middleware('api.auth')->group(function () {
+    Route::post('comments', [App\Http\Controllers\Api\CommentController::class, 'store']);
     Route::put('comments/{id}', [App\Http\Controllers\Api\CommentController::class, 'update']);
     Route::delete('comments/{id}', [App\Http\Controllers\Api\CommentController::class, 'destroy']);
 });
