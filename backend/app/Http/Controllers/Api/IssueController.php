@@ -110,17 +110,34 @@ class IssueController extends Controller
             $issues->getCollection()->transform(function ($issue) use ($userId, $guestIp) {
                 $issue->is_upvoted = $issue->isUpvotedBy($userId, $guestIp);
                 
-                // Ensure comments_count is not negative (recalculate if needed)
-                if ($issue->comments_count < 0) {
+                // Recalculate comments_count if it's negative, null, or 0 but comments exist
+                if ($issue->comments_count < 0 || $issue->comments_count === null) {
                     try {
                         $actualCount = $issue->comments()->count();
                         $issue->comments_count = max(0, $actualCount);
                         // Update in database asynchronously (don't block the response)
                         $issue->updateQuietly(['comments_count' => $issue->comments_count]);
                     } catch (\Exception $e) {
-                        // If recalculation fails, just set to 0
+                        // If recalculation fails, try to get count directly
                         Log::warning('Failed to recalculate comments count for issue ' . $issue->id . ': ' . $e->getMessage());
-                        $issue->comments_count = 0;
+                        try {
+                            $issue->comments_count = $issue->comments()->count();
+                        } catch (\Exception $e2) {
+                            $issue->comments_count = 0;
+                        }
+                    }
+                } elseif ($issue->comments_count === 0) {
+                    // If count is 0, check if there are actually comments (might be out of sync)
+                    try {
+                        $actualCount = $issue->comments()->count();
+                        if ($actualCount > 0) {
+                            // Count is wrong, update it
+                            $issue->comments_count = $actualCount;
+                            $issue->updateQuietly(['comments_count' => $actualCount]);
+                        }
+                    } catch (\Exception $e) {
+                        // If check fails, just use stored value
+                        Log::debug('Could not verify comments count for issue ' . $issue->id . ': ' . $e->getMessage());
                     }
                 }
                 
