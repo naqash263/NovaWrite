@@ -190,6 +190,11 @@ class CommentController extends Controller
                     $parent->incrementRepliesCount();
                 }
             }
+            
+            // Increment commentable's comments count if it's an Issue
+            if ($request->commentable_type === 'Issue' && $commentable) {
+                $commentable->incrementCommentsCount();
+            }
 
             // Send email notifications via N8n
             try {
@@ -375,13 +380,13 @@ class CommentController extends Controller
     {
         try {
             $comment = Comment::findOrFail($id);
-            $user = Auth::user();
+            $user = Auth::guard('api')->user();
             
             // Require authentication
             if (!$user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Authentication required to delete comments'
+                    'message' => 'Authentication required. Please login or use an API token to delete comments.'
                 ], 401);
             }
 
@@ -394,6 +399,8 @@ class CommentController extends Controller
             }
 
             $parentId = $comment->parent_id;
+            $commentableType = $comment->commentable_type;
+            $commentableId = $comment->commentable_id;
 
             // Delete comment (cascade will handle likes and reports)
             $comment->delete();
@@ -403,6 +410,14 @@ class CommentController extends Controller
                 $parent = Comment::find($parentId);
                 if ($parent) {
                     $parent->decrementRepliesCount();
+                }
+            }
+            
+            // Decrement commentable's comments count if it's an Issue
+            if ($commentableType === 'Issue') {
+                $issue = \App\Models\Issue::find($commentableId);
+                if ($issue) {
+                    $issue->decrementCommentsCount();
                 }
             }
 

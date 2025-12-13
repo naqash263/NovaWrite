@@ -24,7 +24,8 @@ class IssueController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Issue::with(['user', 'category', 'assignee', 'resolver']);
+            $query = Issue::with(['user', 'category', 'assignee', 'resolver'])
+                ->withCount('comments');
 
             // Search filter
             if ($request->has('search')) {
@@ -404,6 +405,7 @@ class IssueController extends Controller
             $issue = null;
             if (is_numeric($id)) {
                 $issue = Issue::with(['user', 'category', 'assignee', 'resolver', 'upvotes'])
+                    ->withCount('comments')
                     ->where('id', $id)
                     ->first();
             }
@@ -411,6 +413,7 @@ class IssueController extends Controller
             // If not found by ID or ID is not numeric, try slug
             if (!$issue) {
                 $issue = Issue::with(['user', 'category', 'assignee', 'resolver', 'upvotes'])
+                    ->withCount('comments')
                     ->where('slug', $id)
                     ->first();
             }
