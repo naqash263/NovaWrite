@@ -8,6 +8,7 @@ use App\Models\IssueCategory;
 use App\Models\IssueUpvote;
 use App\Models\IssueLabel;
 use App\Models\IssueAssignment;
+use App\Models\Comment;
 use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
