@@ -827,10 +827,14 @@ class IssueController extends Controller
             $issue = Issue::findOrFail($id);
             $user = Auth::user();
 
-            // Check if user is the creator (authenticated or guest)
+            // Check if user is the creator (authenticated or guest) OR if user is admin
             $isOwner = false;
+            $isAdmin = false;
             
-            if ($user && $issue->user_id === $user->id) {
+            // Admins can always mark issues as solved
+            if ($user && $user->role === 'admin') {
+                $isAdmin = true;
+            } elseif ($user && $issue->user_id === $user->id) {
                 // Authenticated user owns the issue
                 $isOwner = true;
             } elseif (!$user && $issue->guest_email) {
@@ -847,10 +851,10 @@ class IssueController extends Controller
                 }
             }
 
-            if (!$isOwner) {
+            if (!$isOwner && !$isAdmin) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Only the issue creator can mark it as solved. Please provide the correct email if you created this issue as a guest.'
+                    'message' => 'Only the issue creator or administrators can mark it as solved. Please provide the correct email if you created this issue as a guest.'
                 ], 403);
             }
 
