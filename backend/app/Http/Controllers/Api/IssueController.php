@@ -109,6 +109,13 @@ class IssueController extends Controller
             
             $issues->getCollection()->transform(function ($issue) use ($userId, $guestIp) {
                 $issue->is_upvoted = $issue->isUpvotedBy($userId, $guestIp);
+                
+                // Ensure comments_count is not negative (recalculate if needed)
+                if ($issue->comments_count < 0) {
+                    $issue->recalculateCommentsCount();
+                    $issue->refresh();
+                }
+                
                 return $issue;
             });
 
@@ -424,6 +431,12 @@ class IssueController extends Controller
                     'success' => false,
                     'message' => 'Issue not found'
                 ], 404);
+            }
+
+            // Ensure comments_count is not negative (recalculate if needed)
+            if ($issue->comments_count < 0) {
+                $issue->recalculateCommentsCount();
+                $issue->refresh();
             }
 
             // Increment views

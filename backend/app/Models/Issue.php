@@ -197,11 +197,25 @@ class Issue extends Model
     }
 
     /**
-     * Decrement comments count
+     * Decrement comments count (with safeguard to prevent negative values)
      */
     public function decrementCommentsCount(): void
     {
-        $this->decrement('comments_count');
+        if ($this->comments_count > 0) {
+            $this->decrement('comments_count');
+        } else {
+            // If count is already 0 or negative, recalculate from actual comments
+            $this->recalculateCommentsCount();
+        }
+    }
+    
+    /**
+     * Recalculate comments count from actual comments
+     */
+    public function recalculateCommentsCount(): void
+    {
+        $actualCount = $this->comments()->count();
+        $this->update(['comments_count' => max(0, $actualCount)]);
     }
 
     /**
