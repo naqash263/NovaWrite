@@ -50,24 +50,40 @@ class IssueController extends Controller
                 if (!empty($searchWords)) {
                     $query->where(function($q) use ($searchWords, $searchEscaped) {
                         // Use ILIKE for PostgreSQL (case-insensitive, can use indexes)
-                        // Falls back to LIKE for other databases (case-sensitive but still works)
+                        // Falls back to LIKE for other databases
                         $dbDriver = \DB::connection()->getDriverName();
-                        $likeOperator = ($dbDriver === 'pgsql') ? 'ilike' : 'like';
+                        $isPostgres = ($dbDriver === 'pgsql');
                         
-                        // Search for exact phrase in title (highest priority - uses index)
-                        $q->where('title', $likeOperator, "%{$searchEscaped}%");
-                        
-                        // Also search in description
-                        $q->orWhere('description', $likeOperator, "%{$searchEscaped}%");
-                        
-                        // If multiple words, search for each word individually
-                        if (count($searchWords) > 1) {
-                            foreach ($searchWords as $word) {
-                                $word = trim($word);
-                                if (strlen($word) >= 2) {
-                                    $wordEscaped = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $word);
-                                    $q->orWhere('title', $likeOperator, "%{$wordEscaped}%")
-                                      ->orWhere('description', $likeOperator, "%{$wordEscaped}%");
+                        if ($isPostgres) {
+                            // PostgreSQL: Use ILIKE for case-insensitive search (can use indexes)
+                            $q->whereRaw('title ILIKE ?', ["%{$searchEscaped}%"]);
+                            $q->orWhereRaw('description ILIKE ?', ["%{$searchEscaped}%"]);
+                            
+                            // If multiple words, search for each word individually
+                            if (count($searchWords) > 1) {
+                                foreach ($searchWords as $word) {
+                                    $word = trim($word);
+                                    if (strlen($word) >= 2) {
+                                        $wordEscaped = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $word);
+                                        $q->orWhereRaw('title ILIKE ?', ["%{$wordEscaped}%"]);
+                                        $q->orWhereRaw('description ILIKE ?', ["%{$wordEscaped}%"]);
+                                    }
+                                }
+                            }
+                        } else {
+                            // Other databases: Use LIKE (case-sensitive)
+                            $q->where('title', 'like', "%{$searchEscaped}%");
+                            $q->orWhere('description', 'like', "%{$searchEscaped}%");
+                            
+                            // If multiple words, search for each word individually
+                            if (count($searchWords) > 1) {
+                                foreach ($searchWords as $word) {
+                                    $word = trim($word);
+                                    if (strlen($word) >= 2) {
+                                        $wordEscaped = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $word);
+                                        $q->orWhere('title', 'like', "%{$wordEscaped}%");
+                                        $q->orWhere('description', 'like', "%{$wordEscaped}%");
+                                    }
                                 }
                             }
                         }
