@@ -112,18 +112,25 @@ class IssueController extends Controller
                 
                 // Always verify and update comments_count if it seems wrong
                 try {
-                    $actualCount = $issue->comments()->count();
+                    // Force fresh query to get accurate count
+                    $actualCount = \App\Models\Comment::where('commentable_type', 'Issue')
+                        ->where('commentable_id', $issue->id)
+                        ->count();
+                    
                     $storedCount = $issue->comments_count ?? 0;
                     
                     // If stored count doesn't match actual count, update it
                     if ($storedCount != $actualCount || $storedCount < 0 || $storedCount === null) {
+                        // Update the model instance immediately for the response
                         $issue->comments_count = max(0, $actualCount);
                         // Update in database asynchronously (don't block the response)
                         $issue->updateQuietly(['comments_count' => $issue->comments_count]);
+                        
+                        Log::debug('Updated comments count for issue ' . $issue->id . ' from ' . $storedCount . ' to ' . $actualCount);
                     }
                 } catch (\Exception $e) {
                     // If count check fails, log but don't break the response
-                    Log::debug('Could not verify comments count for issue ' . $issue->id . ': ' . $e->getMessage());
+                    Log::warning('Could not verify comments count for issue ' . $issue->id . ': ' . $e->getMessage());
                     // Ensure count is at least 0
                     if ($issue->comments_count < 0 || $issue->comments_count === null) {
                         $issue->comments_count = 0;
