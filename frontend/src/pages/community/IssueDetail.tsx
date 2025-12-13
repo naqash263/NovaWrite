@@ -338,9 +338,6 @@ export default function IssueDetail() {
               </div>
             </div>
 
-            {/* Ad: Before Comments */}
-            <AdPlacement position="content-middle" className="my-6" />
-
             {/* Comments Section */}
             <CommentSection
               commentableType="Issue"
