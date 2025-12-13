@@ -458,10 +458,17 @@ class IssueController extends Controller
                 ], 404);
             }
 
-            // Ensure comments_count is not negative (recalculate if needed)
-            if ($issue->comments_count < 0) {
+            // Ensure comments_count is accurate (recalculate if needed)
+            if ($issue->comments_count < 0 || $issue->comments_count === null) {
                 $issue->recalculateCommentsCount();
                 $issue->refresh();
+            } elseif ($issue->comments_count === 0) {
+                // Check if count is 0 but comments actually exist
+                $actualCount = $issue->comments()->count();
+                if ($actualCount > 0) {
+                    $issue->recalculateCommentsCount();
+                    $issue->refresh();
+                }
             }
 
             // Increment views
