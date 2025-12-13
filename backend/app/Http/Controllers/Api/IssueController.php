@@ -27,13 +27,47 @@ class IssueController extends Controller
         try {
             $query = Issue::with(['user', 'category', 'assignee', 'resolver']);
 
-            // Search filter
-            if ($request->has('search')) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
-                });
+            // Search filter - optimized for performance and word-based search
+            if ($request->has('search') && !empty(trim($request->search))) {
+                $search = trim($request->search);
+                
+                // Limit search length to prevent abuse
+                if (strlen($search) > 100) {
+                    $search = substr($search, 0, 100);
+                }
+                
+                // Escape special characters for LIKE queries
+                $searchEscaped = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $search);
+                
+                // Split search into individual words for better matching
+                $searchWords = array_filter(
+                    preg_split('/\s+/', $search),
+                    function($word) {
+                        return strlen(trim($word)) >= 2; // Ignore words shorter than 2 characters
+                    }
+                );
+                
+                if (!empty($searchWords)) {
+                    $query->where(function($q) use ($searchWords, $searchEscaped) {
+                        // Search for exact phrase in title (highest priority - uses index)
+                        $q->where('title', 'like', "%{$searchEscaped}%");
+                        
+                        // Also search in description
+                        $q->orWhere('description', 'like', "%{$searchEscaped}%");
+                        
+                        // If multiple words, search for each word individually
+                        if (count($searchWords) > 1) {
+                            foreach ($searchWords as $word) {
+                                $word = trim($word);
+                                if (strlen($word) >= 2) {
+                                    $wordEscaped = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $word);
+                                    $q->orWhere('title', 'like', "%{$wordEscaped}%")
+                                      ->orWhere('description', 'like', "%{$wordEscaped}%");
+                                }
+                            }
+                        }
+                    });
+                }
             }
 
             // Status filter
