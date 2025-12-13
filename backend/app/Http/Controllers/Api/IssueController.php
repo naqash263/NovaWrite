@@ -49,12 +49,16 @@ class IssueController extends Controller
                 
                 if (!empty($searchWords)) {
                     $query->where(function($q) use ($searchWords, $searchEscaped) {
+                        // Use ILIKE for PostgreSQL (case-insensitive, can use indexes)
+                        // Falls back to LIKE for other databases (case-sensitive but still works)
+                        $dbDriver = \DB::connection()->getDriverName();
+                        $likeOperator = ($dbDriver === 'pgsql') ? 'ilike' : 'like';
+                        
                         // Search for exact phrase in title (highest priority - uses index)
-                        // Use case-insensitive search for better user experience
-                        $q->whereRaw('LOWER(title) LIKE ?', ['%' . strtolower($searchEscaped) . '%']);
+                        $q->where('title', $likeOperator, "%{$searchEscaped}%");
                         
                         // Also search in description
-                        $q->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($searchEscaped) . '%']);
+                        $q->orWhere('description', $likeOperator, "%{$searchEscaped}%");
                         
                         // If multiple words, search for each word individually
                         if (count($searchWords) > 1) {
@@ -62,8 +66,8 @@ class IssueController extends Controller
                                 $word = trim($word);
                                 if (strlen($word) >= 2) {
                                     $wordEscaped = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $word);
-                                    $q->orWhereRaw('LOWER(title) LIKE ?', ['%' . strtolower($wordEscaped) . '%'])
-                                      ->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($wordEscaped) . '%']);
+                                    $q->orWhere('title', $likeOperator, "%{$wordEscaped}%")
+                                      ->orWhere('description', $likeOperator, "%{$wordEscaped}%");
                                 }
                             }
                         }
