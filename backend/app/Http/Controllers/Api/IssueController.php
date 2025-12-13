@@ -825,7 +825,28 @@ class IssueController extends Controller
 
         try {
             $issue = Issue::findOrFail($id);
-            $user = Auth::user();
+            
+            // Try to get authenticated user (supports both JWT and API tokens)
+            $user = Auth::guard('api')->user();
+            
+            // If no user from guard, try manual API token authentication
+            if (!$user) {
+                $token = $request->bearerToken();
+                if ($token) {
+                    try {
+                        $apiToken = \App\Models\ApiToken::where('token', $token)->first();
+                        if ($apiToken && !$apiToken->isExpired()) {
+                            $apiToken->update(['last_used_at' => now()]);
+                            $user = $apiToken->user;
+                            if ($user) {
+                                Auth::guard('api')->setUser($user);
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        Log::debug('API token authentication failed in markAsSolved: ' . $e->getMessage());
+                    }
+                }
+            }
 
             // Check if user is the creator (authenticated or guest) OR if user is admin
             $isOwner = false;
