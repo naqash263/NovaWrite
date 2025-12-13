@@ -50,10 +50,11 @@ class IssueController extends Controller
                 if (!empty($searchWords)) {
                     $query->where(function($q) use ($searchWords, $searchEscaped) {
                         // Search for exact phrase in title (highest priority - uses index)
-                        $q->where('title', 'like', "%{$searchEscaped}%");
+                        // Use case-insensitive search for better user experience
+                        $q->whereRaw('LOWER(title) LIKE ?', ['%' . strtolower($searchEscaped) . '%']);
                         
                         // Also search in description
-                        $q->orWhere('description', 'like', "%{$searchEscaped}%");
+                        $q->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($searchEscaped) . '%']);
                         
                         // If multiple words, search for each word individually
                         if (count($searchWords) > 1) {
@@ -61,8 +62,8 @@ class IssueController extends Controller
                                 $word = trim($word);
                                 if (strlen($word) >= 2) {
                                     $wordEscaped = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $word);
-                                    $q->orWhere('title', 'like', "%{$wordEscaped}%")
-                                      ->orWhere('description', 'like', "%{$wordEscaped}%");
+                                    $q->orWhereRaw('LOWER(title) LIKE ?', ['%' . strtolower($wordEscaped) . '%'])
+                                      ->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($wordEscaped) . '%']);
                                 }
                             }
                         }
