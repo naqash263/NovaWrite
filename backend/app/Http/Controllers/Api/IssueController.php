@@ -456,16 +456,22 @@ class IssueController extends Controller
             }
 
             // Ensure comments_count is accurate (recalculate if needed)
-            if ($issue->comments_count < 0 || $issue->comments_count === null) {
-                $issue->recalculateCommentsCount();
-                $issue->refresh();
-            } elseif ($issue->comments_count === 0) {
-                // Check if count is 0 but comments actually exist
-                $actualCount = $issue->comments()->count();
-                if ($actualCount > 0) {
-                    $issue->recalculateCommentsCount();
+            try {
+                // Use direct query for more reliable count
+                $actualCount = Comment::where('commentable_type', 'Issue')
+                    ->where('commentable_id', $issue->id)
+                    ->count();
+                
+                $storedCount = $issue->comments_count ?? 0;
+                
+                // If stored count doesn't match actual count, update it
+                if ($storedCount != $actualCount || $storedCount < 0 || $storedCount === null) {
+                    $issue->comments_count = max(0, $actualCount);
+                    $issue->updateQuietly(['comments_count' => $issue->comments_count]);
                     $issue->refresh();
                 }
+            } catch (\Exception $e) {
+                Log::warning('Could not verify comments count for issue ' . $issue->id . ': ' . $e->getMessage());
             }
 
             // Increment views
