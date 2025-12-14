@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Models\Workflow;
+use App\Models\Issue;
+// use App\Models\Course; // Commented out: courses not included in sitemap
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
@@ -20,7 +22,9 @@ class SitemapController extends Controller
         // Cache key includes last update timestamps to auto-invalidate when content changes
         $lastPostUpdate = Cache::get('posts.last_updated', now()->subDays(1))->timestamp;
         $lastWorkflowUpdate = Cache::get('workflows.last_updated', now()->subDays(1))->timestamp;
-        $cacheKey = 'sitemap.xml.' . max($lastPostUpdate, $lastWorkflowUpdate);
+        $lastIssueUpdate = Cache::get('issues.last_updated', now()->subDays(1))->timestamp;
+        // $lastCourseUpdate = Cache::get('courses.last_updated', now()->subDays(1))->timestamp; // Commented out: courses not included
+        $cacheKey = 'sitemap.xml.' . max($lastPostUpdate, $lastWorkflowUpdate, $lastIssueUpdate);
         
         $sitemap = Cache::remember($cacheKey, 3600, function () {
             return $this->generateSitemap();
@@ -32,7 +36,7 @@ class SitemapController extends Controller
     }
 
     /**
-     * Clear sitemap cache (call this when posts/workflows are updated)
+     * Clear sitemap cache (call this when posts/workflows/issues are updated)
      */
     public static function clearCache(): void
     {
@@ -40,6 +44,8 @@ class SitemapController extends Controller
         // Also clear any timestamped cache keys
         Cache::forget('sitemap.xml.' . Cache::get('posts.last_updated', now())->timestamp);
         Cache::forget('sitemap.xml.' . Cache::get('workflows.last_updated', now())->timestamp);
+        Cache::forget('sitemap.xml.' . Cache::get('issues.last_updated', now())->timestamp);
+        // Cache::forget('sitemap.xml.' . Cache::get('courses.last_updated', now())->timestamp); // Commented out: courses not included
     }
 
     /**
@@ -61,28 +67,28 @@ class SitemapController extends Controller
         $xml .= $this->addUrl($baseUrl, '/workflows', $today, 'daily', '0.9');
         $xml .= $this->addUrl($baseUrl, '/blog', $today, 'daily', '0.9');
         $xml .= $this->addUrl($baseUrl, '/contact', $today, 'monthly', '0.7');
-        $xml .= $this->addUrl($baseUrl, '/resources', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources', $today, 'weekly', '0.9');
         
-        // Career Tools
-        $xml .= $this->addUrl($baseUrl, '/resources/cv-builder', $today, 'monthly', '0.7');
-        $xml .= $this->addUrl($baseUrl, '/resources/linkedin-optimizer', $today, 'monthly', '0.7');
-        $xml .= $this->addUrl($baseUrl, '/resources/cover-letter-generator', $today, 'monthly', '0.7');
-        $xml .= $this->addUrl($baseUrl, '/resources/job-search-optimizer', $today, 'monthly', '0.7');
-        $xml .= $this->addUrl($baseUrl, '/resources/skills-assessment', $today, 'monthly', '0.7');
-        $xml .= $this->addUrl($baseUrl, '/resources/interview-prep', $today, 'monthly', '0.7');
-        $xml .= $this->addUrl($baseUrl, '/resources/salary-negotiation', $today, 'monthly', '0.7');
-        $xml .= $this->addUrl($baseUrl, '/resources/career-path-planner', $today, 'monthly', '0.7');
+        // Career Tools (optimized for SEO - higher priority)
+        $xml .= $this->addUrl($baseUrl, '/resources/cv-builder', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources/linkedin-optimizer', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources/cover-letter-generator', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources/job-search-optimizer', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources/skills-assessment', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources/interview-prep', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources/salary-negotiation', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources/career-path-planner', $today, 'weekly', '0.8');
         
         // Conversion Tools
-        $xml .= $this->addUrl($baseUrl, '/resources/conversion-tools', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources/conversion-tools', $today, 'weekly', '0.9');
         // Individual Conversion Tools
         $conversionTools = ['length', 'weight', 'volume', 'temperature', 'area', 'speed', 'currency', 'timezone', 'date', 'number', 'text', 'color', 'filesize', 'percentage', 'bmi'];
         foreach ($conversionTools as $tool) {
-            $xml .= $this->addUrl($baseUrl, '/resources/conversion-tools?tool=' . $tool, $today, 'monthly', '0.7');
+            $xml .= $this->addUrl($baseUrl, '/resources/conversion-tools?tool=' . $tool, $today, 'weekly', '0.8');
         }
         
         // Utility Tools
-        $xml .= $this->addUrl($baseUrl, '/resources/utility-tools', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources/utility-tools', $today, 'weekly', '0.9');
         // Individual Utility Tools
         $utilityTools = [
             'password-generator', 'qr-code-generator', 'image-resizer', 'text-to-image', 'word-counter',
@@ -91,22 +97,31 @@ class SitemapController extends Controller
             'pdf-merger', 'pdf-splitter', 'pdf-compressor', 'pdf-rotate', 'lorem-ipsum-generator',
             'text-case-converter', 'hash-generator', 'image-compressor', 'sql-formatter',
             'css-formatter', 'html-formatter', 'image-format-converter', 'color-picker',
-            'markdown-preview', 'file-converter', 'document-converter', 'excel-csv-converter'
+            'markdown-preview', 'file-converter', 'document-converter', 'excel-csv-converter',
+            'token-counter'
         ];
         foreach ($utilityTools as $tool) {
-            $xml .= $this->addUrl($baseUrl, '/resources/utility-tools?tool=' . $tool, $today, 'monthly', '0.7');
+            $xml .= $this->addUrl($baseUrl, '/resources/utility-tools?tool=' . $tool, $today, 'weekly', '0.8');
         }
         
         // AI Tools
-        $xml .= $this->addUrl($baseUrl, '/resources/ai-tools', $today, 'weekly', '0.8');
+        $xml .= $this->addUrl($baseUrl, '/resources/ai-tools', $today, 'weekly', '0.9');
         // Individual AI Tools
         $aiTools = ['text-summarizer', 'article-rewriter', 'grammar-checker', 'language-translator', 'keyword-extractor'];
         foreach ($aiTools as $tool) {
-            $xml .= $this->addUrl($baseUrl, '/resources/ai-tools?tool=' . $tool, $today, 'monthly', '0.7');
+            $xml .= $this->addUrl($baseUrl, '/resources/ai-tools?tool=' . $tool, $today, 'weekly', '0.8');
         }
+        
+        // Courses
+        // $xml .= $this->addUrl($baseUrl, '/courses', $today, 'weekly', '0.8');
         
         // Projects
         $xml .= $this->addUrl($baseUrl, '/projects', $today, 'weekly', '0.8');
+        
+        // Community
+        $xml .= $this->addUrl($baseUrl, '/community/issues', $today, 'daily', '0.7');
+        
+        // Legal pages
         $xml .= $this->addUrl($baseUrl, '/privacy-policy', $today, 'yearly', '0.3');
         $xml .= $this->addUrl($baseUrl, '/terms-of-service', $today, 'yearly', '0.3');
         $xml .= $this->addUrl($baseUrl, '/cookie-policy', $today, 'yearly', '0.3');
@@ -165,6 +180,48 @@ class SitemapController extends Controller
             }
         } catch (\Exception $e) {
             \Log::warning('Error fetching workflows for sitemap: ' . $e->getMessage());
+        }
+
+        // Courses (published courses) - Commented out: courses not included in sitemap
+        // try {
+        //     $courses = Course::published()
+        //         ->select('slug', 'updated_at', 'created_at', 'image_url')
+        //         ->orderBy('created_at', 'desc')
+        //         ->get();
+
+        //     foreach ($courses as $course) {
+        //         $lastmod = $course->updated_at 
+        //             ? Carbon::parse($course->updated_at)->format('Y-m-d')
+        //             : ($course->created_at 
+        //                 ? Carbon::parse($course->created_at)->format('Y-m-d')
+        //                 : $today);
+                
+        //         $xml .= $this->addUrl($baseUrl, '/courses/' . $course->slug, $lastmod, 'monthly', '0.7', $course->image_url);
+        //     }
+        // } catch (\Exception $e) {
+        //     \Log::warning('Error fetching courses for sitemap: ' . $e->getMessage());
+        // }
+
+        // Issues (community issues - exclude locked issues)
+        try {
+            $issues = Issue::where('is_locked', false)
+                ->select('id', 'slug', 'updated_at', 'created_at')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            foreach ($issues as $issue) {
+                $lastmod = $issue->updated_at 
+                    ? Carbon::parse($issue->updated_at)->format('Y-m-d')
+                    : ($issue->created_at 
+                        ? Carbon::parse($issue->created_at)->format('Y-m-d')
+                        : $today);
+                
+                // Use slug if available, otherwise use ID
+                $identifier = $issue->slug ?: $issue->id;
+                $xml .= $this->addUrl($baseUrl, '/community/issues/' . $identifier, $lastmod, 'weekly', '0.6');
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Error fetching issues for sitemap: ' . $e->getMessage());
         }
 
         // Projects (if Project model exists)
