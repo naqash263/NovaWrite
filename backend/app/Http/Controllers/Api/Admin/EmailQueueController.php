@@ -58,19 +58,45 @@ class EmailQueueController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => $emailQueue
+            'data' => $emailQueue,
+            'can_retry' => $emailQueue->status === 'failed' || 
+                          ($emailQueue->status === 'pending' && $emailQueue->attempts >= $emailQueue->max_attempts)
         ]);
     }
 
     /**
      * Retry a failed email.
      */
-    public function retry(EmailQueue $emailQueue): JsonResponse
+    public function retry($id): JsonResponse
     {
-        if ($emailQueue->status !== 'failed') {
+        // Find the email queue item by ID
+        $emailQueue = EmailQueue::find($id);
+        
+        if (!$emailQueue) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only failed emails can be retried'
+                'message' => 'Email queue item not found'
+            ], 404);
+        }
+
+        // Allow retrying failed emails or pending emails that have reached max attempts
+        $canRetry = $emailQueue->status === 'failed' || 
+                   ($emailQueue->status === 'pending' && $emailQueue->attempts >= $emailQueue->max_attempts);
+
+        if (!$canRetry) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only failed emails or emails that have reached max attempts can be retried',
+                'current_status' => $emailQueue->status,
+                'attempts' => $emailQueue->attempts,
+                'max_attempts' => $emailQueue->max_attempts,
+                'debug_info' => [
+                    'id' => $emailQueue->id,
+                    'status' => $emailQueue->status,
+                    'status_type' => gettype($emailQueue->status),
+                    'is_failed' => $emailQueue->status === 'failed',
+                    'attempts_check' => $emailQueue->attempts >= $emailQueue->max_attempts
+                ]
             ], 422);
         }
 
@@ -79,8 +105,15 @@ class EmailQueueController extends Controller
             'status' => 'pending',
             'attempts' => 0,
             'last_error' => null,
+            'failure_reason_code' => null,
+            'failure_category' => null,
+            'error_details' => null,
+            'http_status_code' => null,
             'next_retry_at' => now()
         ]);
+
+        // Refresh the model to get updated data
+        $emailQueue->refresh();
 
         // Dispatch the job
         SendN8nEmail::dispatch($emailQueue);
