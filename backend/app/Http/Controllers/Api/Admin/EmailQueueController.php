@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\EmailQueue;
 use App\Jobs\SendN8nEmail;
+use App\Services\N8nEmailService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class EmailQueueController extends Controller
 {
@@ -65,9 +67,9 @@ class EmailQueueController extends Controller
     }
 
     /**
-     * Retry a failed email.
+     * Retry a failed email - sends directly to N8n.
      */
-    public function retry($id): JsonResponse
+    public function retry($id, N8nEmailService $n8nService): JsonResponse
     {
         // Find the email queue item by ID
         $emailQueue = EmailQueue::find($id);
@@ -89,40 +91,92 @@ class EmailQueueController extends Controller
                 'message' => 'Only failed emails or emails that have reached max attempts can be retried',
                 'current_status' => $emailQueue->status,
                 'attempts' => $emailQueue->attempts,
-                'max_attempts' => $emailQueue->max_attempts,
-                'debug_info' => [
-                    'id' => $emailQueue->id,
-                    'status' => $emailQueue->status,
-                    'status_type' => gettype($emailQueue->status),
-                    'is_failed' => $emailQueue->status === 'failed',
-                    'attempts_check' => $emailQueue->attempts >= $emailQueue->max_attempts
-                ]
+                'max_attempts' => $emailQueue->max_attempts
             ], 422);
         }
 
-        // Reset the queue item for retry
-        $emailQueue->update([
-            'status' => 'pending',
-            'attempts' => 0,
-            'last_error' => null,
-            'failure_reason_code' => null,
-            'failure_category' => null,
-            'error_details' => null,
-            'http_status_code' => null,
-            'next_retry_at' => now()
-        ]);
+        // Mark as processing
+        $emailQueue->markAsProcessing();
 
-        // Refresh the model to get updated data
-        $emailQueue->refresh();
+        // Prepare recipient data
+        $recipient = [
+            'email' => $emailQueue->recipient_email,
+            'name' => $emailQueue->recipient_name ?? 'User'
+        ];
 
-        // Dispatch the job
-        SendN8nEmail::dispatch($emailQueue);
+        // Send directly to N8n
+        try {
+            $success = $n8nService->sendToN8n(
+                $emailQueue->action,
+                $recipient,
+                $emailQueue->details ?? []
+            );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Email queued for retry',
-            'data' => $emailQueue->fresh()
-        ]);
+            if ($success) {
+                // Mark as completed
+                $emailQueue->markAsCompleted();
+                
+                Log::info("Email retried and sent successfully via N8n", [
+                    'queue_id' => $emailQueue->id,
+                    'action' => $emailQueue->action,
+                    'recipient' => $emailQueue->recipient_email
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Email sent successfully to N8n',
+                    'data' => $emailQueue->fresh()
+                ]);
+            } else {
+                // Increment attempts
+                $emailQueue->incrementAttempts();
+                
+                // Get failure info from the last email log entry
+                $lastLog = \App\Models\EmailLog::where('recipient_email', $emailQueue->recipient_email)
+                    ->where('action', $emailQueue->action)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                $failureInfo = null;
+                if ($lastLog && $lastLog->status === 'failed') {
+                    $failureInfo = [
+                        'failure_reason_code' => $lastLog->failure_reason_code,
+                        'failure_category' => $lastLog->failure_category,
+                        'error_details' => $lastLog->error_details,
+                        'http_status_code' => $lastLog->http_status_code,
+                        'provider_name' => $lastLog->provider_name ?? 'n8n'
+                    ];
+                    $emailQueue->update($failureInfo);
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email failed to send to N8n. Check email logs for details.',
+                    'data' => $emailQueue->fresh(),
+                    'attempts' => $emailQueue->attempts,
+                    'max_attempts' => $emailQueue->max_attempts
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            // Analyze the failure
+            $failureInfo = \App\Services\EmailFailureAnalyzer::analyzeException($e);
+            $failureInfo['provider_name'] = 'n8n';
+            
+            $emailQueue->markAsFailed($e->getMessage(), $failureInfo);
+            
+            Log::error("Email retry failed with exception", [
+                'queue_id' => $emailQueue->id,
+                'error' => $e->getMessage(),
+                'failure_category' => $failureInfo['failure_category']
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error sending email to N8n: ' . $e->getMessage(),
+                'data' => $emailQueue->fresh(),
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
