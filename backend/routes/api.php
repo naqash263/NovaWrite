@@ -641,6 +641,7 @@ Route::post('issues/{id}/mark-solved', [App\Http\Controllers\Api\IssueController
 
 // Issue Categories routes
 Route::get('issue-categories', [App\Http\Controllers\Api\IssueCategoryController::class, 'index']);
+Route::get('issue-categories/{id}', [App\Http\Controllers\Api\IssueCategoryController::class, 'show']);
 
 // Email Unsubscribe routes (public)
 Route::get('email/unsubscribe/{token}', [App\Http\Controllers\Api\EmailUnsubscribeController::class, 'unsubscribeByToken']);
