@@ -11,6 +11,18 @@ interface EmailLog {
   response: any;
   attempts: number;
   created_at: string;
+  failure_reason_code?: string | null;
+  failure_category?: string | null;
+  error_details?: any;
+  http_status_code?: number | null;
+  provider_name?: string;
+}
+
+interface FailureCategory {
+  category: string;
+  count: number;
+  description: string;
+  suggested_action: string;
 }
 
 interface LogStats {
@@ -19,6 +31,9 @@ interface LogStats {
   failed: number;
   success_rate: number;
   common_errors: Array<{ error_message: string; count: number }>;
+  failure_categories?: FailureCategory[];
+  failure_by_provider?: Array<{ provider_name: string; count: number }>;
+  failure_trends?: Array<{ date: string; count: number }>;
 }
 
 const EmailLogs: React.FC = () => {
@@ -165,10 +180,41 @@ const EmailLogs: React.FC = () => {
         </div>
       )}
 
+      {/* Failure Analysis Section */}
+      {stats?.failure_categories && stats.failure_categories.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Failure Analysis by Category</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            {stats.failure_categories.map((category, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-900 capitalize">{category.category}</span>
+                  <span className="text-sm font-bold text-red-600">{category.count}</span>
+                </div>
+                <p className="text-xs text-gray-600 mb-2">{category.description}</p>
+                <p className="text-xs text-blue-600 italic">💡 {category.suggested_action}</p>
+              </div>
+            ))}
+          </div>
+          {stats.failure_by_provider && stats.failure_by_provider.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Failures by Provider</h4>
+              <div className="flex flex-wrap gap-2">
+                {stats.failure_by_provider.map((provider, index) => (
+                  <span key={index} className="px-3 py-1 bg-gray-100 rounded-full text-xs">
+                    {provider.provider_name}: {provider.count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Common Errors */}
       {stats?.common_errors && stats.common_errors.length > 0 && (
         <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Common Errors</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Common Error Messages</h3>
           <div className="space-y-2">
             {stats.common_errors.map((error, index) => (
               <div key={index} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
@@ -271,8 +317,22 @@ const EmailLogs: React.FC = () => {
                     <span className="ml-1 capitalize">{log.status}</span>
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                  {log.error_message || '-'}
+                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                  <div className="flex flex-col">
+                    {log.error_message && (
+                      <span className="truncate" title={log.error_message}>{log.error_message}</span>
+                    )}
+                    {log.failure_category && (
+                      <span className="text-xs text-gray-400 mt-1">
+                        {log.failure_category}
+                        {log.failure_reason_code && ` (${log.failure_reason_code})`}
+                        {log.http_status_code && ` - HTTP ${log.http_status_code}`}
+                      </span>
+                    )}
+                    {log.provider_name && (
+                      <span className="text-xs text-blue-500 mt-1">Provider: {log.provider_name}</span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {log.attempts}

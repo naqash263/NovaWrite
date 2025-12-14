@@ -16,13 +16,20 @@ class EmailLog extends Model
         'error_message',
         'payload',
         'response',
-        'attempts'
+        'attempts',
+        'failure_reason_code',
+        'failure_category',
+        'error_details',
+        'http_status_code',
+        'provider_name'
     ];
 
     protected $casts = [
         'payload' => 'array',
         'response' => 'array',
-        'attempts' => 'integer'
+        'error_details' => 'array',
+        'attempts' => 'integer',
+        'http_status_code' => 'integer'
     ];
 
     /**
@@ -60,7 +67,59 @@ class EmailLog extends Model
                 ->groupBy('error_message')
                 ->orderBy('count', 'desc')
                 ->limit(5)
-                ->get()
+                ->get(),
+            'failure_categories' => static::getFailureCategories($days),
+            'failure_by_provider' => static::getFailureByProvider($days),
+            'failure_trends' => static::getFailureTrends($days)
         ];
+    }
+
+    /**
+     * Get failure statistics by category
+     */
+    public static function getFailureCategories($days = 30)
+    {
+        return static::where('created_at', '>=', now()->subDays($days))
+            ->where('status', 'failed')
+            ->whereNotNull('failure_category')
+            ->selectRaw('failure_category, COUNT(*) as count')
+            ->groupBy('failure_category')
+            ->orderBy('count', 'desc')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'category' => $item->failure_category,
+                    'count' => $item->count,
+                    'description' => \App\Services\EmailFailureAnalyzer::getCategoryDescription($item->failure_category),
+                    'suggested_action' => \App\Services\EmailFailureAnalyzer::getSuggestedAction($item->failure_category)
+                ];
+            });
+    }
+
+    /**
+     * Get failure statistics by provider
+     */
+    public static function getFailureByProvider($days = 30)
+    {
+        return static::where('created_at', '>=', now()->subDays($days))
+            ->where('status', 'failed')
+            ->whereNotNull('provider_name')
+            ->selectRaw('provider_name, COUNT(*) as count')
+            ->groupBy('provider_name')
+            ->orderBy('count', 'desc')
+            ->get();
+    }
+
+    /**
+     * Get failure trends over time
+     */
+    public static function getFailureTrends($days = 30)
+    {
+        return static::where('created_at', '>=', now()->subDays($days))
+            ->where('status', 'failed')
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
     }
 }

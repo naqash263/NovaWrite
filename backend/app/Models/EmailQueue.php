@@ -22,15 +22,22 @@ class EmailQueue extends Model
         'max_attempts',
         'last_error',
         'next_retry_at',
-        'completed_at'
+        'completed_at',
+        'failure_reason_code',
+        'failure_category',
+        'error_details',
+        'http_status_code',
+        'provider_name'
     ];
 
     protected $casts = [
         'details' => 'array',
+        'error_details' => 'array',
         'next_retry_at' => 'datetime',
         'completed_at' => 'datetime',
         'attempts' => 'integer',
-        'max_attempts' => 'integer'
+        'max_attempts' => 'integer',
+        'http_status_code' => 'integer'
     ];
 
     /**
@@ -83,12 +90,18 @@ class EmailQueue extends Model
     /**
      * Mark as failed
      */
-    public function markAsFailed(string $error): void
+    public function markAsFailed(string $error, ?array $failureInfo = null): void
     {
-        $this->update([
+        $updateData = [
             'status' => 'failed',
             'last_error' => $error
-        ]);
+        ];
+
+        if ($failureInfo) {
+            $updateData = array_merge($updateData, $failureInfo);
+        }
+
+        $this->update($updateData);
     }
 
     /**
@@ -118,5 +131,39 @@ class EmailQueue extends Model
         return $this->status === 'pending' && 
                $this->attempts < $this->max_attempts &&
                $this->next_retry_at <= now();
+    }
+
+    /**
+     * Get failure statistics by category
+     */
+    public static function getFailureCategories()
+    {
+        return static::where('status', 'failed')
+            ->whereNotNull('failure_category')
+            ->selectRaw('failure_category, COUNT(*) as count')
+            ->groupBy('failure_category')
+            ->orderBy('count', 'desc')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'category' => $item->failure_category,
+                    'count' => $item->count,
+                    'description' => \App\Services\EmailFailureAnalyzer::getCategoryDescription($item->failure_category),
+                    'suggested_action' => \App\Services\EmailFailureAnalyzer::getSuggestedAction($item->failure_category)
+                ];
+            });
+    }
+
+    /**
+     * Get failure statistics by provider
+     */
+    public static function getFailureByProvider()
+    {
+        return static::where('status', 'failed')
+            ->whereNotNull('provider_name')
+            ->selectRaw('provider_name, COUNT(*) as count')
+            ->groupBy('provider_name')
+            ->orderBy('count', 'desc')
+            ->get();
     }
 }

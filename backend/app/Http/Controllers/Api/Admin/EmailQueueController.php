@@ -148,6 +148,10 @@ class EmailQueueController extends Controller
             ->limit(5)
             ->get();
 
+        // Add failure analysis
+        $stats['failure_categories'] = EmailQueue::getFailureCategories();
+        $stats['failure_by_provider'] = EmailQueue::getFailureByProvider();
+
         return response()->json([
             'success' => true,
             'data' => $stats

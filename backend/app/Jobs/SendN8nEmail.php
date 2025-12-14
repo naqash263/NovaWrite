@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\EmailQueue;
 use App\Services\N8nEmailService;
+use App\Services\EmailFailureAnalyzer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -55,19 +56,49 @@ class SendN8nEmail implements ShouldQueue
                     'recipient' => $this->emailQueue->recipient_email
                 ]);
             } else {
+                // Get failure info from the last email log entry
+                $lastLog = \App\Models\EmailLog::where('recipient_email', $this->emailQueue->recipient_email)
+                    ->where('action', $this->emailQueue->action)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                $failureInfo = null;
+                if ($lastLog && $lastLog->status === 'failed') {
+                    $failureInfo = [
+                        'failure_reason_code' => $lastLog->failure_reason_code,
+                        'failure_category' => $lastLog->failure_category,
+                        'error_details' => $lastLog->error_details,
+                        'http_status_code' => $lastLog->http_status_code,
+                        'provider_name' => $lastLog->provider_name ?? 'n8n'
+                    ];
+                }
+
                 $this->emailQueue->incrementAttempts();
+                
+                // Update failure info if available
+                if ($failureInfo) {
+                    $this->emailQueue->update($failureInfo);
+                }
+                
                 Log::warning("Email failed, will retry", [
                     'queue_id' => $this->emailQueue->id,
                     'attempts' => $this->emailQueue->attempts,
-                    'max_attempts' => $this->emailQueue->max_attempts
+                    'max_attempts' => $this->emailQueue->max_attempts,
+                    'failure_category' => $failureInfo['failure_category'] ?? null
                 ]);
             }
 
         } catch (\Exception $e) {
-            $this->emailQueue->markAsFailed($e->getMessage());
+            // Analyze the failure
+            $failureInfo = EmailFailureAnalyzer::analyzeException($e);
+            $failureInfo['provider_name'] = 'n8n';
+            
+            $this->emailQueue->markAsFailed($e->getMessage(), $failureInfo);
             Log::error("Email job failed with exception", [
                 'queue_id' => $this->emailQueue->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'failure_category' => $failureInfo['failure_category'],
+                'failure_reason_code' => $failureInfo['failure_reason_code']
             ]);
         }
     }
@@ -77,10 +108,16 @@ class SendN8nEmail implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        $this->emailQueue->markAsFailed($exception->getMessage());
+        // Analyze the failure
+        $failureInfo = EmailFailureAnalyzer::analyzeException($exception);
+        $failureInfo['provider_name'] = 'n8n';
+        
+        $this->emailQueue->markAsFailed($exception->getMessage(), $failureInfo);
         Log::error("Email job permanently failed", [
             'queue_id' => $this->emailQueue->id,
-            'error' => $exception->getMessage()
+            'error' => $exception->getMessage(),
+            'failure_category' => $failureInfo['failure_category'],
+            'failure_reason_code' => $failureInfo['failure_reason_code']
         ]);
     }
 }
