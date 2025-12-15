@@ -45,7 +45,7 @@ class IssueCategory extends Model
      */
     public function issues(): HasMany
     {
-        return $this->hasMany(Issue::class);
+        return $this->hasMany(Issue::class, 'category_id');
     }
 
     /**
