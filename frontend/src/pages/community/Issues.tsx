@@ -49,6 +49,12 @@ export default function Issues() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [categories, setCategories] = useState<IssueCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<{
+    total: number;
+    open: number;
+    closed: number;
+    resolved: number;
+  } | null>(null);
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [priorityFilter, setPriorityFilter] = useState(searchParams.get('priority') || '');
@@ -71,7 +77,24 @@ export default function Issues() {
 
   useEffect(() => {
     fetchCategories();
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const response = await apiClient.get('/issues/stats');
+      if (response.data.success && response.data.data) {
+        setStats({
+          total: response.data.data.total || 0,
+          open: response.data.data.open || 0,
+          closed: (response.data.data.closed || 0) + (response.data.data.resolved || 0), // Combine closed and resolved
+          resolved: response.data.data.resolved || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
 
   useEffect(() => {
     setCurrentPage(1); // Reset to page 1 when filters change
@@ -373,11 +396,21 @@ export default function Issues() {
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">IT Community Forum</h1>
                   <p className="text-gray-600 mt-2 text-sm sm:text-base">Ask technical questions, get programming help, and connect with IT professionals</p>
-                  {/* Total Issues Count */}
-                  {!loading && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                      <span className="font-semibold text-gray-900">{pagination.total}</span>
-                      <span>total {pagination.total === 1 ? 'question' : 'questions'}</span>
+                  {/* Issues Count Stats */}
+                  {!loading && stats && (
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-gray-900">{stats.total}</span>
+                        <span className="text-gray-600">total</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-green-600">{stats.open}</span>
+                        <span className="text-gray-600">open</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-gray-500">{stats.closed}</span>
+                        <span className="text-gray-600">closed</span>
+                      </div>
                     </div>
                   )}
                 </div>

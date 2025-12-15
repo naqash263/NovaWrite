@@ -14,21 +14,27 @@ class IssueCategoryController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $categories = IssueCategory::active()->ordered()->get();
+            // Use withCount in the query builder for better performance
+            $categories = IssueCategory::active()
+                ->ordered()
+                ->withCount('issues')
+                ->get();
 
-            // Add issue count for each category
+            // Ensure all categories have issues_count set (fallback to 0 if null)
             foreach ($categories as $category) {
-                try {
-                    $category->loadCount('issues');
-                } catch (\Exception $e) {
-                    // If issues table doesn't exist, set count to 0
-                    $category->issues_count = 0;
+                if ($category->issues_count === null) {
+                    try {
+                        $category->issues_count = $category->issues()->count();
+                    } catch (\Exception $e) {
+                        $category->issues_count = 0;
+                    }
                 }
             }
 
             \Log::info('Issue categories fetched', [
                 'count' => $categories->count(),
-                'categories' => $categories->pluck('name')->toArray()
+                'categories' => $categories->pluck('name')->toArray(),
+                'with_counts' => $categories->pluck('issues_count', 'name')->toArray()
             ]);
 
             return response()->json([
