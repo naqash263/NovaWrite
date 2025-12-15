@@ -41,6 +41,7 @@ interface IssueCategory {
   name: string;
   slug: string;
   color: string;
+  issues_count?: number;
 }
 
 export default function Issues() {
