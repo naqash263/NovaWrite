@@ -16,6 +16,16 @@ class IssueCategoryController extends Controller
         try {
             $categories = IssueCategory::active()->ordered()->get();
 
+            // Add issue count for each category
+            foreach ($categories as $category) {
+                try {
+                    $category->loadCount('issues');
+                } catch (\Exception $e) {
+                    // If issues table doesn't exist, set count to 0
+                    $category->issues_count = 0;
+                }
+            }
+
             \Log::info('Issue categories fetched', [
                 'count' => $categories->count(),
                 'categories' => $categories->pluck('name')->toArray()

@@ -270,7 +270,9 @@ export default function Issues() {
                   >
                     <option value="">All Categories</option>
                     {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name} {cat.issues_count !== undefined && `(${cat.issues_count})`}
+                      </option>
                     ))}
                   </select>
                   
@@ -291,14 +293,23 @@ export default function Issues() {
                               return prev;
                             });
                           }}
-                          className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
                             categoryFilter === String(cat.id)
                               ? 'text-white shadow-md'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                           style={categoryFilter === String(cat.id) ? { backgroundColor: cat.color } : {}}
                         >
-                          {cat.name}
+                          <span>{cat.name}</span>
+                          {cat.issues_count !== undefined && (
+                            <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                              categoryFilter === String(cat.id)
+                                ? 'bg-white/20 text-white'
+                                : 'bg-gray-200 text-gray-600'
+                            }`}>
+                              {cat.issues_count}
+                            </span>
+                          )}
                         </button>
                       ))}
                     </div>
@@ -357,13 +368,20 @@ export default function Issues() {
           <div className="lg:col-span-3">
             {/* Header */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">IT Community Forum</h1>
-                  <p className="text-gray-600 mt-2">Ask technical questions, get programming help, and connect with IT professionals</p>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">IT Community Forum</h1>
+                  <p className="text-gray-600 mt-2 text-sm sm:text-base">Ask technical questions, get programming help, and connect with IT professionals</p>
+                  {/* Total Issues Count */}
+                  {!loading && (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                      <span className="font-semibold text-gray-900">{pagination.total}</span>
+                      <span>total {pagination.total === 1 ? 'question' : 'questions'}</span>
+                    </div>
+                  )}
                 </div>
-                <Link to="/community/issues/create">
-                  <Button>Ask a Question</Button>
+                <Link to="/community/issues/create" className="flex-shrink-0">
+                  <Button className="w-full sm:w-auto">Ask a Question</Button>
                 </Link>
               </div>
 
