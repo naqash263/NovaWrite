@@ -49,6 +49,7 @@ export default function Issues() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [categories, setCategories] = useState<IssueCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [stats, setStats] = useState<{
     total: number;
     open: number;
@@ -106,6 +107,7 @@ export default function Issues() {
   }, [currentPage]);
 
   const fetchCategories = async () => {
+    setCategoriesLoading(true);
     try {
       const response = await apiClient.get('/issue-categories');
       console.log('Categories API response:', response.data);
@@ -129,6 +131,8 @@ export default function Issues() {
       console.error('Error fetching categories:', error);
       console.error('Error response:', error.response?.data);
       setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
     }
   };
 
@@ -273,7 +277,7 @@ export default function Issues() {
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Category
-                    {categories.length === 0 && (
+                    {categoriesLoading && (
                       <span className="text-xs text-gray-500 ml-2">(Loading...)</span>
                     )}
                   </label>
@@ -290,7 +294,7 @@ export default function Issues() {
                       });
                     }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                    disabled={categories.length === 0}
+                    disabled={categoriesLoading}
                   >
                     <option value="">All Categories</option>
                     {categories.map(cat => (
@@ -301,7 +305,7 @@ export default function Issues() {
                   </select>
                   
                   {/* Category Pills for Quick Filter */}
-                  {categories.length > 0 && (
+                  {!categoriesLoading && categories.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {categories.map(cat => (
                         <button
