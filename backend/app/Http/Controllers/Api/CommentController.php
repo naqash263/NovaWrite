@@ -199,6 +199,7 @@ class CommentController extends Controller
             // Send email notifications via N8n
             try {
                 $emailService = app(EmailService::class);
+                $commenterUserType = $user->isAdmin() ? 'admin' : 'user';
                 
                 // Only send email notifications if commentable exists
                 if ($commentable) {
@@ -208,6 +209,7 @@ class CommentController extends Controller
                         if ($parent) {
                             $parentAuthorEmail = $parent->user ? $parent->user->email : $parent->guest_email;
                             $parentAuthorName = $parent->user ? $parent->user->name : $parent->guest_name;
+                            $parentAuthorUserType = $parent->user ? ($parent->user->isAdmin() ? 'admin' : 'user') : 'guest';
                             
                             if ($parentAuthorEmail && $parentAuthorEmail !== $user->email) {
                                 // Don't notify if replying to own comment
@@ -216,6 +218,7 @@ class CommentController extends Controller
                                 
                                 $emailService->sendTemplateEmail('comment_reply', [
                                     'commenter_name' => $user->name,
+                                    'commenter_user_type' => $commenterUserType,
                                     'comment_content' => substr(strip_tags($request->content), 0, 200),
                                     'parent_comment' => substr(strip_tags($parent->content), 0, 200),
                                     'resource_type' => strtolower($request->commentable_type),
@@ -223,7 +226,7 @@ class CommentController extends Controller
                                     'resource_url' => $this->getResourceUrl($commentable, $request->commentable_type),
                                     'comment_url' => $this->getResourceUrl($commentable, $request->commentable_type) . '#comment-' . $comment->id,
                                     'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=comment_reply',
-                                ], $parentAuthorEmail, $parentAuthorName);
+                                ], $parentAuthorEmail, $parentAuthorName, $parentAuthorUserType);
                             }
                         }
                     }
@@ -231,9 +234,11 @@ class CommentController extends Controller
                     // 2. Notify resource owner (if different from commenter)
                     $resourceOwnerEmail = null;
                     $resourceOwnerName = null;
+                    $resourceOwnerUserType = 'guest';
                     if (method_exists($commentable, 'user') && $commentable->user) {
                         $resourceOwnerEmail = $commentable->user->email;
                         $resourceOwnerName = $commentable->user->name;
+                        $resourceOwnerUserType = $commentable->user->isAdmin() ? 'admin' : 'user';
                     } elseif (method_exists($commentable, 'guest_email') && $commentable->guest_email) {
                         $resourceOwnerEmail = $commentable->guest_email;
                         $resourceOwnerName = $commentable->guest_name ?? 'Guest';
@@ -246,13 +251,14 @@ class CommentController extends Controller
                         
                         $emailService->sendTemplateEmail('new_comment', [
                             'commenter_name' => $user->name,
+                            'commenter_user_type' => $commenterUserType,
                             'comment_content' => substr(strip_tags($request->content), 0, 200),
                             'resource_type' => strtolower($request->commentable_type),
                             'resource_title' => $this->getResourceTitle($commentable),
                             'resource_url' => $this->getResourceUrl($commentable, $request->commentable_type),
                             'comment_url' => $this->getResourceUrl($commentable, $request->commentable_type) . '#comment-' . $comment->id,
                             'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=new_comment',
-                        ], $resourceOwnerEmail, $resourceOwnerName);
+                        ], $resourceOwnerEmail, $resourceOwnerName, $resourceOwnerUserType);
                     }
                 }
             } catch (\Exception $e) {

@@ -75,7 +75,7 @@ class EmailService
     /**
      * Send email using a template with direct send and status logging
      */
-    public function sendTemplateEmail(string $templateName, array $variables, string $to, ?string $toName = null): bool
+    public function sendTemplateEmail(string $templateName, array $variables, string $to, ?string $toName = null, ?string $userType = null): bool
     {
         try {
             // Check if email is unsubscribed
@@ -99,6 +99,11 @@ class EmailService
                 'email' => $to,
                 'name' => $toName ?? 'User'
             ];
+
+            // Add user type if provided (admin or user)
+            if ($userType) {
+                $recipient['user_type'] = $userType;
+            }
 
             $success = $n8nService->sendToN8n($templateName, $recipient, $variables);
 

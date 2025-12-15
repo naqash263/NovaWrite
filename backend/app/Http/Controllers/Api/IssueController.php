@@ -395,6 +395,7 @@ class IssueController extends Controller
                 $emailService = app(EmailService::class);
                 $recipientEmail = $user ? $user->email : $request->guest_email;
                 $recipientName = $user ? $user->name : $request->guest_name;
+                $userType = $user ? ($user->isAdmin() ? 'admin' : 'user') : 'guest';
 
                 if ($recipientEmail) {
                     // Get unsubscribe token
@@ -404,6 +405,7 @@ class IssueController extends Controller
                         'recipient' => $recipientEmail,
                         'issue_id' => $issue->id,
                         'issue_title' => $issue->title,
+                        'user_type' => $userType,
                     ]);
                     
                     $result = $emailService->sendTemplateEmail('issue_created', [
@@ -412,7 +414,7 @@ class IssueController extends Controller
                         'issue_description' => substr(strip_tags($issue->description), 0, 200) . '...',
                         'created_at' => $issue->created_at->format('F j, Y \a\t g:i A'),
                         'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=issue_created',
-                    ], $recipientEmail, $recipientName);
+                    ], $recipientEmail, $recipientName, $userType);
                     
                     if ($result) {
                         Log::info('Issue created email notification sent successfully', [
@@ -770,6 +772,8 @@ class IssueController extends Controller
                 $emailService = app(EmailService::class);
                 $recipientEmail = $issue->user ? $issue->user->email : $issue->guest_email;
                 $recipientName = $issue->user ? $issue->user->name : $issue->guest_name;
+                $recipientUserType = $issue->user ? ($issue->user->isAdmin() ? 'admin' : 'user') : 'guest';
+                $changedByUserType = $user ? ($user->isAdmin() ? 'admin' : 'user') : 'guest';
 
                 if ($recipientEmail && in_array($request->status, ['resolved', 'closed', 'in_progress'])) {
                     // Get unsubscribe token
@@ -781,10 +785,11 @@ class IssueController extends Controller
                         'old_status' => $issue->getOriginal('status'),
                         'new_status' => $request->status,
                         'changed_by' => $user->name,
+                        'changed_by_user_type' => $changedByUserType,
                         'resolution_notes' => $request->resolution_notes ?? null,
                         'changed_at' => now()->format('F j, Y \a\t g:i A'),
                         'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=issue_status_changed',
-                    ], $recipientEmail, $recipientName);
+                    ], $recipientEmail, $recipientName, $recipientUserType);
                 }
             } catch (\Exception $e) {
                 // Log but don't fail the request if email fails
@@ -903,6 +908,8 @@ class IssueController extends Controller
                 $emailService = app(EmailService::class);
                 $recipientEmail = $issue->user ? $issue->user->email : $issue->guest_email;
                 $recipientName = $issue->user ? $issue->user->name : $issue->guest_name;
+                $recipientUserType = $issue->user ? ($issue->user->isAdmin() ? 'admin' : 'user') : 'guest';
+                $resolvedByUserType = $user ? ($user->isAdmin() ? 'admin' : 'user') : 'guest';
 
                 if ($recipientEmail) {
                     // Get unsubscribe token
@@ -913,9 +920,10 @@ class IssueController extends Controller
                         'issue_url' => config('app.url') . '/community/issues/' . ($issue->slug ?? $issue->id),
                         'solution' => $request->solution,
                         'resolved_by' => $user ? $user->name : ($issue->guest_name ?? 'You'),
+                        'resolved_by_user_type' => $resolvedByUserType,
                         'resolved_at' => now()->format('F j, Y \a\t g:i A'),
                         'unsubscribe_url' => config('app.url') . '/email/unsubscribe/' . $unsubscribeToken . '?types[]=issue_solved',
-                    ], $recipientEmail, $recipientName);
+                    ], $recipientEmail, $recipientName, $recipientUserType);
                 }
             } catch (\Exception $e) {
                 // Log but don't fail the request if email fails
