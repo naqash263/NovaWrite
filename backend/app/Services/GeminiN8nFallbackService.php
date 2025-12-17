@@ -52,11 +52,38 @@ class GeminiN8nFallbackService
             $geminiErrorCode = GeminiErrorClassifier::getErrorCode($e);
             $geminiErrorMessage = GeminiErrorClassifier::getErrorMessage($e);
 
+            // Debug logging
+            Log::info('Gemini API exception caught in fallback service', [
+                'tool_type' => $toolType,
+                'error_message' => $e->getMessage(),
+                'error_class' => get_class($e),
+                'should_fallback' => $this->errorClassifier->shouldFallback($e),
+                'fallback_available' => $this->isFallbackAvailable()
+            ]);
+
             // Check if we should fallback
-            if (!$this->errorClassifier->shouldFallback($e)) {
+            $shouldFallback = $this->errorClassifier->shouldFallback($e);
+            if (!$shouldFallback) {
                 Log::info('Gemini API error, but fallback not needed', [
                     'tool_type' => $toolType,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
+                    'error_class' => get_class($e),
+                    'error_message_lower' => strtolower($e->getMessage())
+                ]);
+                throw $e;
+            }
+
+            // Check if fallback is available
+            $fallbackAvailable = $this->isFallbackAvailable();
+            if (!$fallbackAvailable) {
+                Log::warning('Fallback needed but N8N fallback not configured', [
+                    'tool_type' => $toolType,
+                    'error' => $e->getMessage(),
+                    'config_check' => [
+                        'has_config' => N8nConfiguration::getActive() !== null,
+                        'enabled' => N8nConfiguration::getActive()?->isGeminiFallbackEnabled() ?? false,
+                        'has_webhook' => N8nConfiguration::getActive()?->isValidGeminiWebhookUrl() ?? false
+                    ]
                 ]);
                 throw $e;
             }
@@ -66,7 +93,8 @@ class GeminiN8nFallbackService
             Log::info('Gemini API failed, attempting N8N fallback', [
                 'tool_type' => $toolType,
                 'fallback_reason' => $fallbackReason,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'error_class' => get_class($e)
             ]);
 
             // Attempt N8N fallback
@@ -113,8 +141,16 @@ class GeminiN8nFallbackService
                 Log::error('N8N fallback also failed', [
                     'tool_type' => $toolType,
                     'gemini_error' => $e->getMessage(),
-                    'n8n_error' => $n8nException->getMessage()
+                    'n8n_error' => $n8nException->getMessage(),
+                    'n8n_error_class' => get_class($n8nException)
                 ]);
+
+                // If N8N isn't configured, provide helpful error message
+                if (strpos($n8nException->getMessage(), 'not configured') !== false || 
+                    strpos($n8nException->getMessage(), 'not enabled') !== false ||
+                    strpos($n8nException->getMessage(), 'Invalid') !== false) {
+                    throw new \Exception('AI service temporarily unavailable. N8N fallback is not configured. Please contact support or try again later.');
+                }
 
                 // Throw original Gemini error
                 throw $e;
