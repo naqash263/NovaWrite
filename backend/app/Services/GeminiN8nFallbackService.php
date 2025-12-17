@@ -76,15 +76,29 @@ class GeminiN8nFallbackService
             // Check if fallback is available
             $fallbackAvailable = $this->isFallbackAvailable();
             if (!$fallbackAvailable) {
+                $config = N8nConfiguration::getActive();
+                $configStatus = [
+                    'has_config' => $config !== null,
+                    'enabled' => $config?->isGeminiFallbackEnabled() ?? false,
+                    'has_webhook' => $config?->isValidGeminiWebhookUrl() ?? false,
+                    'webhook_url' => $config?->getGeminiWebhookUrl() ?? 'not set'
+                ];
+                
                 Log::warning('Fallback needed but N8N fallback not configured', [
                     'tool_type' => $toolType,
                     'error' => $e->getMessage(),
-                    'config_check' => [
-                        'has_config' => N8nConfiguration::getActive() !== null,
-                        'enabled' => N8nConfiguration::getActive()?->isGeminiFallbackEnabled() ?? false,
-                        'has_webhook' => N8nConfiguration::getActive()?->isValidGeminiWebhookUrl() ?? false
-                    ]
+                    'config_check' => $configStatus
                 ]);
+                
+                // Provide helpful error message
+                if (!$config) {
+                    throw new \Exception('AI service temporarily unavailable. N8N fallback is not configured. Please contact support.');
+                } elseif (!$config->isGeminiFallbackEnabled()) {
+                    throw new \Exception('AI service temporarily unavailable. N8N fallback is disabled. Please contact support.');
+                } elseif (!$config->isValidGeminiWebhookUrl()) {
+                    throw new \Exception('AI service temporarily unavailable. N8N fallback webhook URL is not configured. Please contact support.');
+                }
+                
                 throw $e;
             }
 
