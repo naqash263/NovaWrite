@@ -16,14 +16,21 @@ class N8nConfiguration extends Model
         'webhook_timeout',
         'max_retry_attempts',
         'is_active',
-        'auto_notify_on_failure'
+        'auto_notify_on_failure',
+        'gemini_fallback_enabled',
+        'gemini_webhook_url',
+        'gemini_fallback_timeout',
+        'gemini_fallback_retry_attempts'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'webhook_timeout' => 'integer',
         'max_retry_attempts' => 'integer',
-        'auto_notify_on_failure' => 'boolean'
+        'auto_notify_on_failure' => 'boolean',
+        'gemini_fallback_enabled' => 'boolean',
+        'gemini_fallback_timeout' => 'integer',
+        'gemini_fallback_retry_attempts' => 'integer'
     ];
 
     /**
@@ -63,7 +70,11 @@ class N8nConfiguration extends Model
             'name' => 'required|string|max:255',
             'webhook_url' => 'required|url|max:500',
             'webhook_timeout' => 'required|integer|min:5|max:300',
-            'max_retry_attempts' => 'required|integer|min:1|max:10'
+            'max_retry_attempts' => 'required|integer|min:1|max:10',
+            'gemini_fallback_enabled' => 'sometimes|boolean',
+            'gemini_webhook_url' => 'nullable|url|max:500',
+            'gemini_fallback_timeout' => 'sometimes|integer|min:5|max:300',
+            'gemini_fallback_retry_attempts' => 'sometimes|integer|min:1|max:10'
         ];
     }
 
@@ -73,5 +84,48 @@ class N8nConfiguration extends Model
     public function isValidWebhookUrl(): bool
     {
         return filter_var($this->webhook_url, FILTER_VALIDATE_URL) !== false;
+    }
+
+    /**
+     * Check if Gemini fallback is enabled
+     */
+    public function isGeminiFallbackEnabled(): bool
+    {
+        return $this->gemini_fallback_enabled ?? false;
+    }
+
+    /**
+     * Get Gemini webhook URL
+     */
+    public function getGeminiWebhookUrl(): ?string
+    {
+        return $this->gemini_webhook_url;
+    }
+
+    /**
+     * Check if Gemini webhook URL is valid
+     */
+    public function isValidGeminiWebhookUrl(): bool
+    {
+        if (!$this->gemini_webhook_url) {
+            return false;
+        }
+        return filter_var($this->gemini_webhook_url, FILTER_VALIDATE_URL) !== false;
+    }
+
+    /**
+     * Get Gemini fallback timeout
+     */
+    public function getGeminiFallbackTimeout(): int
+    {
+        return $this->gemini_fallback_timeout ?? 60;
+    }
+
+    /**
+     * Get Gemini fallback retry attempts
+     */
+    public function getGeminiFallbackRetryAttempts(): int
+    {
+        return $this->gemini_fallback_retry_attempts ?? 2;
     }
 }

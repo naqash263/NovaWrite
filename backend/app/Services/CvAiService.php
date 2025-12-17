@@ -11,10 +11,12 @@ use GuzzleHttp\Exception\RequestException;
 class CvAiService
 {
     private $client;
+    private $fallbackService;
 
     public function __construct()
     {
         $this->client = new Client();
+        $this->fallbackService = new GeminiN8nFallbackService();
     }
 
     /**
@@ -38,7 +40,16 @@ class CvAiService
             $truncatedContent = $this->truncateContent($fileContent);
             
             $prompt = $this->buildExtractionPrompt($truncatedContent, $fileType);
-            $response = $this->callGeminiApi($apiKey, $prompt);
+            
+            // Use fallback service to call Gemini API with N8N fallback
+            $response = $this->fallbackService->callWithFallback(
+                function() use ($apiKey, $prompt) {
+                    return $this->callGeminiApi($apiKey, $prompt);
+                },
+                'cv_extract',
+                $prompt,
+                ['file_type' => $fileType]
+            );
 
             return $this->parseCvData($response);
         } catch (\Exception $e) {
@@ -72,7 +83,16 @@ class CvAiService
             }
 
             $prompt = $this->buildTailoringPrompt($cvData, $jobDescription);
-            $response = $this->callGeminiApi($apiKey, $prompt);
+            
+            // Use fallback service to call Gemini API with N8N fallback
+            $response = $this->fallbackService->callWithFallback(
+                function() use ($apiKey, $prompt) {
+                    return $this->callGeminiApi($apiKey, $prompt);
+                },
+                'cv_tailor',
+                $prompt,
+                ['cv_data' => $cvData, 'job_description' => $jobDescription]
+            );
 
             return $this->parseTailoredCvData($response);
         } catch (\Exception $e) {

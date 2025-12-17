@@ -11,10 +11,12 @@ use GuzzleHttp\Exception\RequestException;
 class CareerAiService
 {
     private $client;
+    private $fallbackService;
 
     public function __construct()
     {
         $this->client = new Client();
+        $this->fallbackService = new GeminiN8nFallbackService();
     }
 
     /**
@@ -32,7 +34,16 @@ class CareerAiService
             }
 
             $prompt = $this->buildLinkedInAnalysisPrompt($profileData);
-            $response = $this->callGeminiApi($apiKey, $prompt);
+            
+            // Use fallback service to call Gemini API with N8N fallback
+            $response = $this->fallbackService->callWithFallback(
+                function() use ($apiKey, $prompt) {
+                    return $this->callGeminiApi($apiKey, $prompt);
+                },
+                'linkedin_analysis',
+                $prompt,
+                ['profile_data' => $profileData]
+            );
 
             return $this->parseLinkedInAnalysis($response);
         } catch (\Exception $e) {
@@ -56,7 +67,16 @@ class CareerAiService
             }
 
             $prompt = $this->buildCoverLetterPrompt($formData);
-            $response = $this->callGeminiApi($apiKey, $prompt);
+            
+            // Use fallback service to call Gemini API with N8N fallback
+            $response = $this->fallbackService->callWithFallback(
+                function() use ($apiKey, $prompt) {
+                    return $this->callGeminiApi($apiKey, $prompt);
+                },
+                'cover_letter',
+                $prompt,
+                ['form_data' => $formData]
+            );
 
             return $this->parseCoverLetterResponse($response);
         } catch (\Exception $e) {
@@ -80,7 +100,16 @@ class CareerAiService
             }
 
             $prompt = $this->buildInterviewPrepPrompt($formData);
-            $response = $this->callGeminiApi($apiKey, $prompt);
+            
+            // Use fallback service to call Gemini API with N8N fallback
+            $response = $this->fallbackService->callWithFallback(
+                function() use ($apiKey, $prompt) {
+                    return $this->callGeminiApi($apiKey, $prompt);
+                },
+                'interview_prep',
+                $prompt,
+                ['form_data' => $formData]
+            );
 
             return $this->parseInterviewPrepResponse($response);
         } catch (\Exception $e) {
@@ -104,7 +133,16 @@ class CareerAiService
             }
 
             $prompt = $this->buildSalaryNegotiationPrompt($formData);
-            $response = $this->callGeminiApi($apiKey, $prompt);
+            
+            // Use fallback service to call Gemini API with N8N fallback
+            $response = $this->fallbackService->callWithFallback(
+                function() use ($apiKey, $prompt) {
+                    return $this->callGeminiApi($apiKey, $prompt);
+                },
+                'salary_negotiation',
+                $prompt,
+                ['form_data' => $formData]
+            );
 
             return $this->parseSalaryNegotiationResponse($response);
         } catch (\Exception $e) {
@@ -128,7 +166,16 @@ class CareerAiService
             }
 
             $prompt = $this->buildSkillsAssessmentPrompt($formData);
-            $response = $this->callGeminiApi($apiKey, $prompt);
+            
+            // Use fallback service to call Gemini API with N8N fallback
+            $response = $this->fallbackService->callWithFallback(
+                function() use ($apiKey, $prompt) {
+                    return $this->callGeminiApi($apiKey, $prompt);
+                },
+                'skills_assessment',
+                $prompt,
+                ['form_data' => $formData]
+            );
 
             return $this->parseSkillsAssessmentResponse($response);
         } catch (\Exception $e) {
@@ -152,7 +199,16 @@ class CareerAiService
             }
 
             $prompt = $this->buildCareerPathPrompt($formData);
-            $response = $this->callGeminiApi($apiKey, $prompt);
+            
+            // Use fallback service to call Gemini API with N8N fallback
+            $response = $this->fallbackService->callWithFallback(
+                function() use ($apiKey, $prompt) {
+                    return $this->callGeminiApi($apiKey, $prompt);
+                },
+                'career_path',
+                $prompt,
+                ['form_data' => $formData]
+            );
 
             return $this->parseCareerPathResponse($response);
         } catch (\Exception $e) {
@@ -176,7 +232,16 @@ class CareerAiService
             }
 
             $prompt = $this->buildJobSearchPrompt($formData);
-            $response = $this->callGeminiApi($apiKey, $prompt);
+            
+            // Use fallback service to call Gemini API with N8N fallback
+            $response = $this->fallbackService->callWithFallback(
+                function() use ($apiKey, $prompt) {
+                    return $this->callGeminiApi($apiKey, $prompt);
+                },
+                'job_search',
+                $prompt,
+                ['form_data' => $formData]
+            );
 
             return $this->parseJobSearchResponse($response);
         } catch (\Exception $e) {

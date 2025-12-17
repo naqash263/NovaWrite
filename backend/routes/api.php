@@ -930,6 +930,12 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::post('user-api-keys/{id}/reset-usage', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'resetUserApiKeyUsage']);
     Route::delete('user-api-keys/{id}', [\App\Http\Controllers\Api\Admin\GeminiApiController::class, 'deleteUserApiKey']);
     
+    // Gemini Fallback Management
+    Route::get('gemini-fallback/stats', [\App\Http\Controllers\Api\Admin\GeminiFallbackController::class, 'getStats']);
+    Route::get('gemini-fallback/logs', [\App\Http\Controllers\Api\Admin\GeminiFallbackController::class, 'getLogs']);
+    Route::get('gemini-fallback/health', [\App\Http\Controllers\Api\Admin\GeminiFallbackController::class, 'getHealth']);
+    Route::post('gemini-fallback/test', [\App\Http\Controllers\Api\Admin\GeminiFallbackController::class, 'testConnection']);
+    
     // CV Template Management
     Route::apiResource('cv-templates', \App\Http\Controllers\Api\Admin\CvTemplateController::class);
     Route::post('cv-templates/upload', [\App\Http\Controllers\Api\Admin\CvTemplateController::class, 'uploadFile']);
