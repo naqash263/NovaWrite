@@ -9,6 +9,10 @@ interface N8nConfiguration {
   webhook_timeout: number;
   max_retry_attempts: number;
   is_active: boolean;
+  gemini_fallback_enabled?: boolean;
+  gemini_webhook_url?: string;
+  gemini_fallback_timeout?: number;
+  gemini_fallback_retry_attempts?: number;
   created_at: string;
   updated_at: string;
 }
@@ -43,7 +47,11 @@ const N8nConfigurations: React.FC = () => {
     name: '',
     webhook_url: '',
     webhook_timeout: 30,
-    max_retry_attempts: 3
+    max_retry_attempts: 3,
+    gemini_fallback_enabled: false,
+    gemini_webhook_url: '',
+    gemini_fallback_timeout: 60,
+    gemini_fallback_retry_attempts: 2
   });
   // Fallback Webhook state
   const [fallbackWebhooks, setFallbackWebhooks] = useState<FallbackWebhook[]>([]);
@@ -112,7 +120,16 @@ const N8nConfigurations: React.FC = () => {
       if (data.success) {
         setShowModal(false);
         setEditingConfig(null);
-        setFormData({ name: '', webhook_url: '', webhook_timeout: 30, max_retry_attempts: 3 });
+        setFormData({ 
+          name: '', 
+          webhook_url: '', 
+          webhook_timeout: 30, 
+          max_retry_attempts: 3,
+          gemini_fallback_enabled: false,
+          gemini_webhook_url: '',
+          gemini_fallback_timeout: 60,
+          gemini_fallback_retry_attempts: 2
+        });
         fetchConfigurations();
       } else {
         alert(data.message || 'Error saving configuration');
@@ -129,7 +146,11 @@ const N8nConfigurations: React.FC = () => {
       name: config.name,
       webhook_url: config.webhook_url,
       webhook_timeout: config.webhook_timeout,
-      max_retry_attempts: config.max_retry_attempts
+      max_retry_attempts: config.max_retry_attempts,
+      gemini_fallback_enabled: config.gemini_fallback_enabled ?? false,
+      gemini_webhook_url: config.gemini_webhook_url ?? '',
+      gemini_fallback_timeout: config.gemini_fallback_timeout ?? 60,
+      gemini_fallback_retry_attempts: config.gemini_fallback_retry_attempts ?? 2
     });
     setShowModal(true);
   };
@@ -387,7 +408,16 @@ const N8nConfigurations: React.FC = () => {
             <button
               onClick={() => {
                 setEditingConfig(null);
-                setFormData({ name: '', webhook_url: '', webhook_timeout: 30, max_retry_attempts: 3 });
+                setFormData({ 
+                  name: '', 
+                  webhook_url: '', 
+                  webhook_timeout: 30, 
+                  max_retry_attempts: 3,
+                  gemini_fallback_enabled: false,
+                  gemini_webhook_url: '',
+                  gemini_fallback_timeout: 60,
+                  gemini_fallback_retry_attempts: 2
+                });
                 setShowModal(true);
               }}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
@@ -501,7 +531,7 @@ const N8nConfigurations: React.FC = () => {
           {/* Modal */}
           {showModal && (
             <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-              <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
                 <div className="mt-3">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">
                     {editingConfig ? 'Edit Configuration' : 'Create Configuration'}
@@ -551,6 +581,108 @@ const N8nConfigurations: React.FC = () => {
                         required
                       />
                     </div>
+                    
+                    {/* Gemini Fallback Section */}
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="text-md font-semibold text-gray-900 mb-3">Gemini API Fallback Settings</h4>
+                      
+                      <div className="mb-4">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={formData.gemini_fallback_enabled}
+                            onChange={(e) => setFormData({ ...formData, gemini_fallback_enabled: e.target.checked })}
+                            className="mr-2"
+                          />
+                          <span className="text-sm font-medium text-gray-700">Enable Gemini Fallback</span>
+                        </label>
+                        <p className="text-xs text-gray-500 mt-1 ml-6">Automatically use N8N when Gemini API fails</p>
+                      </div>
+                      
+                      {formData.gemini_fallback_enabled && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Gemini Webhook URL</label>
+                            <input
+                              type="url"
+                              value={formData.gemini_webhook_url}
+                              onChange={(e) => setFormData({ ...formData, gemini_webhook_url: e.target.value })}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="https://your-n8n-server.com/webhook/gemini-fallback"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">N8N webhook endpoint for Gemini fallback</p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Fallback Timeout (seconds)</label>
+                            <input
+                              type="number"
+                        min="1"
+                        max="10"
+                        value={formData.max_retry_attempts}
+                        onChange={(e) => setFormData({ ...formData, max_retry_attempts: parseInt(e.target.value) })}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                    
+                    {/* Gemini Fallback Section */}
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="text-md font-semibold text-gray-900 mb-3">Gemini API Fallback Settings</h4>
+                      
+                      <div className="mb-4">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={formData.gemini_fallback_enabled}
+                            onChange={(e) => setFormData({ ...formData, gemini_fallback_enabled: e.target.checked })}
+                            className="mr-2"
+                          />
+                          <span className="text-sm font-medium text-gray-700">Enable Gemini Fallback</span>
+                        </label>
+                        <p className="text-xs text-gray-500 mt-1 ml-6">Automatically use N8N when Gemini API fails</p>
+                      </div>
+                      
+                      {formData.gemini_fallback_enabled && (
+                        <>
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700">Gemini Webhook URL</label>
+                            <input
+                              type="url"
+                              value={formData.gemini_webhook_url}
+                              onChange={(e) => setFormData({ ...formData, gemini_webhook_url: e.target.value })}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="https://your-n8n-server.com/webhook/gemini-fallback"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">N8N webhook endpoint for Gemini fallback</p>
+                          </div>
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700">Fallback Timeout (seconds)</label>
+                            <input
+                              type="number"
+                              min="5"
+                              max="300"
+                              value={formData.gemini_fallback_timeout}
+                              onChange={(e) => setFormData({ ...formData, gemini_fallback_timeout: parseInt(e.target.value) })}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Timeout for N8N fallback requests (default: 60)</p>
+                          </div>
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700">Fallback Retry Attempts</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="10"
+                              value={formData.gemini_fallback_retry_attempts}
+                              onChange={(e) => setFormData({ ...formData, gemini_fallback_retry_attempts: parseInt(e.target.value) })}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Number of retry attempts for failed fallback requests (default: 2)</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    
                     <div className="flex justify-end space-x-3 pt-4">
                       <button
                         type="button"

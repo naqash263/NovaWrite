@@ -90,7 +90,7 @@ class GeminiN8nFallbackService
                     'config_check' => $configStatus
                 ]);
                 
-                // Provide helpful error message
+                // Provide helpful error message instead of original exception
                 if (!$config) {
                     throw new \Exception('AI service temporarily unavailable. N8N fallback is not configured. Please contact support.');
                 } elseif (!$config->isGeminiFallbackEnabled()) {
@@ -99,6 +99,7 @@ class GeminiN8nFallbackService
                     throw new \Exception('AI service temporarily unavailable. N8N fallback webhook URL is not configured. Please contact support.');
                 }
                 
+                // If we get here, something else is wrong - throw original
                 throw $e;
             }
 

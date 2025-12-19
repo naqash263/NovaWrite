@@ -47,7 +47,10 @@ class CareerAiService
 
             return $this->parseLinkedInAnalysis($response);
         } catch (\Exception $e) {
-            Log::error('LinkedIn analysis failed: ' . $e->getMessage());
+            Log::error('LinkedIn analysis failed: ' . $e->getMessage(), [
+                'exception_class' => get_class($e),
+                'trace' => $e->getTraceAsString()
+            ]);
             throw $e;
         }
     }

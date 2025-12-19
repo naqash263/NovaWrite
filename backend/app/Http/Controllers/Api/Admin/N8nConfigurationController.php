@@ -60,8 +60,10 @@ class N8nConfigurationController extends Controller
     /**
      * Display the specified N8n configuration.
      */
-    public function show(N8nConfiguration $n8nConfiguration): JsonResponse
+    public function show($id): JsonResponse
     {
+        $n8nConfiguration = N8nConfiguration::findOrFail($id);
+        
         return response()->json([
             'success' => true,
             'data' => $n8nConfiguration
@@ -71,8 +73,10 @@ class N8nConfigurationController extends Controller
     /**
      * Update the specified N8n configuration.
      */
-    public function update(Request $request, N8nConfiguration $n8nConfiguration): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
+        $n8nConfiguration = N8nConfiguration::findOrFail($id);
+        
         $validator = Validator::make($request->all(), N8nConfiguration::rules());
 
         if ($validator->fails()) {
@@ -88,7 +92,7 @@ class N8nConfigurationController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'N8n configuration updated successfully',
-            'data' => $n8nConfiguration
+            'data' => $n8nConfiguration->fresh()
         ]);
     }
 
