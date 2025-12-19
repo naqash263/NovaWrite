@@ -583,20 +583,23 @@ const N8nConfigurations: React.FC = () => {
                     </div>
                     
                     {/* Gemini Fallback Section */}
-                    <div className="border-t pt-4 mt-4">
-                      <h4 className="text-md font-semibold text-gray-900 mb-3">Gemini API Fallback Settings</h4>
+                    <div className="border-t pt-4 mt-4 bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
+                        <span className="mr-2">🤖</span>
+                        Gemini API Fallback Settings
+                      </h4>
                       
-                      <div className="mb-4">
-                        <label className="flex items-center">
+                      <div className="mb-4 bg-white p-3 rounded border">
+                        <label className="flex items-center cursor-pointer">
                           <input
                             type="checkbox"
                             checked={formData.gemini_fallback_enabled}
                             onChange={(e) => setFormData({ ...formData, gemini_fallback_enabled: e.target.checked })}
-                            className="mr-2"
+                            className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
                           <span className="text-sm font-medium text-gray-700">Enable Gemini Fallback</span>
                         </label>
-                        <p className="text-xs text-gray-500 mt-1 ml-6">Automatically use N8N when Gemini API fails</p>
+                        <p className="text-xs text-gray-500 mt-1 ml-6">Automatically use N8N when Gemini API fails (quota exceeded, rate limits, etc.)</p>
                       </div>
                       
                       {formData.gemini_fallback_enabled && (
