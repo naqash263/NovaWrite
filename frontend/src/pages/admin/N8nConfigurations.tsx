@@ -601,7 +601,7 @@ const N8nConfigurations: React.FC = () => {
                       
                       {formData.gemini_fallback_enabled && (
                         <>
-                          <div>
+                          <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700">Gemini Webhook URL</label>
                             <input
                               type="url"
