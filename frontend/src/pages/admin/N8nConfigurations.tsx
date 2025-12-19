@@ -612,49 +612,6 @@ const N8nConfigurations: React.FC = () => {
                             />
                             <p className="text-xs text-gray-500 mt-1">N8N webhook endpoint for Gemini fallback</p>
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">Fallback Timeout (seconds)</label>
-                            <input
-                              type="number"
-                        min="1"
-                        max="10"
-                        value={formData.max_retry_attempts}
-                        onChange={(e) => setFormData({ ...formData, max_retry_attempts: parseInt(e.target.value) })}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    
-                    {/* Gemini Fallback Section */}
-                    <div className="border-t pt-4 mt-4">
-                      <h4 className="text-md font-semibold text-gray-900 mb-3">Gemini API Fallback Settings</h4>
-                      
-                      <div className="mb-4">
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.gemini_fallback_enabled}
-                            onChange={(e) => setFormData({ ...formData, gemini_fallback_enabled: e.target.checked })}
-                            className="mr-2"
-                          />
-                          <span className="text-sm font-medium text-gray-700">Enable Gemini Fallback</span>
-                        </label>
-                        <p className="text-xs text-gray-500 mt-1 ml-6">Automatically use N8N when Gemini API fails</p>
-                      </div>
-                      
-                      {formData.gemini_fallback_enabled && (
-                        <>
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700">Gemini Webhook URL</label>
-                            <input
-                              type="url"
-                              value={formData.gemini_webhook_url}
-                              onChange={(e) => setFormData({ ...formData, gemini_webhook_url: e.target.value })}
-                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="https://your-n8n-server.com/webhook/gemini-fallback"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">N8N webhook endpoint for Gemini fallback</p>
-                          </div>
                           <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700">Fallback Timeout (seconds)</label>
                             <input
