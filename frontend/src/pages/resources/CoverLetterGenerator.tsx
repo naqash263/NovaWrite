@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
 import ApiKeyManager from '../../components/ApiKeyManager';
+import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 
 interface CoverLetterData {
   jobTitle: string;
@@ -93,19 +94,23 @@ const CoverLetterGenerator: React.FC = () => {
         }
       };
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/cover-letter/generate`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          job_title: formData.jobTitle,
-          company_name: formData.companyName,
-          job_description: formData.jobDescription,
-          years_experience: getYearsExperience(formData.yearsExperience),
-          current_position: formData.currentPosition,
-          achievements: formData.relevantExperience, // Use relevant experience as achievements
-          skills: formData.keySkills.join(', ')
-        })
-      });
+      const response = await fetchWithTimeout(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/cover-letter/generate`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            job_title: formData.jobTitle,
+            company_name: formData.companyName,
+            job_description: formData.jobDescription,
+            years_experience: getYearsExperience(formData.yearsExperience),
+            current_position: formData.currentPosition,
+            achievements: formData.relevantExperience, // Use relevant experience as achievements
+            skills: formData.keySkills.join(', ')
+          })
+        },
+        120000 // 120 seconds timeout for N8N fallback
+      );
 
       const result = await response.json();
 

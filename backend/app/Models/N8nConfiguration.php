@@ -118,7 +118,7 @@ class N8nConfiguration extends Model
      */
     public function getGeminiFallbackTimeout(): int
     {
-        return $this->gemini_fallback_timeout ?? 60;
+        return $this->gemini_fallback_timeout ?? 120; // Increased default from 60 to 120 seconds
     }
 
     /**

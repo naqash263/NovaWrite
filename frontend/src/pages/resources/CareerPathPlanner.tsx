@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
 import ApiKeyManager from '../../components/ApiKeyManager';
+import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 
 interface CareerData {
   currentRole: string;
@@ -60,19 +61,23 @@ const CareerPathPlanner: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/career-path/generate`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          current_role: careerData.currentRole,
-          experience_years: careerData.experience,
-          skills: careerData.skills,
-          interests: careerData.interests,
-          career_goals: careerData.goals,
-          industry: careerData.industry,
-          education_level: 'Bachelor' // Default value since not in interface
-        })
-      });
+      const response = await fetchWithTimeout(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/career-path/generate`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            current_role: careerData.currentRole,
+            experience_years: careerData.experience,
+            skills: careerData.skills,
+            interests: careerData.interests,
+            career_goals: careerData.goals,
+            industry: careerData.industry,
+            education_level: 'Bachelor' // Default value since not in interface
+          })
+        },
+        120000 // 120 seconds timeout for N8N fallback
+      );
 
       const result = await response.json();
 

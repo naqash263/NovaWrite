@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
 import ApiKeyManager from '../../components/ApiKeyManager';
+import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 
 interface JobSearchData {
   jobTitle: string;
@@ -79,19 +80,23 @@ const JobSearchOptimizer: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/job-search/generate`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          job_title: jobSearchData.jobTitle,
-          location: jobSearchData.location,
-          experience_years: getExperienceYears(jobSearchData.experience),
-          skills: jobSearchData.skills,
-          salary_expectation: getSalaryExpectation(jobSearchData.salaryRange),
-          job_type: 'full_time', // Backend expects specific values
-          industry: 'Technology' // Default value since not in interface
-        })
-      });
+      const response = await fetchWithTimeout(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/job-search/generate`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            job_title: jobSearchData.jobTitle,
+            location: jobSearchData.location,
+            experience_years: getExperienceYears(jobSearchData.experience),
+            skills: jobSearchData.skills,
+            salary_expectation: getSalaryExpectation(jobSearchData.salaryRange),
+            job_type: 'full_time', // Backend expects specific values
+            industry: 'Technology' // Default value since not in interface
+          })
+        },
+        120000 // 120 seconds timeout for N8N fallback
+      );
 
       const result = await response.json();
 

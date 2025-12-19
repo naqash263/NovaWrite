@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
 import ApiKeyManager from '../../components/ApiKeyManager';
+import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 
 interface InterviewData {
   jobTitle: string;
@@ -59,19 +60,23 @@ const InterviewPrep: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/interview-prep/generate`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          job_title: interviewData.jobTitle,
-          company_name: interviewData.company,
-          industry: interviewData.industry,
-          experience_level: interviewData.experience,
-          interview_type: interviewData.interviewType,
-          technical_skills: interviewData.skills,
-          soft_skills: [] // Default empty array since not in interface
-        })
-      });
+      const response = await fetchWithTimeout(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/interview-prep/generate`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            job_title: interviewData.jobTitle,
+            company_name: interviewData.company,
+            industry: interviewData.industry,
+            experience_level: interviewData.experience,
+            interview_type: interviewData.interviewType,
+            technical_skills: interviewData.skills,
+            soft_skills: [] // Default empty array since not in interface
+          })
+        },
+        120000 // 120 seconds timeout for N8N fallback
+      );
 
       const result = await response.json();
 

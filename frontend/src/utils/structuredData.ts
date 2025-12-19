@@ -9,7 +9,8 @@ export function generatePersonSchema() {
     "url": "https://naqashthaheem.com",
     "sameAs": [
       "https://linkedin.com/in/naqashthaheem",
-      "https://github.com/naqashthaheem"
+      "https://github.com/naqashthaheem",
+      "https://www.fiverr.com/hoiyothaheem"
     ]
   };
 }
@@ -108,7 +109,8 @@ export function generateBlogPostSchema(post: {
       "url": "https://naqashthaheem.com/about",
       "sameAs": [
         "https://linkedin.com/in/naqash-thaheem",
-        "https://github.com/naqash-thaheem"
+        "https://github.com/naqash-thaheem",
+        "https://www.fiverr.com/hoiyothaheem"
       ]
     },
     "publisher": {

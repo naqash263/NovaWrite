@@ -11,7 +11,8 @@ export const generateAISearchSchema = () => {
     "image": "https://naqashthaheem.com/images/professional_busines_b4d6588a.jpg",
     "sameAs": [
       "https://linkedin.com/in/naqash-thaheem",
-      "https://github.com/naqash-thaheem"
+      "https://github.com/naqash-thaheem",
+      "https://www.fiverr.com/hoiyothaheem"
     ],
     "address": {
       "@type": "PostalAddress",

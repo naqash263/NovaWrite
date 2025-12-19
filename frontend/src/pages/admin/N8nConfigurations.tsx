@@ -50,7 +50,7 @@ const N8nConfigurations: React.FC = () => {
     max_retry_attempts: 3,
     gemini_fallback_enabled: false,
     gemini_webhook_url: '',
-    gemini_fallback_timeout: 60,
+    gemini_fallback_timeout: 120,
     gemini_fallback_retry_attempts: 2
   });
   // Fallback Webhook state

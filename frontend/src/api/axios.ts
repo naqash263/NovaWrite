@@ -7,7 +7,7 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 30000, // 30 second timeout for SMTP testing
+  timeout: 120000, // 120 second timeout for AI requests (N8N fallback may take longer)
 });
 
 // Request interceptor

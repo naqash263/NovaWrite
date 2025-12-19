@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
 import ApiKeyManager from '../../components/ApiKeyManager';
+import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 
 interface SalaryData {
   currentSalary: string;
@@ -60,20 +61,24 @@ const SalaryNegotiation: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/salary-negotiation/generate`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          current_salary: salaryData.currentSalary,
-          desired_salary: salaryData.desiredSalary,
-          job_title: salaryData.jobTitle,
-          location: salaryData.location,
-          experience_years: salaryData.experience,
-          education_level: 'Bachelor', // Default value since not in interface
-          skills: [], // Default empty array since not in interface
-          company_size: salaryData.companySize
-        })
-      });
+      const response = await fetchWithTimeout(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/salary-negotiation/generate`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            current_salary: salaryData.currentSalary,
+            desired_salary: salaryData.desiredSalary,
+            job_title: salaryData.jobTitle,
+            location: salaryData.location,
+            experience_years: salaryData.experience,
+            education_level: 'Bachelor', // Default value since not in interface
+            skills: [], // Default empty array since not in interface
+            company_size: salaryData.companySize
+          })
+        },
+        120000 // 120 seconds timeout for N8N fallback
+      );
 
       const result = await response.json();
 

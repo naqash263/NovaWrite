@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
 import ApiKeyManager from '../../components/ApiKeyManager';
+import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 
 interface Skill {
   name: string;
@@ -152,18 +153,22 @@ const SkillsAssessment: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/skills-assessment/generate`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          technical_skills: assessmentData.skills.filter(s => s.category === 'Technical Skills').map(s => s.name),
-          soft_skills: assessmentData.skills.filter(s => s.category === 'Soft Skills').map(s => s.name),
-          experience_years: getExperienceYears(assessmentData.experience),
-          current_role: 'Software Developer', // Default value since not in interface
-          career_goals: 'Professional development and career growth', // Default value since we removed this field
-          industry: assessmentData.industry
-        })
-      });
+      const response = await fetchWithTimeout(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/skills-assessment/generate`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            technical_skills: assessmentData.skills.filter(s => s.category === 'Technical Skills').map(s => s.name),
+            soft_skills: assessmentData.skills.filter(s => s.category === 'Soft Skills').map(s => s.name),
+            experience_years: getExperienceYears(assessmentData.experience),
+            current_role: 'Software Developer', // Default value since not in interface
+            career_goals: 'Professional development and career growth', // Default value since we removed this field
+            industry: assessmentData.industry
+          })
+        },
+        120000 // 120 seconds timeout for N8N fallback
+      );
 
       const result = await response.json();
 

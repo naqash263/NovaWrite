@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
 import ApiKeyManager from '../../components/ApiKeyManager';
+import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 
 interface LinkedInProfile {
   headline: string;
@@ -155,21 +156,25 @@ const LinkedInOptimizer: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/linkedin/analyze`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          profile_data: {
-            headline: profileData.headline,
-            summary: profileData.summary,
-            skills: profileData.skills,
-            experience: profileData.experience,
-            education: profileData.education,
-            location: profileData.location,
-            industry: profileData.industry
-          }
-        })
-      });
+      const response = await fetchWithTimeout(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/linkedin/analyze`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            profile_data: {
+              headline: profileData.headline,
+              summary: profileData.summary,
+              skills: profileData.skills,
+              experience: profileData.experience,
+              education: profileData.education,
+              location: profileData.location,
+              industry: profileData.industry
+            }
+          })
+        },
+        120000 // 120 seconds timeout for N8N fallback
+      );
 
       const result = await response.json();
 
