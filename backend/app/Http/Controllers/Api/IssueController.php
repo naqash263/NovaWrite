@@ -351,17 +351,34 @@ class IssueController extends Controller
                 }
             }
 
-            // Rate limiting: max 5 issues per hour per IP
-            $ipAddress = $request->ip();
-            $recentIssues = Issue::where('ip_address', $ipAddress)
-                ->where('created_at', '>=', now()->subHour())
-                ->count();
+            // Rate limiting: Different limits for admin vs regular users
+            $isAdmin = $user && $user->isAdmin();
+            
+            if ($isAdmin) {
+                // Admin users: 15 issues per minute (user-based)
+                $recentIssues = Issue::where('user_id', $user->id)
+                    ->where('created_at', '>=', now()->subMinute())
+                    ->count();
 
-            if ($recentIssues >= 5) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Rate limit exceeded. Please wait before creating another issue.'
-                ], 429);
+                if ($recentIssues >= 15) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Rate limit exceeded. Maximum 15 issues per minute for admin users. Please wait before creating another issue.'
+                    ], 429);
+                }
+            } else {
+                // Regular users/guests: 5 issues per hour per IP
+                $ipAddress = $request->ip();
+                $recentIssues = Issue::where('ip_address', $ipAddress)
+                    ->where('created_at', '>=', now()->subHour())
+                    ->count();
+
+                if ($recentIssues >= 5) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Rate limit exceeded. Please wait before creating another issue.'
+                    ], 429);
+                }
             }
 
             // Normalize labels - ensure they're strings and filter out empty values

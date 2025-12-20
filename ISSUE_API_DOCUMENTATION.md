@@ -270,8 +270,9 @@ curl -X POST "https://naqashthaheem.com/api/issues" \
 
 ## Rate Limiting
 
-- **POST /api/issues**: Max 5 issues per hour per IP address
-- Applies to both authenticated and guest users
+- **POST /api/issues**: 
+  - **Admin users (with API token)**: Max 15 issues per minute (user-based)
+  - **Regular users/guests**: Max 5 issues per hour per IP address
 
 ---
 
