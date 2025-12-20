@@ -157,16 +157,33 @@ class CommentController extends Controller
                 }
             }
 
-            // Rate limiting: max 50 comments per hour per user (user-based, not IP-based)
-            $recentComments = Comment::where('user_id', $user->id)
-                ->where('created_at', '>=', now()->subHour())
-                ->count();
+            // Rate limiting: Different limits for admin vs regular users
+            $isAdmin = $user && $user->isAdmin();
+            
+            if ($isAdmin) {
+                // Admin users: 100 comments per minute (user-based)
+                $recentComments = Comment::where('user_id', $user->id)
+                    ->where('created_at', '>=', now()->subMinute())
+                    ->count();
 
-            if ($recentComments >= 50) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Rate limit exceeded. Maximum 50 comments per hour. Please wait before posting another comment.'
-                ], 429);
+                if ($recentComments >= 100) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Rate limit exceeded. Maximum 100 comments per minute for admin users. Please wait before posting another comment.'
+                    ], 429);
+                }
+            } else {
+                // Regular users: 50 comments per hour (user-based)
+                $recentComments = Comment::where('user_id', $user->id)
+                    ->where('created_at', '>=', now()->subHour())
+                    ->count();
+
+                if ($recentComments >= 50) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Rate limit exceeded. Maximum 50 comments per hour. Please wait before posting another comment.'
+                    ], 429);
+                }
             }
 
             // Create comment (only authenticated users)
