@@ -351,6 +351,9 @@ class IssueController extends Controller
                 }
             }
 
+            // Get IP address for issue creation (needed regardless of rate limiting)
+            $ipAddress = $request->ip();
+            
             // Rate limiting: Different limits for admin vs regular users
             $isAdmin = $user && $user->isAdmin();
             
@@ -368,7 +371,6 @@ class IssueController extends Controller
                 }
             } else {
                 // Regular users/guests: 5 issues per hour per IP
-                $ipAddress = $request->ip();
                 $recentIssues = Issue::where('ip_address', $ipAddress)
                     ->where('created_at', '>=', now()->subHour())
                     ->count();
@@ -489,10 +491,20 @@ class IssueController extends Controller
                 ]
             ], 201);
         } catch (\Exception $e) {
-            Log::error('Error creating issue: ' . $e->getMessage());
+            Log::error('Error creating issue', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => [
+                    'title' => $request->title,
+                    'category_name' => $request->category_name,
+                    'category_id' => $request->category_id,
+                    'user_id' => $user?->id,
+                ]
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create issue'
+                'message' => 'Failed to create issue',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred while creating the issue. Please try again.'
             ], 500);
         }
     }
