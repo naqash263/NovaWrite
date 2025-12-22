@@ -1,0 +1,73 @@
+name: Deploy to Production (SFTP)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+        
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+        
+    - name: Build frontend
+      run: |
+        cd frontend
+        export VITE_API_URL=https://naqashthaheem.com/api
+        export VITE_APP_NAME="Naqash Thaheem"
+        export VITE_APP_ENV=production
+        if [ -f ".env.production" ]; then
+          cp .env.production .env
+        fi
+        npm run build
+        
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_pgsql, dom, filter, gd, json, zip
+        tools: composer
+        
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        composer install --no-dev --optimize-autoloader --no-interaction
+        
+    - name: Deploy via SFTP
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        port: 21
+        protocol: ftps
+        local-dir: ./
+        server-dir: /naqashthaheem.com/
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/node_modules/**
+          **/.env*
+          **/frontend/node_modules/**
+          **/frontend/dist/**
+          **/backend/vendor/**
+          **/backend/storage/logs/**
+          **/backend/storage/framework/cache/**
+          **/backend/storage/framework/sessions/**
+          **/backend/storage/framework/views/**
+          **/backend/bootstrap/cache/**
+        dangerous-clean-slate: false
+

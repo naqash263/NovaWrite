@@ -1066,6 +1066,188 @@ class IssueController extends Controller
     }
 
     /**
+     * Merge duplicate issues into one (admin only)
+     */
+    public function merge(Request $request, string $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'duplicate_ids' => 'required|array|min:1',
+            'duplicate_ids.*' => 'required|integer|exists:issues,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = Auth::guard('api')->user();
+            
+            // Only admin can merge issues
+            if (!$user || !$user->isAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only administrators can merge issues'
+                ], 403);
+            }
+
+            // Get main issue (the one to merge into)
+            $mainIssue = Issue::findOrFail($id);
+            
+            // Get duplicate issues
+            $duplicateIds = $request->duplicate_ids;
+            
+            // Prevent merging into itself
+            if (in_array($mainIssue->id, $duplicateIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot merge an issue into itself'
+                ], 422);
+            }
+
+            // Prevent merging already merged issues
+            $duplicates = Issue::whereIn('id', $duplicateIds)->get();
+            foreach ($duplicates as $duplicate) {
+                if ($duplicate->merged_into) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Issue #{$duplicate->id} has already been merged into issue #{$duplicate->merged_into}"
+                    ], 422);
+                }
+                if ($duplicate->id === $mainIssue->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot merge an issue into itself'
+                    ], 422);
+                }
+            }
+
+            // Start transaction
+            \DB::beginTransaction();
+
+            $totalCommentsMoved = 0;
+            $totalUpvotesMoved = 0;
+            $totalViewsAdded = 0;
+            $combinedLabels = $mainIssue->labels ?? [];
+
+            // Process each duplicate issue
+            foreach ($duplicates as $duplicate) {
+                // Move comments from duplicate to main issue
+                $commentsCount = Comment::where('commentable_type', 'Issue')
+                    ->where('commentable_id', $duplicate->id)
+                    ->count();
+                
+                Comment::where('commentable_type', 'Issue')
+                    ->where('commentable_id', $duplicate->id)
+                    ->update([
+                        'commentable_id' => $mainIssue->id
+                    ]);
+                
+                $totalCommentsMoved += $commentsCount;
+
+                // Move upvotes from duplicate to main issue
+                // First, get all upvotes from duplicate
+                $duplicateUpvotes = IssueUpvote::where('issue_id', $duplicate->id)->get();
+                
+                foreach ($duplicateUpvotes as $upvote) {
+                    // Check if user/guest already upvoted main issue
+                    $existingUpvote = IssueUpvote::where('issue_id', $mainIssue->id)
+                        ->where(function($query) use ($upvote) {
+                            if ($upvote->user_id) {
+                                $query->where('user_id', $upvote->user_id);
+                            } else {
+                                $query->where('guest_ip', $upvote->guest_ip);
+                            }
+                        })
+                        ->first();
+                    
+                    if (!$existingUpvote) {
+                        // Move upvote to main issue
+                        $upvote->update(['issue_id' => $mainIssue->id]);
+                        $totalUpvotesMoved++;
+                    } else {
+                        // Delete duplicate upvote (user already upvoted main issue)
+                        $upvote->delete();
+                    }
+                }
+
+                // Add views count
+                $totalViewsAdded += $duplicate->views_count ?? 0;
+
+                // Combine labels (merge unique labels)
+                $duplicateLabels = $duplicate->labels ?? [];
+                if (is_array($duplicateLabels)) {
+                    $combinedLabels = array_unique(array_merge($combinedLabels, $duplicateLabels));
+                }
+
+                // Mark duplicate as merged
+                $duplicate->update([
+                    'status' => 'duplicate',
+                    'merged_into' => $mainIssue->id,
+                    'is_locked' => true, // Lock merged issues
+                ]);
+            }
+
+            // Update main issue with combined data
+            $mainIssue->update([
+                'labels' => array_values($combinedLabels), // Re-index array
+                'views_count' => ($mainIssue->views_count ?? 0) + $totalViewsAdded,
+            ]);
+
+            // Recalculate counts on main issue
+            $mainIssue->recalculateCommentsCount();
+            
+            // Recalculate upvotes count
+            $actualUpvotes = IssueUpvote::where('issue_id', $mainIssue->id)->count();
+            $mainIssue->update(['upvotes_count' => $actualUpvotes]);
+
+            \DB::commit();
+
+            Log::info('Issues merged successfully', [
+                'main_issue_id' => $mainIssue->id,
+                'duplicate_ids' => $duplicateIds,
+                'comments_moved' => $totalCommentsMoved,
+                'upvotes_moved' => $totalUpvotesMoved,
+                'views_added' => $totalViewsAdded,
+                'merged_by' => $user->id,
+            ]);
+
+            // Reload main issue with relationships
+            $mainIssue->load(['user', 'category', 'assignee', 'resolver']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Issues merged successfully',
+                'data' => [
+                    'main_issue' => $mainIssue,
+                    'merged_count' => count($duplicateIds),
+                    'comments_moved' => $totalCommentsMoved,
+                    'upvotes_moved' => $totalUpvotesMoved,
+                    'views_added' => $totalViewsAdded,
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            Log::error('Error merging issues', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'main_issue_id' => $id,
+                'duplicate_ids' => $request->duplicate_ids ?? [],
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to merge issues',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred while merging issues.'
+            ], 500);
+        }
+    }
+
+    /**
      * Get or create unsubscribe token for email
      */
     private function getUnsubscribeToken(string $email): string

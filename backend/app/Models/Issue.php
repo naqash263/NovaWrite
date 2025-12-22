@@ -30,6 +30,7 @@ class Issue extends Model
         'resolution_notes',
         'resolved_at',
         'resolved_by',
+        'merged_into',
         'ip_address',
     ];
 
@@ -106,6 +107,22 @@ class Issue extends Model
     public function resolver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'resolved_by');
+    }
+
+    /**
+     * Get the issue this was merged into
+     */
+    public function mergedInto(): BelongsTo
+    {
+        return $this->belongsTo(Issue::class, 'merged_into');
+    }
+
+    /**
+     * Get issues that were merged into this issue
+     */
+    public function mergedIssues(): HasMany
+    {
+        return $this->hasMany(Issue::class, 'merged_into');
     }
 
     /**

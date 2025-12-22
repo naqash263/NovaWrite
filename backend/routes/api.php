@@ -656,6 +656,7 @@ Route::middleware('api.auth')->group(function () {
     Route::middleware('admin')->group(function () {
         Route::post('issues/{id}/status', [App\Http\Controllers\Api\IssueController::class, 'updateStatus']);
         Route::post('issues/{id}/assign', [App\Http\Controllers\Api\IssueController::class, 'assign']);
+        Route::post('issues/{id}/merge', [App\Http\Controllers\Api\IssueController::class, 'merge']);
         Route::delete('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'destroy']);
     });
 });
