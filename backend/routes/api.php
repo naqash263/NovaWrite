@@ -634,7 +634,6 @@ Route::middleware('api.auth')->group(function () {
 // Issues routes (public read, authenticated write, admin for status/assign)
 Route::get('issues', [App\Http\Controllers\Api\IssueController::class, 'index']);
 Route::get('issues/stats', [App\Http\Controllers\Api\IssueController::class, 'stats']);
-Route::get('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'show']);
 Route::post('issues', [App\Http\Controllers\Api\IssueController::class, 'store']);
 Route::post('issues/{id}/upvote', [App\Http\Controllers\Api\IssueController::class, 'upvote']);
 Route::post('issues/{id}/mark-solved', [App\Http\Controllers\Api\IssueController::class, 'markAsSolved']); // Public - creator can mark as solved
@@ -654,6 +653,7 @@ Route::middleware('api.auth')->group(function () {
     
     // Admin-only routes
     Route::middleware('admin')->group(function () {
+        // Define specific routes before the catch-all {id} route to avoid conflicts
         Route::get('issues/duplicates', [App\Http\Controllers\Api\IssueController::class, 'findDuplicates']);
         Route::post('issues/{id}/status', [App\Http\Controllers\Api\IssueController::class, 'updateStatus']);
         Route::post('issues/{id}/assign', [App\Http\Controllers\Api\IssueController::class, 'assign']);
@@ -661,6 +661,9 @@ Route::middleware('api.auth')->group(function () {
         Route::delete('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'destroy']);
     });
 });
+
+// Public issue detail route (must be after specific routes to avoid conflicts)
+Route::get('issues/{id}', [App\Http\Controllers\Api\IssueController::class, 'show']);
 
 Route::get('files/{id}/download', [FileController::class, 'download']);
 
