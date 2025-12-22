@@ -634,6 +634,7 @@ Route::middleware('api.auth')->group(function () {
 // Issues routes (public read, authenticated write, admin for status/assign)
 Route::get('issues', [App\Http\Controllers\Api\IssueController::class, 'index']);
 Route::get('issues/stats', [App\Http\Controllers\Api\IssueController::class, 'stats']);
+Route::get('issues/check-similar', [App\Http\Controllers\Api\IssueController::class, 'checkSimilar']); // Public - for real-time duplicate detection
 Route::post('issues', [App\Http\Controllers\Api\IssueController::class, 'store']);
 Route::post('issues/{id}/upvote', [App\Http\Controllers\Api\IssueController::class, 'upvote']);
 Route::post('issues/{id}/mark-solved', [App\Http\Controllers\Api\IssueController::class, 'markAsSolved']); // Public - creator can mark as solved

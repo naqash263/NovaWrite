@@ -1,5 +1,5 @@
-import { useState, useEffect, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, type FormEvent } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../../api/axios';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
@@ -33,6 +33,9 @@ export default function CreateIssue() {
   });
 
   const [labelInput, setLabelInput] = useState('');
+  const [similarIssues, setSimilarIssues] = useState<any[]>([]);
+  const [checkingSimilar, setCheckingSimilar] = useState(false);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   useSEO({
     title: 'Ask a Question - IT Community Forum | Naqash Thaheem',
@@ -43,6 +46,56 @@ export default function CreateIssue() {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  // Debounced function to check for similar issues
+  const checkSimilarIssues = useCallback(async (title: string) => {
+    if (!title || title.trim().length < 5) {
+      setSimilarIssues([]);
+      return;
+    }
+
+    setCheckingSimilar(true);
+    try {
+      const response = await apiClient.get(`/issues/check-similar?title=${encodeURIComponent(title)}&threshold=70`);
+      if (response.data.success && response.data.data) {
+        setSimilarIssues(response.data.data.similar_issues || []);
+      } else {
+        setSimilarIssues([]);
+      }
+    } catch (error) {
+      console.error('Error checking similar issues:', error);
+      setSimilarIssues([]);
+    } finally {
+      setCheckingSimilar(false);
+    }
+  }, []);
+
+  // Handle title change with debounce
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setFormData({ ...formData, title: newTitle });
+
+    // Clear existing timer
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+
+    // Set new timer for debounced search
+    const timer = setTimeout(() => {
+      checkSimilarIssues(newTitle);
+    }, 500); // 500ms delay
+
+    setDebounceTimer(timer);
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [debounceTimer]);
 
   const fetchCategories = async () => {
     try {
@@ -130,7 +183,16 @@ export default function CreateIssue() {
     } catch (err: any) {
       console.error('Error creating issue:', err);
       
-      if (err.response?.data?.errors) {
+      // Handle duplicate detection error
+      if (err.response?.status === 409 && err.response?.data?.error === 'duplicate_detected') {
+        const duplicateData = err.response.data;
+        setError(duplicateData.message || 'A similar issue already exists.');
+        
+        // Show similar issues from API response
+        if (duplicateData.similar_issues && duplicateData.similar_issues.length > 0) {
+          setSimilarIssues(duplicateData.similar_issues);
+        }
+      } else if (err.response?.data?.errors) {
         setErrors(err.response.data.errors);
       } else {
         setError(err.response?.data?.message || err.message || 'Failed to create issue. Please try again.');
@@ -194,16 +256,76 @@ export default function CreateIssue() {
               </div>
             )}
 
-            <Input
-              label="Question Title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              error={errors.title}
-              required
-              placeholder="Brief, descriptive question title"
-              disabled={loading}
-              helperText="Be specific and concise"
-            />
+            <div>
+              <Input
+                label="Question Title"
+                value={formData.title}
+                onChange={handleTitleChange}
+                error={errors.title}
+                required
+                placeholder="Brief, descriptive question title"
+                disabled={loading}
+                helperText="Be specific and concise"
+              />
+              
+              {/* Similar Issues Display */}
+              {similarIssues.length > 0 && formData.title.trim().length >= 5 && (
+                <div className="mt-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-start gap-2 mb-2">
+                    <span className="text-yellow-600 text-lg">⚠️</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-yellow-800">
+                        Similar issues found ({similarIssues.length})
+                      </p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        Please check if your question is already answered before creating a new one.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mt-3">
+                    {similarIssues.map((issue) => (
+                      <Link
+                        key={issue.id}
+                        to={`/community/issues/${issue.slug || issue.id}`}
+                        target="_blank"
+                        className="block p-3 bg-white border border-yellow-300 rounded-md hover:bg-yellow-50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium text-gray-900 truncate">
+                                {issue.title}
+                              </span>
+                              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 whitespace-nowrap">
+                                {issue.similarity}% similar
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                              {issue.category && (
+                                <span className="px-2 py-0.5 bg-gray-100 rounded">
+                                  {issue.category.name}
+                                </span>
+                              )}
+                              <span>💬 {issue.comments_count}</span>
+                              <span>👍 {issue.upvotes_count}</span>
+                              <span className="capitalize">{issue.status}</span>
+                            </div>
+                          </div>
+                          <span className="text-yellow-600 text-xs whitespace-nowrap">View →</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {checkingSimilar && formData.title.trim().length >= 5 && (
+                <div className="mt-2 text-xs text-gray-500 flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400"></div>
+                  Checking for similar issues...
+                </div>
+              )}
+            </div>
 
             <Textarea
               label="Question Details"

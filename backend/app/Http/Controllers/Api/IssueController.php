@@ -1405,6 +1405,89 @@ class IssueController extends Controller
     }
 
     /**
+     * Check for similar issues by title (for real-time duplicate detection)
+     */
+    public function checkSimilar(Request $request): JsonResponse
+    {
+        try {
+            $title = $request->input('title');
+            
+            if (empty($title) || strlen(trim($title)) < 5) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'similar_issues' => [],
+                        'count' => 0
+                    ]
+                ], 200);
+            }
+
+            $threshold = $request->input('threshold', 70) / 100; // Default 70% for real-time check
+            
+            // Get existing open/resolved issues (exclude already merged duplicates)
+            $existingIssues = Issue::where('status', '!=', 'duplicate')
+                ->whereNull('merged_into')
+                ->select('id', 'title', 'status', 'slug', 'created_at', 'comments_count', 'upvotes_count')
+                ->with(['category:id,name,color'])
+                ->orderBy('created_at', 'desc')
+                ->limit(50) // Limit to recent issues for performance
+                ->get();
+            
+            $similarIssues = [];
+            foreach ($existingIssues as $existingIssue) {
+                $similarity = $this->calculateTitleSimilarity($title, $existingIssue->title);
+                
+                if ($similarity >= $threshold) {
+                    $similarIssues[] = [
+                        'id' => $existingIssue->id,
+                        'title' => $existingIssue->title,
+                        'status' => $existingIssue->status,
+                        'slug' => $existingIssue->slug,
+                        'created_at' => $existingIssue->created_at,
+                        'comments_count' => $existingIssue->comments_count,
+                        'upvotes_count' => $existingIssue->upvotes_count,
+                        'category' => $existingIssue->category,
+                        'similarity' => round($similarity * 100, 1),
+                        'url' => config('app.url') . '/community/issues/' . ($existingIssue->slug ?? $existingIssue->id),
+                    ];
+                }
+            }
+            
+            // Sort by similarity (highest first)
+            usort($similarIssues, function($a, $b) {
+                return $b['similarity'] <=> $a['similarity'];
+            });
+            
+            // Limit to top 5 for display
+            $similarIssues = array_slice($similarIssues, 0, 5);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'similar_issues' => $similarIssues,
+                    'count' => count($similarIssues),
+                    'threshold' => $threshold * 100,
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error checking similar issues', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to check for similar issues',
+                'data' => [
+                    'similar_issues' => [],
+                    'count' => 0
+                ]
+            ], 500);
+        }
+    }
+
+    /**
      * Calculate similarity between two titles (0-1 scale)
      */
     private function calculateTitleSimilarity(string $title1, string $title2): float
