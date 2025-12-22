@@ -77,6 +77,7 @@ export default function Issues() {
   const [selectedDuplicates, setSelectedDuplicates] = useState<number[]>([]);
   const [duplicateGroups, setDuplicateGroups] = useState<any[]>([]);
   const [isFindingDuplicates, setIsFindingDuplicates] = useState(false);
+  const [similarityThreshold, setSimilarityThreshold] = useState(70);
   const [statusForm, setStatusForm] = useState({
     status: 'open' as Issue['status'],
     resolution_notes: '',
@@ -201,9 +202,9 @@ export default function Issues() {
 
   // Find duplicates query
   const { data: duplicatesData, refetch: refetchDuplicates, isLoading: isLoadingDuplicates } = useQuery({
-    queryKey: ['duplicate-issues'],
+    queryKey: ['duplicate-issues', similarityThreshold],
     queryFn: async () => {
-      const response = await apiClient.get('/issues/duplicates?threshold=70');
+      const response = await apiClient.get(`/issues/duplicates?threshold=${similarityThreshold}`);
       return response.data;
     },
     enabled: false, // Only fetch when explicitly called
@@ -211,7 +212,6 @@ export default function Issues() {
 
   const handleFindDuplicates = async () => {
     setIsFindingDuplicates(true);
-    setShowDuplicatesModal(true);
     try {
       await refetchDuplicates();
     } catch (error) {
@@ -219,6 +219,11 @@ export default function Issues() {
     } finally {
       setIsFindingDuplicates(false);
     }
+  };
+
+  const handleOpenDuplicatesModal = () => {
+    setShowDuplicatesModal(true);
+    setDuplicateGroups([]);
   };
 
   // Sync duplicate groups when query data changes
@@ -349,20 +354,10 @@ export default function Issues() {
           <p className="text-gray-600">Manage community issues and questions</p>
         </div>
         <button
-          onClick={handleFindDuplicates}
-          disabled={isFindingDuplicates}
-          className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2"
+          onClick={handleOpenDuplicatesModal}
+          className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 flex items-center gap-2"
         >
-          {isFindingDuplicates ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              Finding...
-            </>
-          ) : (
-            <>
-              🔍 Find Duplicates
-            </>
-          )}
+          🔍 Find Duplicates
         </button>
       </div>
 
@@ -985,7 +980,7 @@ export default function Issues() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-5xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Duplicate Issues Found</h2>
+              <h2 className="text-xl font-bold">Find Duplicate Issues</h2>
               <button
                 onClick={() => {
                   setShowDuplicatesModal(false);
@@ -997,6 +992,49 @@ export default function Issues() {
               </button>
             </div>
             
+            {/* Threshold Selector */}
+            {duplicateGroups.length === 0 && !isLoadingDuplicates && !isFindingDuplicates && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Similarity Threshold: {similarityThreshold}%
+                </label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min="50"
+                    max="100"
+                    value={similarityThreshold}
+                    onChange={(e) => setSimilarityThreshold(parseInt(e.target.value))}
+                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <input
+                    type="number"
+                    min="50"
+                    max="100"
+                    value={similarityThreshold}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (value >= 50 && value <= 100) {
+                        setSimilarityThreshold(value);
+                      }
+                    }}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded-md text-center"
+                  />
+                  <span className="text-sm text-gray-500">%</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Only issues with similarity above {similarityThreshold}% will be shown. Higher values show more similar issues.
+                </p>
+                <button
+                  onClick={handleFindDuplicates}
+                  disabled={isFindingDuplicates}
+                  className="mt-4 w-full px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
+                >
+                  {isFindingDuplicates ? 'Searching...' : `Find Duplicates (${similarityThreshold}% threshold)`}
+                </button>
+              </div>
+            )}
+            
             {isLoadingDuplicates || isFindingDuplicates ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
@@ -1004,19 +1042,33 @@ export default function Issues() {
               </div>
             ) : duplicateGroups.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
-                <p>No duplicate issues found.</p>
-                <button
-                  onClick={handleFindDuplicates}
-                  className="mt-4 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
-                >
-                  Search Again
-                </button>
+                <p>No duplicate issues found with {similarityThreshold}% similarity threshold.</p>
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm">Try lowering the threshold to find more potential duplicates.</p>
+                  <button
+                    onClick={handleFindDuplicates}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                  >
+                    Search Again
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="text-sm text-gray-600 mb-4">
-                  Found {duplicateGroups.length} group(s) of potential duplicate issues. 
-                  Select issues to merge into the main issue.
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg mb-4">
+                  <div className="text-sm text-gray-700">
+                    Found <strong>{duplicateGroups.length}</strong> group(s) of potential duplicate issues 
+                    (threshold: <strong>{similarityThreshold}%</strong>).
+                  </div>
+                  <button
+                    onClick={() => {
+                      setDuplicateGroups([]);
+                      setSimilarityThreshold(70);
+                    }}
+                    className="text-sm px-3 py-1 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Change Threshold
+                  </button>
                 </div>
                 
                 {duplicateGroups.map((group, groupIndex) => (
