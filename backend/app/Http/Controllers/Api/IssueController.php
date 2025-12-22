@@ -1248,6 +1248,160 @@ class IssueController extends Controller
     }
 
     /**
+     * Find duplicate issues by title similarity (admin only)
+     */
+    public function findDuplicates(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::guard('api')->user();
+            
+            // Only admin can find duplicates
+            if (!$user || !$user->isAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only administrators can find duplicate issues'
+                ], 403);
+            }
+
+            // Get similarity threshold (default 70%)
+            $threshold = $request->input('threshold', 70) / 100;
+            
+            // Get all open/resolved issues (exclude already merged duplicates)
+            $issues = Issue::where('status', '!=', 'duplicate')
+                ->whereNull('merged_into')
+                ->select('id', 'title', 'status', 'priority', 'category_id', 'comments_count', 'upvotes_count', 'created_at')
+                ->with(['category'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $duplicates = [];
+            $processed = [];
+
+            foreach ($issues as $issue) {
+                // Skip if already processed
+                if (in_array($issue->id, $processed)) {
+                    continue;
+                }
+
+                $similarIssues = [];
+                
+                foreach ($issues as $otherIssue) {
+                    // Skip self and already processed
+                    if ($issue->id === $otherIssue->id || in_array($otherIssue->id, $processed)) {
+                        continue;
+                    }
+
+                    // Calculate similarity
+                    $similarity = $this->calculateTitleSimilarity($issue->title, $otherIssue->title);
+                    
+                    if ($similarity >= $threshold) {
+                        $similarIssues[] = [
+                            'id' => $otherIssue->id,
+                            'title' => $otherIssue->title,
+                            'status' => $otherIssue->status,
+                            'priority' => $otherIssue->priority,
+                            'category' => $otherIssue->category,
+                            'comments_count' => $otherIssue->comments_count,
+                            'upvotes_count' => $otherIssue->upvotes_count,
+                            'created_at' => $otherIssue->created_at,
+                            'similarity' => round($similarity * 100, 1),
+                        ];
+                        $processed[] = $otherIssue->id;
+                    }
+                }
+
+                // If we found similar issues, add the main issue and its duplicates
+                if (count($similarIssues) > 0) {
+                    $duplicates[] = [
+                        'main_issue' => [
+                            'id' => $issue->id,
+                            'title' => $issue->title,
+                            'status' => $issue->status,
+                            'priority' => $issue->priority,
+                            'category' => $issue->category,
+                            'comments_count' => $issue->comments_count,
+                            'upvotes_count' => $issue->upvotes_count,
+                            'created_at' => $issue->created_at,
+                        ],
+                        'duplicates' => $similarIssues,
+                        'total_count' => count($similarIssues) + 1,
+                    ];
+                    $processed[] = $issue->id;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'duplicate_groups' => $duplicates,
+                    'total_groups' => count($duplicates),
+                    'threshold' => $threshold * 100,
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error finding duplicate issues', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to find duplicate issues',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred while finding duplicates.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Calculate similarity between two titles (0-1 scale)
+     */
+    private function calculateTitleSimilarity(string $title1, string $title2): float
+    {
+        // Normalize titles for comparison
+        $normalize = function($text) {
+            // Convert to lowercase, remove extra spaces, remove special characters
+            return strtolower(preg_replace('/[^a-z0-9\s]/', '', preg_replace('/\s+/', ' ', trim($text))));
+        };
+        
+        $norm1 = $normalize($title1);
+        $norm2 = $normalize($title2);
+        
+        // If one is much shorter, they're probably not similar
+        $len1 = strlen($norm1);
+        $len2 = strlen($norm2);
+        
+        if ($len1 == 0 || $len2 == 0) {
+            return 0;
+        }
+        
+        // Length ratio check
+        $ratio = min($len1, $len2) / max($len1, $len2);
+        if ($ratio < 0.5) {
+            return 0;
+        }
+        
+        // Use similar_text for similarity calculation
+        similar_text($norm1, $norm2, $percent);
+        $similarity = $percent / 100;
+        
+        // Boost similarity if they share significant words
+        $words1 = array_filter(explode(' ', $norm1), function($w) { return strlen($w) > 3; });
+        $words2 = array_filter(explode(' ', $norm2), function($w) { return strlen($w) > 3; });
+        
+        if (count($words1) > 0 && count($words2) > 0) {
+            $commonWords = count(array_intersect($words1, $words2));
+            $totalWords = count(array_unique(array_merge($words1, $words2)));
+            $wordSimilarity = $totalWords > 0 ? ($commonWords / $totalWords) : 0;
+            
+            // Combine both similarity scores (weighted average)
+            $similarity = ($similarity * 0.6) + ($wordSimilarity * 0.4);
+        }
+        
+        return min(1.0, $similarity);
+    }
+
+    /**
      * Get or create unsubscribe token for email
      */
     private function getUnsubscribeToken(string $email): string

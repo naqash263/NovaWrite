@@ -654,6 +654,7 @@ Route::middleware('api.auth')->group(function () {
     
     // Admin-only routes
     Route::middleware('admin')->group(function () {
+        Route::get('issues/duplicates', [App\Http\Controllers\Api\IssueController::class, 'findDuplicates']);
         Route::post('issues/{id}/status', [App\Http\Controllers\Api\IssueController::class, 'updateStatus']);
         Route::post('issues/{id}/assign', [App\Http\Controllers\Api\IssueController::class, 'assign']);
         Route::post('issues/{id}/merge', [App\Http\Controllers\Api\IssueController::class, 'merge']);

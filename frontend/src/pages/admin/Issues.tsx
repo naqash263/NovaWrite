@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../api/axios';
 import { useSEO } from '../../utils/seo';
@@ -73,7 +73,10 @@ export default function Issues() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showMergeModal, setShowMergeModal] = useState(false);
+  const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
   const [selectedDuplicates, setSelectedDuplicates] = useState<number[]>([]);
+  const [duplicateGroups, setDuplicateGroups] = useState<any[]>([]);
+  const [isFindingDuplicates, setIsFindingDuplicates] = useState(false);
   const [statusForm, setStatusForm] = useState({
     status: 'open' as Issue['status'],
     resolution_notes: '',
@@ -188,11 +191,44 @@ export default function Issues() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-issues'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-issues'] });
       setShowMergeModal(false);
+      setShowDuplicatesModal(false);
       setSelectedIssue(null);
       setSelectedDuplicates([]);
     },
   });
+
+  // Find duplicates query
+  const { data: duplicatesData, refetch: refetchDuplicates, isLoading: isLoadingDuplicates } = useQuery({
+    queryKey: ['duplicate-issues'],
+    queryFn: async () => {
+      const response = await apiClient.get('/issues/duplicates?threshold=70');
+      return response.data;
+    },
+    enabled: false, // Only fetch when explicitly called
+  });
+
+  const handleFindDuplicates = async () => {
+    setIsFindingDuplicates(true);
+    setShowDuplicatesModal(true);
+    try {
+      await refetchDuplicates();
+    } catch (error) {
+      console.error('Error finding duplicates:', error);
+    } finally {
+      setIsFindingDuplicates(false);
+    }
+  };
+
+  // Sync duplicate groups when query data changes
+  useEffect(() => {
+    if (duplicatesData?.data?.duplicate_groups) {
+      setDuplicateGroups(duplicatesData.data.duplicate_groups);
+    } else {
+      setDuplicateGroups([]);
+    }
+  }, [duplicatesData]);
 
   const handleUpdateStatus = (issue: Issue) => {
     setSelectedIssue(issue);
@@ -312,6 +348,22 @@ export default function Issues() {
           <h1 className="text-2xl font-bold text-gray-900">Issue Management</h1>
           <p className="text-gray-600">Manage community issues and questions</p>
         </div>
+        <button
+          onClick={handleFindDuplicates}
+          disabled={isFindingDuplicates}
+          className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2"
+        >
+          {isFindingDuplicates ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Finding...
+            </>
+          ) : (
+            <>
+              🔍 Find Duplicates
+            </>
+          )}
+        </button>
       </div>
 
       {/* Filters */}
@@ -924,6 +976,128 @@ export default function Issues() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Find Duplicates Modal */}
+      {showDuplicatesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-5xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Duplicate Issues Found</h2>
+              <button
+                onClick={() => {
+                  setShowDuplicatesModal(false);
+                  setDuplicateGroups([]);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {isLoadingDuplicates || isFindingDuplicates ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+                <p className="mt-2 text-gray-600">Finding duplicate issues...</p>
+              </div>
+            ) : duplicateGroups.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <p>No duplicate issues found.</p>
+                <button
+                  onClick={handleFindDuplicates}
+                  className="mt-4 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                >
+                  Search Again
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="text-sm text-gray-600 mb-4">
+                  Found {duplicateGroups.length} group(s) of potential duplicate issues. 
+                  Select issues to merge into the main issue.
+                </div>
+                
+                {duplicateGroups.map((group, groupIndex) => (
+                  <div key={groupIndex} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-gray-900">
+                        Group {groupIndex + 1} ({group.total_count} issues)
+                      </h3>
+                      <button
+                        onClick={() => {
+                          const allIds = [group.main_issue.id, ...group.duplicates.map((d: any) => d.id)];
+                          setSelectedIssue(group.main_issue);
+                          setSelectedDuplicates(group.duplicates.map((d: any) => d.id));
+                          setShowDuplicatesModal(false);
+                          setShowMergeModal(true);
+                        }}
+                        className="px-3 py-1 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700"
+                      >
+                        Merge All
+                      </button>
+                    </div>
+                    
+                    {/* Main Issue */}
+                    <div className="mb-3 p-3 bg-blue-50 rounded border-l-4 border-blue-500">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-blue-700">Main Issue:</span>
+                            <span className="text-sm text-gray-900">#{group.main_issue.id}</span>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(group.main_issue.status)}`}>
+                              {group.main_issue.status.replace('_', ' ')}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 mt-1">{group.main_issue.title}</p>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {group.main_issue.category?.name} • {group.main_issue.comments_count} comments • {group.main_issue.upvotes_count} upvotes
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Duplicate Issues */}
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium text-gray-600 mb-2">Duplicate Issues:</div>
+                      {group.duplicates.map((duplicate: any) => (
+                        <div key={duplicate.id} className="p-3 bg-gray-50 rounded border-l-4 border-orange-400">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-900">#{duplicate.id}</span>
+                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(duplicate.status)}`}>
+                                  {duplicate.status.replace('_', ' ')}
+                                </span>
+                                <span className="text-xs text-orange-600 font-medium">
+                                  {duplicate.similarity}% similar
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-700 mt-1">{duplicate.title}</p>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {duplicate.category?.name} • {duplicate.comments_count} comments • {duplicate.upvotes_count} upvotes
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedIssue(group.main_issue);
+                                setSelectedDuplicates([duplicate.id]);
+                                setShowDuplicatesModal(false);
+                                setShowMergeModal(true);
+                              }}
+                              className="ml-2 px-2 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700"
+                            >
+                              Merge
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
