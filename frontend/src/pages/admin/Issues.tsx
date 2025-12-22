@@ -558,7 +558,7 @@ export default function Issues() {
                           <button
                             onClick={() => handleMerge(issue)}
                             className="text-orange-600 hover:text-orange-800 text-sm"
-                            disabled={issue.status === 'duplicate' || issue.merged_into}
+                            disabled={issue.status === 'duplicate' || !!issue.merged_into}
                             title={issue.status === 'duplicate' ? 'This issue is already merged' : 'Merge duplicates into this issue'}
                           >
                             Merge
@@ -1027,7 +1027,6 @@ export default function Issues() {
                       </h3>
                       <button
                         onClick={() => {
-                          const allIds = [group.main_issue.id, ...group.duplicates.map((d: any) => d.id)];
                           setSelectedIssue(group.main_issue);
                           setSelectedDuplicates(group.duplicates.map((d: any) => d.id));
                           setShowDuplicatesModal(false);
