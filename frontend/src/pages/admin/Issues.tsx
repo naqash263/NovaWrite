@@ -38,6 +38,8 @@ interface Issue {
     id: number;
     name: string;
   };
+  merged_into?: number;
+  merged_issues?: Issue[];
   created_at: string;
   updated_at: string;
 }
@@ -70,6 +72,8 @@ export default function Issues() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [selectedDuplicates, setSelectedDuplicates] = useState<number[]>([]);
   const [statusForm, setStatusForm] = useState({
     status: 'open' as Issue['status'],
     resolution_notes: '',
@@ -174,6 +178,22 @@ export default function Issues() {
     },
   });
 
+  // Merge issues mutation
+  const mergeMutation = useMutation({
+    mutationFn: async ({ mainId, duplicateIds }: { mainId: number; duplicateIds: number[] }) => {
+      const response = await apiClient.post(`/issues/${mainId}/merge`, {
+        duplicate_ids: duplicateIds,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-issues'] });
+      setShowMergeModal(false);
+      setSelectedIssue(null);
+      setSelectedDuplicates([]);
+    },
+  });
+
   const handleUpdateStatus = (issue: Issue) => {
     setSelectedIssue(issue);
     setStatusForm({
@@ -225,6 +245,34 @@ export default function Issues() {
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this issue? This action cannot be undone.')) {
       deleteMutation.mutate(id);
+    }
+  };
+
+  const handleMerge = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setSelectedDuplicates([]);
+    setShowMergeModal(true);
+  };
+
+  const toggleDuplicateSelection = (issueId: number) => {
+    if (selectedDuplicates.includes(issueId)) {
+      setSelectedDuplicates(selectedDuplicates.filter(id => id !== issueId));
+    } else {
+      setSelectedDuplicates([...selectedDuplicates, issueId]);
+    }
+  };
+
+  const handleMergeSubmit = () => {
+    if (!selectedIssue || selectedDuplicates.length === 0) {
+      alert('Please select at least one duplicate issue to merge');
+      return;
+    }
+    
+    if (window.confirm(`Are you sure you want to merge ${selectedDuplicates.length} issue(s) into issue #${selectedIssue.id}? This will move all comments, upvotes, and views to the main issue.`)) {
+      mergeMutation.mutate({
+        mainId: selectedIssue.id,
+        duplicateIds: selectedDuplicates,
+      });
     }
   };
 
@@ -377,11 +425,26 @@ export default function Issues() {
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {issue.is_pinned && <span className="text-yellow-500 mr-1">📌</span>}
+                            {issue.merged_into && (
+                              <span className="text-purple-500 mr-1" title={`Merged into issue #${issue.merged_into}`}>
+                                🔗
+                              </span>
+                            )}
                             {issue.title}
                           </div>
                           <div className="text-sm text-gray-500 mt-1">
                             by {issue.user_id ? (issue.assignee?.name || 'User') : (issue.guest_name || 'Guest')}
                           </div>
+                          {issue.merged_into && (
+                            <div className="text-xs text-purple-600 mt-1">
+                              Merged into issue #{issue.merged_into}
+                            </div>
+                          )}
+                          {issue.merged_issues && issue.merged_issues.length > 0 && (
+                            <div className="text-xs text-orange-600 mt-1">
+                              {issue.merged_issues.length} issue(s) merged into this
+                            </div>
+                          )}
                           <div className="text-xs text-gray-400 mt-1">
                             {new Date(issue.created_at).toLocaleDateString()}
                           </div>
@@ -439,6 +502,14 @@ export default function Issues() {
                             className="text-green-600 hover:text-green-800 text-sm"
                           >
                             Assign
+                          </button>
+                          <button
+                            onClick={() => handleMerge(issue)}
+                            className="text-orange-600 hover:text-orange-800 text-sm"
+                            disabled={issue.status === 'duplicate' || issue.merged_into}
+                            title={issue.status === 'duplicate' ? 'This issue is already merged' : 'Merge duplicates into this issue'}
+                          >
+                            Merge
                           </button>
                           <button
                             onClick={() => handleDelete(issue.id)}
@@ -745,6 +816,107 @@ export default function Issues() {
                   onClick={() => {
                     setShowEditModal(false);
                     setSelectedIssue(null);
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Merge Modal */}
+      {showMergeModal && selectedIssue && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">Merge Duplicate Issues</h2>
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-gray-700">
+                <strong>Main Issue:</strong> #{selectedIssue.id} - {selectedIssue.title}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Select duplicate issues to merge into this one. All comments, upvotes, and views will be moved to the main issue.
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Duplicate Issues ({selectedDuplicates.length} selected)
+                </label>
+                <div className="border border-gray-300 rounded-md max-h-96 overflow-y-auto">
+                  {isLoading ? (
+                    <div className="p-4 text-center text-gray-500">Loading issues...</div>
+                  ) : issues.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">No issues available</div>
+                  ) : (
+                    <div className="divide-y divide-gray-200">
+                      {issues
+                        .filter((issue: Issue) => 
+                          issue.id !== selectedIssue.id && 
+                          issue.status !== 'duplicate' && 
+                          !issue.merged_into
+                        )
+                        .map((issue: Issue) => (
+                          <label
+                            key={issue.id}
+                            className="flex items-start p-4 hover:bg-gray-50 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedDuplicates.includes(issue.id)}
+                              onChange={() => toggleDuplicateSelection(issue.id)}
+                              className="mt-1 mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-900">#{issue.id}</span>
+                                <span className="text-sm text-gray-900">{issue.title}</span>
+                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(issue.status)}`}>
+                                  {issue.status.replace('_', ' ')}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {issue.category?.name} • {issue.comments_count} comments • {issue.upvotes_count} upvotes
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {selectedDuplicates.length > 0 && (
+                <div className="p-4 bg-yellow-50 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Warning:</strong> Merging will:
+                  </p>
+                  <ul className="text-xs text-yellow-700 mt-2 list-disc list-inside">
+                    <li>Move all comments from {selectedDuplicates.length} duplicate issue(s) to issue #{selectedIssue.id}</li>
+                    <li>Move all upvotes (duplicates will be removed)</li>
+                    <li>Combine views count</li>
+                    <li>Merge labels</li>
+                    <li>Mark duplicate issues as "duplicate" status and lock them</li>
+                  </ul>
+                </div>
+              )}
+              
+              <div className="flex space-x-3 pt-4 border-t">
+                <button
+                  onClick={handleMergeSubmit}
+                  disabled={mergeMutation.isPending || selectedDuplicates.length === 0}
+                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {mergeMutation.isPending ? 'Merging...' : `Merge ${selectedDuplicates.length} Issue(s)`}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMergeModal(false);
+                    setSelectedIssue(null);
+                    setSelectedDuplicates([]);
                   }}
                   className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                 >

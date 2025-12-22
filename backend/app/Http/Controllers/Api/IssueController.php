@@ -25,7 +25,7 @@ class IssueController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Issue::with(['user', 'category', 'assignee', 'resolver']);
+            $query = Issue::with(['user', 'category', 'assignee', 'resolver', 'mergedIssues']);
 
             // Search filter - optimized for performance and word-based search
             if ($request->has('search') && !empty(trim($request->search))) {
@@ -518,14 +518,14 @@ class IssueController extends Controller
             // Try to find by ID first (if numeric), then by slug
             $issue = null;
             if (is_numeric($id)) {
-                $issue = Issue::with(['user', 'category', 'assignee', 'resolver', 'upvotes'])
+                $issue = Issue::with(['user', 'category', 'assignee', 'resolver', 'upvotes', 'mergedIssues', 'mergedInto'])
                     ->where('id', $id)
                     ->first();
             }
             
             // If not found by ID or ID is not numeric, try slug
             if (!$issue) {
-                $issue = Issue::with(['user', 'category', 'assignee', 'resolver', 'upvotes'])
+                $issue = Issue::with(['user', 'category', 'assignee', 'resolver', 'upvotes', 'mergedIssues', 'mergedInto'])
                     ->where('slug', $id)
                     ->first();
             }
