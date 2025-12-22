@@ -383,6 +383,57 @@ class IssueController extends Controller
                 }
             }
 
+            // Check for duplicate issues before creating
+            $duplicateThreshold = $request->input('duplicate_threshold', 80) / 100; // Default 80% for creation (stricter)
+            $allowDuplicate = $request->input('allow_duplicate', false); // Allow admins to bypass
+            
+            if (!$allowDuplicate) {
+                // Get existing open/resolved issues (exclude already merged duplicates)
+                $existingIssues = Issue::where('status', '!=', 'duplicate')
+                    ->whereNull('merged_into')
+                    ->select('id', 'title', 'status', 'slug', 'created_at')
+                    ->get();
+                
+                $similarIssues = [];
+                foreach ($existingIssues as $existingIssue) {
+                    $similarity = $this->calculateTitleSimilarity($request->title, $existingIssue->title);
+                    
+                    if ($similarity >= $duplicateThreshold) {
+                        $similarIssues[] = [
+                            'id' => $existingIssue->id,
+                            'title' => $existingIssue->title,
+                            'status' => $existingIssue->status,
+                            'slug' => $existingIssue->slug,
+                            'created_at' => $existingIssue->created_at,
+                            'similarity' => round($similarity * 100, 1),
+                            'url' => config('app.url') . '/community/issues/' . ($existingIssue->slug ?? $existingIssue->id),
+                        ];
+                    }
+                }
+                
+                // If similar issues found, return error with suggestions
+                if (count($similarIssues) > 0) {
+                    // Sort by similarity (highest first)
+                    usort($similarIssues, function($a, $b) {
+                        return $b['similarity'] <=> $a['similarity'];
+                    });
+                    
+                    $topMatch = $similarIssues[0];
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'A similar issue already exists. Please check if your issue is a duplicate.',
+                        'error' => 'duplicate_detected',
+                        'similar_issues' => $similarIssues,
+                        'top_match' => $topMatch,
+                        'suggestion' => count($similarIssues) === 1 
+                            ? "This issue is {$topMatch['similarity']}% similar to issue #{$topMatch['id']}. Please review it before creating a new one."
+                            : "Found " . count($similarIssues) . " similar issues. The most similar is issue #{$topMatch['id']} ({$topMatch['similarity']}% similar).",
+                        'bypass' => $isAdmin ? 'Add "allow_duplicate": true to your request to create anyway (admin only)' : null,
+                    ], 409); // 409 Conflict
+                }
+            }
+
             // Normalize labels - ensure they're strings and filter out empty values
             $labels = [];
             if ($request->has('labels') && is_array($request->labels)) {

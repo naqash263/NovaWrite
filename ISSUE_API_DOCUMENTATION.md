@@ -192,8 +192,11 @@ POST /api/issues
 | `guest_name` | string | Conditional | Required if not authenticated |
 | `guest_email` | string | Conditional | Required if not authenticated (must be valid email) |
 | `category_id` | integer | No | Category ID |
+| `category_name` | string | No | Category name (alternative to category_id) |
 | `priority` | string | No | Priority: `low`, `medium`, `high`, `critical` (default: `medium`) |
 | `labels` | array | No | Array of label strings (max 50 chars each) |
+| `duplicate_threshold` | integer | No | Similarity threshold for duplicate detection (50-100, default: 80) |
+| `allow_duplicate` | boolean | No | Allow creating duplicate even if similar issue exists (admin only, default: false) |
 
 ### Example Request (Without Token - Guest)
 ```bash
@@ -267,6 +270,52 @@ curl -X POST "https://naqashthaheem.com/api/issues" \
 - For POST, must provide `guest_name` and `guest_email`
 
 ---
+
+## Duplicate Detection
+
+When creating an issue, the API automatically checks for similar existing issues to prevent duplicates:
+
+- **Default threshold**: 80% similarity (stricter than duplicate finder)
+- **Behavior**: If a similar issue is found, the API returns a `409 Conflict` error with details about similar issues
+- **Admin bypass**: Admins can bypass duplicate detection by adding `"allow_duplicate": true` to the request
+- **Custom threshold**: You can adjust the threshold using `"duplicate_threshold": 70` (50-100)
+
+### Example: Duplicate Detected Response
+```json
+{
+  "success": false,
+  "message": "A similar issue already exists. Please check if your issue is a duplicate.",
+  "error": "duplicate_detected",
+  "similar_issues": [
+    {
+      "id": 5,
+      "title": "GitHub Actions workflow fails on push",
+      "status": "open",
+      "slug": "github-actions-workflow-fails-on-push",
+      "created_at": "2025-12-20T10:00:00.000000Z",
+      "similarity": 85.5,
+      "url": "https://naqashthaheem.com/community/issues/github-actions-workflow-fails-on-push"
+    }
+  ],
+  "top_match": {
+    "id": 5,
+    "title": "GitHub Actions workflow fails on push",
+    "similarity": 85.5
+  },
+  "suggestion": "This issue is 85.5% similar to issue #5. Please review it before creating a new one.",
+  "bypass": "Add \"allow_duplicate\": true to your request to create anyway (admin only)"
+}
+```
+
+### Bypassing Duplicate Detection (Admin Only)
+```json
+{
+  "title": "GitHub Actions workflow fails",
+  "description": "...",
+  "allow_duplicate": true,
+  "duplicate_threshold": 90
+}
+```
 
 ## Rate Limiting
 
