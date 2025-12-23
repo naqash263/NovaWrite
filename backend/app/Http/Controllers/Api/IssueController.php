@@ -1412,6 +1412,12 @@ class IssueController extends Controller
         try {
             $title = $request->input('title');
             
+            Log::info('checkSimilar called', [
+                'title' => $title,
+                'title_length' => strlen($title ?? ''),
+                'request_all' => $request->all()
+            ]);
+            
             if (empty($title) || strlen(trim($title)) < 5) {
                 return response()->json([
                     'success' => true,
@@ -1424,14 +1430,38 @@ class IssueController extends Controller
 
             $threshold = $request->input('threshold', 70) / 100; // Default 70% for real-time check
             
+            Log::info('Checking for similar issues', [
+                'title' => $title,
+                'threshold' => $threshold
+            ]);
+            
             // Get existing open/resolved issues (exclude already merged duplicates)
+            // Search in title for better performance - use LIKE for initial filtering
+            $titleWords = array_filter(explode(' ', strtolower(trim($title))), function($word) {
+                return strlen($word) > 3; // Only words longer than 3 characters
+            });
+            
             $existingIssues = Issue::where('status', '!=', 'duplicate')
                 ->whereNull('merged_into')
-                ->select('id', 'title', 'status', 'slug', 'created_at', 'comments_count', 'upvotes_count')
-                ->with(['category:id,name,color'])
-                ->orderBy('created_at', 'desc')
-                ->limit(50) // Limit to recent issues for performance
+                ->select('id', 'title', 'status', 'slug', 'created_at', 'comments_count', 'upvotes_count', 'category_id')
+                ->with(['category:id,name,color']);
+            
+            // If we have significant words, filter by them for better performance
+            if (count($titleWords) > 0) {
+                $existingIssues->where(function($query) use ($titleWords) {
+                    foreach ($titleWords as $word) {
+                        $query->orWhere('title', 'ILIKE', "%{$word}%");
+                    }
+                });
+            }
+            
+            $existingIssues = $existingIssues->orderBy('created_at', 'desc')
+                ->limit(100) // Increased limit for better coverage
                 ->get();
+            
+            Log::info('Issues to check for similarity', [
+                'count' => $existingIssues->count()
+            ]);
             
             $similarIssues = [];
             foreach ($existingIssues as $existingIssue) {
@@ -1460,6 +1490,13 @@ class IssueController extends Controller
             
             // Limit to top 5 for display
             $similarIssues = array_slice($similarIssues, 0, 5);
+
+            Log::info('Similar issues found', [
+                'count' => count($similarIssues),
+                'issues' => array_map(function($issue) {
+                    return ['id' => $issue['id'], 'title' => $issue['title'], 'similarity' => $issue['similarity']];
+                }, $similarIssues)
+            ]);
 
             return response()->json([
                 'success' => true,

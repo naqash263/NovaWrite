@@ -56,14 +56,22 @@ export default function CreateIssue() {
 
     setCheckingSimilar(true);
     try {
+      console.log('Checking similar issues for title:', title);
       const response = await apiClient.get(`/issues/check-similar?title=${encodeURIComponent(title)}&threshold=70`);
+      console.log('Similar issues response:', response.data);
+      
       if (response.data.success && response.data.data) {
-        setSimilarIssues(response.data.data.similar_issues || []);
+        const issues = response.data.data.similar_issues || [];
+        console.log('Found similar issues:', issues.length);
+        setSimilarIssues(issues);
       } else {
+        console.log('No similar issues found or unexpected response format');
         setSimilarIssues([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error checking similar issues:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
       setSimilarIssues([]);
     } finally {
       setCheckingSimilar(false);
