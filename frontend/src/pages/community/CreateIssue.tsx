@@ -333,6 +333,13 @@ export default function CreateIssue() {
                   Checking for similar issues...
                 </div>
               )}
+              
+              {/* Debug info - remove in production */}
+              {process.env.NODE_ENV === 'development' && formData.title.trim().length >= 5 && (
+                <div className="mt-2 text-xs text-gray-400">
+                  Title length: {formData.title.trim().length}, Similar issues: {similarIssues.length}, Checking: {checkingSimilar ? 'Yes' : 'No'}
+                </div>
+              )}
             </div>
 
             <Textarea

@@ -1448,9 +1448,16 @@ class IssueController extends Controller
             
             // If we have significant words, filter by them for better performance
             if (count($titleWords) > 0) {
-                $existingIssues->where(function($query) use ($titleWords) {
+                $dbDriver = \DB::connection()->getDriverName();
+                $isPostgres = ($dbDriver === 'pgsql');
+                
+                $existingIssues->where(function($query) use ($titleWords, $isPostgres) {
                     foreach ($titleWords as $word) {
-                        $query->orWhere('title', 'ILIKE', "%{$word}%");
+                        if ($isPostgres) {
+                            $query->orWhereRaw('LOWER(title) LIKE ?', ['%' . strtolower($word) . '%']);
+                        } else {
+                            $query->orWhere('title', 'like', "%{$word}%");
+                        }
                     }
                 });
             }
