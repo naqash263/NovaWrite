@@ -50,6 +50,11 @@ export default function IssueDetail() {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
   const [issue, setIssue] = useState<Issue | null>(null);
+  const [relatedIssues, setRelatedIssues] = useState<{
+    same_category: any[];
+    same_user: any[];
+    similar_title: any[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [upvoting, setUpvoting] = useState(false);
   const [showSolutionModal, setShowSolutionModal] = useState(false);
@@ -76,6 +81,10 @@ export default function IssueDetail() {
       const response = await apiClient.get(`/issues/${id}`);
       if (response.data.success) {
         setIssue(response.data.data);
+        // Set related issues if provided
+        if (response.data.related_issues) {
+          setRelatedIssues(response.data.related_issues);
+        }
       }
     } catch (error) {
       console.error('Error fetching issue:', error);
@@ -237,12 +246,13 @@ export default function IssueDetail() {
                         {issue.priority}
                       </span>
                       {issue.category && (
-                        <span 
-                          className="px-4 py-2 rounded-full text-sm font-semibold text-white"
+                        <Link
+                          to={`/community/issues?category_id=${issue.category.id}`}
+                          className="px-4 py-2 rounded-full text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                           style={{ backgroundColor: issue.category.color }}
                         >
                           {issue.category.name}
-                        </span>
+                        </Link>
                       )}
                     </div>
 
@@ -345,6 +355,144 @@ export default function IssueDetail() {
               title="Discussion"
               showTitle={true}
             />
+
+            {/* Related Issues Section - Internal Linking for SEO */}
+            {relatedIssues && (
+              <div className="mt-8 space-y-6">
+                {/* Related Issues from Same Category */}
+                {relatedIssues.same_category && relatedIssues.same_category.length > 0 && (
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-bold text-gray-900">
+                        More from {issue.category?.name || 'this category'}
+                      </h2>
+                      {issue.category && (
+                        <Link
+                          to={`/community/issues?category_id=${issue.category.id}`}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          View all →
+                        </Link>
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      {relatedIssues.same_category.map((relatedIssue: any) => (
+                        <Link
+                          key={relatedIssue.id}
+                          to={`/community/issues/${relatedIssue.slug || relatedIssue.id}`}
+                          className="block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <h3 className="font-medium text-gray-900 hover:text-blue-600">
+                                {relatedIssue.title}
+                              </h3>
+                              <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                                <span className={`px-2 py-0.5 rounded-full ${getStatusColor(relatedIssue.status)}`}>
+                                  {relatedIssue.status.replace('_', ' ')}
+                                </span>
+                                <span>💬 {relatedIssue.comments_count}</span>
+                                <span>👍 {relatedIssue.upvotes_count}</span>
+                                <span>{new Date(relatedIssue.created_at).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Related Issues from Same User */}
+                {relatedIssues.same_user && relatedIssues.same_user.length > 0 && issue.user && (
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-bold text-gray-900">
+                        More from {issue.user.name}
+                      </h2>
+                    </div>
+                    <div className="space-y-3">
+                      {relatedIssues.same_user.map((relatedIssue: any) => (
+                        <Link
+                          key={relatedIssue.id}
+                          to={`/community/issues/${relatedIssue.slug || relatedIssue.id}`}
+                          className="block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <h3 className="font-medium text-gray-900 hover:text-blue-600">
+                                {relatedIssue.title}
+                              </h3>
+                              <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                                {relatedIssue.category && (
+                                  <span
+                                    className="px-2 py-0.5 rounded text-white text-xs"
+                                    style={{ backgroundColor: relatedIssue.category.color }}
+                                  >
+                                    {relatedIssue.category.name}
+                                  </span>
+                                )}
+                                <span className={`px-2 py-0.5 rounded-full ${getStatusColor(relatedIssue.status)}`}>
+                                  {relatedIssue.status.replace('_', ' ')}
+                                </span>
+                                <span>💬 {relatedIssue.comments_count}</span>
+                                <span>👍 {relatedIssue.upvotes_count}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Similar Issues */}
+                {relatedIssues.similar_title && relatedIssues.similar_title.length > 0 && (
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">
+                      Similar Issues
+                    </h2>
+                    <div className="space-y-3">
+                      {relatedIssues.similar_title.map((relatedIssue: any) => (
+                        <Link
+                          key={relatedIssue.id}
+                          to={`/community/issues/${relatedIssue.slug || relatedIssue.id}`}
+                          className="block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-medium text-gray-900 hover:text-blue-600">
+                                  {relatedIssue.title}
+                                </h3>
+                                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                  {relatedIssue.similarity}% similar
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-gray-500">
+                                {relatedIssue.category && (
+                                  <span
+                                    className="px-2 py-0.5 rounded text-white"
+                                    style={{ backgroundColor: relatedIssue.category.color }}
+                                  >
+                                    {relatedIssue.category.name}
+                                  </span>
+                                )}
+                                <span className={`px-2 py-0.5 rounded-full ${getStatusColor(relatedIssue.status)}`}>
+                                  {relatedIssue.status.replace('_', ' ')}
+                                </span>
+                                <span>💬 {relatedIssue.comments_count}</span>
+                                <span>👍 {relatedIssue.upvotes_count}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Ad: After Comments */}
             <AdPlacement position="content-bottom" className="my-6" />

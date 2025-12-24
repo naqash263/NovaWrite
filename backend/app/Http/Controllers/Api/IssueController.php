@@ -619,9 +619,13 @@ class IssueController extends Controller
             $guestIp = $request->ip();
             $issue->is_upvoted = $issue->isUpvotedBy($userId, $guestIp);
 
+            // Get related issues for internal linking (prevent orphan URLs)
+            $relatedIssues = $this->getRelatedIssues($issue);
+
             return response()->json([
                 'success' => true,
-                'data' => $issue
+                'data' => $issue,
+                'related_issues' => $relatedIssues
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -629,6 +633,120 @@ class IssueController extends Controller
                 'message' => 'Issue not found'
             ], 404);
         }
+    }
+
+    /**
+     * Get related issues for internal linking
+     */
+    private function getRelatedIssues(Issue $issue): array
+    {
+        $related = [
+            'same_category' => [],
+            'same_user' => [],
+            'similar_title' => [],
+        ];
+
+        try {
+            // Get issues from same category (excluding current and duplicates)
+            if ($issue->category_id) {
+                $sameCategory = Issue::where('category_id', $issue->category_id)
+                    ->where('id', '!=', $issue->id)
+                    ->where('status', '!=', 'duplicate')
+                    ->whereNull('merged_into')
+                    ->select('id', 'title', 'slug', 'status', 'priority', 'comments_count', 'upvotes_count', 'created_at')
+                    ->with(['category:id,name,color'])
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get();
+
+                $related['same_category'] = $sameCategory->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => $item->title,
+                        'slug' => $item->slug,
+                        'status' => $item->status,
+                        'priority' => $item->priority,
+                        'comments_count' => $item->comments_count,
+                        'upvotes_count' => $item->upvotes_count,
+                        'created_at' => $item->created_at,
+                        'category' => $item->category,
+                        'url' => config('app.url') . '/community/issues/' . ($item->slug ?? $item->id),
+                    ];
+                })->toArray();
+            }
+
+            // Get issues from same user (excluding current and duplicates)
+            if ($issue->user_id) {
+                $sameUser = Issue::where('user_id', $issue->user_id)
+                    ->where('id', '!=', $issue->id)
+                    ->where('status', '!=', 'duplicate')
+                    ->whereNull('merged_into')
+                    ->select('id', 'title', 'slug', 'status', 'priority', 'comments_count', 'upvotes_count', 'created_at')
+                    ->with(['category:id,name,color'])
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get();
+
+                $related['same_user'] = $sameUser->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => $item->title,
+                        'slug' => $item->slug,
+                        'status' => $item->status,
+                        'priority' => $item->priority,
+                        'comments_count' => $item->comments_count,
+                        'upvotes_count' => $item->upvotes_count,
+                        'created_at' => $item->created_at,
+                        'category' => $item->category,
+                        'url' => config('app.url') . '/community/issues/' . ($item->slug ?? $item->id),
+                    ];
+                })->toArray();
+            }
+
+            // Get similar issues by title (excluding current and duplicates)
+            $similarIssues = Issue::where('id', '!=', $issue->id)
+                ->where('status', '!=', 'duplicate')
+                ->whereNull('merged_into')
+                ->select('id', 'title', 'slug', 'status', 'priority', 'comments_count', 'upvotes_count', 'created_at', 'category_id')
+                ->with(['category:id,name,color'])
+                ->orderBy('created_at', 'desc')
+                ->limit(20) // Check more for better similarity matches
+                ->get();
+
+            $similar = [];
+            foreach ($similarIssues as $similarIssue) {
+                $similarity = $this->calculateTitleSimilarity($issue->title, $similarIssue->title);
+                if ($similarity >= 0.5) { // 50% similarity threshold
+                    $similar[] = [
+                        'id' => $similarIssue->id,
+                        'title' => $similarIssue->title,
+                        'slug' => $similarIssue->slug,
+                        'status' => $similarIssue->status,
+                        'priority' => $similarIssue->priority,
+                        'comments_count' => $similarIssue->comments_count,
+                        'upvotes_count' => $similarIssue->upvotes_count,
+                        'created_at' => $similarIssue->created_at,
+                        'category' => $similarIssue->category,
+                        'similarity' => round($similarity * 100, 1),
+                        'url' => config('app.url') . '/community/issues/' . ($similarIssue->slug ?? $similarIssue->id),
+                    ];
+                }
+            }
+
+            // Sort by similarity and limit to top 5
+            usort($similar, function($a, $b) {
+                return $b['similarity'] <=> $a['similarity'];
+            });
+            $related['similar_title'] = array_slice($similar, 0, 5);
+
+        } catch (\Exception $e) {
+            Log::warning('Error fetching related issues', [
+                'issue_id' => $issue->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return $related;
     }
 
     /**

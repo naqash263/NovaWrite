@@ -495,12 +495,13 @@ export default function Issues() {
                               {issue.priority.toUpperCase()}
                             </span>
                             {issue.category && (
-                              <span 
-                                className="px-3 py-1 rounded-full text-sm font-semibold text-white shadow-sm"
+                              <Link
+                                to={`/community/issues?category_id=${issue.category.id}`}
+                                className="px-3 py-1 rounded-full text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
                                 style={{ backgroundColor: issue.category.color }}
                               >
                                 {issue.category.name}
-                              </span>
+                              </Link>
                             )}
                             {issue.labels && issue.labels.length > 0 && (
                               <div className="flex items-center gap-1 flex-wrap">
