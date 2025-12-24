@@ -81,6 +81,14 @@ export default function IssueDetail() {
     ].filter(Boolean) : []
   });
 
+  // Update canonical URL when issue is loaded
+  useEffect(() => {
+    if (issue) {
+      const canonicalUrl = `/community/issues/${issue.slug || issue.id}`;
+      // The useSEO hook will handle setting the canonical tag
+    }
+  }, [issue]);
+
   useEffect(() => {
     if (id) {
       fetchIssue();

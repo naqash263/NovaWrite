@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/axios';
 import { PostCard } from '../components/PostCard';
@@ -264,7 +264,19 @@ export default function Blog() {
   return (
     <div className="bg-gray-50 min-h-screen py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Blog</h1>
+        {/* Breadcrumb Navigation for SEO */}
+        <nav className="mb-4" aria-label="Breadcrumb">
+          <ol className="flex items-center space-x-2 text-sm text-gray-500">
+            <li>
+              <Link to="/" className="hover:text-gray-900">Home</Link>
+            </li>
+            <li>/</li>
+            <li className="text-gray-900">Blog</li>
+          </ol>
+        </nav>
+        
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Blog</h1>
+        <h2 className="text-2xl font-semibold text-gray-700 mb-8">Expert insights on AI automation, CRM integration, and business intelligence</h2>
 
         {/* Mobile Sidebar Toggle */}
         <div className="lg:hidden mb-4">

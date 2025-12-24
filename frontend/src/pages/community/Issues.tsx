@@ -394,12 +394,28 @@ export default function Issues() {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
+            {/* Breadcrumb Navigation for SEO */}
+            <nav className="mb-4" aria-label="Breadcrumb">
+              <ol className="flex items-center space-x-2 text-sm text-gray-500">
+                <li>
+                  <Link to="/" className="hover:text-gray-900">Home</Link>
+                </li>
+                <li>/</li>
+                <li>
+                  <Link to="/community/issues" className="hover:text-gray-900">Community</Link>
+                </li>
+                <li>/</li>
+                <li className="text-gray-900">Issues</li>
+              </ol>
+            </nav>
+
             {/* Header */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">IT Community Forum</h1>
-                  <p className="text-gray-600 mt-2 text-sm sm:text-base">Ask technical questions, get programming help, and connect with IT professionals</p>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mt-2">Ask technical questions, get programming help, and connect with IT professionals</h2>
+                  <p className="text-gray-600 mt-2 text-sm sm:text-base">Join our community to share knowledge, solve problems, and learn from experts</p>
                   {/* Issues Count Stats */}
                   {!loading && stats && (
                     <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
@@ -466,22 +482,39 @@ export default function Issues() {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-4">
-                {issues.map((issue, index) => (
-                  <React.Fragment key={issue.id}>
-                    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            {issue.is_pinned && (
-                              <span className="text-yellow-500">📌</span>
-                            )}
-                            <Link to={`/community/issues/${issue.slug || issue.id}`}>
-                              <h3 className="text-xl font-semibold text-gray-900 hover:text-blue-600">
-                                {issue.title}
-                              </h3>
-                            </Link>
-                          </div>
+              <>
+                {/* Internal linking section for SEO - prevent orphan URLs */}
+                <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-2">Browse by Category</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {categories.slice(0, 8).map(cat => (
+                      <Link
+                        key={cat.id}
+                        to={`/community/issues?category_id=${cat.id}`}
+                        className="px-3 py-1 rounded-full text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                        style={{ backgroundColor: cat.color }}
+                      >
+                        {cat.name} {cat.issues_count !== undefined && `(${cat.issues_count})`}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {issues.map((issue, index) => (
+                    <React.Fragment key={issue.id}>
+                      <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              {issue.is_pinned && (
+                                <span className="text-yellow-500">📌</span>
+                              )}
+                              <Link to={`/community/issues/${issue.slug || issue.id}`}>
+                                <h3 className="text-xl font-semibold text-gray-900 hover:text-blue-600">
+                                  {issue.title}
+                                </h3>
+                              </Link>
+                            </div>
                           
                           <p className="text-gray-600 mb-4 line-clamp-2">
                             {issue.description.replace(/<[^>]+>/g, '').substring(0, 200)}...
@@ -559,7 +592,8 @@ export default function Issues() {
                     )}
                   </React.Fragment>
                 ))}
-              </div>
+                </div>
+              </>
             )}
 
             {/* Ad: Content Bottom */}
