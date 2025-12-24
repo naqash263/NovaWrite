@@ -111,7 +111,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {
         title: 'Overview',
         items: [
-      { path: '/admin', label: 'Dashboard', icon: '📊' },
+          { path: '/admin', label: 'Dashboard', icon: '📊' },
           { path: '/admin/analytics', label: 'Analytics', icon: '📈' },
           { path: '/admin/monitoring', label: 'System Monitoring', icon: '🏥' },
         ]
@@ -119,13 +119,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {
         title: 'Content Management',
         items: [
-      { path: '/admin/posts', label: 'Posts', icon: '📝' },
-      { path: '/admin/workflows', label: 'Workflows', icon: '⚡' },
+          { path: '/admin/posts', label: 'Posts', icon: '📝' },
+          { path: '/admin/workflows', label: 'Workflows', icon: '⚡' },
       { path: '/admin/projects', label: 'My Projects', icon: '📁' },
       { path: '/admin/issues', label: 'Issues', icon: '🐛' },
       { path: '/admin/issue-categories', label: 'Issue Categories', icon: '📂' },
-      { path: '/admin/courses', label: 'Courses', icon: '📚' },
-      { path: '/admin/files', label: 'Files', icon: '📁' },
+          { path: '/admin/courses', label: 'Courses', icon: '📚' },
+          { path: '/admin/files', label: 'Files', icon: '📁' },
           { path: '/admin/cv-templates', label: 'CV Templates', icon: '📄' },
           { path: '/admin/categories', label: 'Categories', icon: '🏷️' },
           { path: '/admin/tags', label: 'Tags', icon: '🔖' },
@@ -136,7 +136,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         items: [
           { path: '/admin/user-management', label: 'User Management', icon: '👥' },
           { path: '/admin/user-activities', label: 'User Activities', icon: '👤' },
-      { path: '/admin/user-groups', label: 'User Groups', icon: '👨‍👩‍👧‍👦' },
+          { path: '/admin/user-groups', label: 'User Groups', icon: '👨‍👩‍👧‍👦' },
         ]
       },
       {
@@ -174,10 +174,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
           {/* Sidebar Header */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-                <Link to="/admin" className="flex items-center">
+            <Link to="/admin" className="flex items-center">
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Admin Dashboard
-                    </span>
+              </span>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -187,7 +187,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-                  </div>
+          </div>
 
           {/* Sidebar Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-6 overflow-y-auto">
@@ -222,19 +222,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Sidebar Footer */}
           <div className="border-t border-gray-200 p-4">
-                  <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">
-                          {user.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                        </div>
-                    </div>
+              </div>
+            </div>
             <div className="mt-3 space-y-1">
-                                        <Link
+              <Link
                 to="/"
                 className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               >
@@ -242,19 +242,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 View Site
-                                        </Link>
-                    <button
+              </Link>
+              <button
                 onClick={() => logout('/')}
                 className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      Logout
-                    </button>
-                  </div>
-                      </div>
-                  </div>
+              >
+                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Mobile overlay */}
         {sidebarOpen && (
@@ -268,14 +268,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top Bar */}
           <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                  <button
+            <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                  </button>
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
             
             <div className="flex items-center space-x-4">
               <h1 className="text-lg font-semibold text-gray-900">
@@ -284,15 +284,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   .find(item => item.path === location.pathname)?.label || 'Admin Dashboard'}
               </h1>
             </div>
-            
+
             <div className="flex items-center space-x-3">
-              </div>
+            </div>
           </div>
-        
+
           {/* Page Content */}
           <main className="flex-1 p-6">
-          {children}
-        </main>
+            {children}
+          </main>
         </div>
       </div>
     );
@@ -324,7 +324,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center">
               <Link to="/" className="flex items-center text-xl font-bold text-gray-900">
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Naqash Thaheem
+                  Naqash Thaheem
                 </span>
               </Link>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-1">
@@ -632,7 +632,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       Manage Projects
                     </Link>
                   )}
-                  
+                        
                   <Link
                     to="/my-courses"
                           onClick={() => setUserDropdownOpen(false)}
@@ -744,15 +744,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
                 <Link
                   to="/projects"
-                  className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                      className={`flex items-center px-3 py-2 text-base font-medium rounded-lg transition-colors ${
                     location.pathname.startsWith('/projects')
-                      ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
+                      </svg>
                   Projects
                 </Link>
                     <Link
@@ -1069,7 +1069,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {/* Social Media Links */}
               <div className="flex gap-3">
                 <a 
-                  href="https://linkedin.com/in/naqash-thaheem" 
+                  href="https://www.linkedin.com/in/naqash-thaheem-297464147" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors group"
@@ -1248,13 +1248,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </div>
               <div className="border-t border-gray-800 pt-4">
                 <h4 className="text-sm font-semibold mb-3">Legal</h4>
-                <ul className="space-y-2">
+              <ul className="space-y-2">
                   <li><Link to="/privacy-policy" className="text-gray-400 hover:text-white transition-colors text-sm">Privacy Policy</Link></li>
                   <li><Link to="/terms-of-service" className="text-gray-400 hover:text-white transition-colors text-sm">Terms of Service</Link></li>
                   <li><Link to="/cookie-policy" className="text-gray-400 hover:text-white transition-colors text-sm">Cookie Policy</Link></li>
-                </ul>
-              </div>
+              </ul>
             </div>
+          </div>
           </div>
 
           {/* Bottom Bar */}

@@ -10,7 +10,7 @@ export const generatePersonSchema = () => {
     "url": "https://naqashthaheem.com",
     "image": "https://naqashthaheem.com/images/professional_busines_b4d6588a.jpg",
     "sameAs": [
-      "https://linkedin.com/in/naqash-thaheem",
+      "https://www.linkedin.com/in/naqash-thaheem-297464147",
       "https://github.com/naqash-thaheem",
       "https://www.fiverr.com/hoiyothaheem"
     ],
@@ -95,7 +95,7 @@ export const generateOrganizationSchema = () => {
       "email": "contact@naqashthaheem.com"
     },
     "sameAs": [
-      "https://linkedin.com/in/naqash-thaheem",
+      "https://www.linkedin.com/in/naqash-thaheem-297464147",
       "https://github.com/naqash-thaheem",
       "https://www.fiverr.com/hoiyothaheem"
     ],
@@ -147,7 +147,7 @@ export const generateBlogPostSchema = (post: {
       "name": post.author,
       "url": "https://naqashthaheem.com/about",
       "sameAs": [
-        "https://linkedin.com/in/naqash-thaheem",
+        "https://www.linkedin.com/in/naqash-thaheem-297464147",
         "https://github.com/naqash-thaheem"
       ]
     },

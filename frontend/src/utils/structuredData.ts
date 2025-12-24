@@ -8,7 +8,7 @@ export function generatePersonSchema() {
     "description": "Experienced Systems Analyst specializing in automation and process optimization",
     "url": "https://naqashthaheem.com",
     "sameAs": [
-      "https://linkedin.com/in/naqashthaheem",
+      "https://www.linkedin.com/in/naqash-thaheem-297464147",
       "https://github.com/naqashthaheem",
       "https://www.fiverr.com/hoiyothaheem"
     ]
@@ -108,7 +108,7 @@ export function generateBlogPostSchema(post: {
       "name": post.author,
       "url": "https://naqashthaheem.com/about",
       "sameAs": [
-        "https://linkedin.com/in/naqash-thaheem",
+        "https://www.linkedin.com/in/naqash-thaheem-297464147",
         "https://github.com/naqash-thaheem",
         "https://www.fiverr.com/hoiyothaheem"
       ]

@@ -225,7 +225,7 @@ const HomeSettings: React.FC = () => {
     'social_linkedin': {
       title: 'LinkedIn URL',
       description: 'LinkedIn profile or company page URL',
-      example: 'https://linkedin.com/in/naqashthaheem',
+      example: 'https://www.linkedin.com/in/naqash-thaheem-297464147',
       category: 'Contact Info',
       icon: '💼'
     },
@@ -729,7 +729,7 @@ const HomeSettings: React.FC = () => {
     'footer_social_links': {
       title: 'Footer Social Links',
       description: 'JSON array of social media links',
-      example: '[{"platform":"linkedin","url":"https://linkedin.com/in/naqashthaheem"}]',
+      example: '[{"platform":"linkedin","url":"https://www.linkedin.com/in/naqash-thaheem-297464147"}]',
       category: 'Footer',
       icon: '📱'
     },

@@ -351,7 +351,7 @@ export default function Home() {
             {/* Social Media Links */}
             <div className="flex gap-6 justify-center">
               <a 
-                href="https://linkedin.com/in/naqash-thaheem" 
+                href="https://www.linkedin.com/in/naqash-thaheem-297464147" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-white hover:text-blue-200 transform hover:scale-110 transition-all duration-300"

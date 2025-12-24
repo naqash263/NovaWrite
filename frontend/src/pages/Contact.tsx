@@ -82,7 +82,7 @@ export default function Contact() {
           "addressCountryName": "United Arab Emirates"
         },
         "sameAs": [
-          "https://linkedin.com/in/naqash-thaheem",
+          "https://www.linkedin.com/in/naqash-thaheem-297464147",
           "https://github.com/naqash-thaheem"
         ],
         "knowsAbout": [
@@ -143,7 +143,7 @@ export default function Contact() {
     const faqSchema = generateFAQSchema([
       {
         question: 'How can I contact Naqash Thaheem for automation services?',
-        answer: 'You can contact Naqash Thaheem via email at contact@naqashthaheem.com, through the contact form on this page, or via LinkedIn at linkedin.com/in/naqash-thaheem. He typically responds within 24 hours.'
+        answer: 'You can contact Naqash Thaheem via email at contact@naqashthaheem.com, through the contact form on this page, or via LinkedIn at www.linkedin.com/in/naqash-thaheem-297464147. He typically responds within 24 hours.'
       },
       {
         question: 'What is the typical response time for inquiries?',
