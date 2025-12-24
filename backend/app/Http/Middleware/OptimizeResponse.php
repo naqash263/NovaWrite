@@ -17,11 +17,20 @@ class OptimizeResponse
             return $response;
         }
 
-        // Add performance-related headers
+        // Add security headers - Enhanced XSS protection
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-XSS-Protection', '1; mode=block');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        
+        // HSTS - Force HTTPS for 1 year
+        if ($request->isSecure() || $request->header('X-Forwarded-Proto') === 'https') {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+        }
+        
+        // Remove server information
+        $response->headers->remove('X-Powered-By');
+        $response->headers->remove('Server');
 
         // Set caching headers for API responses
         if ($request->is('api/*')) {

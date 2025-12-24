@@ -300,6 +300,10 @@ export default function Home() {
                 alt={getSettingValue('profile_alt_text', 'Naqash Thaheem')}
                 className="w-40 h-40 md:w-48 md:h-48 rounded-full mx-auto border-4 border-white shadow-2xl object-cover ring-4 ring-blue-300 ring-opacity-50"
                 loading="eager"
+                width="192"
+                height="192"
+                decoding="async"
+                fetchPriority="high"
               />
             </div>
             
@@ -379,6 +383,10 @@ export default function Home() {
                   src="/images/fiverr-icon.svg" 
                   alt="Fiverr" 
                   className="w-8 h-8"
+                  width="32"
+                  height="32"
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => {
                     // Fallback to SVG if image doesn't exist
                     const target = e.target as HTMLImageElement;
@@ -503,6 +511,9 @@ export default function Home() {
                   alt="Business Analytics and Automation"
                   className="w-full rounded-2xl shadow-2xl"
                   loading="lazy"
+                  width="800"
+                  height="600"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent rounded-2xl"></div>
               </div>

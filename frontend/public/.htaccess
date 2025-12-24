@@ -1,5 +1,10 @@
 RewriteEngine On
 
+# Force HTTPS redirect
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
 # Handle ads.txt requests - route to backend API (dynamic from admin settings)
 RewriteCond %{REQUEST_URI} ^/ads\.txt$ [NC]
 RewriteRule ^ads\.txt$ /api/ads.txt [L]
@@ -17,13 +22,26 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /index.html [L]
 
-# Security headers
+# Security headers - Enhanced XSS protection and security
 <IfModule mod_headers.c>
+    # XSS Protection
     Header always set X-Content-Type-Options nosniff
     Header always set X-Frame-Options DENY
     Header always set X-XSS-Protection "1; mode=block"
+    
+    # Content Security Policy - Allow necessary sources while blocking XSS
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: http:; connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com; frame-src 'self' https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self';"
+    
+    # Referrer and Permissions Policy
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    
+    # HSTS - Force HTTPS for 1 year (31536000 seconds)
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    
+    # Remove server information
+    Header always unset X-Powered-By
+    Header always unset Server
 </IfModule>
 
 # Cache static assets

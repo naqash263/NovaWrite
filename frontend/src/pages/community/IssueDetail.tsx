@@ -66,7 +66,19 @@ export default function IssueDetail() {
   useSEO({
     title: issue ? `${issue.title} - Community Issue | Naqash Thaheem` : 'Issue Detail',
     description: issue ? issue.description.replace(/<[^>]+>/g, '').substring(0, 160) : 'View issue details',
-    url: `/community/issues/${id}`
+    url: issue ? `/community/issues/${issue.slug || issue.id}` : `/community/issues/${id}`,
+    type: 'article',
+    publishedTime: issue?.created_at,
+    modifiedTime: issue?.updated_at,
+    keywords: issue ? [
+      ...(issue.labels || []),
+      issue.category?.name || '',
+      issue.status,
+      issue.priority,
+      'IT community',
+      'technical support',
+      'programming help'
+    ].filter(Boolean) : []
   });
 
   useEffect(() => {
@@ -297,13 +309,14 @@ export default function IssueDetail() {
 
                 {/* Description */}
                 <div className="prose max-w-none mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Issue Description</h2>
                   <div dangerouslySetInnerHTML={{ __html: issue.description }} />
                 </div>
 
                 {/* Labels */}
                 {issue.labels && issue.labels.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Labels</h3>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">Labels</h2>
                     <div className="flex flex-wrap gap-2">
                       {issue.labels.map((label, idx) => (
                         <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
@@ -330,7 +343,7 @@ export default function IssueDetail() {
                 {/* Resolution Notes */}
                 {issue.status === 'resolved' && issue.resolution_notes && (
                   <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <h3 className="font-semibold text-green-900 mb-2">Solution</h3>
+                    <h2 className="text-lg font-semibold text-green-900 mb-2">Solution</h2>
                     <p className="text-green-800 whitespace-pre-wrap">{issue.resolution_notes}</p>
                     {issue.resolver && (
                       <p className="text-sm text-green-700 mt-2">
@@ -349,12 +362,15 @@ export default function IssueDetail() {
             </div>
 
             {/* Comments Section */}
-            <CommentSection
-              commentableType="Issue"
-              commentableId={issue.id}
-              title="Discussion"
-              showTitle={true}
-            />
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Discussion</h2>
+              <CommentSection
+                commentableType="Issue"
+                commentableId={issue.id}
+                title=""
+                showTitle={false}
+              />
+            </div>
 
             {/* Related Issues Section - Internal Linking for SEO */}
             {relatedIssues && (
@@ -363,7 +379,7 @@ export default function IssueDetail() {
                 {relatedIssues.same_category && relatedIssues.same_category.length > 0 && (
                   <div className="bg-white rounded-lg shadow-md p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-bold text-gray-900">
+                      <h2 className="text-2xl font-bold text-gray-900">
                         More from {issue.category?.name || 'this category'}
                       </h2>
                       {issue.category && (
@@ -407,7 +423,7 @@ export default function IssueDetail() {
                 {relatedIssues.same_user && relatedIssues.same_user.length > 0 && issue.user && (
                   <div className="bg-white rounded-lg shadow-md p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-bold text-gray-900">
+                      <h2 className="text-2xl font-bold text-gray-900">
                         More from {issue.user.name}
                       </h2>
                     </div>
@@ -449,7 +465,7 @@ export default function IssueDetail() {
                 {/* Similar Issues */}
                 {relatedIssues.similar_title && relatedIssues.similar_title.length > 0 && (
                   <div className="bg-white rounded-lg shadow-md p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
                       Similar Issues
                     </h2>
                     <div className="space-y-3">

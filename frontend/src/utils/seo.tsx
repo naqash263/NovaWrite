@@ -150,9 +150,19 @@ export function useSEO({
     setMetaTag('og:site_name', 'Naqash Thaheem - Systems Analyst & Automation Specialist', true);
     
     if (url) {
-      setMetaTag('og:url', url.startsWith('http') ? url : `${window.location.origin}${url}`, true);
+      let ogUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+      // Force HTTPS in og:url
+      if (ogUrl.startsWith('http://')) {
+        ogUrl = ogUrl.replace('http://', 'https://');
+      }
+      setMetaTag('og:url', ogUrl, true);
     } else {
-      setMetaTag('og:url', window.location.href, true);
+      let currentHref = window.location.href;
+      // Force HTTPS in og:url
+      if (currentHref.startsWith('http://')) {
+        currentHref = currentHref.replace('http://', 'https://');
+      }
+      setMetaTag('og:url', currentHref, true);
     }
     
     // Article specific meta tags
@@ -190,7 +200,7 @@ export function useSEO({
       setMetaTag('twitter:image', `${window.location.origin}${safeImage}`);
     }
     
-    // Canonical URL - Always use current page URL as canonical
+    // Canonical URL - Use provided URL parameter or current page URL
     // Remove any existing canonical tags first to prevent duplicates
     const existingCanonicals = document.querySelectorAll('link[rel="canonical"]');
     existingCanonicals.forEach(canonical => canonical.remove());
@@ -199,14 +209,31 @@ export function useSEO({
     const canonical = document.createElement('link');
     canonical.rel = 'canonical';
     
-    // Always use current page URL as canonical to prevent duplicate issues
-    const currentUrl = window.location.href;
+    // Use provided URL parameter if available, otherwise use current page URL
+    let canonicalUrl: string;
+    if (url && url.trim() !== '') {
+      // If URL is provided, construct full URL
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        canonicalUrl = url;
+      } else {
+        // Relative URL - construct full URL
+        canonicalUrl = `${window.location.origin}${url.startsWith('/') ? url : '/' + url}`;
+      }
+    } else {
+      // Fallback to current page URL
+      canonicalUrl = window.location.href;
+    }
     
-    // Remove trailing slash and query parameters for consistency
-    const cleanUrl = currentUrl.split('?')[0].replace(/\/$/, '');
+    // Force HTTPS in canonical URL
+    if (canonicalUrl.startsWith('http://')) {
+      canonicalUrl = canonicalUrl.replace('http://', 'https://');
+    }
     
-    // Only add trailing slash for homepage
-    const finalUrl = cleanUrl === window.location.origin ? `${window.location.origin}/` : cleanUrl;
+    // Remove trailing slash and query parameters for consistency (except homepage)
+    const cleanUrl = canonicalUrl.split('?')[0];
+    const finalUrl = cleanUrl === window.location.origin || cleanUrl === `${window.location.origin}/` 
+      ? `${window.location.origin}/` 
+      : cleanUrl.replace(/\/$/, '');
     
     canonical.href = finalUrl;
     document.head.appendChild(canonical);

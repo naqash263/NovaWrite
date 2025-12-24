@@ -23,6 +23,11 @@ SetEnv PHP_VALUE "upload_max_filesize=50M;post_max_size=50M;memory_limit=256M"
 
     RewriteEngine On
     
+    # Force HTTPS redirect
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    
     # Handle Angular and Vue.js client-side routing, allow Laravel routes, remove trailing slash
     RewriteCond %{REQUEST_URI} !(^/(api|admin|auth|storage|vendor))
     RewriteCond %{REQUEST_FILENAME} !-f
@@ -42,4 +47,22 @@ SetEnv PHP_VALUE "upload_max_filesize=50M;post_max_size=50M;memory_limit=256M"
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+    # XSS Protection
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # HSTS - Force HTTPS
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Remove server information
+    Header always unset X-Powered-By
+    Header always unset Server
 </IfModule>
