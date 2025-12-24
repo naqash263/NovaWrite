@@ -665,6 +665,7 @@ export default function Posts() {
         <table className="min-w-full divide-y divide-gray-200 admin-table">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured Image</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -675,6 +676,9 @@ export default function Posts() {
           <tbody className="bg-white divide-y divide-gray-200">
                 {filteredPosts.map((post) => (
               <tr key={post.id}>
+                  <td className="px-3 py-2 text-sm text-gray-500 font-mono">
+                    #{post.id}
+                  </td>
                   <td className="px-3 py-2 font-medium text-gray-900 max-w-xs truncate" title={post.title}>
                     {post.title}
                   </td>
@@ -796,9 +800,12 @@ export default function Posts() {
             {/* Post Header */}
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-medium text-gray-900 truncate" title={post.title}>
-                  {post.title}
-                </h3>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-mono text-gray-500">#{post.id}</span>
+                  <h3 className="text-lg font-medium text-gray-900 truncate" title={post.title}>
+                    {post.title}
+                  </h3>
+                </div>
                 <p className="text-sm text-gray-500 mt-1">
                   {new Date(post.created_at).toLocaleDateString()}
                 </p>

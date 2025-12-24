@@ -697,6 +697,7 @@ Route::get('workflow-files/{id}/download', [WorkflowDownloadController::class, '
 
 Route::post('contact', [ContactController::class, 'submit']);
 Route::post('contact/analyze', [ContactController::class, 'analyze']);
+Route::post('bookings', [\App\Http\Controllers\Api\BookingController::class, 'bookService']);
 
 Route::get('courses', [CourseController::class, 'index']);
 Route::get('courses/{slug}', [CourseController::class, 'show']);

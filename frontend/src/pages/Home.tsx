@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import apiClient from '../api/axios';
 import { PostCard } from '../components/PostCard';
 import AdPlacement from '../components/AdPlacement';
+import ServiceBookingModal from '../components/ServiceBookingModal';
 // Removed LazyImage for faster image loading
 import { useSEO } from '../utils/seo';
 import { generateAISearchSchema, generateKnowledgeGraphSchema, generateFAQSchema, injectAISearchOptimizations } from '../utils/aiSearchOptimization';
@@ -61,6 +62,10 @@ export default function Home() {
   const [contactSubmitted, setContactSubmitted] = useState(false);
   const [contactErrors, setContactErrors] = useState<Partial<ContactFormData>>({});
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [bookingModal, setBookingModal] = useState<{ isOpen: boolean; serviceName: string }>({
+    isOpen: false,
+    serviceName: '',
+  });
 
   // Helper function to get setting value
   const getSettingValue = (key: string, defaultValue: string = '') => {
@@ -293,31 +298,36 @@ export default function Home() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center animate-fade-in">
-            {/* Profile Image with enhanced animation */}
-            <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
-              <img
-                src={getImageUrl('profile_image', '/images/professional_busines_b4d6588a.jpg')} 
-                alt={getSettingValue('profile_alt_text', 'Naqash Thaheem')}
-                className="w-40 h-40 md:w-48 md:h-48 rounded-full mx-auto border-4 border-white shadow-2xl object-cover ring-4 ring-blue-300 ring-opacity-50"
-                loading="eager"
-                width="192"
-                height="192"
-                decoding="async"
-                fetchPriority="high"
-              />
-            </div>
-            
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white">
-              {getSettingValue('hero_title', 'Naqash Thaheem')}
+              {getSettingValue('hero_title', 'AI Automation & Business Intelligence Services')}
             </h1>
             
             <p className="text-2xl md:text-3xl mb-4 text-blue-50 font-semibold">
-              {getSettingValue('hero_subtitle', 'Systems Analyst & Automation Specialist')}
+              {getSettingValue('hero_subtitle', 'Transform Your Business with Intelligent Automation')}
             </p>
             
             <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Global AI automation specialist transforming businesses worldwide through intelligent workflows, CRM integrations, and data-driven insights. Specializing in n8n, Make.com, OpenAI, Power BI, and Zoho CRM solutions. Remote services available globally.
+              Streamline operations, boost productivity, and drive growth with our comprehensive automation solutions. From workflow automation and CRM integration to Power BI dashboards and AI-powered tools - we deliver measurable results for businesses worldwide.
             </p>
+            
+            {/* Service Highlights */}
+            <div className="grid md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
+              <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20">
+                <div className="text-3xl mb-2">🤖</div>
+                <h3 className="font-semibold text-white mb-1">Workflow Automation</h3>
+                <p className="text-sm text-blue-100">n8n, Make.com, Zapier</p>
+              </div>
+              <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20">
+                <div className="text-3xl mb-2">📊</div>
+                <h3 className="font-semibold text-white mb-1">Business Intelligence</h3>
+                <p className="text-sm text-blue-100">Power BI, Data Analytics</p>
+              </div>
+              <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20">
+                <div className="text-3xl mb-2">🔗</div>
+                <h3 className="font-semibold text-white mb-1">CRM Integration</h3>
+                <p className="text-sm text-blue-100">Zoho, HubSpot, Custom APIs</p>
+              </div>
+            </div>
             
             {/* Contact Info */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center text-lg mb-8">
@@ -1051,23 +1061,31 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
       {/* Services Section - Enhanced */}
       <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">What I Offer</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">Our Services</h2>
           <p className="text-xl text-gray-600 text-center mb-12 max-w-3xl mx-auto">
             Comprehensive solutions to streamline your business operations and drive growth
           </p>
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-blue-100">
               <div className="text-4xl mb-4">🤖</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Workflow Automation</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Automate repetitive tasks, streamline business processes, and reduce manual errors with intelligent workflow solutions tailored to your needs.
+                Automate repetitive tasks, streamline business processes, and reduce manual errors with intelligent workflow solutions using n8n, Make.com, and Zapier.
               </p>
-              <Link to="/workflows" className="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-2 group">
-                View Automation Examples 
-                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
+              <div className="flex flex-col gap-2">
+                <Link to="/workflows" className="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                  View Examples 
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <button
+                  onClick={() => setBookingModal({ isOpen: true, serviceName: 'Workflow Automation' })}
+                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
+                >
+                  Book Now
+                </button>
+              </div>
             </div>
             <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-purple-100">
               <div className="text-4xl mb-4">📊</div>
@@ -1075,12 +1093,20 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Create interactive Power BI dashboards, generate actionable insights, and make data-driven decisions with comprehensive analytics solutions.
               </p>
-              <Link to="/about" className="text-purple-600 hover:text-purple-700 font-semibold inline-flex items-center gap-2 group">
-                Learn More 
-                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
+              <div className="flex flex-col gap-2">
+                <Link to="/about" className="text-purple-600 hover:text-purple-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                  Learn More 
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <button
+                  onClick={() => setBookingModal({ isOpen: true, serviceName: 'Business Intelligence' })}
+                  className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-semibold text-sm"
+                >
+                  Book Now
+                </button>
+              </div>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
               <div className="text-4xl mb-4">🔗</div>
@@ -1088,12 +1114,20 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Connect your CRM, marketing tools, databases, and third-party services into a unified ecosystem that works seamlessly together.
               </p>
-              <Link to="/about" className="text-green-600 hover:text-green-700 font-semibold inline-flex items-center gap-2 group">
-                View Projects 
-                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
+              <div className="flex flex-col gap-2">
+                <Link to="/about" className="text-green-600 hover:text-green-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                  View Projects 
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <button
+                  onClick={() => setBookingModal({ isOpen: true, serviceName: 'System Integrations' })}
+                  className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm"
+                >
+                  Book Now
+                </button>
+              </div>
             </div>
             <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-orange-100">
               <div className="text-4xl mb-4">💻</div>
@@ -1101,12 +1135,62 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Build scalable web applications, APIs, and custom software solutions using modern frameworks like React, .NET Core, and Laravel.
               </p>
-              <Link to="/contact" className="text-orange-600 hover:text-orange-700 font-semibold inline-flex items-center gap-2 group">
-                Start a Project 
-                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
+              <div className="flex flex-col gap-2">
+                <Link to="/contact" className="text-orange-600 hover:text-orange-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                  Start a Project 
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <button
+                  onClick={() => setBookingModal({ isOpen: true, serviceName: 'Full-Stack Development' })}
+                  className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors font-semibold text-sm"
+                >
+                  Book Now
+                </button>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-indigo-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-indigo-100">
+              <div className="text-4xl mb-4">🔍</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">SEO & Digital Marketing</h3>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                Improve your online visibility with comprehensive SEO audits, keyword optimization, technical SEO, content strategy, and performance tracking.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Link to="/contact" className="text-indigo-600 hover:text-indigo-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                  Learn More 
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <button
+                  onClick={() => setBookingModal({ isOpen: true, serviceName: 'SEO & Digital Marketing' })}
+                  className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
+                >
+                  Book Now
+                </button>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-teal-100">
+              <div className="text-4xl mb-4">📈</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Data Analytics & Reporting</h3>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                Transform raw data into actionable insights with advanced analytics, custom reporting, KPI dashboards, and automated data processing pipelines.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Link to="/contact" className="text-teal-600 hover:text-teal-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                  Learn More 
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <button
+                  onClick={() => setBookingModal({ isOpen: true, serviceName: 'Data Analytics & Reporting' })}
+                  className="w-full bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-semibold text-sm"
+                >
+                  Book Now
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1516,6 +1600,13 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
           </svg>
         </button>
       )}
+
+      {/* Service Booking Modal */}
+      <ServiceBookingModal
+        isOpen={bookingModal.isOpen}
+        onClose={() => setBookingModal({ isOpen: false, serviceName: '' })}
+        serviceName={bookingModal.serviceName}
+      />
     </div>
   );
 }
