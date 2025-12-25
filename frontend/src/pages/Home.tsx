@@ -543,21 +543,42 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
-              <div className="text-5xl mb-4">🎯</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/business_analytics_d_948bb4c2.jpg" 
+                  alt="Results-Driven" 
+                  className="w-full h-40 object-cover rounded-lg opacity-90"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold mb-3">Results-Driven</h3>
               <p className="text-blue-100 leading-relaxed">
                 Every solution is designed with measurable outcomes in mind. I focus on delivering tangible ROI through automation and efficiency improvements.
               </p>
             </div>
             <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
-              <div className="text-5xl mb-4">🚀</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/technology_coding_pr_27f67dc5.jpg" 
+                  alt="Fast & Reliable" 
+                  className="w-full h-40 object-cover rounded-lg opacity-90"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold mb-3">Fast & Reliable</h3>
               <p className="text-blue-100 leading-relaxed">
                 Quick turnaround times without compromising quality. I understand the importance of meeting deadlines in business-critical projects.
               </p>
             </div>
             <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
-              <div className="text-5xl mb-4">💡</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/ai_artificial_intell_c522e573.jpg" 
+                  alt="Innovative Solutions" 
+                  className="w-full h-40 object-cover rounded-lg opacity-90"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold mb-3">Innovative Solutions</h3>
               <p className="text-blue-100 leading-relaxed">
                 Leveraging cutting-edge AI and automation technologies to solve complex business problems with elegant, scalable solutions.
@@ -576,10 +597,13 @@ export default function Home() {
           </p>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-blue-100">
-              <div className="text-blue-600 mb-4">
-                <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                </svg>
+              <div className="mb-4">
+                <img 
+                  src="/images/ai_artificial_intell_c522e573.jpg" 
+                  alt="AI Automation & Workflows" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">AI Automation & Workflows</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -602,10 +626,13 @@ export default function Home() {
             </div>
 
             <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-purple-100">
-              <div className="text-purple-600 mb-4">
-                <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+              <div className="mb-4">
+                <img 
+                  src="/images/business_analytics_d_948bb4c2.jpg" 
+                  alt="Data Analysis & Power BI" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">Data Analysis & Power BI</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -628,10 +655,13 @@ export default function Home() {
             </div>
 
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
-              <div className="text-green-600 mb-4">
-                <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+              <div className="mb-4">
+                <img 
+                  src="/images/technology_coding_pr_27f67dc5.jpg" 
+                  alt="CRM & System Integrations" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">CRM & System Integrations</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -854,10 +884,13 @@ export default function Home() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Project 1 */}
             <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-                <svg className="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src="/images/business_analytics_d_948bb4c2.jpg" 
+                  alt="Sales Performance Dashboard" 
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Sales Performance Dashboard</h3>
@@ -872,10 +905,13 @@ export default function Home() {
 
             {/* Project 2 */}
             <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
-                <svg className="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src="/images/ai_artificial_intell_c522e573.jpg" 
+                  alt="AI Resume Screening System" 
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">AI Resume Screening System</h3>
@@ -890,10 +926,13 @@ export default function Home() {
 
             {/* Project 3 */}
             <div className="bg-gradient-to-br from-green-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                <svg className="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src="/images/technology_coding_pr_27f67dc5.jpg" 
+                  alt="CRM Integration Platform" 
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">CRM Integration Platform</h3>
@@ -908,10 +947,13 @@ export default function Home() {
 
             {/* Project 4 */}
             <div className="bg-gradient-to-br from-orange-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-                <svg className="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src="/images/technology_coding_pr_27f67dc5.jpg" 
+                  alt="Job Aggregation System" 
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Job Aggregation System</h3>
@@ -926,10 +968,13 @@ export default function Home() {
 
             {/* Project 5 */}
             <div className="bg-gradient-to-br from-red-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center">
-                <svg className="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src="/images/professional_busines_b4d6588a.jpg" 
+                  alt="Email Marketing Automation" 
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Email Marketing Automation</h3>
@@ -944,10 +989,13 @@ export default function Home() {
 
             {/* Project 6 */}
             <div className="bg-gradient-to-br from-indigo-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
-                <svg className="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src="/images/professional_busines_b4d6588a1.jpg" 
+                  alt="Lead Enrichment Pipeline" 
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Lead Enrichment Pipeline</h3>
@@ -1067,7 +1115,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
           </p>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-blue-100">
-              <div className="text-4xl mb-4">🤖</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/ai_artificial_intell_c522e573.jpg" 
+                  alt="Workflow Automation" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Workflow Automation</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Automate repetitive tasks, streamline business processes, and reduce manual errors with intelligent workflow solutions using n8n, Make.com, and Zapier.
@@ -1088,7 +1143,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               </div>
             </div>
             <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-purple-100">
-              <div className="text-4xl mb-4">📊</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/business_analytics_d_948bb4c2.jpg" 
+                  alt="Business Intelligence" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Business Intelligence</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Create interactive Power BI dashboards, generate actionable insights, and make data-driven decisions with comprehensive analytics solutions.
@@ -1109,7 +1171,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               </div>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
-              <div className="text-4xl mb-4">🔗</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/technology_coding_pr_27f67dc5.jpg" 
+                  alt="System Integrations" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">System Integrations</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Connect your CRM, marketing tools, databases, and third-party services into a unified ecosystem that works seamlessly together.
@@ -1130,7 +1199,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               </div>
             </div>
             <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-orange-100">
-              <div className="text-4xl mb-4">💻</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/technology_coding_pr_27f67dc5.jpg" 
+                  alt="Full-Stack Development" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Full-Stack Development</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Build scalable web applications, APIs, and custom software solutions using modern frameworks like React, .NET Core, and Laravel.
@@ -1151,40 +1227,18 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               </div>
             </div>
             <div className="bg-gradient-to-br from-indigo-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-indigo-100">
-              <div className="text-4xl mb-4">🔍</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/professional_busines_b4d6588a.jpg" 
+                  alt="SEO & Digital Marketing" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">SEO & Digital Marketing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Improve your online visibility with comprehensive SEO audits, keyword optimization, technical SEO, content strategy, and performance tracking.
               </p>
-              <div className="mb-4">
-                <p className="text-sm font-semibold text-gray-700 mb-2">Services Include:</p>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-600 mt-1">✓</span>
-                    <span>SEO Audits & Technical SEO</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-600 mt-1">✓</span>
-                    <span>Keyword Research & Optimization</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-600 mt-1">✓</span>
-                    <span>On-Page & Off-Page SEO</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-600 mt-1">✓</span>
-                    <span>Content Strategy & Optimization</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-600 mt-1">✓</span>
-                    <span>Local SEO & Google My Business</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-600 mt-1">✓</span>
-                    <span>SEO Analytics & Reporting</span>
-                  </li>
-                </ul>
-              </div>
               <div className="flex flex-col gap-2">
                 <Link to="/contact" className="text-indigo-600 hover:text-indigo-700 font-semibold inline-flex items-center gap-2 group text-sm">
                   Learn More 
@@ -1201,7 +1255,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               </div>
             </div>
             <div className="bg-gradient-to-br from-pink-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-pink-100">
-              <div className="text-4xl mb-4">✍️</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/professional_busines_b4d6588a1.jpg" 
+                  alt="Content Marketing & SEO Writing" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Content Marketing & SEO Writing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Create SEO-optimized content that ranks well and engages your audience. Blog posts, articles, landing pages, and content strategy.
@@ -1222,7 +1283,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               </div>
             </div>
             <div className="bg-gradient-to-br from-cyan-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-cyan-100">
-              <div className="text-4xl mb-4">🔗</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/professional_busines_b4d6588a.jpg" 
+                  alt="Link Building & Outreach" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Link Building & Outreach</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Build high-quality backlinks through strategic outreach, guest posting, and relationship building to boost your domain authority.
@@ -1243,7 +1311,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               </div>
             </div>
             <div className="bg-gradient-to-br from-rose-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-rose-100">
-              <div className="text-4xl mb-4">📱</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/professional_busines_b4d6588a1.jpg" 
+                  alt="Social Media Marketing" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Social Media Marketing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Grow your brand presence across social platforms with strategic content, community management, and performance-driven campaigns.
@@ -1264,7 +1339,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               </div>
             </div>
             <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-teal-100">
-              <div className="text-4xl mb-4">📈</div>
+              <div className="mb-4">
+                <img 
+                  src="/images/business_analytics_d_948bb4c2.jpg" 
+                  alt="Data Analytics & Reporting" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Data Analytics & Reporting</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Transform raw data into actionable insights with advanced analytics, custom reporting, KPI dashboards, and automated data processing pipelines.
