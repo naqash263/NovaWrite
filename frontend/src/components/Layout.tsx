@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import InstallBanner from './InstallBanner';
 import NotificationSettings from './NotificationSettings';
+import ServiceBookingModal from './ServiceBookingModal';
 import analyticsService from '../services/analyticsService';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [notificationSettingsOpen, setNotificationSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [bookingModal, setBookingModal] = useState<{ isOpen: boolean; serviceName: string }>({
+    isOpen: false,
+    serviceName: '',
+  });
   const isAdmin = location.pathname.startsWith('/admin');
   const isLoginPage = location.pathname === '/admin/login';
 
@@ -579,6 +584,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             
             {/* Desktop Auth Menu */}
             <div className="hidden sm:flex items-center gap-3">
+              {/* Book Consultation Button */}
+              <button
+                onClick={() => setBookingModal({ isOpen: true, serviceName: 'Consultation' })}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white rounded-lg hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="hidden md:block">Book Consultation</span>
+                <span className="md:hidden">Book</span>
+              </button>
 
               {/* Install App Button */}
               {canInstall && (
@@ -798,6 +814,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     </Link>
                   </div>
                 </div>
+
+                {/* Book Consultation Button */}
+                <button
+                  onClick={() => {
+                    setBookingModal({ isOpen: true, serviceName: 'Consultation' });
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center justify-center px-5 py-3 text-sm font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white rounded-lg hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 mb-4"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>Book Consultation</span>
+                </button>
 
                 {/* Notification Settings Button */}
                 <button
@@ -1282,6 +1312,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
+
+      {/* Service Booking Modal */}
+      <ServiceBookingModal
+        isOpen={bookingModal.isOpen}
+        onClose={() => setBookingModal({ isOpen: false, serviceName: '' })}
+        serviceName={bookingModal.serviceName}
+      />
     </div>
   );
 }
