@@ -39,11 +39,11 @@ class BookingController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error("Booking validation failed", [
                 'errors' => $e->errors(),
-                'request_data' => $request->all()
+                'request_data' => $request->except(['message']) // Exclude message from logs for privacy
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid form data. Please check your input and try again.',
+                'message' => 'Please fill in all required fields correctly.',
                 'errors' => $e->errors()
             ], 422);
         }

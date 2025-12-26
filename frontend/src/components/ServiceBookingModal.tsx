@@ -57,7 +57,21 @@ export default function ServiceBookingModal({
         }, 3000);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to submit booking. Please try again.');
+      console.error('Booking submission error:', err);
+      
+      // Handle validation errors
+      if (err.response?.status === 422 && err.response?.data?.errors) {
+        const validationErrors = Object.values(err.response.data.errors).flat().join(', ');
+        setError(`Validation error: ${validationErrors}`);
+      } 
+      // Handle service unavailable errors
+      else if (err.response?.status === 503) {
+        setError(err.response?.data?.message || 'Booking service is currently unavailable. Please contact us directly at contact@naqashthaheem.com');
+      }
+      // Handle other errors
+      else {
+        setError(err.response?.data?.message || err.message || 'Failed to submit booking. Please try again or contact us directly.');
+      }
     } finally {
       setLoading(false);
     }
