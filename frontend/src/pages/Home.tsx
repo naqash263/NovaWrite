@@ -206,7 +206,7 @@ export default function Home() {
             background: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 30%, rgba(219, 39, 119, 0.85) 60%, rgba(37, 99, 235, 0.9) 100%)`
           }}
         />
-        {/* Hero image as proper img element for better LCP */}
+        {/* Hero image as proper img element for better LCP - visible and high priority */}
         <img 
           src={getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')} 
           alt=""
@@ -216,6 +216,7 @@ export default function Home() {
           decoding="async"
           width="1920"
           height="1080"
+          style={{ willChange: 'auto' }}
         />
         {/* Enhanced Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">

@@ -227,22 +227,23 @@ export default defineConfig({
             const match = id.match(/node_modules\/(@[^/]+|[^/]+)/);
             if (match) {
               const packageName = match[1];
-              // Scoped packages - group by scope to reduce chunk count
+              // Scoped packages - split problematic ones, group others
               if (packageName.startsWith('@')) {
                 const scope = packageName.split('/')[0];
                 // Large scoped packages get their own chunk
                 if (scope === '@uiw' || scope === '@tanstack') {
                   return `vendor-${scope.substring(1)}`;
                 }
-                // Group smaller scoped packages by scope to reduce HTTP requests
-                // Only split if package is known to have circular deps
-                const problematicPackages = ['@heroicons'];
+                // Split packages known to have circular dependencies
+                const problematicPackages = ['@heroicons', '@hookform', '@types'];
                 if (problematicPackages.some(pkg => packageName.includes(pkg))) {
                   const fullPackage = packageName.replace('@', '').replace('/', '-');
                   return `vendor-${fullPackage}`;
                 }
-                // Group other scoped packages together to reduce chunk count
-                return 'vendor-scoped';
+                // For other scoped packages, split by full package name to avoid circular deps
+                // This prevents initialization order issues while still reducing chunk count
+                const fullPackage = packageName.replace('@', '').replace('/', '-');
+                return `vendor-${fullPackage}`;
               }
               // Individual packages - exclude React packages (already handled)
               const largePackages = ['react', 'react-dom', 'react-router', 'axios'];
