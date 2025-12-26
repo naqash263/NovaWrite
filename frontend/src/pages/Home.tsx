@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/axios';
 import { PostCard } from '../components/PostCard';
-import AdPlacement from '../components/AdPlacement';
 import ServiceBookingModal from '../components/ServiceBookingModal';
 // Removed LazyImage for faster image loading
 import { useSEO } from '../utils/seo';
@@ -25,13 +24,6 @@ interface Post {
   };
 }
 
-interface ContactFormData {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  submit?: string;
-}
 
 interface HomeSetting {
   key: string;
@@ -53,14 +45,6 @@ export default function Home() {
   const [featuredPosts, setFeaturedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [homeSettings, setHomeSettings] = useState<HomeSettings | null>(null);
-  const [contactForm, setContactForm] = useState<ContactFormData>({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
-  const [contactSubmitted, setContactSubmitted] = useState(false);
-  const [contactErrors, setContactErrors] = useState<Partial<ContactFormData>>({});
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [bookingModal, setBookingModal] = useState<{ isOpen: boolean; serviceName: string }>({
     isOpen: false,
@@ -581,7 +565,7 @@ export default function Home() {
                   width="400"
                   height="192"
                   decoding="async"
-                  fetchpriority="low"
+                  fetchPriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Workflow Automation</h3>
@@ -613,7 +597,7 @@ export default function Home() {
                   width="400"
                   height="192"
                   decoding="async"
-                  fetchpriority="low"
+                  fetchPriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Business Intelligence</h3>
@@ -645,7 +629,7 @@ export default function Home() {
                   width="400"
                   height="192"
                   decoding="async"
-                  fetchpriority="low"
+                  fetchPriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI System Integrations</h3>
@@ -677,7 +661,7 @@ export default function Home() {
                   width="400"
                   height="192"
                   decoding="async"
-                  fetchpriority="low"
+                  fetchPriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered Full-Stack Development</h3>
@@ -709,7 +693,7 @@ export default function Home() {
                   width="400"
                   height="192"
                   decoding="async"
-                  fetchpriority="low"
+                  fetchPriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered SEO & Digital Marketing</h3>
@@ -741,7 +725,7 @@ export default function Home() {
                   width="400"
                   height="192"
                   decoding="async"
-                  fetchpriority="low"
+                  fetchPriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Content Marketing & LLM-Powered SEO Writing</h3>
@@ -773,7 +757,7 @@ export default function Home() {
                   width="400"
                   height="192"
                   decoding="async"
-                  fetchpriority="low"
+                  fetchPriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Link Building & Outreach</h3>
@@ -805,7 +789,7 @@ export default function Home() {
                   width="400"
                   height="192"
                   decoding="async"
-                  fetchpriority="low"
+                  fetchPriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Social Media Marketing</h3>
@@ -837,7 +821,7 @@ export default function Home() {
                   width="400"
                   height="192"
                   decoding="async"
-                  fetchpriority="low"
+                  fetchPriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Data Analytics & Intelligent Reporting</h3>
