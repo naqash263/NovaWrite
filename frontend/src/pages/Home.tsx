@@ -1664,6 +1664,41 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
         </div>
       </section>
 
+      {/* Community Section */}
+      <section className="py-16 bg-gradient-to-br from-purple-50 to-white scroll-animate">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Join Our Community</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Get help, share solutions, and connect with others working on automation and business intelligence projects
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border border-purple-100">
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-shrink-0">
+                <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Community Issues & Solutions</h3>
+                <p className="text-gray-600 mb-6">
+                  Browse technical issues, share your solutions, and get help from the community. Whether you're working with n8n, Make.com, Power BI, or any automation tool, find answers and contribute to the community knowledge base.
+                </p>
+                <Link
+                  to="/community/issues"
+                  className="inline-block bg-gradient-to-r from-purple-600 to-purple-700 text-white px-8 py-3 rounded-full hover:from-purple-700 hover:to-purple-800 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg"
+                >
+                  Visit Community Issues →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Contact Form Section */}
       <section className="py-16 bg-gradient-to-br from-blue-600 to-blue-800 text-white scroll-animate">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

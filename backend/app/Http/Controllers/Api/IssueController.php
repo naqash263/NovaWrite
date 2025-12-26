@@ -516,6 +516,10 @@ class IssueController extends Controller
                 ]);
             }
 
+            // Clear sitemap cache when issue is created
+            \Cache::put('issues.last_updated', now(), now()->addDays(30));
+            \App\Http\Controllers\Api\SitemapController::clearCache();
+
             // Return only the created issue data (without relationships)
             return response()->json([
                 'success' => true,
@@ -802,6 +806,10 @@ class IssueController extends Controller
                 'title', 'description', 'category_id', 'priority', 'labels'
             ]));
 
+            // Clear sitemap cache when issue is updated
+            \Cache::put('issues.last_updated', now(), now()->addDays(30));
+            \App\Http\Controllers\Api\SitemapController::clearCache();
+
             $issue->load(['user', 'category', 'assignee']);
 
             return response()->json([
@@ -850,6 +858,10 @@ class IssueController extends Controller
             }
 
             $issue->delete();
+
+            // Clear sitemap cache when issue is deleted
+            \Cache::put('issues.last_updated', now(), now()->addDays(30));
+            \App\Http\Controllers\Api\SitemapController::clearCache();
 
             return response()->json([
                 'success' => true,
@@ -1386,6 +1398,10 @@ class IssueController extends Controller
 
             // Reload main issue with relationships
             $mainIssue->load(['user', 'category', 'assignee', 'resolver']);
+
+            // Clear sitemap cache when issues are merged
+            \Cache::put('issues.last_updated', now(), now()->addDays(30));
+            \App\Http\Controllers\Api\SitemapController::clearCache();
 
             return response()->json([
                 'success' => true,
