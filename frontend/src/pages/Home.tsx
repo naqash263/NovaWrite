@@ -81,14 +81,14 @@ export default function Home() {
 
   useSEO({
     title: 'AI Automation, LLM Integration, AI Chatbots & AI Agents Services | Workflow Automation Expert | Business Intelligence Solutions',
-    description: 'Expert AI automation, LLM integration, AI chatbots, and AI agents services. Specializing in GPT-4, OpenAI, large language models, conversational AI, intelligent workflow automation, AI-powered CRM integration, Power BI dashboards, and business intelligence solutions. 8+ years experience with n8n, Make.com, AI agents, autonomous systems, and machine learning automation. Global remote services available.',
+    description: 'Expert AI automation, LLM integration, AI chatbots, and AI agents services. Specializing in GPT-4, OpenAI, large language models, conversational AI, intelligent workflow automation, AI-powered CRM integration, Power BI dashboards, and business intelligence solutions. 8+ years experience with n8n, Make.com, AI agents, and autonomous systems. Global remote services available.',
     image: '/images/professional_busines_b4d6588a.jpg',
     url: '/',
     keywords: [
       'AI automation expert', 'LLM integration services', 'GPT-4 integration', 'OpenAI automation', 
       'large language model integration', 'AI workflow automation', 'intelligent automation solutions',
       'AI agents development', 'AI chatbots development', 'conversational AI', 'autonomous AI agents',
-      'machine learning automation', 'natural language processing automation', 'AI chatbot builder',
+      'natural language processing automation', 'AI chatbot builder',
       'GPT-4 chatbot', 'OpenAI chatbot integration', 'LLM chatbot development', 'AI agent framework',
       'autonomous AI systems', 'intelligent AI agents', 'AI-powered CRM integration', 'business intelligence AI', 
       'AI consulting services', 'workflow automation with AI', 'AI-driven analytics', 'LLM consulting', 
@@ -258,7 +258,7 @@ export default function Home() {
             {/* Main Headline - Ultra Prominent */}
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-extrabold mb-8 leading-tight">
               <span className="block bg-clip-text text-transparent bg-gradient-to-r from-white via-yellow-200 to-white animate-gradient">
-                {getSettingValue('hero_title', 'AI Automation & LLM Integration Services')}
+                {getSettingValue('hero_title', 'Automate Your Business With AI')}
               </span>
             </h1>
             
@@ -269,7 +269,7 @@ export default function Home() {
             
             {/* Description */}
             <p className="text-xl md:text-2xl text-blue-50 mb-10 max-w-4xl mx-auto leading-relaxed font-medium">
-              Streamline operations, boost productivity, and drive growth with our comprehensive AI automation, LLM integration, AI chatbots, and AI agents solutions. From GPT-4 powered workflows, intelligent automation, conversational AI chatbots, and autonomous AI agents to AI-driven CRM integration, Power BI dashboards, and machine learning automation - we deliver measurable results for businesses worldwide using cutting-edge AI, large language models, and intelligent agent technologies.
+              Streamline operations, boost productivity, and drive growth with our comprehensive AI automation, LLM integration, AI chatbots, and AI agents solutions. From GPT-4 powered workflows, intelligent automation, conversational AI chatbots, and autonomous AI agents to AI-driven CRM integration, Power BI dashboards, and intelligent automation - we deliver measurable results for businesses worldwide using cutting-edge AI, large language models, and intelligent agent technologies.
             </p>
 
             {/* Key Stats - Show Stopper */}
@@ -545,7 +545,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Business Intelligence</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Create interactive Power BI dashboards powered by AI and machine learning. Generate actionable insights using LLM-driven analytics, natural language processing, and AI-powered data visualization for intelligent, data-driven business decisions.
+                Create interactive Power BI dashboards powered by AI. Generate actionable insights using LLM-driven analytics, natural language processing, and AI-powered data visualization for intelligent, data-driven business decisions.
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/blog" className="text-purple-600 hover:text-purple-700 font-semibold inline-flex items-center gap-2 group text-sm">
@@ -644,7 +644,7 @@ export default function Home() {
                   </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered SEO & Digital Marketing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Improve your online visibility with AI-driven SEO solutions. Leverage LLM-powered content optimization, GPT-4 for keyword research, AI content strategy, intelligent technical SEO audits, and machine learning-based performance tracking.
+                Improve your online visibility with AI-driven SEO solutions. Leverage LLM-powered content optimization, GPT-4 for keyword research, AI content strategy, intelligent technical SEO audits, and AI-based performance tracking.
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/contact" className="text-indigo-600 hover:text-indigo-700 font-semibold inline-flex items-center gap-2 group text-sm">
@@ -842,7 +842,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Data Analytics & Intelligent Reporting</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Transform raw data into actionable insights using AI and machine learning. Leverage LLM-powered analytics, intelligent reporting, AI-driven KPI dashboards, and automated data processing pipelines with natural language query capabilities.
+                Transform raw data into actionable insights using AI. Leverage LLM-powered analytics, intelligent reporting, AI-driven KPI dashboards, and automated data processing pipelines with natural language query capabilities.
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/contact" className="text-teal-600 hover:text-teal-700 font-semibold inline-flex items-center gap-2 group text-sm">
