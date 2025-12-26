@@ -202,8 +202,6 @@ export default function Home() {
           backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 30%, rgba(219, 39, 119, 0.85) 60%, rgba(37, 99, 235, 0.9) 100%), url('${getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')}')`
         }}
       >
-        {/* Preload hero image for better LCP */}
-        <link rel="preload" as="image" href={getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')} fetchPriority="high" />
         {/* Enhanced Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
@@ -489,6 +487,7 @@ export default function Home() {
                   height="192"
                   decoding="async"
                   fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Workflow Automation</h3>
@@ -521,6 +520,7 @@ export default function Home() {
                   height="192"
                   decoding="async"
                   fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Business Intelligence</h3>
@@ -553,6 +553,7 @@ export default function Home() {
                   height="192"
                   decoding="async"
                   fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI System Integrations</h3>
@@ -585,6 +586,7 @@ export default function Home() {
                   height="192"
                   decoding="async"
                   fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
                 />
         </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered Full-Stack Development</h3>
@@ -617,6 +619,7 @@ export default function Home() {
                   height="192"
                   decoding="async"
                   fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
                 />
                   </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered SEO & Digital Marketing</h3>
@@ -649,6 +652,7 @@ export default function Home() {
                   height="192"
                   decoding="async"
                   fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
                 />
           </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Content Marketing & LLM-Powered SEO Writing</h3>
@@ -681,6 +685,7 @@ export default function Home() {
                   height="192"
                   decoding="async"
                   fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Link Building & Outreach</h3>
@@ -713,6 +718,7 @@ export default function Home() {
                   height="192"
                   decoding="async"
                   fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Social Media Marketing</h3>
@@ -745,6 +751,7 @@ export default function Home() {
                   height="192"
                   decoding="async"
                   fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Data Analytics & Intelligent Reporting</h3>
