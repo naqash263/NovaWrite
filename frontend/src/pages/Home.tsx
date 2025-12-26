@@ -563,763 +563,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Stats Section - Enhanced with hover effects */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div className="bg-white p-8 rounded-2xl shadow-md hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border-t-4 border-blue-600">
-              <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800 mb-2">8+</div>
-              <div className="text-gray-600 font-semibold">Years Experience</div>
-            </div>
-            <div className="bg-white p-8 rounded-2xl shadow-md hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border-t-4 border-purple-600">
-              <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-purple-800 mb-2">100+</div>
-              <div className="text-gray-600 font-semibold">Projects Delivered</div>
-            </div>
-            <div className="bg-white p-8 rounded-2xl shadow-md hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border-t-4 border-green-600">
-              <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-green-800 mb-2">50+</div>
-              <div className="text-gray-600 font-semibold">Automation Workflows</div>
-            </div>
-            <div className="bg-white p-8 rounded-2xl shadow-md hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border-t-4 border-orange-600">
-              <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-orange-800 mb-2">20+</div>
-              <div className="text-gray-600 font-semibold">Client Integrations</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Our Process Section */}
-      <section className="py-16 bg-white scroll-animate">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Process</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              A proven methodology to deliver automation solutions that drive real business results
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="order-2 md:order-1">
-              <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg border border-blue-100">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">How We Work</h3>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <span className="text-white text-sm font-bold">1</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Understand & Analyze</h4>
-                      <p className="text-gray-600 text-sm">Deep dive into your business processes to identify automation opportunities</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <span className="text-white text-sm font-bold">2</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Design & Prototype</h4>
-                      <p className="text-gray-600 text-sm">Create scalable solutions with clear ROI and measurable outcomes</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <span className="text-white text-sm font-bold">3</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Implement & Optimize</h4>
-                      <p className="text-gray-600 text-sm">Deploy robust solutions with ongoing support and continuous improvement</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="order-1 md:order-2">
-              <div className="relative">
-                <img
-                  src="/images/How we work.png"
-                  alt="Our Process - How We Work"
-                  className="w-full rounded-2xl shadow-2xl"
-                  loading="lazy"
-                  width="600"
-                  height="200"
-                  decoding="async"
-                />
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent rounded-2xl"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Why Choose Us Section */}
-      <section className="py-16 bg-gradient-to-br from-blue-600 to-blue-800 text-white scroll-animate">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Why Choose Us?</h2>
-            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-              We bring a unique combination of technical expertise and business understanding to every project
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
-              <div className="mb-4">
-                <img 
-                  src="/images/business_analytics.png" 
-                  alt="Results-Driven" 
-                  className="w-full h-40 object-cover rounded-lg opacity-90"
-                  loading="lazy"
-                />
-              </div>
-              <h3 className="text-2xl font-bold mb-3">Results-Driven</h3>
-              <p className="text-blue-100 leading-relaxed">
-                Every solution is designed with measurable outcomes in mind. We focus on delivering tangible ROI through automation and efficiency improvements.
-              </p>
-            </div>
-            <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
-              <div className="mb-4">
-                <img 
-                  src="/images/Automation.png" 
-                  alt="Fast & Reliable" 
-                  className="w-full h-40 object-cover rounded-lg opacity-90"
-                  loading="lazy"
-                />
-              </div>
-              <h3 className="text-2xl font-bold mb-3">Fast & Reliable</h3>
-              <p className="text-blue-100 leading-relaxed">
-                Quick turnaround times without compromising quality. We understand the importance of meeting deadlines in business-critical projects.
-              </p>
-            </div>
-            <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
-              <div className="mb-4">
-                <img 
-                  src="/images/ai_artificial_intell_c522e573.jpg" 
-                  alt="Innovative Solutions" 
-                  className="w-full h-40 object-cover rounded-lg opacity-90"
-                  loading="lazy"
-                />
-              </div>
-              <h3 className="text-2xl font-bold mb-3">Innovative Solutions</h3>
-              <p className="text-blue-100 leading-relaxed">
-                Leveraging cutting-edge AI and automation technologies to solve complex business problems with elegant, scalable solutions.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Core Expertise Section - Enhanced */}
-      <section className="py-16 bg-white scroll-animate">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">AI & LLM Expertise</h2>
-          <p className="text-xl text-gray-600 text-center mb-12 max-w-3xl mx-auto">
-            Specializing in AI automation, large language model (LLM) integration, GPT-4 workflows, intelligent data analytics, and enterprise AI system integrations
-          </p>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-blue-100">
-              <div className="mb-4">
-                <img 
-                  src="/images/AI Automation.png" 
-                  alt="AI Automation & LLM Workflows" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">AI Automation & LLM Workflows</h3>
-              <p className="text-gray-600 mb-4 leading-relaxed">
-                Design and implement intelligent automation solutions using GPT-4, OpenAI, large language models (LLM), n8n, Make.com, and Zapier for next-generation AI-powered workflows
-              </p>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 mt-1">✓</span>
-                  <span>GPT-4 & LLM integration with AI agents</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 mt-1">✓</span>
-                  <span>AI-powered workflow automation</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 mt-1">✓</span>
-                  <span>Machine learning process optimization</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 mt-1">✓</span>
-                  <span>Natural language processing automation</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-purple-100">
-              <div className="mb-4">
-                <img 
-                  src="/images/Move_from_Data_to_Decisions_version_1.png" 
-                  alt="AI Data Analysis & Power BI" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">AI Data Analysis & Power BI</h3>
-              <p className="text-gray-600 mb-4 leading-relaxed">
-                Transform complex data into actionable insights using AI, machine learning, and LLM-powered analytics with advanced visualization dashboards
-              </p>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-purple-600 mt-1">✓</span>
-                  <span>AI-powered Power BI dashboard design</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-purple-600 mt-1">✓</span>
-                  <span>LLM-driven KPI tracking & reporting</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-purple-600 mt-1">✓</span>
-                  <span>Machine learning predictive analytics</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-purple-600 mt-1">✓</span>
-                  <span>Natural language data querying</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
-              <div className="mb-4">
-                <img 
-                  src="/images/Automation.png" 
-                  alt="AI CRM & LLM System Integrations" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">AI CRM & LLM System Integrations</h3>
-              <p className="text-gray-600 mb-4 leading-relaxed">
-                Seamlessly connect business systems with AI-powered integrations. Leverage GPT-4 and LLM capabilities with Zoho CRM, HubSpot, and custom API integrations for intelligent automation
-              </p>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-green-600 mt-1">✓</span>
-                  <span>AI-powered CRM customization & automation</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-600 mt-1">✓</span>
-                  <span>LLM-enhanced third-party API integration</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-600 mt-1">✓</span>
-                  <span>Intelligent data migration & synchronization</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-600 mt-1">✓</span>
-                  <span>AI agent-based workflow orchestration</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Ad: Content Top */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <AdPlacement position="content-top" />
-      </div>
-
-      {/* Skills Progress Bars Section */}
-      <section className="py-16 bg-gray-50 scroll-animate">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Technical Proficiency</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              A comprehensive skill set across automation platforms, programming languages, and business tools
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-12">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Automation & AI</h3>
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">n8n Workflow Automation</span>
-                    <span className="font-semibold text-blue-600">95%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full animate-progress-95"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">Make.com / Zapier</span>
-                    <span className="font-semibold text-blue-600">90%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full animate-progress-90"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">OpenAI GPT Integration</span>
-                    <span className="font-semibold text-blue-600">92%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full animate-progress-92"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">AI Agents & Chatbots</span>
-                    <span className="font-semibold text-blue-600">88%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full animate-progress-88"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Data & Analytics</h3>
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">Power BI Dashboards</span>
-                    <span className="font-semibold text-purple-600">93%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full animate-progress-93"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">Python Data Analysis</span>
-                    <span className="font-semibold text-purple-600">85%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full animate-progress-85"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">SQL & Database Management</span>
-                    <span className="font-semibold text-purple-600">90%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full animate-progress-90"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">Data Scraping & ETL</span>
-                    <span className="font-semibold text-purple-600">87%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full animate-progress-87"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">CRM & Integrations</h3>
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">Zoho CRM</span>
-                    <span className="font-semibold text-green-600">94%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full animate-progress-94"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">HubSpot</span>
-                    <span className="font-semibold text-green-600">86%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full animate-progress-86"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">REST API Integration</span>
-                    <span className="font-semibold text-green-600">91%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full animate-progress-91"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">Webhook & Event Systems</span>
-                    <span className="font-semibold text-green-600">89%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full animate-progress-89"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Development</h3>
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">React & TypeScript</span>
-                    <span className="font-semibold text-orange-600">88%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full animate-progress-88"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">.NET Core / C#</span>
-                    <span className="font-semibold text-orange-600">85%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full animate-progress-85"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">Laravel / PHP</span>
-                    <span className="font-semibold text-orange-600">82%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full animate-progress-82"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-700">Cloud Platforms (AWS/Azure)</span>
-                    <span className="font-semibold text-orange-600">80%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full animate-progress-80"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Service Showcase Section */}
-      <section className="py-16 bg-white scroll-animate">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Service Solutions</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Real-world solutions delivering measurable business impact for our clients
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Project 1 */}
-            <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src="/images/Move_from_Data_to_Decisions_version_1.png" 
-                  alt="Sales Performance Dashboard" 
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Sales Performance Dashboard</h3>
-                <p className="text-gray-600 mb-4">Interactive Power BI dashboard tracking real-time KPIs, revenue trends, and team performance metrics</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">Power BI</span>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">SQL</span>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">DAX</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Project 2 */}
-            <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src="/images/ai_artificial_intell_c522e573.jpg" 
-                  alt="AI Resume Screening System" 
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">AI Resume Screening System</h3>
-                <p className="text-gray-600 mb-4">Automated recruitment workflow using GPT-4 to analyze resumes and match candidates with job requirements</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full">OpenAI</span>
-                  <span className="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full">n8n</span>
-                  <span className="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full">Zoho</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Project 3 */}
-            <div className="bg-gradient-to-br from-green-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src="/images/technology_coding_pr_27f67dc5.jpg" 
-                  alt="CRM Integration Platform" 
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">CRM Integration Platform</h3>
-                <p className="text-gray-600 mb-4">Unified integration connecting Zoho CRM with marketing tools, email platforms, and analytics services</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">Zoho CRM</span>
-                  <span className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">Make.com</span>
-                  <span className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">APIs</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Project 4 */}
-            <div className="bg-gradient-to-br from-orange-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src="/images/technology_coding_pr_27f67dc5.jpg" 
-                  alt="Job Aggregation System" 
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Job Aggregation System</h3>
-                <p className="text-gray-600 mb-4">Multi-source job scraping platform aggregating 10,000+ jobs daily from LinkedIn, Indeed, and Glassdoor</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-orange-100 text-orange-700 text-sm rounded-full">Python</span>
-                  <span className="px-3 py-1 bg-orange-100 text-orange-700 text-sm rounded-full">Scrapy</span>
-                  <span className="px-3 py-1 bg-orange-100 text-orange-700 text-sm rounded-full">PostgreSQL</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Project 5 */}
-            <div className="bg-gradient-to-br from-red-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src="/images/professional_busines_b4d6588a.jpg" 
-                  alt="Email Marketing Automation" 
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Email Marketing Automation</h3>
-                <p className="text-gray-600 mb-4">Personalized email campaigns with AI-generated content and automated follow-up sequences</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">n8n</span>
-                  <span className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">OpenAI</span>
-                  <span className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">SMTP</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Project 6 */}
-            <div className="bg-gradient-to-br from-indigo-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src="/images/professional_busines_b4d6588a1.jpg" 
-                  alt="Lead Enrichment Pipeline" 
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Lead Enrichment Pipeline</h3>
-                <p className="text-gray-600 mb-4">Automated lead data enrichment using multiple APIs to enhance contact information and company details</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full">Zapier</span>
-                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full">Clearbit</span>
-                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full">HubSpot</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="text-center mt-12">
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Link
-                to="/workflows"
-                className="inline-block bg-blue-600 text-white px-8 py-4 rounded-full hover:bg-blue-700 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg"
-              >
-                View All Workflows
-              </Link>
-              <Link
-                to="/projects"
-                className="inline-block bg-purple-600 text-white px-8 py-4 rounded-full hover:bg-purple-700 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg"
-              >
-                View All Projects
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Links Section - All Pages */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Explore Our Platform</h2>
-            <p className="text-xl text-gray-600">Access tools, resources, and services to help your business grow</p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Link
-              to="/workflows"
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
-            >
-              <div className="text-4xl mb-3">⚙️</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Workflows</h3>
-              <p className="text-gray-600 text-sm">Automation templates and solutions</p>
-            </Link>
-            <Link
-              to="/blog"
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
-            >
-              <div className="text-4xl mb-3">📝</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Blog</h3>
-              <p className="text-gray-600 text-sm">Latest insights and tutorials</p>
-            </Link>
-            <Link
-              to="/blog"
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
-            >
-              <div className="text-4xl mb-3">📚</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Blog & Tutorials</h3>
-              <p className="text-gray-600 text-sm">Learn automation and BI skills</p>
-            </Link>
-            <Link
-              to="/resources"
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
-            >
-              <div className="text-4xl mb-3">🛠️</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Resources</h3>
-              <p className="text-gray-600 text-sm">Free tools and utilities</p>
-            </Link>
-            <Link
-              to="/community/issues"
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
-            >
-              <div className="text-4xl mb-3">💬</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Community</h3>
-              <p className="text-gray-600 text-sm">Get help and share solutions</p>
-            </Link>
-            <Link
-              to="/projects"
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
-            >
-              <div className="text-4xl mb-3">📊</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Projects</h3>
-              <p className="text-gray-600 text-sm">View our portfolio</p>
-            </Link>
-            <Link
-              to="/about"
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
-            >
-              <div className="text-4xl mb-3">ℹ️</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">About</h3>
-              <p className="text-gray-600 text-sm">Learn more about us</p>
-            </Link>
-            <Link
-              to="/contact"
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
-            >
-              <div className="text-4xl mb-3">📧</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Contact</h3>
-              <p className="text-gray-600 text-sm">Get in touch with us</p>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Experience Timeline Section - Minimized */}
-      <section className="py-16 bg-white scroll-animate">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our AI & Automation Experience</h2>
-            <p className="text-xl text-gray-600">8+ years of delivering excellence in AI automation, LLM integration, and intelligent analytics solutions</p>
-          </div>
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-blue-400 to-blue-600 hidden md:block"></div>
-            
-            {/* Timeline items */}
-            <div className="space-y-12">
-              {/* Item 1 - Right */}
-              <div className="relative flex items-center justify-between md:justify-end">
-                <div className="md:w-5/12"></div>
-                <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 bg-blue-600 rounded-full border-4 border-white shadow-lg hidden md:block"></div>
-                <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                  <span className="text-blue-600 font-bold text-sm">2024 - Present</span>
-                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Senior AI Automation Specialist</h3>
-                  <p className="text-gray-600 mb-3">Leading complex AI automation and LLM integration projects with GPT-4, OpenAI, and enterprise AI system implementations</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">GPT-4 Integration</span>
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">LLM Automation</span>
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">AI Power BI</span>
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">OpenAI N8N</span>
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">AI Agents</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Item 2 - Left */}
-              <div className="relative flex items-center justify-between md:justify-start">
-                <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                  <span className="text-purple-600 font-bold text-sm">2021 - 2023</span>
-                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Support Engineer </h3>
-                  <p className="text-gray-600 mb-3">Application and infrastructure support for Riayati (MOHAP’s Health Information Exchange).
-
-Ensured ITSM process adherence (request, incident, problem & change management).
-
-Generated performance & downtime reports, conducted CAB meetings, and maintained SLA compliance.</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full">Zoho Service Desk</span>
-                    <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full">Riayati</span>
-                    <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full">Power BI</span>
-                  </div>
-                </div>
-                <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 bg-purple-600 rounded-full border-4 border-white shadow-lg hidden md:block"></div>
-                <div className="md:w-5/12"></div>
-              </div>
-
-              {/* Item 3 - Right */}
-              <div className="relative flex items-center justify-between md:justify-end">
-                <div className="md:w-5/12"></div>
-                <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 bg-green-600 rounded-full border-4 border-white shadow-lg hidden md:block"></div>
-                <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                  <span className="text-green-600 font-bold text-sm">2017 - 2021</span>
-                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">System Analyst & Automation Specialist</h3>
-                  <p className="text-gray-600 mb-3">Built scalable web applications and RESTful APIs using React, Laravel,Python</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">React</span>
-                    <span className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">Laravel</span>
-                    <span className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">Python</span>
-                    <span className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">Zoho Creator</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Item 4 - Left */}
-              <div className="relative flex items-center justify-between md:justify-start">
-                <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                  <span className="text-orange-600 font-bold text-sm">2016 - 2017</span>
-                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Software Developer</h3>
-                  <p className="text-gray-600 mb-3">Started career building applications and learning automation tools and data analysis techniques</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-full">PHP</span>
-                    <span className="px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-full">Python</span>
-                  </div>
-                </div>
-                <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 bg-orange-600 rounded-full border-4 border-white shadow-lg hidden md:block"></div>
-                <div className="md:w-5/12"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Section - Enhanced */}
+      {/* Our Services Section */}
       <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">Our Services</h2>
@@ -1334,6 +578,10 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   alt="AI Workflow Automation" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchpriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Workflow Automation</h3>
@@ -1362,6 +610,10 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   alt="AI Business Intelligence" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchpriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Business Intelligence</h3>
@@ -1390,6 +642,10 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   alt="AI System Integrations" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchpriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI System Integrations</h3>
@@ -1418,6 +674,10 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   alt="AI-Powered Full-Stack Development" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchpriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered Full-Stack Development</h3>
@@ -1446,6 +706,10 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   alt="AI-Powered SEO & Digital Marketing" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchpriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered SEO & Digital Marketing</h3>
@@ -1470,10 +734,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
             <div className="bg-gradient-to-br from-pink-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-pink-100">
               <div className="mb-4">
                 <img 
-                  src="/images/professional_busines_b4d6588a1.jpg" 
+                  src="/images/Al Content Marketing.png" 
                   alt="Content Marketing & SEO Writing" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchpriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Content Marketing & LLM-Powered SEO Writing</h3>
@@ -1498,10 +766,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
             <div className="bg-gradient-to-br from-cyan-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-cyan-100">
               <div className="mb-4">
                 <img 
-                  src="/images/professional_busines_b4d6588a.jpg" 
+                  src="/images/link  Building.png" 
                   alt="Link Building & Outreach" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchpriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Link Building & Outreach</h3>
@@ -1526,10 +798,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
             <div className="bg-gradient-to-br from-rose-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-rose-100">
               <div className="mb-4">
                 <img 
-                  src="/images/professional_busines_b4d6588a1.jpg" 
+                  src="/images/Social Media.png" 
                   alt="Social Media Marketing" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchpriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Social Media Marketing</h3>
@@ -1554,10 +830,14 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
             <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-teal-100">
               <div className="mb-4">
                 <img 
-                  src="/images/Move_from_Data_to_Decisions_version_1.png" 
+                  src="/images/AI Analytics.png" 
                   alt="AI Data Analytics & Intelligent Reporting" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchpriority="low"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Data Analytics & Intelligent Reporting</h3>
@@ -1693,99 +973,7 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
         </div>
       </section>
 
-      {/* Fiverr Reviews Section */}
-      <section className="py-16 bg-white scroll-animate">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Client Reviews</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              What clients say about my Fiverr services
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Review 1 */}
-            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
-              <div className="flex items-center gap-2 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-6 italic leading-relaxed">
-                "Amazing customer support, hopped on a call twice to clarify and get all the details accordingly to our vision. Hoiyothaheem is one of our favorite Fiverr specialist, thanks for the outstanding work!"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  JD
-                </div>
-                <div>
-                  <div className="font-bold text-gray-900">mantaskarmaza</div>
-                  <div className="text-sm text-gray-500">via Fiverr</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Review 2 */}
-            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
-              <div className="flex items-center gap-2 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-6 italic leading-relaxed">
-                "Outstanding Power BI dashboard! The insights are clear and actionable. Highly recommend this seller."
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  SM
-                </div>
-                <div>
-                  <div className="font-bold text-gray-900">tomgibbons426</div>
-                  <div className="text-sm text-gray-500">via Fiverr</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Review 3 */}
-            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
-              <div className="flex items-center gap-2 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-6 italic leading-relaxed">
-                "Perfect CRM integration! Everything works seamlessly. Great communication throughout the project."
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  RK
-                </div>
-                <div>
-                  <div className="font-bold text-gray-900">masterbig</div>
-                  <div className="text-sm text-gray-500">via Fiverr</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="text-center mt-12">
-            <a
-              href="https://www.fiverr.com/hoiyothaheem"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block text-green-600 hover:text-green-700 font-semibold text-lg"
-            >
-              Read More Reviews on Fiverr →
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* AI-Friendly FAQ Section */}
+      {/* Frequently Asked Questions Section */}
       <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -1909,104 +1097,6 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Contact Form Section */}
-      <section className="py-16 bg-gradient-to-br from-blue-600 to-blue-800 text-white scroll-animate">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Let's Work Together</h2>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-              Have a project in mind? Send us a message and we'll get back to you within 24 hours
-            </p>
-          </div>
-          
-          {contactSubmitted ? (
-            <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-12 text-center">
-              <svg className="w-20 h-20 mx-auto mb-6 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 className="text-3xl font-bold mb-4">Thank You!</h3>
-              <p className="text-xl text-blue-100">Your message has been received. I'll get back to you soon!</p>
-            </div>
-          ) : (
-            <form onSubmit={handleContactSubmit} className="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-semibold mb-2 text-blue-100">Your Name</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={contactForm.name}
-                    onChange={handleContactChange}
-                    className={`w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border ${contactErrors.name ? 'border-red-400' : 'border-white border-opacity-30'} text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all`}
-                    placeholder="John Doe"
-                  />
-                  {contactErrors.name && (
-                    <p className="text-red-300 text-sm mt-1">{contactErrors.name}</p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-semibold mb-2 text-blue-100">Your Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={contactForm.email}
-                    onChange={handleContactChange}
-                    className={`w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border ${contactErrors.email ? 'border-red-400' : 'border-white border-opacity-30'} text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all`}
-                    placeholder="john@example.com"
-                  />
-                  {contactErrors.email && (
-                    <p className="text-red-300 text-sm mt-1">{contactErrors.email}</p>
-                  )}
-                </div>
-              </div>
-              <div className="mb-6">
-                <label htmlFor="subject" className="block text-sm font-semibold mb-2 text-blue-100">Subject</label>
-                <input
-                  type="text"
-                  id="subject"
-                  name="subject"
-                  value={contactForm.subject}
-                  onChange={handleContactChange}
-                  className={`w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border ${contactErrors.subject ? 'border-red-400' : 'border-white border-opacity-30'} text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all`}
-                  placeholder="Project Inquiry"
-                />
-                {contactErrors.subject && (
-                  <p className="text-red-300 text-sm mt-1">{contactErrors.subject}</p>
-                )}
-              </div>
-              <div className="mb-6">
-                <label htmlFor="message" className="block text-sm font-semibold mb-2 text-blue-100">Message</label>
-                <textarea
-                  id="message"
-                  name="message"
-                  value={contactForm.message}
-                  onChange={handleContactChange}
-                  rows={6}
-                  className={`w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border ${contactErrors.message ? 'border-red-400' : 'border-white border-opacity-30'} text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition-all resize-none`}
-                  placeholder="Tell me about your project..."
-                ></textarea>
-                {contactErrors.message && (
-                  <p className="text-red-300 text-sm mt-1">{contactErrors.message}</p>
-                )}
-              </div>
-              {contactErrors.submit && (
-                <div className="mb-4 p-4 bg-red-500 bg-opacity-20 border border-red-400 text-red-200 rounded-lg">
-                  {contactErrors.submit}
-                </div>
-              )}
-              <button
-                type="submit"
-                className="w-full bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-50 transform hover:scale-105 transition-all duration-300 shadow-lg"
-              >
-                Send Message
-              </button>
-            </form>
-          )}
         </div>
       </section>
 
