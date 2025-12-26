@@ -41,12 +41,14 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        // Increase file size limit for precaching (default is 2MB)
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
         // Exclude large vendor chunks from precaching (they'll be cached at runtime)
-        exclude: [
-          /vendor-.*\.js$/,
-          /editor-.*\.js$/,
+        globIgnores: [
+          '**/vendor-*.js',
+          '**/editor-*.js',
+          '**/markdown-editor-*.js',
+          '**/assets/js/vendor-*.js',
+          '**/assets/js/editor-*.js',
+          '**/assets/js/markdown-editor-*.js',
         ],
         runtimeCaching: [
           {
