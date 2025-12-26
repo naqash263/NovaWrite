@@ -87,6 +87,7 @@ const CreateIssue = lazy(() => import('./pages/community/CreateIssue'));
 const AdminIssues = lazy(() => import('./pages/admin/Issues'));
 const IssueCategories = lazy(() => import('./pages/admin/IssueCategories'));
 const EmailUnsubscribe = lazy(() => import('./pages/EmailUnsubscribe'));
+const Search = lazy(() => import('./pages/Search'));
 
 // Enhanced loading with performance optimizations
 
@@ -176,9 +177,10 @@ function App() {
         <Route path="/resources/job-search-optimizer" element={<JobSearchOptimizer />} />
         <Route path="/resources/skills-assessment" element={<SkillsAssessment />} />
         <Route path="/resources/cover-letter-generator" element={<CoverLetterGenerator />} />
-        <Route path="/resources/conversion-tools" element={<ConversionTools />} />
-        <Route path="/resources/utility-tools" element={<UtilityTools />} />
-        <Route path="/resources/ai-tools" element={<AITools />} />
+              <Route path="/resources/conversion-tools" element={<ConversionTools />} />
+              <Route path="/resources/utility-tools" element={<UtilityTools />} />
+              <Route path="/resources/ai-tools" element={<AITools />} />
+              <Route path="/search" element={<Search />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

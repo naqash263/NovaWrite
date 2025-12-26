@@ -646,13 +646,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search workflows, blog posts, resources..."
+                      placeholder="Search workflows, projects, issues, blog posts..."
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && searchQuery.trim()) {
-                          // Navigate to search results or trigger search
-                          window.location.href = `/blog?search=${encodeURIComponent(searchQuery)}`;
+                          setSearchOpen(false);
+                          window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
                         }
                       }}
                     />
