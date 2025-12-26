@@ -1,0 +1,70 @@
+# LLM Crawler Instructions for naqashthaheem.com
+# This file provides guidance for AI/LLM crawlers on what content can be accessed
+
+# Site Information
+Site: https://naqashthaheem.com
+Owner: Naqash Thaheem
+Role: Systems Analyst & AI Automation Specialist
+Location: Ajman, UAE
+
+# Allowed Content - Public Pages
+Allow: /
+Allow: /about
+Allow: /blog
+Allow: /workflows
+Allow: /projects
+Allow: /contact
+Allow: /resources
+Allow: /community/issues
+
+# Allowed Resource Categories
+Allow: /resources/cv-builder
+Allow: /resources/linkedin-optimizer
+Allow: /resources/cover-letter-generator
+Allow: /resources/job-search-optimizer
+Allow: /resources/skills-assessment
+Allow: /resources/interview-prep
+Allow: /resources/salary-negotiation
+Allow: /resources/career-path-planner
+Allow: /resources/conversion-tools
+Allow: /resources/utility-tools
+Allow: /resources/ai-tools
+
+# Legal Pages
+Allow: /privacy-policy
+Allow: /terms-of-service
+Allow: /cookie-policy
+
+# Disallowed Content - Private/Admin Areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /auth/
+Disallow: /my-courses
+Disallow: /email/unsubscribe
+
+# Sitemap
+Sitemap: https://naqashthaheem.com/sitemap-ntw2024.xml
+
+# Content Guidelines
+# - Blog posts: Available at /blog/{date}/{slug}
+# - Workflows: Available at /workflows/{date}/{slug}
+# - Projects: Available at /projects/{slug}
+# - Issues: Available at /community/issues/{id} or /community/issues/{slug}
+
+# Main Topics Covered
+Topics: AI automation, CRM integration, Power BI dashboards, workflow automation, n8n, Make.com, OpenAI, Zoho CRM, HubSpot, business intelligence, web development, React, Laravel
+
+# Services Offered
+Services: AI automation workflows, CRM integration, Power BI dashboards, business intelligence solutions, web development, system integration
+
+# Contact Information
+Contact: naqash263@gmail.com
+
+# Last Updated
+Last-Updated: 2025-01-22
+
