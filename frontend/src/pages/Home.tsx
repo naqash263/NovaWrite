@@ -534,8 +534,8 @@ export default function Home() {
             <div className="order-1 md:order-2">
               <div className="relative">
                 <img
-                  src="/images/business_analytics_d_948bb4c2.jpg"
-                  alt="Business Analytics and Automation"
+                  src="/images/How we work.png"
+                  alt="Our Process - How We Work"
                   className="w-full rounded-2xl shadow-2xl"
                   loading="lazy"
                   width="800"
@@ -562,7 +562,7 @@ export default function Home() {
             <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
               <div className="mb-4">
                 <img 
-                  src="/images/business_analytics_d_948bb4c2.jpg" 
+                  src="/images/Move_from_Data_to_Decisions_version_1.png" 
                   alt="Results-Driven" 
                   className="w-full h-40 object-cover rounded-lg opacity-90"
                   loading="lazy"
@@ -576,7 +576,7 @@ export default function Home() {
             <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
               <div className="mb-4">
                 <img 
-                  src="/images/technology_coding_pr_27f67dc5.jpg" 
+                  src="/images/Automation.png" 
                   alt="Fast & Reliable" 
                   className="w-full h-40 object-cover rounded-lg opacity-90"
                   loading="lazy"
@@ -616,8 +616,8 @@ export default function Home() {
             <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-blue-100">
               <div className="mb-4">
                 <img 
-                  src="/images/ai_artificial_intell_c522e573.jpg" 
-                  alt="AI Automation & Workflows" 
+                  src="/images/AI Automation.png" 
+                  alt="AI Automation & LLM Workflows" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
                 />
@@ -649,8 +649,8 @@ export default function Home() {
             <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-purple-100">
               <div className="mb-4">
                 <img 
-                  src="/images/business_analytics_d_948bb4c2.jpg" 
-                  alt="Data Analysis & Power BI" 
+                  src="/images/Move_from_Data_to_Decisions_version_1.png" 
+                  alt="AI Data Analysis & Power BI" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
                 />
@@ -682,8 +682,8 @@ export default function Home() {
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
               <div className="mb-4">
                 <img 
-                  src="/images/technology_coding_pr_27f67dc5.jpg" 
-                  alt="CRM & System Integrations" 
+                  src="/images/Automation.png" 
+                  alt="AI CRM & LLM System Integrations" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
                 />
@@ -915,7 +915,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100">
               <div className="h-48 overflow-hidden">
                 <img 
-                  src="/images/business_analytics_d_948bb4c2.jpg" 
+                  src="/images/Move_from_Data_to_Decisions_version_1.png" 
                   alt="Sales Performance Dashboard" 
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -1230,8 +1230,8 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
             <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-blue-100">
               <div className="mb-4">
                 <img 
-                  src="/images/ai_artificial_intell_c522e573.jpg" 
-                  alt="Workflow Automation" 
+                  src="/images/AI Automation.png" 
+                  alt="AI Workflow Automation" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
                 />
@@ -1258,8 +1258,8 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
             <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-purple-100">
               <div className="mb-4">
                 <img 
-                  src="/images/business_analytics_d_948bb4c2.jpg" 
-                  alt="Business Intelligence" 
+                  src="/images/Move_from_Data_to_Decisions_version_1.png" 
+                  alt="AI Business Intelligence" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
                 />
@@ -1286,8 +1286,8 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
               <div className="mb-4">
                 <img 
-                  src="/images/technology_coding_pr_27f67dc5.jpg" 
-                  alt="System Integrations" 
+                  src="/images/Automation.png" 
+                  alt="AI System Integrations" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
                 />
@@ -1314,8 +1314,8 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
             <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-orange-100">
               <div className="mb-4">
                 <img 
-                  src="/images/technology_coding_pr_27f67dc5.jpg" 
-                  alt="Full-Stack Development" 
+                  src="/images/Web_development.png" 
+                  alt="AI-Powered Full-Stack Development" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
                 />
@@ -1342,8 +1342,8 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
             <div className="bg-gradient-to-br from-indigo-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-indigo-100">
               <div className="mb-4">
                 <img 
-                  src="/images/professional_busines_b4d6588a.jpg" 
-                  alt="SEO & Digital Marketing" 
+                  src="/images/SEO.png" 
+                  alt="AI-Powered SEO & Digital Marketing" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
                 />
@@ -1454,8 +1454,8 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
             <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-teal-100">
               <div className="mb-4">
                 <img 
-                  src="/images/business_analytics_d_948bb4c2.jpg" 
-                  alt="Data Analytics & Reporting" 
+                  src="/images/Move_from_Data_to_Decisions_version_1.png" 
+                  alt="AI Data Analytics & Intelligent Reporting" 
                   className="w-full h-48 object-cover rounded-lg"
                   loading="lazy"
                 />
