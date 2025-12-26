@@ -181,15 +181,15 @@ export default defineConfig({
               // Don't split React - it must be available immediately
               return 'react-vendor';
             }
-            // Router (medium size)
+            // Router (medium size) - depends on React, so load after
             if (id.includes('react-router')) {
               return 'router';
             }
-            // Query library (medium size)
+            // Query library (medium size) - depends on React
             if (id.includes('@tanstack/react-query')) {
               return 'query';
             }
-            // HTTP client (small)
+            // HTTP client (small) - no React dependency
             if (id.includes('axios')) {
               return 'http';
             }
@@ -203,7 +203,12 @@ export default defineConfig({
                 id.includes('mdast')) {
               return 'markdown-editor';
             }
-            // Large utility libraries
+            // React-related packages that might import React
+            if (id.includes('react-') || id.includes('@react')) {
+              // Put all React-related packages in react-vendor to ensure React is available
+              return 'react-vendor';
+            }
+            // Large utility libraries (no React dependency)
             if (id.includes('lodash') || id.includes('date-fns') || id.includes('moment')) {
               return 'utils';
             }
@@ -225,13 +230,13 @@ export default defineConfig({
                 // Other scoped packages grouped by scope
                 return `vendor-scoped`;
               }
-              // Individual packages - large ones get their own chunk
+              // Individual packages - exclude React packages (already handled)
               const largePackages = ['react', 'react-dom', 'react-router', 'axios'];
               if (largePackages.some(pkg => packageName.includes(pkg))) {
                 return 'vendor-core';
               }
             }
-            // Default vendor chunk for smaller packages
+            // Default vendor chunk for smaller packages (no React dependency)
             return 'vendor';
           }
         },
