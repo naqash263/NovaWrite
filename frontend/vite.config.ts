@@ -280,15 +280,16 @@ export default defineConfig({
     // Optimize CSS
     cssTarget: 'chrome80',
     assetsInlineLimit: 4096,
-    // Preload optimization - preload React chunks to ensure they load first
+    // Preload optimization - preload critical chunks for faster initial load
     modulePreload: {
       polyfill: false,
       resolveDependencies: (filename, deps) => {
-        // Always preload React chunks for lazy-loaded components
+        // Always preload critical chunks for entry
         if (filename.includes('main') || filename.includes('index')) {
           return deps.filter(dep => 
             dep.includes('react-vendor') ||
-            dep.includes('router')
+            dep.includes('router') ||
+            dep.includes('http')
           );
         }
         // For lazy chunks, preload React if not already loaded
