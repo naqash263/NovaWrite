@@ -181,32 +181,29 @@ export default defineConfig({
               // Don't split React - it must be available immediately
               return 'react-vendor';
             }
-            // Router (medium size) - depends on React, so load after
-            if (id.includes('react-router')) {
-              return 'router';
-            }
-            // Query library (medium size) - depends on React
-            if (id.includes('@tanstack/react-query')) {
-              return 'query';
-            }
             // HTTP client (small) - no React dependency
             if (id.includes('axios')) {
               return 'http';
             }
-            // Markdown editor and related (large - split separately)
-            if (id.includes('@uiw/react-md-editor') || 
-                id.includes('react-markdown') || 
-                id.includes('remark') || 
+            // React-related packages that might import React
+            // Put ALL React-related packages in react-vendor to ensure React is available
+            if (id.includes('react-') || 
+                id.includes('@react') || 
+                id.includes('react-router') ||
+                id.includes('@tanstack/react-query') ||
+                id.includes('react-hook-form') ||
+                id.includes('react-select') ||
+                id.includes('react-markdown') ||
+                id.includes('@uiw/react-md-editor')) {
+              return 'react-vendor';
+            }
+            // Markdown editor dependencies (no React) - split separately
+            if (id.includes('remark') || 
                 id.includes('rehype') ||
                 id.includes('unified') ||
                 id.includes('micromark') ||
                 id.includes('mdast')) {
               return 'markdown-editor';
-            }
-            // React-related packages that might import React
-            if (id.includes('react-') || id.includes('@react')) {
-              // Put all React-related packages in react-vendor to ensure React is available
-              return 'react-vendor';
             }
             // Large utility libraries (no React dependency)
             if (id.includes('lodash') || id.includes('date-fns') || id.includes('moment')) {
