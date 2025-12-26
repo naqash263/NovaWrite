@@ -96,11 +96,19 @@ export default function Home() {
   };
 
   useSEO({
-    title: 'Naqash Thaheem - Global AI Automation Expert & Systems Analyst',
-    description: 'Global AI automation specialist offering workflow automation, CRM integration, Power BI dashboards, and business intelligence solutions worldwide. 8+ years experience with n8n, Make.com, OpenAI, and Zoho CRM. Remote services available.',
+    title: 'AI Automation & LLM Integration Services | Workflow Automation Expert | Business Intelligence Solutions',
+    description: 'Expert AI automation and LLM integration services. Specializing in GPT-4, OpenAI, large language models, intelligent workflow automation, AI-powered CRM integration, Power BI dashboards, and business intelligence solutions. 8+ years experience with n8n, Make.com, AI agents, and machine learning automation. Global remote services available.',
     image: '/images/professional_busines_b4d6588a.jpg',
     url: '/',
-    keywords: ['AI automation expert', 'global automation specialist', 'workflow automation consultant', 'CRM integration expert', 'Power BI consultant', 'business intelligence specialist', 'n8n automation expert', 'Make.com specialist', 'OpenAI integration', 'Zoho CRM expert', 'remote automation services', 'international consultant'],
+    keywords: [
+      'AI automation expert', 'LLM integration services', 'GPT-4 integration', 'OpenAI automation', 
+      'large language model integration', 'AI workflow automation', 'intelligent automation solutions',
+      'AI agents development', 'machine learning automation', 'natural language processing automation',
+      'AI-powered CRM integration', 'business intelligence AI', 'AI consulting services',
+      'workflow automation with AI', 'AI-driven analytics', 'LLM consulting', 'AI automation specialist',
+      'global automation expert', 'n8n AI integration', 'Make.com AI workflows', 'Zoho CRM AI',
+      'Power BI AI dashboards', 'remote AI services', 'AI business solutions', 'enterprise AI automation'
+    ],
     structuredData: 'custom',
     customStructuredData: generateAISearchSchema()
   });
@@ -299,36 +307,36 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center animate-fade-in">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white">
-              {getSettingValue('hero_title', 'AI Automation & Business Intelligence Services')}
+              {getSettingValue('hero_title', 'AI Automation & LLM Integration Services')}
             </h1>
             
             <p className="text-2xl md:text-3xl mb-4 text-blue-50 font-semibold">
-              {getSettingValue('hero_subtitle', 'Transform Your Business with Intelligent Automation')}
+              {getSettingValue('hero_subtitle', 'Transform Your Business with AI-Powered Automation & Large Language Models')}
             </p>
             
             <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Streamline operations, boost productivity, and drive growth with our comprehensive automation solutions. From workflow automation and CRM integration to Power BI dashboards and AI-powered tools - we deliver measurable results for businesses worldwide.
+              Streamline operations, boost productivity, and drive growth with our comprehensive AI automation and LLM integration solutions. From GPT-4 powered workflows and intelligent automation to AI-driven CRM integration, Power BI dashboards, and machine learning automation - we deliver measurable results for businesses worldwide using cutting-edge AI and large language model technologies.
             </p>
             
             {/* Service Highlights with Links */}
             <div className="grid md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
               <Link to="/workflows" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
                 <div className="text-3xl mb-2">🤖</div>
-                <h3 className="font-semibold text-white mb-1">Workflow Automation</h3>
-                <p className="text-sm text-blue-100">n8n, Make.com, Zapier</p>
-                <p className="text-xs text-blue-200 mt-2">View Workflows →</p>
+                <h3 className="font-semibold text-white mb-1">AI Workflow Automation</h3>
+                <p className="text-sm text-blue-100">GPT-4, OpenAI, n8n, Make.com</p>
+                <p className="text-xs text-blue-200 mt-2">View AI Workflows →</p>
               </Link>
               <Link to="/blog" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
                 <div className="text-3xl mb-2">📊</div>
-                <h3 className="font-semibold text-white mb-1">Business Intelligence</h3>
-                <p className="text-sm text-blue-100">Power BI, Data Analytics</p>
+                <h3 className="font-semibold text-white mb-1">AI Business Intelligence</h3>
+                <p className="text-sm text-blue-100">AI-Powered Analytics, Power BI</p>
                 <p className="text-xs text-blue-200 mt-2">Read Blog →</p>
               </Link>
               <Link to="/resources" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
                 <div className="text-3xl mb-2">🔗</div>
-                <h3 className="font-semibold text-white mb-1">CRM Integration</h3>
-                <p className="text-sm text-blue-100">Zoho, HubSpot, Custom APIs</p>
-                <p className="text-xs text-blue-200 mt-2">Free Tools →</p>
+                <h3 className="font-semibold text-white mb-1">AI CRM Integration</h3>
+                <p className="text-sm text-blue-100">LLM-Powered CRM, Zoho, HubSpot</p>
+                <p className="text-xs text-blue-200 mt-2">Free AI Tools →</p>
               </Link>
             </div>
             
@@ -600,9 +608,9 @@ export default function Home() {
       {/* Core Expertise Section - Enhanced */}
       <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">Core Expertise</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">AI & LLM Expertise</h2>
           <p className="text-xl text-gray-600 text-center mb-12 max-w-3xl mx-auto">
-            Specializing in intelligent automation, data analytics, and enterprise system integrations
+            Specializing in AI automation, large language model (LLM) integration, GPT-4 workflows, intelligent data analytics, and enterprise AI system integrations
           </p>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-blue-100">
@@ -614,22 +622,26 @@ export default function Home() {
                   loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">AI Automation & Workflows</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">AI Automation & LLM Workflows</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Design and implement intelligent automation solutions using n8n, Make.com, Zapier, and OpenAI models
+                Design and implement intelligent automation solutions using GPT-4, OpenAI, large language models (LLM), n8n, Make.com, and Zapier for next-generation AI-powered workflows
               </p>
               <ul className="text-sm text-gray-600 space-y-2">
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 mt-1">✓</span>
-                  <span>GPT-4 integration & AI agents</span>
+                  <span>GPT-4 & LLM integration with AI agents</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 mt-1">✓</span>
-                  <span>Custom workflow automation</span>
+                  <span>AI-powered workflow automation</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 mt-1">✓</span>
-                  <span>Process optimization</span>
+                  <span>Machine learning process optimization</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 mt-1">✓</span>
+                  <span>Natural language processing automation</span>
                 </li>
               </ul>
             </div>
@@ -643,22 +655,26 @@ export default function Home() {
                   loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">Data Analysis & Power BI</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">AI Data Analysis & Power BI</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Transform complex data into actionable insights with advanced analytics and visualization dashboards
+                Transform complex data into actionable insights using AI, machine learning, and LLM-powered analytics with advanced visualization dashboards
               </p>
               <ul className="text-sm text-gray-600 space-y-2">
                 <li className="flex items-start gap-2">
                   <span className="text-purple-600 mt-1">✓</span>
-                  <span>Power BI dashboard design</span>
+                  <span>AI-powered Power BI dashboard design</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-purple-600 mt-1">✓</span>
-                  <span>KPI tracking & reporting</span>
+                  <span>LLM-driven KPI tracking & reporting</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-purple-600 mt-1">✓</span>
-                  <span>Predictive analytics</span>
+                  <span>Machine learning predictive analytics</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-purple-600 mt-1">✓</span>
+                  <span>Natural language data querying</span>
                 </li>
               </ul>
             </div>
@@ -672,22 +688,26 @@ export default function Home() {
                   loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">CRM & System Integrations</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">AI CRM & LLM System Integrations</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Seamlessly connect business systems with Zoho CRM, HubSpot, and custom API integrations
+                Seamlessly connect business systems with AI-powered integrations. Leverage GPT-4 and LLM capabilities with Zoho CRM, HubSpot, and custom API integrations for intelligent automation
               </p>
               <ul className="text-sm text-gray-600 space-y-2">
                 <li className="flex items-start gap-2">
                   <span className="text-green-600 mt-1">✓</span>
-                  <span>CRM customization & automation</span>
+                  <span>AI-powered CRM customization & automation</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-600 mt-1">✓</span>
-                  <span>Third-party API integration</span>
+                  <span>LLM-enhanced third-party API integration</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-600 mt-1">✓</span>
-                  <span>Data migration & synchronization</span>
+                  <span>Intelligent data migration & synchronization</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 mt-1">✓</span>
+                  <span>AI agent-based workflow orchestration</span>
                 </li>
               </ul>
             </div>
@@ -1116,8 +1136,8 @@ export default function Home() {
       <section className="py-16 bg-white scroll-animate">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Experience</h2>
-            <p className="text-xl text-gray-600">8+ years of delivering excellence in automation and analytics</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our AI & Automation Experience</h2>
+            <p className="text-xl text-gray-600">8+ years of delivering excellence in AI automation, LLM integration, and intelligent analytics solutions</p>
           </div>
           <div className="relative">
             {/* Timeline line */}
@@ -1131,14 +1151,14 @@ export default function Home() {
                 <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 bg-blue-600 rounded-full border-4 border-white shadow-lg hidden md:block"></div>
                 <div className="md:w-5/12 bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                   <span className="text-blue-600 font-bold text-sm">2024 - Present</span>
-                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Senior Automation Specialist</h3>
-                  <p className="text-gray-600 mb-3">Leading complex automation projects with AI integration and enterprise system implementations</p>
+                  <h3 className="text-xl font-bold text-gray-900 mt-2 mb-2">Senior AI Automation Specialist</h3>
+                  <p className="text-gray-600 mb-3">Leading complex AI automation and LLM integration projects with GPT-4, OpenAI, and enterprise AI system implementations</p>
                   <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">AI Integration</span>
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">Power BI</span>
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">N8N</span>
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">Make.com</span>
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">Vibe Code</span>
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">GPT-4 Integration</span>
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">LLM Automation</span>
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">AI Power BI</span>
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">OpenAI N8N</span>
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">AI Agents</span>
                   </div>
                 </div>
               </div>
@@ -1216,9 +1236,9 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Workflow Automation</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Workflow Automation</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Automate repetitive tasks, streamline business processes, and reduce manual errors with intelligent workflow solutions using n8n, Make.com, and Zapier.
+                Automate repetitive tasks, streamline business processes, and reduce manual errors with AI-powered intelligent workflow solutions. Integrate GPT-4, OpenAI, and large language models (LLM) with n8n, Make.com, and Zapier for next-generation automation.
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/workflows" className="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-2 group text-sm">
@@ -1244,9 +1264,9 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Business Intelligence</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Business Intelligence</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Create interactive Power BI dashboards, generate actionable insights, and make data-driven decisions with comprehensive analytics solutions.
+                Create interactive Power BI dashboards powered by AI and machine learning. Generate actionable insights using LLM-driven analytics, natural language processing, and AI-powered data visualization for intelligent, data-driven business decisions.
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/blog" className="text-purple-600 hover:text-purple-700 font-semibold inline-flex items-center gap-2 group text-sm">
@@ -1272,9 +1292,9 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">System Integrations</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI System Integrations</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Connect your CRM, marketing tools, databases, and third-party services into a unified ecosystem that works seamlessly together.
+                Connect your CRM, marketing tools, databases, and third-party services into a unified AI-powered ecosystem. Leverage LLM integration, AI agents, and intelligent automation to create seamless, intelligent workflows that work together.
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/projects" className="text-green-600 hover:text-green-700 font-semibold inline-flex items-center gap-2 group text-sm">
@@ -1300,9 +1320,9 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Full-Stack Development</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered Full-Stack Development</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Build scalable web applications, APIs, and custom software solutions using modern frameworks like React, .NET Core, and Laravel.
+                Build scalable web applications, APIs, and custom software solutions with AI integration. Develop intelligent applications using modern frameworks like React, .NET Core, and Laravel, enhanced with GPT-4, OpenAI APIs, and LLM capabilities.
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/contact" className="text-orange-600 hover:text-orange-700 font-semibold inline-flex items-center gap-2 group text-sm">
@@ -1328,9 +1348,9 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">SEO & Digital Marketing</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered SEO & Digital Marketing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Improve your online visibility with comprehensive SEO audits, keyword optimization, technical SEO, content strategy, and performance tracking.
+                Improve your online visibility with AI-driven SEO solutions. Leverage LLM-powered content optimization, GPT-4 for keyword research, AI content strategy, intelligent technical SEO audits, and machine learning-based performance tracking.
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/contact" className="text-indigo-600 hover:text-indigo-700 font-semibold inline-flex items-center gap-2 group text-sm">
@@ -1356,9 +1376,9 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Content Marketing & SEO Writing</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Content Marketing & LLM-Powered SEO Writing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Create SEO-optimized content that ranks well and engages your audience. Blog posts, articles, landing pages, and content strategy.
+                Create SEO-optimized content using GPT-4 and large language models. Generate engaging blog posts, articles, landing pages, and content strategies with AI-powered writing that ranks well and resonates with your audience.
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/contact" className="text-pink-600 hover:text-pink-700 font-semibold inline-flex items-center gap-2 group text-sm">
@@ -1440,9 +1460,9 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                   loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Data Analytics & Reporting</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Data Analytics & Intelligent Reporting</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Transform raw data into actionable insights with advanced analytics, custom reporting, KPI dashboards, and automated data processing pipelines.
+                Transform raw data into actionable insights using AI and machine learning. Leverage LLM-powered analytics, intelligent reporting, AI-driven KPI dashboards, and automated data processing pipelines with natural language query capabilities.
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/contact" className="text-teal-600 hover:text-teal-700 font-semibold inline-flex items-center gap-2 group text-sm">
