@@ -353,57 +353,107 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Announcement Banner */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white py-2 px-4 text-center text-sm font-medium">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
-          <svg className="w-4 h-4 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-          <span>🚀 Transform your business with AI automation & LLM integration services</span>
+      {/* Enhanced Announcement Banner - Show Stopper */}
+      <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-blue-600 text-white py-3 px-4 overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-0 left-1/2 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-yellow-400 rounded-full blur-lg animate-ping opacity-75"></div>
+              <div className="relative bg-yellow-400 rounded-full p-1.5">
+                <svg className="w-5 h-5 text-yellow-900 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <span className="text-base sm:text-lg font-bold">🚀 Transform Your Business with AI Automation & LLM Integration</span>
+              <span className="hidden sm:inline text-yellow-200 font-semibold">•</span>
+              <span className="text-sm sm:text-base text-yellow-100">8+ Years Experience • 100+ Projects</span>
+            </div>
+          </div>
           <button
             onClick={() => setBookingModal({ isOpen: true, serviceName: 'Consultation' })}
-            className="ml-4 underline hover:no-underline font-semibold"
+            className="group relative px-6 py-2.5 bg-white text-blue-600 rounded-lg font-bold text-sm hover:bg-yellow-400 hover:text-blue-900 transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 flex items-center gap-2 whitespace-nowrap"
           >
-            Book Now →
+            <span className="relative z-10">Book Free Consultation</span>
+            <svg className="w-4 h-4 relative z-10 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-yellow-300 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity blur-sm"></div>
           </button>
         </div>
       </div>
 
-      {/* Sticky Header */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200">
+      {/* Enhanced Sticky Header - Show Stopper */}
+      <nav className="sticky top-0 z-50 bg-white/98 backdrop-blur-lg shadow-xl border-b-2 border-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-20">
+          <div className="flex justify-between items-center h-24">
             <div className="flex items-center gap-4">
-              <Link to="/" className="flex items-center gap-2 group">
+              <Link to="/" className="flex items-center gap-3 group">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                  <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl blur-lg opacity-60 group-hover:opacity-100 transition-opacity animate-pulse"></div>
+                  <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-2.5 rounded-xl shadow-lg group-hover:shadow-2xl transition-all transform group-hover:scale-110">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Naqash Thaheem
-                </span>
-                  <span className="text-xs text-gray-500 hidden sm:block">AI Automation Expert</span>
+                  <span className="text-xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">
+                    Naqash Thaheem
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-600 hidden sm:block">AI & LLM Automation Expert</span>
+                    <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                      Available Now
+                    </span>
+                  </div>
                 </div>
               </Link>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-1">
+              <div className="hidden lg:flex items-center gap-1 ml-6">
+                {/* Quick Stats - Show Stopper Element */}
+                <div className="hidden xl:flex items-center gap-4 mr-4 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">8+</span>
+                    <span className="text-xs text-gray-600 font-medium">Years</span>
+                  </div>
+                  <div className="w-px h-6 bg-gray-300"></div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">100+</span>
+                    <span className="text-xs text-gray-600 font-medium">Projects</span>
+                  </div>
+                  <div className="w-px h-6 bg-gray-300"></div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-blue-600 bg-clip-text text-transparent">50+</span>
+                    <span className="text-xs text-gray-600 font-medium">Workflows</span>
+                  </div>
+                </div>
+                
                 {/* Primary Navigation - Most Important Items */}
+                <div className="flex space-x-1">
                 <Link
                   to="/"
-                  className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  className={`group relative inline-flex items-center px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${
                     location.pathname === '/'
-                      ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50 hover:shadow-sm'
+                      ? 'bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 shadow-md ring-2 ring-blue-300'
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:shadow-md'
                   }`}
                 >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  {location.pathname === '/' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-lg animate-pulse"></div>
+                  )}
+                  <svg className={`w-4 h-4 mr-2 relative z-10 ${location.pathname === '/' ? 'text-blue-600' : 'group-hover:text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                   </svg>
-                  Home
+                  <span className="relative z-10">Home</span>
                 </Link>
                 
                 <Link
@@ -637,6 +687,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     </div>
                   )}
                 </div>
+                </div>
               </div>
             </div>
             
@@ -683,19 +734,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 )}
               </div>
 
-              {/* Book Consultation Button - Enhanced */}
+              {/* Book Consultation Button - Ultra Prominent Show Stopper */}
               <button
                 onClick={() => setBookingModal({ isOpen: true, serviceName: 'Consultation' })}
-                className="group relative flex items-center gap-2 px-6 py-3 text-sm font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white rounded-lg hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 overflow-hidden"
+                className="group relative flex items-center gap-2 px-7 py-3.5 text-sm font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-blue-600 text-white rounded-xl hover:from-blue-700 hover:via-purple-700 hover:via-pink-700 hover:to-blue-700 transition-all duration-500 shadow-2xl hover:shadow-blue-500/50 transform hover:scale-110 overflow-hidden border-2 border-white/20"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                <svg className="w-5 h-5 relative z-10 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                {/* Animated shimmer effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                
+                {/* Pulsing glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-xl opacity-0 group-hover:opacity-50 blur-xl transition-opacity duration-500"></div>
+                
+                {/* Content */}
+                <svg className="w-5 h-5 relative z-10 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span className="relative z-10 hidden md:block">Book Consultation</span>
+                <span className="relative z-10 hidden lg:block">Book Free Consultation</span>
+                <span className="relative z-10 hidden md:block lg:hidden">Book Now</span>
                 <span className="relative z-10 md:hidden">Book</span>
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></span>
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"></span>
+                
+                {/* Animated notification badge */}
+                <div className="absolute -top-2 -right-2 flex items-center justify-center">
+                  <span className="absolute w-4 h-4 bg-yellow-400 rounded-full animate-ping opacity-75"></span>
+                  <span className="relative w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-yellow-900">!</span>
+                  </span>
+                </div>
+                
+                {/* Sparkle effects */}
+                <div className="absolute top-1 left-4 w-1 h-1 bg-white rounded-full opacity-0 group-hover:opacity-100 animate-ping" style={{ animationDelay: '0s' }}></div>
+                <div className="absolute bottom-1 right-6 w-1 h-1 bg-white rounded-full opacity-0 group-hover:opacity-100 animate-ping" style={{ animationDelay: '0.5s' }}></div>
               </button>
 
               {/* Install App Button */}
@@ -841,19 +909,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {mobileMenuOpen && (
             <div className="sm:hidden border-t border-gray-200 py-4 bg-gradient-to-b from-white to-gray-50">
               <div className="space-y-4">
-                {/* Mobile Booking Button - Prominent */}
+                {/* Mobile Booking Button - Ultra Prominent Show Stopper */}
                 <div className="px-3">
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);
                       setBookingModal({ isOpen: true, serviceName: 'Consultation' });
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white rounded-lg hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="group relative w-full flex items-center justify-center gap-2 px-6 py-4 text-base font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-blue-600 text-white rounded-xl hover:from-blue-700 hover:via-purple-700 hover:via-pink-700 hover:to-blue-700 transition-all duration-500 shadow-2xl hover:shadow-blue-500/50 transform hover:scale-105 overflow-hidden border-2 border-white/20"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    {/* Animated shimmer */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                    
+                    {/* Pulsing glow */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-xl opacity-0 group-hover:opacity-50 blur-xl transition-opacity duration-500"></div>
+                    
+                    <svg className="w-6 h-6 relative z-10 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Book Consultation
+                    <span className="relative z-10">Book Free Consultation</span>
+                    
+                    {/* Notification badge */}
+                    <div className="absolute -top-2 -right-2 flex items-center justify-center">
+                      <span className="absolute w-5 h-5 bg-yellow-400 rounded-full animate-ping opacity-75"></span>
+                      <span className="relative w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-yellow-900">!</span>
+                      </span>
+                    </div>
                   </button>
                 </div>
 
