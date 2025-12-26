@@ -207,6 +207,10 @@ export default defineConfig({
                 id.includes('mdast')) {
               return 'markdown-editor';
             }
+            // PDF libraries - keep together to avoid circular deps
+            if (id.includes('pdf-lib') || id.includes('jspdf') || id.includes('@react-pdf')) {
+              return 'pdf-libs';
+            }
             // Large utility libraries (no React dependency)
             if (id.includes('lodash') || id.includes('date-fns') || id.includes('moment')) {
               return 'utils';
