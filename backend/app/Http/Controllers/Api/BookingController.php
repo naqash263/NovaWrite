@@ -4,21 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\N8nConfiguration;
-use App\Services\N8nEmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
 class BookingController extends Controller
 {
     protected $client;
-    protected $n8nService;
 
-    public function __construct(N8nEmailService $n8nService)
+    public function __construct()
     {
         $this->client = new Client();
-        $this->n8nService = $n8nService;
     }
 
     /**
@@ -26,31 +24,71 @@ class BookingController extends Controller
      */
     public function bookService(Request $request)
     {
-        $request->validate([
-            'service_name' => 'required|string|max:255',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'company' => 'nullable|string|max:255',
-            'message' => 'nullable|string|max:2000',
-            'preferred_contact_method' => 'nullable|in:email,phone,whatsapp',
-            'budget_range' => 'nullable|string|max:100',
-            'timeline' => 'nullable|string|max:100',
-        ]);
+        try {
+            $request->validate([
+                'service_name' => 'required|string|max:255',
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255',
+                'phone' => 'nullable|string|max:50',
+                'company' => 'nullable|string|max:255',
+                'message' => 'nullable|string|max:2000',
+                'preferred_contact_method' => 'nullable|in:email,phone,whatsapp',
+                'budget_range' => 'nullable|string|max:100',
+                'timeline' => 'nullable|string|max:100',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error("Booking validation failed", [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid form data. Please check your input and try again.',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
-        $config = N8nConfiguration::getActive();
-        
-        if (!$config) {
+        try {
+            // Check if n8n_configurations table exists
+            if (!DB::getSchemaBuilder()->hasTable('n8n_configurations')) {
+                Log::error("N8n configurations table does not exist");
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Booking service is currently unavailable. Please contact us directly.'
+                ], 503);
+            }
+
+            $config = N8nConfiguration::getActive();
+            
+            if (!$config) {
+                Log::warning("No active N8n configuration found for booking", [
+                    'service' => $request->service_name,
+                    'email' => $request->email
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Booking service is currently unavailable. Please contact us directly.'
+                ], 503);
+            }
+
+            if (!$config->isValidWebhookUrl()) {
+                Log::error("Invalid webhook URL in N8n configuration", [
+                    'config_id' => $config->id,
+                    'webhook_url' => $config->webhook_url
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Booking service configuration error. Please contact us directly.'
+                ], 503);
+            }
+        } catch (\Exception $e) {
+            Log::error("Error retrieving N8n configuration", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Booking service is currently unavailable. Please contact us directly.'
-            ], 503);
-        }
-
-        if (!$config->isValidWebhookUrl()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Booking service configuration error. Please contact us directly.'
             ], 503);
         }
 
