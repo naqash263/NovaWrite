@@ -175,9 +175,13 @@ export default defineConfig({
         manualChunks: (id) => {
           // Vendor chunks - split more aggressively to avoid large chunks
           if (id.includes('node_modules')) {
-            // React core (small, critical) - keep together
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react-vendor';
+            // React core (CRITICAL - must load first) - keep together and ensure it's in entry
+            // Don't split React - it must be available synchronously
+            if (id.includes('react') && !id.includes('react-dom')) {
+              return 'react-core';
+            }
+            if (id.includes('react-dom')) {
+              return 'react-dom';
             }
             // Router (medium size)
             if (id.includes('react-router')) {

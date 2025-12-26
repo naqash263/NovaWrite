@@ -202,6 +202,15 @@ export default function Home() {
           backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 30%, rgba(219, 39, 119, 0.85) 60%, rgba(37, 99, 235, 0.9) 100%), url('${getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')}')`
         }}
       >
+        {/* Preload hero image as img element for better LCP (hidden) */}
+        <img 
+          src={getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')} 
+          alt="" 
+          className="absolute opacity-0 pointer-events-none w-0 h-0"
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
+        />
         {/* Enhanced Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
