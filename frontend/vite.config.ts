@@ -255,15 +255,21 @@ export default defineConfig({
     // Optimize CSS
     cssTarget: 'chrome80',
     assetsInlineLimit: 4096,
-    // Preload optimization - only preload critical chunks
+    // Preload optimization - preload React chunks to ensure they load first
     modulePreload: {
       polyfill: false,
       resolveDependencies: (filename, deps) => {
-        // Only preload critical entry chunks
+        // Always preload React chunks for lazy-loaded components
         if (filename.includes('main') || filename.includes('index')) {
-          return deps.filter(dep => dep.includes('react-vendor') || dep.includes('router'));
+          return deps.filter(dep => 
+            dep.includes('react-vendor') ||
+            dep.includes('router')
+          );
         }
-        return [];
+        // For lazy chunks, preload React if not already loaded
+        return deps.filter(dep => 
+          dep.includes('react-vendor')
+        );
       }
     }
   },
