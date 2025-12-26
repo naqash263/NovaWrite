@@ -176,10 +176,11 @@ export default defineConfig({
           // Vendor chunks - split more aggressively to avoid large chunks
           if (id.includes('node_modules')) {
             // React core (CRITICAL - must load synchronously with entry)
-            // Keep React and React-DOM together to avoid loading issues
+            // Keep React and React-DOM in entry chunk for immediate availability
+            // Returning undefined keeps it in the entry chunk
             if (id.includes('react') || id.includes('react-dom')) {
-              // Don't split React - it must be available immediately
-              return 'react-vendor';
+              // Keep React in entry chunk - don't split it
+              return undefined;
             }
             // HTTP client (small) - no React dependency
             if (id.includes('axios')) {
