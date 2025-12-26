@@ -409,13 +409,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <span className="text-xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">
                     Naqash Thaheem
                   </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-gray-600 hidden sm:block">AI & LLM Automation Expert</span>
-                    <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                      Available Now
-                    </span>
-                  </div>
+                  
                 </div>
               </Link>
               <div className="hidden lg:flex items-center gap-1 ml-6">

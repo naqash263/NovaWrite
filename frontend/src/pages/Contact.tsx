@@ -59,7 +59,7 @@ export default function Contact() {
     description: 'Get in touch with Naqash Thaheem for AI automation, CRM integration, Power BI dashboards, and business intelligence projects. Get a free consultation for your automation needs. Remote services available worldwide.',
     keywords: ['contact Naqash Thaheem', 'AI automation consultation', 'CRM integration services', 'Power BI development', 'business intelligence consulting', 'workflow automation expert', 'automation project quote', 'remote automation services', 'n8n consultant', 'Make.com specialist', 'Zoho CRM expert', 'free consultation', 'automation expert contact'],
     url: '/contact',
-    image: 'https://naqashthaheem.com/images/business_analytics_d_948bb4c2.jpg',
+    image: 'https://naqashthaheem.com/images/Move_from_Data_to_Decisions_version_1.png',
     structuredData: 'custom',
     customStructuredData: {
       "@context": "https://schema.org",
@@ -67,7 +67,7 @@ export default function Contact() {
       "name": "Contact Naqash Thaheem - AI Automation Expert",
       "description": "Get in touch with Naqash Thaheem for AI automation, CRM integration, and business intelligence projects. Free consultation available.",
       "url": "https://naqashthaheem.com/contact",
-      "image": "https://naqashthaheem.com/images/business_analytics_d_948bb4c2.jpg",
+      "image": "https://naqashthaheem.com/images/Move_from_Data_to_Decisions_version_1.png",
       "mainEntity": {
         "@type": "Person",
         "name": "Naqash Thaheem",
@@ -185,7 +185,7 @@ export default function Contact() {
     if (!ogImage) {
       const meta = document.createElement('meta');
       meta.setAttribute('property', 'og:image');
-      meta.content = 'https://naqashthaheem.com/images/business_analytics_d_948bb4c2.jpg';
+          meta.content = 'https://naqashthaheem.com/images/Move_from_Data_to_Decisions_version_1.png';
       document.head.appendChild(meta);
     }
     if (!ogUrl) {
@@ -215,7 +215,7 @@ export default function Contact() {
     if (!twitterImage) {
       const meta = document.createElement('meta');
       meta.setAttribute('name', 'twitter:image');
-      meta.content = 'https://naqashthaheem.com/images/business_analytics_d_948bb4c2.jpg';
+          meta.content = 'https://naqashthaheem.com/images/Move_from_Data_to_Decisions_version_1.png';
       document.head.appendChild(meta);
     }
   }, []);
@@ -464,7 +464,7 @@ export default function Contact() {
       <div 
         className="relative bg-cover bg-center py-20 mb-16 overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9)), url('${getImageUrl('contact_image', '/images/business_analytics_d_948bb4c2.jpg')}')`
+          backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 50%, rgba(219, 39, 119, 0.85) 100%), url('${getImageUrl('contact_image', '/images/Move_from_Data_to_Decisions_version_1.png')}')`
         }}
       >
         <div className="absolute inset-0 bg-black opacity-10"></div>

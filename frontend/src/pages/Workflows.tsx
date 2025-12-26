@@ -77,7 +77,7 @@ export default function Workflows() {
     description: 'Download free AI automation workflows, CRM integration templates, data processing pipelines, and business automation solutions. Includes n8n, Make.com, Zapier workflow examples for businesses. Created by Systems Analyst Naqash Thaheem with 8+ years experience.',
     keywords: ['AI automation workflows', 'workflow templates', 'CRM automation', 'business process automation', 'n8n workflows', 'Make.com workflows', 'Zapier automation', 'Zoho CRM integration', 'data pipelines', 'workflow examples', 'automation solutions', 'download workflow templates', 'free automation tools', 'business intelligence workflows', 'data processing automation', 'workflow library'],
     url: '/workflows',
-    image: '/images/workflows-og.jpg',
+    image: '/images/AI Automation.png',
     structuredData: 'website',
     customStructuredData: {
       '@context': 'https://schema.org',
@@ -168,15 +168,20 @@ export default function Workflows() {
   return (
     <div className="bg-gray-50">
       <div 
-        className="relative bg-cover bg-center py-20 mb-16"
+        className="relative bg-cover bg-center py-24 md:py-32 mb-16 overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9))`
+          backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 50%, rgba(219, 39, 119, 0.85) 100%), url('${getImageUrl('workflows_image', '/images/AI Automation.png')}')`
         }}
       >
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        </div>
         <LazyImage
-          src={getImageUrl('workflows_image', '/images/ai_artificial_intell_c522e573.jpg')}
+          src={getImageUrl('workflows_image', '/images/AI Automation.png')}
           alt="AI Automation Background"
-          className="absolute inset-0 w-full h-full object-cover -z-10"
+          className="absolute inset-0 w-full h-full object-cover -z-10 opacity-0"
           placeholder="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSIzMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzI1NjNlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QXV0b21hdGlvbiBXb3JrZmxvd3M8L3RleHQ+PC9zdmc+"
         />
         <div className="max-w-7xl mx-auto px-4 text-center">

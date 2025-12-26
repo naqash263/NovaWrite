@@ -290,53 +290,132 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero Section - Enhanced */}
+      {/* Hero Section - Ultra Engaging Show Stopper */}
       <section 
-        className="relative text-white py-24 md:py-32 bg-cover bg-center bg-no-repeat overflow-hidden"
+        className="relative text-white py-32 md:py-48 bg-cover bg-center bg-no-repeat overflow-hidden min-h-[90vh] flex items-center"
         style={{
-          backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.9) 0%, rgba(29, 78, 216, 0.85) 50%, rgba(30, 64, 175, 0.9) 100%), url('${getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')}')`
+          backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 30%, rgba(219, 39, 119, 0.85) 60%, rgba(37, 99, 235, 0.9) 100%), url('${getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')}')`
         }}
       >
-        {/* Animated background elements */}
+        {/* Enhanced Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-          <div className="absolute top-40 left-40 w-80 h-80 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute top-40 left-40 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-6000"></div>
+        </div>
+
+        {/* Floating particles effect */}
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 bg-white rounded-full opacity-20"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 2}s`
+              }}
+            />
+          ))}
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center animate-fade-in">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white">
-              {getSettingValue('hero_title', 'AI Automation & LLM Integration Services')}
+          <div className="text-center">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 bg-white/20 backdrop-blur-md rounded-full border border-white/30 animate-fade-in">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+              <span className="text-sm font-semibold">Available for New Projects</span>
+              <span className="text-xs bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full font-bold">FREE Consultation</span>
+            </div>
+
+            {/* Main Headline - Ultra Prominent */}
+            <h1 className="text-6xl md:text-8xl lg:text-9xl font-extrabold mb-8 leading-tight">
+              <span className="block bg-clip-text text-transparent bg-gradient-to-r from-white via-yellow-200 to-white animate-gradient">
+                {getSettingValue('hero_title', 'AI Automation & LLM Integration Services')}
+              </span>
             </h1>
             
-            <p className="text-2xl md:text-3xl mb-4 text-blue-50 font-semibold">
+            {/* Subtitle with animation */}
+            <p className="text-3xl md:text-4xl lg:text-5xl mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 font-bold leading-tight">
               {getSettingValue('hero_subtitle', 'Transform Your Business with AI-Powered Automation & Large Language Models')}
             </p>
             
-            <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
+            {/* Description */}
+            <p className="text-xl md:text-2xl text-blue-50 mb-10 max-w-4xl mx-auto leading-relaxed font-medium">
               Streamline operations, boost productivity, and drive growth with our comprehensive AI automation and LLM integration solutions. From GPT-4 powered workflows and intelligent automation to AI-driven CRM integration, Power BI dashboards, and machine learning automation - we deliver measurable results for businesses worldwide using cutting-edge AI and large language model technologies.
             </p>
+
+            {/* Key Stats - Show Stopper */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 max-w-4xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all transform hover:scale-110">
+                <div className="text-4xl md:text-5xl font-extrabold text-yellow-300 mb-1">8+</div>
+                <div className="text-sm md:text-base text-blue-100 font-semibold">Years Experience</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all transform hover:scale-110">
+                <div className="text-4xl md:text-5xl font-extrabold text-yellow-300 mb-1">100+</div>
+                <div className="text-sm md:text-base text-blue-100 font-semibold">Projects Delivered</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all transform hover:scale-110">
+                <div className="text-4xl md:text-5xl font-extrabold text-yellow-300 mb-1">50+</div>
+                <div className="text-sm md:text-base text-blue-100 font-semibold">AI Workflows</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all transform hover:scale-110">
+                <div className="text-4xl md:text-5xl font-extrabold text-yellow-300 mb-1">20+</div>
+                <div className="text-sm md:text-base text-blue-100 font-semibold">Integrations</div>
+              </div>
+            </div>
             
-            {/* Service Highlights with Links */}
-            <div className="grid md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
-              <Link to="/workflows" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
-                <div className="text-3xl mb-2">🤖</div>
-                <h3 className="font-semibold text-white mb-1">AI Workflow Automation</h3>
-                <p className="text-sm text-blue-100">GPT-4, OpenAI, n8n, Make.com</p>
-                <p className="text-xs text-blue-200 mt-2">View AI Workflows →</p>
+            {/* Service Highlights with Images - Enhanced */}
+            <div className="grid md:grid-cols-3 gap-6 mb-10 max-w-5xl mx-auto">
+              <Link to="/workflows" className="group relative bg-white/15 backdrop-blur-lg rounded-2xl p-6 border-2 border-white/30 hover:border-white/50 hover:bg-white/25 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 mb-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl flex items-center justify-center text-3xl transform group-hover:rotate-12 transition-transform">
+                    🤖
+                  </div>
+                  <h3 className="font-bold text-white text-lg mb-2">AI Workflow Automation</h3>
+                  <p className="text-sm text-blue-100 mb-3">GPT-4, OpenAI, n8n, Make.com</p>
+                  <p className="text-xs text-yellow-200 font-semibold flex items-center gap-1">
+                    View AI Workflows 
+                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </p>
+                </div>
               </Link>
-              <Link to="/blog" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
-                <div className="text-3xl mb-2">📊</div>
-                <h3 className="font-semibold text-white mb-1">AI Business Intelligence</h3>
-                <p className="text-sm text-blue-100">AI-Powered Analytics, Power BI</p>
-                <p className="text-xs text-blue-200 mt-2">Read Blog →</p>
+              <Link to="/blog" className="group relative bg-white/15 backdrop-blur-lg rounded-2xl p-6 border-2 border-white/30 hover:border-white/50 hover:bg-white/25 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 mb-4 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center text-3xl transform group-hover:rotate-12 transition-transform">
+                    📊
+                  </div>
+                  <h3 className="font-bold text-white text-lg mb-2">AI Business Intelligence</h3>
+                  <p className="text-sm text-blue-100 mb-3">AI-Powered Analytics, Power BI</p>
+                  <p className="text-xs text-yellow-200 font-semibold flex items-center gap-1">
+                    Read Blog 
+                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </p>
+                </div>
               </Link>
-              <Link to="/resources" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
-                <div className="text-3xl mb-2">🔗</div>
-                <h3 className="font-semibold text-white mb-1">AI CRM Integration</h3>
-                <p className="text-sm text-blue-100">LLM-Powered CRM, Zoho, HubSpot</p>
-                <p className="text-xs text-blue-200 mt-2">Free AI Tools →</p>
+              <Link to="/resources" className="group relative bg-white/15 backdrop-blur-lg rounded-2xl p-6 border-2 border-white/30 hover:border-white/50 hover:bg-white/25 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 mb-4 bg-gradient-to-br from-pink-400 to-blue-500 rounded-xl flex items-center justify-center text-3xl transform group-hover:rotate-12 transition-transform">
+                    🔗
+                  </div>
+                  <h3 className="font-bold text-white text-lg mb-2">AI CRM Integration</h3>
+                  <p className="text-sm text-blue-100 mb-3">LLM-Powered CRM, Zoho, HubSpot</p>
+                  <p className="text-xs text-yellow-200 font-semibold flex items-center gap-1">
+                    Free AI Tools 
+                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </p>
+                </div>
               </Link>
             </div>
             
@@ -359,19 +438,40 @@ export default function Home() {
               </div>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+            {/* Ultra Prominent CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-10">
               <button
                 onClick={() => setBookingModal({ isOpen: true, serviceName: 'Consultation' })}
-                className="bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-50 hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+                className="group relative px-10 py-5 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 text-blue-900 rounded-2xl font-extrabold text-xl hover:from-yellow-300 hover:via-yellow-200 hover:to-yellow-300 hover:shadow-2xl transform hover:scale-110 transition-all duration-500 overflow-hidden border-4 border-white/50"
               >
-                Book Consultation
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                <div className="relative z-10 flex items-center gap-3">
+                  <svg className="w-6 h-6 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>Book FREE Consultation</span>
+                  <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </div>
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full animate-ping"></div>
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">!</span>
+                </div>
               </button>
               <Link
                 to="/contact"
-                className="bg-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-2 border-white"
+                className="group relative px-10 py-5 bg-white/20 backdrop-blur-md text-white rounded-2xl font-extrabold text-xl hover:bg-white/30 hover:shadow-2xl transform hover:scale-110 transition-all duration-500 border-4 border-white/50 hover:border-white/80"
               >
-                Get In Touch
+                <div className="relative z-10 flex items-center gap-3">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <span>Get In Touch</span>
+                  <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </div>
               </Link>
             </div>
 

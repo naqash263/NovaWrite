@@ -49,11 +49,16 @@ export default function About() {
     <div className="bg-gray-50">
       {/* Hero Section with AI Image */}
       <div 
-        className="relative bg-cover bg-center py-20 mb-16"
+        className="relative bg-cover bg-center py-24 md:py-32 mb-16 overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(37, 99, 235, 0.9), rgba(30, 64, 175, 0.9)), url('${getImageUrl('about_image', '/images/ai_artificial_intell_c522e573.jpg')}')`
+          backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 50%, rgba(219, 39, 119, 0.85) 100%), url('${getImageUrl('about_image', '/images/AI Analytics.png')}')`
         }}
       >
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        </div>
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-5xl font-bold text-white mb-4">About Me</h1>
           <p className="text-xl text-blue-100">Transforming Business Through Intelligent Automation</p>

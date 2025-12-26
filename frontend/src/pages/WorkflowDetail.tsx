@@ -129,7 +129,7 @@ export default function WorkflowDetail() {
     description: getDescription(),
     keywords: getKeywords(),
     url: `/workflows/${slug || ''}`,
-    image: workflow?.image_url || '/images/workflows-og.jpg',
+    image: workflow?.image_url || '/images/AI Automation.png',
     type: 'article',
     publishedTime: workflow?.created_at,
     modifiedTime: workflow?.updated_at,
@@ -148,7 +148,7 @@ export default function WorkflowDetail() {
         const day = String(publishDate.getDate()).padStart(2, '0');
         return `https://naqashthaheem.com/workflows/${year}/${month}/${day}/${workflow.slug}`;
       })() : `https://naqashthaheem.com/workflows/${actualSlug}`,
-      'image': workflow.image_url ? `https://naqashthaheem.com${workflow.image_url}` : 'https://naqashthaheem.com/images/workflows-og.jpg',
+      'image': workflow.image_url ? `https://naqashthaheem.com${workflow.image_url}` : 'https://naqashthaheem.com/images/AI Automation.png',
       'applicationCategory': 'Automation Tool',
       'applicationSubCategory': 'Business Process Automation',
       'operatingSystem': 'Web-based',
