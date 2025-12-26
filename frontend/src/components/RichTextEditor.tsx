@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
-import MDEditor from '@uiw/react-md-editor';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { EyeIcon, PencilIcon } from '@heroicons/react/24/outline';
+
+// Dynamically import MDEditor to reduce initial bundle size
+const MDEditor = lazy(() => import('@uiw/react-md-editor'));
 
 interface RichTextEditorProps {
   value: string;
@@ -75,22 +77,37 @@ export default function RichTextEditor({
         </div>
       )}
       
-      <MDEditor
-        value={value}
-        onChange={(val) => onChange(val || '')}
-        height={height}
-        data-color-mode="light"
-        preview={previewMode === 'preview' ? 'preview' : 'edit'}
-        hideToolbar={previewMode === 'preview'}
-        visibleDragbar={false}
-        textareaProps={{
-          placeholder: placeholder,
-          style: {
-            fontSize: 14,
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-          },
-        }}
-      />
+      <Suspense fallback={
+        <div 
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          style={{ height: `${height}px` }}
+        >
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="w-full h-full resize-none border-none outline-none"
+            style={{ height: `${height - 16}px` }}
+          />
+        </div>
+      }>
+        <MDEditor
+          value={value}
+          onChange={(val) => onChange(val || '')}
+          height={height}
+          data-color-mode="light"
+          preview={previewMode === 'preview' ? 'preview' : 'edit'}
+          hideToolbar={previewMode === 'preview'}
+          visibleDragbar={false}
+          textareaProps={{
+            placeholder: placeholder,
+            style: {
+              fontSize: 14,
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            },
+          }}
+        />
+      </Suspense>
     </div>
   );
 }
