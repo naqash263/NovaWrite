@@ -187,6 +187,7 @@ export default defineConfig({
             }
             // React-related packages that might import React
             // Put ALL React-related packages in react-vendor to ensure React is available
+            // But React itself stays in entry chunk (returned undefined above)
             if (id.includes('react-') || 
                 id.includes('@react') || 
                 id.includes('react-router') ||
