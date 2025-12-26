@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { EyeIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 // Dynamically import MDEditor to reduce initial bundle size
-const MDEditor = lazy(() => import('@uiw/react-md-editor').then(module => ({ default: module.default })));
+const MDEditor = lazy(() => import('@uiw/react-md-editor'));
 
 interface RichTextEditorProps {
   value: string;
