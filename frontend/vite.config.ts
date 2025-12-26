@@ -227,22 +227,33 @@ export default defineConfig({
             const match = id.match(/node_modules\/(@[^/]+|[^/]+)/);
             if (match) {
               const packageName = match[1];
-              // Scoped packages - split each scope into its own chunk to avoid circular dependencies
+              // Scoped packages - group by scope to reduce chunk count
               if (packageName.startsWith('@')) {
                 const scope = packageName.split('/')[0];
                 // Large scoped packages get their own chunk
                 if (scope === '@uiw' || scope === '@tanstack') {
                   return `vendor-${scope.substring(1)}`;
                 }
-                // Split other scoped packages by full package name to avoid circular deps
-                // This prevents initialization order issues
-                const fullPackage = packageName.replace('@', '').replace('/', '-');
-                return `vendor-${fullPackage}`;
+                // Group smaller scoped packages by scope to reduce HTTP requests
+                // Only split if package is known to have circular deps
+                const problematicPackages = ['@heroicons'];
+                if (problematicPackages.some(pkg => packageName.includes(pkg))) {
+                  const fullPackage = packageName.replace('@', '').replace('/', '-');
+                  return `vendor-${fullPackage}`;
+                }
+                // Group other scoped packages together to reduce chunk count
+                return 'vendor-scoped';
               }
               // Individual packages - exclude React packages (already handled)
               const largePackages = ['react', 'react-dom', 'react-router', 'axios'];
               if (largePackages.some(pkg => packageName.includes(pkg))) {
                 return 'vendor-core';
+              }
+              // Group smaller individual packages together to reduce chunk count
+              // Only split large packages individually
+              const largeIndividualPackages = ['pdf-lib', 'jspdf', 'lodash', 'date-fns'];
+              if (largeIndividualPackages.some(pkg => packageName.includes(pkg))) {
+                return `vendor-${packageName}`;
               }
             }
             // Default vendor chunk for smaller packages (no React dependency)

@@ -197,19 +197,25 @@ export default function Home() {
     <div>
       {/* Hero Section - Ultra Engaging Show Stopper */}
       <section 
-        className="relative text-white py-32 md:py-48 bg-cover bg-center bg-no-repeat overflow-hidden min-h-[90vh] flex items-center"
-        style={{
-          backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 30%, rgba(219, 39, 119, 0.85) 60%, rgba(37, 99, 235, 0.9) 100%), url('${getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')}')`
-        }}
+        className="relative text-white py-32 md:py-48 overflow-hidden min-h-[90vh] flex items-center"
       >
-        {/* Preload hero image as img element for better LCP (hidden) */}
+        {/* Gradient overlay */}
+        <div 
+          className="absolute inset-0 -z-10"
+          style={{
+            background: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 30%, rgba(219, 39, 119, 0.85) 60%, rgba(37, 99, 235, 0.9) 100%)`
+          }}
+        />
+        {/* Hero image as proper img element for better LCP */}
         <img 
           src={getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')} 
-          alt="" 
-          className="absolute opacity-0 pointer-events-none w-0 h-0"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover -z-10"
           fetchPriority="high"
           loading="eager"
           decoding="async"
+          width="1920"
+          height="1080"
         />
         {/* Enhanced Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">

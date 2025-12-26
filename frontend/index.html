@@ -30,8 +30,8 @@
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
     <link rel="dns-prefetch" href="https://naqashthaheem.com" />
     <link rel="preconnect" href="https://naqashthaheem.com" crossorigin />
-    <!-- Preload critical hero image - only if it will be used immediately -->
-    <!-- Note: Background images in CSS don't benefit from preload, so we'll load it via img tag instead -->
+    <!-- Preload critical hero image for better LCP -->
+    <link rel="preload" as="image" href="/images/modern_technology_ab_8cef6e70.jpg" fetchpriority="high" />
     <!-- Preconnect to API for faster requests -->
     <link rel="preconnect" href="https://naqashthaheem.com/api" crossorigin />
     <!-- DNS prefetch for external resources -->
