@@ -85,20 +85,35 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Close search on Escape key
-    const handleEscape = (event: KeyboardEvent) => {
+    // Keyboard shortcuts
+    const handleKeyboard = (event: KeyboardEvent) => {
+      // Close search on Escape key
       if (event.key === 'Escape' && searchOpen) {
         setSearchOpen(false);
+        return;
+      }
+
+      // Open search with Cmd/Ctrl + K
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        // If search is open and has query, navigate to search page
+        if (searchOpen && searchQuery.trim()) {
+          setSearchOpen(false);
+          window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
+        } else {
+          // Otherwise toggle search dropdown
+          setSearchOpen(!searchOpen);
+        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleKeyboard);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyboard);
     };
-  }, [userDropdownOpen, settingsDropdownOpen, moreDropdownOpen, searchOpen]);
+  }, [userDropdownOpen, settingsDropdownOpen, moreDropdownOpen, searchOpen, searchQuery]);
 
   // Allow access to login page without authentication
   if (isLoginPage) {
@@ -370,8 +385,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    Naqash Thaheem
-                  </span>
+                  Naqash Thaheem
+                </span>
                   <span className="text-xs text-gray-500 hidden sm:block">AI Automation Expert</span>
                 </div>
               </Link>
