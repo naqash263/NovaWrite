@@ -1,15 +1,14 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-E3DLY81RTW"></script>
+    <!-- Google tag (gtag.js) - Deferred for better performance -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-E3DLY81RTW');
     </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-E3DLY81RTW" defer></script>
     
     <meta charset="UTF-8" />
     <!-- Favicon for different devices and sizes -->
@@ -31,8 +30,12 @@
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
     <link rel="dns-prefetch" href="https://naqashthaheem.com" />
     <link rel="preconnect" href="https://naqashthaheem.com" crossorigin />
-    <!-- Preload critical hero image -->
-    <link rel="preload" as="image" href="/images/modern_technology_ab_8cef6e70.jpg" />
+    <!-- Preload critical hero image with fetchpriority -->
+    <link rel="preload" as="image" href="/images/modern_technology_ab_8cef6e70.jpg" fetchpriority="high" />
+    <!-- Preconnect to API for faster requests -->
+    <link rel="preconnect" href="https://naqashthaheem.com/api" crossorigin />
+    <!-- DNS prefetch for external resources -->
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
     <meta name="description" content="Naqash Thaheem - Systems Analyst & Automation Specialist. Professional portfolio showcasing AI automation, CRM integration, and business intelligence solutions in UAE." />
     <title>Naqash Thaheem - Systems Analyst & Automation Specialist | Portfolio</title>
     

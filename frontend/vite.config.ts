@@ -147,15 +147,31 @@ export default defineConfig({
     cssCodeSplit: true,
     sourcemap: false,
     chunkSizeWarningLimit: 500,
+    // Optimize chunk splitting for better caching
     rollupOptions: {
       output: {
-        // Simplified chunk splitting to avoid circular dependencies
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'query': ['@tanstack/react-query'],
-          'http': ['axios'],
-          'editor': ['@uiw/react-md-editor']
+        // Optimized chunk splitting for better caching and parallel loading
+        manualChunks: (id) => {
+          // Vendor chunks
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('react-router')) {
+              return 'router';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'query';
+            }
+            if (id.includes('axios')) {
+              return 'http';
+            }
+            if (id.includes('@uiw/react-md-editor')) {
+              return 'editor';
+            }
+            // Other vendor libraries
+            return 'vendor';
+          }
         },
         // Optimize asset naming for better caching
         assetFileNames: (assetInfo) => {
@@ -177,10 +193,16 @@ export default defineConfig({
     // Optimize CSS
     cssTarget: 'chrome80',
     assetsInlineLimit: 4096,
-    // Preload optimization - disable preload for better performance
+    // Preload optimization - only preload critical chunks
     modulePreload: {
       polyfill: false,
-      resolveDependencies: () => [] // Disable automatic preload
+      resolveDependencies: (filename, deps) => {
+        // Only preload critical entry chunks
+        if (filename.includes('main') || filename.includes('index')) {
+          return deps.filter(dep => dep.includes('react-vendor') || dep.includes('router'));
+        }
+        return [];
+      }
     }
   },
   // Optimize dependencies
