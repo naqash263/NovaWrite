@@ -14,13 +14,13 @@ Allow: /about
 Allow: /workflows
 Allow: /blog
 Allow: /contact
-Allow: /courses
 Allow: /resources
 Allow: /resources/cv-builder
 Allow: /resources/watermark-remover
 Allow: /privacy-policy
 Allow: /terms-of-service
 Allow: /cookie-policy
+Allow: /community/issues
 
 
 

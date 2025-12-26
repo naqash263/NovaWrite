@@ -77,13 +77,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       if (moreDropdownOpen && !target.closest('[data-more-dropdown]')) {
         setMoreDropdownOpen(false);
       }
+
+      if (searchOpen && !target.closest('[data-search-dropdown]')) {
+        setSearchOpen(false);
+      }
+    };
+
+    // Close search on Escape key
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && searchOpen) {
+        setSearchOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
     };
-  }, [userDropdownOpen, settingsDropdownOpen, moreDropdownOpen]);
+  }, [userDropdownOpen, settingsDropdownOpen, moreDropdownOpen, searchOpen]);
 
   // Allow access to login page without authentication
   if (isLoginPage) {
@@ -321,16 +334,47 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="bg-white shadow-sm">
+      {/* Announcement Banner */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white py-2 px-4 text-center text-sm font-medium">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
+          <svg className="w-4 h-4 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+          <span>🚀 Transform your business with AI automation & LLM integration services</span>
+          <button
+            onClick={() => setBookingModal({ isOpen: true, serviceName: 'Consultation' })}
+            className="ml-4 underline hover:no-underline font-semibold"
+          >
+            Book Now →
+          </button>
+        </div>
+      </div>
+
+      {/* Sticky Header */}
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center text-xl font-bold text-gray-900">
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Naqash Thaheem
-                </span>
+          <div className="flex justify-between h-20">
+            <div className="flex items-center gap-4">
+              <Link to="/" className="flex items-center gap-2 group">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                  <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Naqash Thaheem
+                  </span>
+                  <span className="text-xs text-gray-500 hidden sm:block">AI Automation Expert</span>
+                </div>
               </Link>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-1">
                 {/* Primary Navigation - Most Important Items */}
@@ -584,16 +628,60 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             
             {/* Desktop Auth Menu */}
             <div className="hidden sm:flex items-center gap-3">
-              {/* Book Consultation Button */}
+              {/* Quick Search */}
+              <div className="relative" data-search-dropdown>
+                <button
+                  onClick={() => setSearchOpen(!searchOpen)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all border border-gray-200 hover:border-blue-300"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <span className="hidden lg:block text-gray-400">Search...</span>
+                  <kbd className="hidden lg:inline-flex items-center px-2 py-0.5 text-xs font-semibold text-gray-500 bg-gray-100 border border-gray-200 rounded">⌘K</kbd>
+                </button>
+                
+                {searchOpen && (
+                  <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 p-4 animate-in fade-in slide-in-from-top-2">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search workflows, blog posts, resources..."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && searchQuery.trim()) {
+                          // Navigate to search results or trigger search
+                          window.location.href = `/blog?search=${encodeURIComponent(searchQuery)}`;
+                        }
+                      }}
+                    />
+                    <div className="mt-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 mt-2">
+                        <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Enter</kbd>
+                        <span>to search</span>
+                        <kbd className="px-2 py-1 bg-gray-100 rounded text-xs ml-2">Esc</kbd>
+                        <span>to close</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Book Consultation Button - Enhanced */}
               <button
                 onClick={() => setBookingModal({ isOpen: true, serviceName: 'Consultation' })}
-                className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white rounded-lg hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="group relative flex items-center gap-2 px-6 py-3 text-sm font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white rounded-lg hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 overflow-hidden"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                <svg className="w-5 h-5 relative z-10 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span className="hidden md:block">Book Consultation</span>
-                <span className="md:hidden">Book</span>
+                <span className="relative z-10 hidden md:block">Book Consultation</span>
+                <span className="relative z-10 md:hidden">Book</span>
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></span>
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"></span>
               </button>
 
               {/* Install App Button */}
@@ -737,8 +825,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           
           {/* Mobile menu */}
           {mobileMenuOpen && (
-            <div className="sm:hidden border-t border-gray-200 py-4">
+            <div className="sm:hidden border-t border-gray-200 py-4 bg-gradient-to-b from-white to-gray-50">
               <div className="space-y-4">
+                {/* Mobile Booking Button - Prominent */}
+                <div className="px-3">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setBookingModal({ isOpen: true, serviceName: 'Consultation' });
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white rounded-lg hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Book Consultation
+                  </button>
+                </div>
+
                 {/* Primary Navigation */}
                 <div>
                   <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">

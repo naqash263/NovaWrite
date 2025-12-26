@@ -538,8 +538,8 @@ export default function Home() {
                   alt="Our Process - How We Work"
                   className="w-full rounded-2xl shadow-2xl"
                   loading="lazy"
-                  width="800"
-                  height="600"
+                  width="600"
+                  height="200"
                   decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent rounded-2xl"></div>
@@ -562,7 +562,7 @@ export default function Home() {
             <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
               <div className="mb-4">
                 <img 
-                  src="/images/Move_from_Data_to_Decisions_version_1.png" 
+                  src="/images/business_analytics.png" 
                   alt="Results-Driven" 
                   className="w-full h-40 object-cover rounded-lg opacity-90"
                   loading="lazy"
