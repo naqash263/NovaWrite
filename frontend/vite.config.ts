@@ -207,8 +207,12 @@ export default defineConfig({
                 id.includes('mdast')) {
               return 'markdown-editor';
             }
-            // PDF libraries - keep together to avoid circular deps
-            if (id.includes('pdf-lib') || id.includes('jspdf') || id.includes('@react-pdf')) {
+            // PDF libraries - keep together in single chunk to avoid circular deps
+            // pdf-lib has internal circular dependencies, so keep it self-contained
+            if (id.includes('pdf-lib')) {
+              return 'pdf-lib'; // Single chunk for pdf-lib to avoid internal circular deps
+            }
+            if (id.includes('jspdf') || id.includes('@react-pdf')) {
               return 'pdf-libs';
             }
             // Large utility libraries (no React dependency)
