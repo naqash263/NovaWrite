@@ -172,7 +172,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Optimized chunk splitting for better caching and parallel loading
-        manualChunks: (id) => {
+        manualChunks: (id, { getModuleInfo }) => {
           // Vendor chunks - split more aggressively to avoid large chunks
           if (id.includes('node_modules')) {
             // React core (CRITICAL - must load synchronously with entry)
@@ -180,6 +180,25 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom')) {
               // Don't split React - it must be available immediately
               return 'react-vendor';
+            }
+            // Check if this module depends on React - if so, put it in react-vendor
+            try {
+              const moduleInfo = getModuleInfo(id);
+              if (moduleInfo) {
+                // Check if this module imports React
+                const hasReactDep = moduleInfo.importers?.some(importer => 
+                  importer.includes('react') || 
+                  importer.includes('react-dom')
+                ) || moduleInfo.dynamicImporters?.some(importer => 
+                  importer.includes('react') || 
+                  importer.includes('react-dom')
+                );
+                if (hasReactDep) {
+                  return 'react-vendor';
+                }
+              }
+            } catch (e) {
+              // Ignore errors in module info lookup
             }
             // Router (medium size) - depends on React, so load after
             if (id.includes('react-router')) {
