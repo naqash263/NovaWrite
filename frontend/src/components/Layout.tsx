@@ -32,6 +32,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     isOpen: false,
     serviceName: '',
   });
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const isAdmin = location.pathname.startsWith('/admin');
   const isLoginPage = location.pathname === '/admin/login';
 
@@ -333,9 +335,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <div className="min-h-screen flex flex-col">
