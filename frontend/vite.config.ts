@@ -219,15 +219,17 @@ export default defineConfig({
             const match = id.match(/node_modules\/(@[^/]+|[^/]+)/);
             if (match) {
               const packageName = match[1];
-              // Scoped packages - group by scope
+              // Scoped packages - split each scope into its own chunk to avoid circular dependencies
               if (packageName.startsWith('@')) {
                 const scope = packageName.split('/')[0];
                 // Large scoped packages get their own chunk
                 if (scope === '@uiw' || scope === '@tanstack') {
                   return `vendor-${scope.substring(1)}`;
                 }
-                // Other scoped packages grouped by scope
-                return `vendor-scoped`;
+                // Split other scoped packages by full package name to avoid circular deps
+                // This prevents initialization order issues
+                const fullPackage = packageName.replace('@', '').replace('/', '-');
+                return `vendor-${fullPackage}`;
               }
               // Individual packages - exclude React packages (already handled)
               const largePackages = ['react', 'react-dom', 'react-router', 'axios'];
