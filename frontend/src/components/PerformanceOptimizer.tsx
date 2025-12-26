@@ -18,18 +18,8 @@ interface CLSEntry extends PerformanceEntry {
 
 // Preload critical resources
 const preloadCriticalResources = () => {
-  // Preload critical CSS
-  const criticalStyles = [
-    '/src/index.css'
-  ];
-
-  criticalStyles.forEach(href => {
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'style';
-    link.href = href;
-    document.head.appendChild(link);
-  });
+  // Note: CSS is already loaded via main.tsx import, so no need to preload
+  // Preloading would cause warnings since the path changes in production builds
 
   // Preload critical fonts
   const criticalFonts = [
