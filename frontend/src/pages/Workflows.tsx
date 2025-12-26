@@ -256,8 +256,8 @@ export default function Workflows() {
           </div>
         ) : (
           <>
-            <div className="grid md:grid-cols-2 gap-8">
-              {workflows.map((workflow) => {
+          <div className="grid md:grid-cols-2 gap-8">
+            {workflows.map((workflow) => {
               const isExpanded = expandedWorkflows.has(workflow.id);
               const shouldShowReadMore = workflow.description && workflow.description.length > 150;
               const displayDescription = isExpanded ? workflow.description : 
@@ -409,8 +409,8 @@ export default function Workflows() {
                 )}
               </div>
               );
-              })}
-            </div>
+            })}
+          </div>
             
             {/* Ad: Content Middle - After every 4 workflows */}
             {workflows.length > 4 && (
@@ -421,7 +421,7 @@ export default function Workflows() {
             <AdPlacement position="content-bottom" className="mt-8 mb-8" />
           </>
         )}
-        
+
         <div className="mt-16 bg-blue-600 rounded-lg p-8 text-center text-white">
           <h2 className="text-3xl font-bold mb-4">Ready to Automate Your Business?</h2>
           <p className="text-xl mb-6 text-blue-100">

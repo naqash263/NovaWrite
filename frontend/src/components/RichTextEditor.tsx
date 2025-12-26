@@ -91,22 +91,22 @@ export default function RichTextEditor({
           />
         </div>
       }>
-        <MDEditor
-          value={value}
-          onChange={(val) => onChange(val || '')}
-          height={height}
-          data-color-mode="light"
-          preview={previewMode === 'preview' ? 'preview' : 'edit'}
-          hideToolbar={previewMode === 'preview'}
-          visibleDragbar={false}
-          textareaProps={{
-            placeholder: placeholder,
-            style: {
-              fontSize: 14,
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-            },
-          }}
-        />
+      <MDEditor
+        value={value}
+        onChange={(val) => onChange(val || '')}
+        height={height}
+        data-color-mode="light"
+        preview={previewMode === 'preview' ? 'preview' : 'edit'}
+        hideToolbar={previewMode === 'preview'}
+        visibleDragbar={false}
+        textareaProps={{
+          placeholder: placeholder,
+          style: {
+            fontSize: 14,
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          },
+        }}
+      />
       </Suspense>
     </div>
   );
