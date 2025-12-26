@@ -185,85 +185,6 @@ export default function Home() {
     }
   };
 
-  const validateContactForm = (): boolean => {
-    const errors: Partial<ContactFormData> = {};
-
-    // Normalize values by trimming
-    const trimmedName = contactForm.name.trim();
-    const trimmedEmail = contactForm.email.trim();
-    const trimmedSubject = contactForm.subject.trim();
-    const trimmedMessage = contactForm.message.trim();
-
-    // Validate name
-    if (!trimmedName) {
-      errors.name = 'Name is required';
-    } else if (trimmedName.length < 2) {
-      errors.name = 'Name must be at least 2 characters';
-    }
-
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!trimmedEmail) {
-      errors.email = 'Email is required';
-    } else if (!emailRegex.test(trimmedEmail)) {
-      errors.email = 'Please enter a valid email address';
-    }
-
-    // Validate subject
-    if (!trimmedSubject) {
-      errors.subject = 'Subject is required';
-    } else if (trimmedSubject.length < 3) {
-      errors.subject = 'Subject must be at least 3 characters';
-    }
-
-    // Validate message
-    if (!trimmedMessage) {
-      errors.message = 'Message is required';
-    } else if (trimmedMessage.length < 10) {
-      errors.message = 'Message must be at least 10 characters';
-    }
-
-    setContactErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleContactSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate form before submission
-    if (!validateContactForm()) {
-      return;
-    }
-
-    try {
-      await apiClient.post('/contact', contactForm);
-      setContactSubmitted(true);
-      setContactErrors({});
-      setTimeout(() => {
-        setContactForm({ name: '', email: '', subject: '', message: '' });
-        setContactSubmitted(false);
-      }, 3000);
-    } catch (error: any) {
-      setContactErrors({
-        ...contactErrors,
-        submit: error.response?.data?.message || 'Failed to send message. Please try again.'
-      });
-    }
-  };
-
-  const handleContactChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setContactForm({
-      ...contactForm,
-      [e.target.name]: e.target.value
-    });
-    // Clear error for this field when user starts typing
-    if (contactErrors[e.target.name as keyof ContactFormData]) {
-      setContactErrors({
-        ...contactErrors,
-        [e.target.name]: undefined
-      });
-    }
-  };
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -303,8 +224,8 @@ export default function Home() {
               }}
             />
           ))}
-        </div>
-
+            </div>
+            
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
             {/* Badge */}
@@ -577,7 +498,7 @@ export default function Home() {
                   View Workflows 
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
+                </svg>
                 </Link>
                 <button
                   onClick={() => setBookingModal({ isOpen: true, serviceName: 'Workflow Automation' })}
@@ -617,7 +538,7 @@ export default function Home() {
                 >
                   Book Now
                 </button>
-              </div>
+            </div>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
               <div className="mb-4">
@@ -649,8 +570,8 @@ export default function Home() {
                 >
                   Book Now
                 </button>
-              </div>
             </div>
+          </div>
             <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-orange-100">
               <div className="mb-4">
                 <img 
@@ -663,7 +584,7 @@ export default function Home() {
                   decoding="async"
                   fetchPriority="low"
                 />
-              </div>
+        </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered Full-Stack Development</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Build scalable web applications, APIs, and custom software solutions with AI integration. Develop intelligent applications using modern frameworks like React, .NET Core, and Laravel, enhanced with GPT-4, OpenAI APIs, and LLM capabilities.
@@ -681,8 +602,8 @@ export default function Home() {
                 >
                   Book Now
                 </button>
-              </div>
-            </div>
+          </div>
+                  </div>
             <div className="bg-gradient-to-br from-indigo-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-indigo-100">
               <div className="mb-4">
                 <img 
@@ -695,7 +616,7 @@ export default function Home() {
                   decoding="async"
                   fetchPriority="low"
                 />
-              </div>
+                  </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered SEO & Digital Marketing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Improve your online visibility with AI-driven SEO solutions. Leverage LLM-powered content optimization, GPT-4 for keyword research, AI content strategy, intelligent technical SEO audits, and machine learning-based performance tracking.
@@ -705,16 +626,16 @@ export default function Home() {
                   Learn More 
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Link>
+                </svg>
+            </Link>
                 <button
                   onClick={() => setBookingModal({ isOpen: true, serviceName: 'SEO & Digital Marketing' })}
                   className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
                 >
                   Book Now
                 </button>
-              </div>
-            </div>
+          </div>
+        </div>
             <div className="bg-gradient-to-br from-pink-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-pink-100">
               <div className="mb-4">
                 <img 
@@ -727,7 +648,7 @@ export default function Home() {
                   decoding="async"
                   fetchPriority="low"
                 />
-              </div>
+          </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Content Marketing & LLM-Powered SEO Writing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
                 Create SEO-optimized content using GPT-4 and large language models. Generate engaging blog posts, articles, landing pages, and content strategies with AI-powered writing that ranks well and resonates with your audience.
@@ -736,16 +657,16 @@ export default function Home() {
                 <Link to="/contact" className="text-pink-600 hover:text-pink-700 font-semibold inline-flex items-center gap-2 group text-sm">
                   Learn More 
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Link>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
                 <button
                   onClick={() => setBookingModal({ isOpen: true, serviceName: 'Content Marketing & SEO Writing' })}
                   className="w-full bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors font-semibold text-sm"
                 >
                   Book Now
                 </button>
-              </div>
+            </div>
             </div>
             <div className="bg-gradient-to-br from-cyan-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-cyan-100">
               <div className="mb-4">
@@ -766,18 +687,18 @@ export default function Home() {
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/contact" className="text-cyan-600 hover:text-cyan-700 font-semibold inline-flex items-center gap-2 group text-sm">
-                  Learn More 
+                Learn More 
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Link>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
                 <button
                   onClick={() => setBookingModal({ isOpen: true, serviceName: 'Link Building & Outreach' })}
                   className="w-full bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition-colors font-semibold text-sm"
                 >
                   Book Now
                 </button>
-              </div>
+            </div>
             </div>
             <div className="bg-gradient-to-br from-rose-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-rose-100">
               <div className="mb-4">
@@ -800,16 +721,16 @@ export default function Home() {
                 <Link to="/contact" className="text-rose-600 hover:text-rose-700 font-semibold inline-flex items-center gap-2 group text-sm">
                   Learn More 
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Link>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
                 <button
                   onClick={() => setBookingModal({ isOpen: true, serviceName: 'Social Media Marketing' })}
                   className="w-full bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors font-semibold text-sm"
                 >
                   Book Now
                 </button>
-              </div>
+            </div>
             </div>
             <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-teal-100">
               <div className="mb-4">
@@ -832,9 +753,9 @@ export default function Home() {
                 <Link to="/contact" className="text-teal-600 hover:text-teal-700 font-semibold inline-flex items-center gap-2 group text-sm">
                   Learn More 
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Link>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
                 <button
                   onClick={() => setBookingModal({ isOpen: true, serviceName: 'Data Analytics & Reporting' })}
                   className="w-full bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-semibold text-sm"
@@ -1064,9 +985,9 @@ export default function Home() {
                 <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
                   <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                  </svg>
+              </svg>
+            </div>
                 </div>
-              </div>
               <div className="flex-1 text-center md:text-left">
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">Community Issues & Solutions</h3>
                 <p className="text-gray-600 mb-6">
@@ -1078,9 +999,9 @@ export default function Home() {
                 >
                   Visit Community Issues →
                 </Link>
+                </div>
               </div>
-            </div>
-          </div>
+              </div>
         </div>
       </section>
 
