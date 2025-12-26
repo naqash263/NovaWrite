@@ -318,11 +318,11 @@ export default function Home() {
                 <p className="text-sm text-blue-100">n8n, Make.com, Zapier</p>
                 <p className="text-xs text-blue-200 mt-2">View Workflows →</p>
               </Link>
-              <Link to="/courses" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <Link to="/blog" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
                 <div className="text-3xl mb-2">📊</div>
                 <h3 className="font-semibold text-white mb-1">Business Intelligence</h3>
                 <p className="text-sm text-blue-100">Power BI, Data Analytics</p>
-                <p className="text-xs text-blue-200 mt-2">Explore Courses →</p>
+                <p className="text-xs text-blue-200 mt-2">Read Blog →</p>
               </Link>
               <Link to="/resources" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
                 <div className="text-3xl mb-2">🔗</div>
@@ -1061,11 +1061,11 @@ export default function Home() {
               <p className="text-gray-600 text-sm">Latest insights and tutorials</p>
             </Link>
             <Link
-              to="/courses"
+              to="/blog"
               className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
             >
-              <div className="text-4xl mb-3">🎓</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Courses</h3>
+              <div className="text-4xl mb-3">📚</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Blog & Tutorials</h3>
               <p className="text-gray-600 text-sm">Learn automation and BI skills</p>
             </Link>
             <Link
@@ -1249,8 +1249,8 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                 Create interactive Power BI dashboards, generate actionable insights, and make data-driven decisions with comprehensive analytics solutions.
               </p>
               <div className="flex flex-col gap-2">
-                <Link to="/courses" className="text-purple-600 hover:text-purple-700 font-semibold inline-flex items-center gap-2 group text-sm">
-                  View Courses 
+                <Link to="/blog" className="text-purple-600 hover:text-purple-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                  Read Blog 
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
