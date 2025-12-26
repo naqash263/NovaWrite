@@ -50,6 +50,3 @@ Allow: /resources/ai-tools
 
 # Allow Community
 Allow: /community/issues
-
-# Crawl delay (optional)
-Crawl-delay: 1
