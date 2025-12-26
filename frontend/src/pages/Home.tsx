@@ -80,18 +80,30 @@ export default function Home() {
   };
 
   useSEO({
-    title: 'AI Automation & LLM Integration Services | Workflow Automation Expert | Business Intelligence Solutions',
-    description: 'Expert AI automation and LLM integration services. Specializing in GPT-4, OpenAI, large language models, intelligent workflow automation, AI-powered CRM integration, Power BI dashboards, and business intelligence solutions. 8+ years experience with n8n, Make.com, AI agents, and machine learning automation. Global remote services available.',
+    title: 'AI Chatbots, AI Agents & LLM Integration Services | GPT-4 Automation Expert | Business Intelligence Solutions',
+    description: 'Expert AI chatbots, AI agents, and LLM integration services. Specializing in GPT-4 chatbots, conversational AI, intelligent AI agents, OpenAI automation, large language models, AI workflow automation, AI-powered CRM integration, Power BI dashboards, and business intelligence solutions. 8+ years experience with n8n, Make.com, AI agent development, chatbot development, and machine learning automation. Global remote services available.',
     image: '/images/professional_busines_b4d6588a.jpg',
     url: '/',
     keywords: [
-      'AI automation expert', 'LLM integration services', 'GPT-4 integration', 'OpenAI automation', 
-      'large language model integration', 'AI workflow automation', 'intelligent automation solutions',
-      'AI agents development', 'machine learning automation', 'natural language processing automation',
+      // Primary Keywords - AI Chatbots & Agents
+      'AI chatbots', 'AI chatbot development', 'GPT-4 chatbots', 'conversational AI', 'intelligent chatbots',
+      'AI agents', 'AI agent development', 'autonomous AI agents', 'intelligent agents', 'AI agent automation',
+      // LLM & AI Integration
+      'LLM integration services', 'GPT-4 integration', 'OpenAI automation', 'large language model integration',
+      'AI automation expert', 'AI workflow automation', 'intelligent automation solutions',
+      'machine learning automation', 'natural language processing automation',
+      // Business Intelligence & Analytics
       'AI-powered CRM integration', 'business intelligence AI', 'AI consulting services',
       'workflow automation with AI', 'AI-driven analytics', 'LLM consulting', 'AI automation specialist',
+      // Platform-Specific
       'global automation expert', 'n8n AI integration', 'Make.com AI workflows', 'Zoho CRM AI',
-      'Power BI AI dashboards', 'remote AI services', 'AI business solutions', 'enterprise AI automation'
+      'Power BI AI dashboards', 'remote AI services', 'AI business solutions', 'enterprise AI automation',
+      // Chatbot-Specific
+      'custom AI chatbots', 'chatbot development services', 'GPT chatbot integration', 'AI customer service chatbots',
+      'conversational AI solutions', 'intelligent chatbot platform', 'AI chatbot consulting',
+      // Agent-Specific
+      'AI agent platform', 'autonomous agent development', 'intelligent agent systems', 'AI agent consulting',
+      'multi-agent systems', 'AI agent orchestration', 'agentic AI solutions'
     ],
     structuredData: 'custom',
     customStructuredData: generateAISearchSchema()
@@ -202,7 +214,7 @@ export default function Home() {
         {/* Gradient overlay */}
         <div 
           className="absolute inset-0 -z-10"
-          style={{
+        style={{
             background: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 30%, rgba(219, 39, 119, 0.85) 60%, rgba(37, 99, 235, 0.9) 100%)`
           }}
         />
@@ -212,8 +224,8 @@ export default function Home() {
           alt=""
           className="absolute inset-0 w-full h-full object-cover -z-10"
           fetchPriority="high"
-          loading="eager"
-          decoding="async"
+                loading="eager"
+                decoding="async"
           width="1920"
           height="1080"
           style={{ willChange: 'auto' }}
@@ -224,8 +236,8 @@ export default function Home() {
           <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
           <div className="absolute top-40 left-40 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-6000"></div>
-        </div>
-
+            </div>
+            
         {/* Floating particles effect */}
         <div className="absolute inset-0 overflow-hidden">
           {[...Array(20)].map((_, i) => (
@@ -265,7 +277,7 @@ export default function Home() {
             
             {/* Description */}
             <p className="text-xl md:text-2xl text-blue-50 mb-10 max-w-4xl mx-auto leading-relaxed font-medium">
-              Streamline operations, boost productivity, and drive growth with our comprehensive AI automation and LLM integration solutions. From GPT-4 powered workflows and intelligent automation to AI-driven CRM integration, Power BI dashboards, and machine learning automation - we deliver measurable results for businesses worldwide using cutting-edge AI and large language model technologies.
+              Streamline operations, boost productivity, and drive growth with our comprehensive AI automation and LLM integration solutions. From GPT-4 powered AI chatbots, intelligent AI agents, and workflow automation to AI-driven CRM integration, Power BI dashboards, and machine learning automation - we deliver measurable results for businesses worldwide using cutting-edge AI and large language model technologies.
             </p>
 
             {/* Key Stats - Show Stopper */}
@@ -789,6 +801,72 @@ export default function Home() {
                 </button>
               </div>
             </div>
+            <div className="bg-gradient-to-br from-emerald-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-emerald-100">
+              <div className="mb-4">
+                <img 
+                  src="/images/Al Automation &LLMWorkflows.png" 
+                  alt="AI Chatbots & Conversational AI" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
+                />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Chatbots & Conversational AI</h3>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                Build intelligent AI chatbots powered by GPT-4, OpenAI, and large language models. Create conversational AI solutions for customer service, sales automation, support systems, and interactive experiences. Integrate chatbots with your CRM, website, and business systems for seamless AI-powered communication.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Link to="/workflows" className="text-emerald-600 hover:text-emerald-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                  View Chatbots 
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <button
+                  onClick={() => setBookingModal({ isOpen: true, serviceName: 'AI Chatbots' })}
+                  className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-semibold text-sm"
+                >
+                  Book Now
+                </button>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-violet-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-violet-100">
+              <div className="mb-4">
+                <img 
+                  src="/images/Workflow.png" 
+                  alt="AI Agents & Autonomous Systems" 
+                  className="w-full h-48 object-cover rounded-lg"
+                  loading="lazy"
+                  width="400"
+                  height="192"
+                  decoding="async"
+                  fetchPriority="low"
+                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
+                />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Agents & Autonomous Systems</h3>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                Develop intelligent AI agents that autonomously perform complex tasks, make decisions, and interact with multiple systems. Build autonomous AI agents using GPT-4, OpenAI, and LLM technologies for workflow automation, data processing, decision-making, and multi-system orchestration. Create agentic AI solutions that work independently and intelligently.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Link to="/workflows" className="text-violet-600 hover:text-violet-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                  View Agents 
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <button
+                  onClick={() => setBookingModal({ isOpen: true, serviceName: 'AI Agents' })}
+                  className="w-full bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors font-semibold text-sm"
+                >
+                  Book Now
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -917,7 +995,7 @@ export default function Home() {
               <div className="bg-gray-50 p-6 rounded-lg">
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">What services does Naqash Thaheem offer?</h3>
                 <p className="text-gray-600">
-                  Naqash offers AI automation workflows, CRM integration services, Power BI dashboard development, web development, and business intelligence solutions globally. He specializes in n8n, Make.com, Zoho CRM, HubSpot, and OpenAI integrations, serving clients worldwide with remote services.
+                  Naqash offers AI chatbots, AI agents, AI automation workflows, CRM integration services, Power BI dashboard development, web development, and business intelligence solutions globally. He specializes in GPT-4 chatbots, conversational AI, intelligent AI agents, n8n, Make.com, Zoho CRM, HubSpot, and OpenAI integrations, serving clients worldwide with remote services.
                 </p>
               </div>
               <div className="bg-gray-50 p-6 rounded-lg">
@@ -938,6 +1016,12 @@ export default function Home() {
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">How can I get started with automation for my business?</h3>
                 <p className="text-gray-600">
                   Start by identifying repetitive tasks in your business, then contact Naqash for a remote consultation. He can analyze your processes and recommend the best automation solutions using tools like n8n, Make.com, or custom integrations, regardless of your location.
+                </p>
+              </div>
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">What are AI Chatbots and AI Agents?</h3>
+                <p className="text-gray-600">
+                  AI Chatbots are conversational AI systems powered by GPT-4 and large language models that interact with users through text or voice, handling customer service, sales, and support. AI Agents are autonomous intelligent systems that can perform complex tasks, make decisions, and orchestrate workflows across multiple systems independently. Both leverage advanced LLM technology for intelligent automation.
                 </p>
               </div>
               <div className="bg-gray-50 p-6 rounded-lg">
