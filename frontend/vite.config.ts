@@ -41,6 +41,13 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Increase file size limit for precaching (default is 2MB)
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
+        // Exclude large vendor chunks from precaching (they'll be cached at runtime)
+        exclude: [
+          /vendor-.*\.js$/,
+          /editor-.*\.js$/,
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -91,7 +98,19 @@ export default defineConfig({
               }
             }
           },
-          // Handle CSS and JS files
+          // Handle CSS and JS files - cache large vendor chunks at runtime
+          {
+            urlPattern: /assets\/js\/(vendor|editor|markdown-editor).*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'vendor-js-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              }
+            }
+          },
+          // Handle other JS and CSS files
           {
             urlPattern: /\.(?:css|js)$/,
             handler: 'StaleWhileRevalidate',
@@ -146,30 +165,69 @@ export default defineConfig({
     minify: 'esbuild',
     cssCodeSplit: true,
     sourcemap: false,
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 1000, // Increased to 1MB to reduce warnings
     // Optimize chunk splitting for better caching
     rollupOptions: {
       output: {
         // Optimized chunk splitting for better caching and parallel loading
         manualChunks: (id) => {
-          // Vendor chunks
+          // Vendor chunks - split more aggressively to avoid large chunks
           if (id.includes('node_modules')) {
+            // React core (small, critical) - keep together
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react-vendor';
             }
+            // Router (medium size)
             if (id.includes('react-router')) {
               return 'router';
             }
+            // Query library (medium size)
             if (id.includes('@tanstack/react-query')) {
               return 'query';
             }
+            // HTTP client (small)
             if (id.includes('axios')) {
               return 'http';
             }
-            if (id.includes('@uiw/react-md-editor')) {
-              return 'editor';
+            // Markdown editor and related (large - split separately)
+            if (id.includes('@uiw/react-md-editor') || 
+                id.includes('react-markdown') || 
+                id.includes('remark') || 
+                id.includes('rehype') ||
+                id.includes('unified') ||
+                id.includes('micromark') ||
+                id.includes('mdast')) {
+              return 'markdown-editor';
             }
-            // Other vendor libraries
+            // Large utility libraries
+            if (id.includes('lodash') || id.includes('date-fns') || id.includes('moment')) {
+              return 'utils';
+            }
+            // Chart/visualization libraries (if any)
+            if (id.includes('chart') || id.includes('d3') || id.includes('recharts')) {
+              return 'charts';
+            }
+            // Split remaining vendor by first-level package name to avoid huge chunks
+            const match = id.match(/node_modules\/(@[^/]+|[^/]+)/);
+            if (match) {
+              const packageName = match[1];
+              // Scoped packages - group by scope
+              if (packageName.startsWith('@')) {
+                const scope = packageName.split('/')[0];
+                // Large scoped packages get their own chunk
+                if (scope === '@uiw' || scope === '@tanstack') {
+                  return `vendor-${scope.substring(1)}`;
+                }
+                // Other scoped packages grouped by scope
+                return `vendor-scoped`;
+              }
+              // Individual packages - large ones get their own chunk
+              const largePackages = ['react', 'react-dom', 'react-router', 'axios'];
+              if (largePackages.some(pkg => packageName.includes(pkg))) {
+                return 'vendor-core';
+              }
+            }
+            // Default vendor chunk for smaller packages
             return 'vendor';
           }
         },
