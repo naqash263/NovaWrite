@@ -310,23 +310,26 @@ export default function Home() {
               Streamline operations, boost productivity, and drive growth with our comprehensive automation solutions. From workflow automation and CRM integration to Power BI dashboards and AI-powered tools - we deliver measurable results for businesses worldwide.
             </p>
             
-            {/* Service Highlights */}
+            {/* Service Highlights with Links */}
             <div className="grid md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
-              <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20">
+              <Link to="/workflows" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
                 <div className="text-3xl mb-2">🤖</div>
                 <h3 className="font-semibold text-white mb-1">Workflow Automation</h3>
                 <p className="text-sm text-blue-100">n8n, Make.com, Zapier</p>
-              </div>
-              <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20">
+                <p className="text-xs text-blue-200 mt-2">View Workflows →</p>
+              </Link>
+              <Link to="/courses" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
                 <div className="text-3xl mb-2">📊</div>
                 <h3 className="font-semibold text-white mb-1">Business Intelligence</h3>
                 <p className="text-sm text-blue-100">Power BI, Data Analytics</p>
-              </div>
-              <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20">
+                <p className="text-xs text-blue-200 mt-2">Explore Courses →</p>
+              </Link>
+              <Link to="/resources" className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
                 <div className="text-3xl mb-2">🔗</div>
                 <h3 className="font-semibold text-white mb-1">CRM Integration</h3>
                 <p className="text-sm text-blue-100">Zoho, HubSpot, Custom APIs</p>
-              </div>
+                <p className="text-xs text-blue-200 mt-2">Free Tools →</p>
+              </Link>
             </div>
             
             {/* Contact Info */}
@@ -350,9 +353,15 @@ export default function Home() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+              <button
+                onClick={() => setBookingModal({ isOpen: true, serviceName: 'Consultation' })}
+                className="bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-50 hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+              >
+                Book Consultation
+              </button>
               <Link
                 to="/contact"
-                className="bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-50 hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+                className="bg-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-2 border-white"
               >
                 Get In Touch
               </Link>
@@ -470,19 +479,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Video Introduction Section */}
+      {/* Our Process Section */}
       <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Professional Background</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Process</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Learn about my journey in automation, systems analysis, and business intelligence
+              A proven methodology to deliver automation solutions that drive real business results
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="order-2 md:order-1">
               <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg border border-blue-100">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">My Approach</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">How We Work</h3>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
@@ -532,13 +541,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Choose Me Section */}
+      {/* Why Choose Us Section */}
       <section className="py-16 bg-gradient-to-br from-blue-600 to-blue-800 text-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Why Choose Me?</h2>
+            <h2 className="text-4xl font-bold mb-4">Why Choose Us?</h2>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-              I bring a unique combination of technical expertise and business understanding to every project
+              We bring a unique combination of technical expertise and business understanding to every project
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -553,7 +562,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold mb-3">Results-Driven</h3>
               <p className="text-blue-100 leading-relaxed">
-                Every solution is designed with measurable outcomes in mind. I focus on delivering tangible ROI through automation and efficiency improvements.
+                Every solution is designed with measurable outcomes in mind. We focus on delivering tangible ROI through automation and efficiency improvements.
               </p>
             </div>
             <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
@@ -567,7 +576,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold mb-3">Fast & Reliable</h3>
               <p className="text-blue-100 leading-relaxed">
-                Quick turnaround times without compromising quality. I understand the importance of meeting deadlines in business-critical projects.
+                Quick turnaround times without compromising quality. We understand the importance of meeting deadlines in business-critical projects.
               </p>
             </div>
             <div className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105">
@@ -872,13 +881,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Portfolio Showcase Section */}
+      {/* Service Showcase Section */}
       <section className="py-16 bg-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Projects</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Service Solutions</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Real-world solutions delivering measurable business impact
+              Real-world solutions delivering measurable business impact for our clients
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -1009,21 +1018,105 @@ export default function Home() {
             </div>
           </div>
           <div className="text-center mt-12">
+            <div className="flex flex-wrap gap-4 justify-center">
+              <Link
+                to="/workflows"
+                className="inline-block bg-blue-600 text-white px-8 py-4 rounded-full hover:bg-blue-700 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg"
+              >
+                View All Workflows
+              </Link>
+              <Link
+                to="/projects"
+                className="inline-block bg-purple-600 text-white px-8 py-4 rounded-full hover:bg-purple-700 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg"
+              >
+                View All Projects
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Links Section - All Pages */}
+      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Explore Our Platform</h2>
+            <p className="text-xl text-gray-600">Access tools, resources, and services to help your business grow</p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Link
               to="/workflows"
-              className="inline-block bg-blue-600 text-white px-8 py-4 rounded-full hover:bg-blue-700 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg"
+              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
             >
-              View All Projects
+              <div className="text-4xl mb-3">⚙️</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Workflows</h3>
+              <p className="text-gray-600 text-sm">Automation templates and solutions</p>
+            </Link>
+            <Link
+              to="/blog"
+              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
+            >
+              <div className="text-4xl mb-3">📝</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Blog</h3>
+              <p className="text-gray-600 text-sm">Latest insights and tutorials</p>
+            </Link>
+            <Link
+              to="/courses"
+              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
+            >
+              <div className="text-4xl mb-3">🎓</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Courses</h3>
+              <p className="text-gray-600 text-sm">Learn automation and BI skills</p>
+            </Link>
+            <Link
+              to="/resources"
+              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
+            >
+              <div className="text-4xl mb-3">🛠️</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Resources</h3>
+              <p className="text-gray-600 text-sm">Free tools and utilities</p>
+            </Link>
+            <Link
+              to="/community/issues"
+              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
+            >
+              <div className="text-4xl mb-3">💬</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Community</h3>
+              <p className="text-gray-600 text-sm">Get help and share solutions</p>
+            </Link>
+            <Link
+              to="/projects"
+              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
+            >
+              <div className="text-4xl mb-3">📊</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Projects</h3>
+              <p className="text-gray-600 text-sm">View our portfolio</p>
+            </Link>
+            <Link
+              to="/about"
+              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
+            >
+              <div className="text-4xl mb-3">ℹ️</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">About</h3>
+              <p className="text-gray-600 text-sm">Learn more about us</p>
+            </Link>
+            <Link
+              to="/contact"
+              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 text-center"
+            >
+              <div className="text-4xl mb-3">📧</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Contact</h3>
+              <p className="text-gray-600 text-sm">Get in touch with us</p>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Experience Timeline Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50 scroll-animate">
+      {/* Experience Timeline Section - Minimized */}
+      <section className="py-16 bg-white scroll-animate">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Professional Journey</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Experience</h2>
             <p className="text-xl text-gray-600">8+ years of delivering excellence in automation and analytics</p>
           </div>
           <div className="relative">
@@ -1129,7 +1222,7 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/workflows" className="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-2 group text-sm">
-                  View Examples 
+                  View Workflows 
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
@@ -1156,8 +1249,8 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                 Create interactive Power BI dashboards, generate actionable insights, and make data-driven decisions with comprehensive analytics solutions.
               </p>
               <div className="flex flex-col gap-2">
-                <Link to="/about" className="text-purple-600 hover:text-purple-700 font-semibold inline-flex items-center gap-2 group text-sm">
-                  Learn More 
+                <Link to="/courses" className="text-purple-600 hover:text-purple-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                  View Courses 
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
@@ -1184,7 +1277,7 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
                 Connect your CRM, marketing tools, databases, and third-party services into a unified ecosystem that works seamlessly together.
               </p>
               <div className="flex flex-col gap-2">
-                <Link to="/about" className="text-green-600 hover:text-green-700 font-semibold inline-flex items-center gap-2 group text-sm">
+                <Link to="/projects" className="text-green-600 hover:text-green-700 font-semibold inline-flex items-center gap-2 group text-sm">
                   View Projects 
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -1374,7 +1467,7 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
       <section className="py-16 bg-gradient-to-br from-green-50 to-white scroll-animate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">My Fiverr Services</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Available on Fiverr</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Professional automation and business intelligence services available on Fiverr
             </p>
@@ -1705,7 +1798,7 @@ Generated performance & downtime reports, conducted CAB meetings, and maintained
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Let's Work Together</h2>
             <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-              Have a project in mind? Send me a message and I'll get back to you within 24 hours
+              Have a project in mind? Send us a message and we'll get back to you within 24 hours
             </p>
           </div>
           
