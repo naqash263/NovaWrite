@@ -80,21 +80,63 @@ export default function Home() {
     return defaultValue;
   };
 
-  // Helper function to render image with WebP support
+  // Helper function to render image with WebP as default
   const renderImage = (src: string, alt: string, className: string = '', props: any = {}) => {
+    // Skip processing for SVG, external URLs, or storage URLs
+    if (src.endsWith('.svg') || src.includes('/storage/') || src.startsWith('http')) {
+      return <img src={src} alt={alt} className={className} {...props} />;
+    }
+    
     const sources = getImageSources(src);
     
-    // Skip WebP for SVG, external URLs, or storage URLs (no conversion needed)
-    if (src.endsWith('.svg') || src.includes('/storage/') || src.startsWith('http') || sources.webpSrc === sources.originalSrc) {
+    // If already WebP or same path, use directly
+    if (src.endsWith('.webp') || sources.webpSrc === sources.originalSrc) {
+      // For WebP paths, add fallback to original PNG/JPG if WebP fails
+      if (src.endsWith('.webp')) {
+        return (
+          <img 
+            src={src} 
+            alt={alt} 
+            className={className} 
+            onError={(e) => {
+              // Try fallback to original format if WebP fails
+              const target = e.target as HTMLImageElement;
+              const pngPath = src.replace(/\.webp$/i, '.png');
+              const jpgPath = src.replace(/\.webp$/i, '.jpg');
+              const jpegPath = src.replace(/\.webp$/i, '.jpeg');
+              if (target.src.includes('.webp')) {
+                // Try PNG first, then JPG, then JPEG
+                if (target.src !== pngPath) {
+                  target.src = pngPath;
+                } else if (target.src !== jpgPath) {
+                  target.src = jpgPath;
+                } else if (target.src !== jpegPath) {
+                  target.src = jpegPath;
+                }
+              }
+            }}
+            {...props} 
+          />
+        );
+      }
       return <img src={sources.originalSrc} alt={alt} className={className} {...props} />;
     }
     
-    // Use picture element with WebP fallback for local PNG/JPG images
+    // For PNG/JPG paths, use WebP with fallback to original
     return (
-      <picture>
-        <source srcSet={sources.webpSrc} type="image/webp" />
-        <img src={sources.originalSrc} alt={alt} className={className} {...props} />
-      </picture>
+      <img 
+        src={sources.webpSrc} 
+        alt={alt} 
+        className={className} 
+        onError={(e) => {
+          // Fallback to original if WebP fails to load
+          const target = e.target as HTMLImageElement;
+          if (target.src !== sources.originalSrc && sources.originalSrc) {
+            target.src = sources.originalSrc;
+          }
+        }}
+        {...props} 
+      />
     );
   };
 
@@ -231,25 +273,31 @@ export default function Home() {
         />
         {/* Hero image as proper img element for better LCP - visible and high priority */}
         {(() => {
-          const heroImage = getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg');
+          const heroImage = getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.webp');
           const sources = getImageSources(heroImage);
+          // Use WebP as default, fallback to original
+          const imageSrc = (sources.webpSrc !== sources.originalSrc && !heroImage.includes('/storage/') && !heroImage.startsWith('http')) 
+            ? sources.webpSrc 
+            : sources.originalSrc;
           return (
-            <picture>
-              {sources.webpSrc !== sources.originalSrc && !heroImage.includes('/storage/') && !heroImage.startsWith('http') && (
-                <source srcSet={sources.webpSrc} type="image/webp" />
-              )}
-              <img 
-                src={sources.originalSrc} 
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover -z-10"
-                fetchPriority="high"
-                loading="eager"
-                decoding="async"
-                width="1920"
-                height="1080"
-                style={{ willChange: 'auto' }}
-              />
-            </picture>
+            <img 
+              src={imageSrc} 
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover -z-10"
+              fetchPriority="high"
+              loading="eager"
+              decoding="async"
+              width="1920"
+              height="1080"
+              style={{ willChange: 'auto' }}
+              onError={(e) => {
+                // Fallback to original if WebP fails to load
+                const target = e.target as HTMLImageElement;
+                if (target.src !== sources.originalSrc && sources.originalSrc) {
+                  target.src = sources.originalSrc;
+                }
+              }}
+            />
           );
         })()}
         {/* Enhanced Animated background elements */}
@@ -529,7 +577,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-blue-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/AI Automation.png",
+                  "/images/AI Automation.webp",
                   "AI Workflow Automation",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
@@ -557,7 +605,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-purple-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/Move_from_Data_to_Decisions_version_1.png",
+                  "/images/Move_from_Data_to_Decisions_version_1.webp",
                   "AI Business Intelligence",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
@@ -585,7 +633,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/Automation.png",
+                  "/images/Automation.webp",
                   "AI System Integrations",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
@@ -613,7 +661,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-orange-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/Web_development.png",
+                  "/images/Web_development.webp",
                   "AI-Powered Full-Stack Development",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
@@ -641,7 +689,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-indigo-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-indigo-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/SEO.png",
+                  "/images/SEO.webp",
                   "AI-Powered SEO & Digital Marketing",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
@@ -669,7 +717,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-pink-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-pink-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/Al Content Marketing.png",
+                  "/images/Al Content Marketing.webp",
                   "Content Marketing & SEO Writing",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
@@ -697,7 +745,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-cyan-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-cyan-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/link  Building.png",
+                  "/images/link  Building.webp",
                   "Link Building & Outreach",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
@@ -725,7 +773,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-teal-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/AI Automation.png",
+                  "/images/AI Automation.webp",
                   "AI Chatbots & Conversational AI",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
@@ -753,7 +801,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-emerald-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-emerald-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/Workflow.png",
+                  "/images/Workflow.webp",
                   "AI Agents & Autonomous Systems",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
@@ -781,7 +829,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-rose-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-rose-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/Social Media.png",
+                  "/images/Social Media.webp",
                   "Social Media Marketing",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
@@ -809,7 +857,7 @@ export default function Home() {
             <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-teal-100">
               <div className="mb-4">
                 {renderImage(
-                  "/images/AI Analytics.png",
+                  "/images/AI Analytics.webp",
                   "AI Data Analytics & Intelligent Reporting",
                   "w-full h-48 object-cover rounded-lg",
                   { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
