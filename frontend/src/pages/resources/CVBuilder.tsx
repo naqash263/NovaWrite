@@ -2123,12 +2123,12 @@ export default function CVBuilder() {
     if (!file) return;
 
     // Validate file type - restrict to common web formats only
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
     if (!allowedTypes.includes(file.type)) {
       addToast({
         type: 'error',
         title: 'Invalid File Type',
-        description: 'Please select a JPG, PNG, GIF, or WebP image file'
+        description: 'Please select a JPG, PNG, GIF, WebP, or AVIF image file'
       });
       return;
     }

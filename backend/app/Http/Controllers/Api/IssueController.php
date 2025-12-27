@@ -10,15 +10,24 @@ use App\Models\IssueLabel;
 use App\Models\IssueAssignment;
 use App\Models\Comment;
 use App\Services\EmailService;
+use App\Models\N8nConfiguration;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
 class IssueController extends Controller
 {
+    protected $client;
+
+    public function __construct()
+    {
+        $this->client = new Client();
+    }
     /**
      * List issues with filtering, sorting, and pagination
      */
@@ -520,6 +529,9 @@ class IssueController extends Controller
             \Cache::put('issues.last_updated', now(), now()->addDays(30));
             \App\Http\Controllers\Api\SitemapController::clearCache();
 
+            // Send issue creation data to N8n (non-blocking)
+            $this->sendIssueCreatedToN8n($issue, $request, $user);
+
             // Return only the created issue data (without relationships)
             return response()->json([
                 'success' => true,
@@ -617,6 +629,9 @@ class IssueController extends Controller
 
             // Increment views
             $issue->incrementViews();
+
+            // Send issue view data to N8n (non-blocking)
+            $this->sendIssueViewToN8n($issue, $request);
 
             // Load upvote status
             $userId = Auth::id();
@@ -1732,5 +1747,164 @@ class IssueController extends Controller
         ]);
 
         return $unsubscribe->token;
+    }
+
+    /**
+     * Send issue view data to N8n webhook (non-blocking)
+     */
+    private function sendIssueViewToN8n(Issue $issue, Request $request): void
+    {
+        try {
+            $config = N8nConfiguration::getActive();
+            
+            if (!$config || !$config->isValidWebhookUrl()) {
+                // Silently fail if N8n is not configured
+                return;
+            }
+
+            // Build issue URL
+            $issueUrl = config('app.url') . '/community/issues/' . ($issue->slug ?? $issue->id);
+
+            // Prepare payload
+            $payload = [
+                'action' => 'issue_viewed',
+                'issue' => [
+                    'id' => $issue->id,
+                    'title' => $issue->title,
+                    'slug' => $issue->slug,
+                    'url' => $issueUrl,
+                    'status' => $issue->status,
+                    'priority' => $issue->priority,
+                    'category' => $issue->category ? [
+                        'id' => $issue->category->id,
+                        'name' => $issue->category->name,
+                    ] : null,
+                    'views_count' => $issue->views_count,
+                    'comments_count' => $issue->comments_count,
+                    'upvotes_count' => $issue->upvotes_count,
+                    'labels' => $issue->labels ?? [],
+                    'created_at' => $issue->created_at?->toISOString(),
+                    'updated_at' => $issue->updated_at?->toISOString(),
+                    'resolved_at' => $issue->resolved_at?->toISOString(),
+                ],
+                'viewer' => [
+                    'user_id' => Auth::id(),
+                    'user_name' => Auth::user()?->name,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ],
+                'timestamp' => now()->toISOString(),
+            ];
+
+            // Send to N8n (fire and forget - non-blocking)
+            // Use a short timeout to avoid blocking the response
+            try {
+                $this->client->post($config->webhook_url, [
+                    'json' => $payload,
+                    'timeout' => min(5, $config->webhook_timeout ?? 30), // Max 5 seconds to avoid blocking
+                    'connect_timeout' => 2, // Quick connection timeout
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json'
+                    ]
+                ]);
+                
+                Log::debug('Issue view data sent to N8n', [
+                    'issue_id' => $issue->id
+                ]);
+            } catch (RequestException $e) {
+                // Silently fail - don't block the response
+                Log::debug('N8n webhook call failed (non-critical)', [
+                    'issue_id' => $issue->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            // Log error but don't throw (non-blocking)
+            Log::warning('Error sending issue view data to N8n', [
+                'issue_id' => $issue->id ?? null,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Send issue creation data to N8n webhook (non-blocking)
+     */
+    private function sendIssueCreatedToN8n(Issue $issue, Request $request, $user = null): void
+    {
+        try {
+            $config = N8nConfiguration::getActive();
+            
+            if (!$config || !$config->isValidWebhookUrl()) {
+                // Silently fail if N8n is not configured
+                return;
+            }
+
+            // Build issue URL
+            $issueUrl = config('app.url') . '/community/issues/' . ($issue->slug ?? $issue->id);
+
+            // Prepare payload
+            $payload = [
+                'action' => 'issue_created',
+                'issue' => [
+                    'id' => $issue->id,
+                    'title' => $issue->title,
+                    'slug' => $issue->slug,
+                    'url' => $issueUrl,
+                    'description' => $issue->description,
+                    'status' => $issue->status,
+                    'priority' => $issue->priority,
+                    'category_id' => $issue->category_id,
+                    'labels' => $issue->labels ?? [],
+                    'views_count' => $issue->views_count ?? 0,
+                    'comments_count' => $issue->comments_count ?? 0,
+                    'upvotes_count' => $issue->upvotes_count ?? 0,
+                    'created_at' => $issue->created_at?->toISOString(),
+                    'updated_at' => $issue->updated_at?->toISOString(),
+                ],
+                'creator' => [
+                    'user_id' => $user?->id,
+                    'user_name' => $user?->name,
+                    'guest_name' => $issue->guest_name,
+                    'guest_email' => $issue->guest_email,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ],
+                'timestamp' => now()->toISOString(),
+            ];
+
+            // Send to N8n (fire and forget - non-blocking)
+            // Use a short timeout to avoid blocking the response
+            try {
+                $this->client->post($config->webhook_url, [
+                    'json' => $payload,
+                    'timeout' => min(5, $config->webhook_timeout ?? 30), // Max 5 seconds to avoid blocking
+                    'connect_timeout' => 2, // Quick connection timeout
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json'
+                    ]
+                ]);
+                
+                Log::debug('Issue creation data sent to N8n', [
+                    'issue_id' => $issue->id
+                ]);
+            } catch (RequestException $e) {
+                // Silently fail - don't block the response
+                Log::debug('N8n webhook call failed (non-critical)', [
+                    'issue_id' => $issue->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            // Log error but don't throw (non-blocking)
+            Log::warning('Error sending issue creation data to N8n', [
+                'issue_id' => $issue->id ?? null,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

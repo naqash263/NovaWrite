@@ -106,6 +106,10 @@ export default function ImageFormatConverter() {
           case 'bmp':
             mimeType = 'image/bmp';
             break;
+          case 'avif':
+            // AVIF encoding not supported in browser canvas, use WebP as fallback
+            mimeType = 'image/webp';
+            break;
         }
 
         let dataUrl: string;
@@ -115,6 +119,9 @@ export default function ImageFormatConverter() {
           dataUrl = canvas.toDataURL(mimeType, quality);
         } else if (targetFormat === 'jpeg') {
           dataUrl = canvas.toDataURL(mimeType, quality);
+        } else if (targetFormat === 'avif') {
+          // AVIF not supported in browser, convert to WebP instead
+          dataUrl = canvas.toDataURL('image/webp', quality);
         } else {
           // For GIF and BMP, use PNG as fallback
           dataUrl = canvas.toDataURL('image/png');
@@ -201,6 +208,7 @@ export default function ImageFormatConverter() {
                 <option value="jpeg">JPEG (.jpg)</option>
                 <option value="png">PNG (.png)</option>
                 <option value="webp">WebP (.webp)</option>
+                <option value="avif">AVIF (.avif) - Note: Browser encoding limited, uses WebP fallback</option>
                 <option value="gif">GIF (.gif)</option>
                 <option value="bmp">BMP (.bmp)</option>
               </select>

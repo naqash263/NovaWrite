@@ -110,7 +110,7 @@ export default function ImageResizer() {
   const [height, setHeight] = useState<number>(600);
   const [maintainAspectRatio, setMaintainAspectRatio] = useState<boolean>(true);
   const [quality, setQuality] = useState<number>(0.9);
-  const [format, setFormat] = useState<'png' | 'jpeg' | 'webp'>('jpeg');
+  const [format, setFormat] = useState<'png' | 'jpeg' | 'webp' | 'avif'>('jpeg');
   const [originalSize, setOriginalSize] = useState<{ width: number; height: number } | null>(null);
   const [fileSize, setFileSize] = useState<{ original: number; resized: number } | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<string>('default');
@@ -151,7 +151,7 @@ export default function ImageResizer() {
         'Resize images to custom dimensions',
         'Social media presets (Instagram, Facebook, Twitter, etc.)',
         'Maintain aspect ratio option',
-        'Format conversion (JPEG, PNG, WebP)',
+        'Format conversion (JPEG, PNG, WebP, AVIF)',
         'Quality adjustment',
         'Before/after size comparison',
         'API support',
@@ -261,7 +261,16 @@ export default function ImageResizer() {
 
     ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
-    const mimeType = format === 'png' ? 'image/png' : format === 'webp' ? 'image/webp' : 'image/jpeg';
+    // Note: AVIF encoding is not supported in browser canvas yet
+    // For AVIF, use API mode instead
+    let mimeType: string;
+    if (format === 'avif') {
+      // Fallback to WebP for client-side processing, or use API
+      mimeType = 'image/webp';
+    } else {
+      mimeType = format === 'png' ? 'image/png' : format === 'webp' ? 'image/webp' : 'image/jpeg';
+    }
+    
     const dataUrl = canvas.toDataURL(mimeType, quality);
     setResizedImage(dataUrl);
 
@@ -563,12 +572,13 @@ export default function ImageResizer() {
                 </label>
                 <select
                   value={format}
-                  onChange={(e) => setFormat(e.target.value as 'png' | 'jpeg' | 'webp')}
+                  onChange={(e) => setFormat(e.target.value as 'png' | 'jpeg' | 'webp' | 'avif')}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="jpeg">JPEG</option>
                   <option value="png">PNG</option>
                   <option value="webp">WebP</option>
+                  <option value="avif">AVIF</option>
                 </select>
               </div>
             </div>

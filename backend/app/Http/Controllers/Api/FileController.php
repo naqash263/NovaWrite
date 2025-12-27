@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\File;
 use App\Services\SeoFileNamingService;
+use App\Services\ImageConversionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -28,14 +29,15 @@ class FileController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:jpg,jpeg,png,gif,webp,svg,pdf,doc,docx,txt,zip,json|max:10240',
+            'file' => 'required|file|mimes:jpg,jpeg,png,gif,webp,avif,svg,pdf,doc,docx,txt,zip,json|max:10240',
             'is_public' => 'nullable|in:true,false,1,0',
             'context' => 'nullable|string|max:100',
             'custom_name' => 'nullable|string|max:100',
+            'auto_convert_webp' => 'nullable|boolean', // Option to disable auto-conversion
         ], [
             'file.required' => 'Please select a file to upload.',
             'file.file' => 'The uploaded file is invalid.',
-            'file.mimes' => 'Only JPG, PNG, GIF, WebP, SVG, PDF, DOC, DOCX, TXT, ZIP, and JSON files are allowed.',
+            'file.mimes' => 'Only JPG, PNG, GIF, WebP, AVIF, SVG, PDF, DOC, DOCX, TXT, ZIP, and JSON files are allowed.',
             'file.max' => 'File size must not exceed 10MB.',
             'is_public.in' => 'The is_public field must be true or false.',
             'context.max' => 'Context must not exceed 100 characters.',
@@ -46,24 +48,58 @@ class FileController extends Controller
             $uploadedFile = $request->file('file');
             $context = $request->input('context');
             $customName = $request->input('custom_name');
+            $autoConvertWebp = $request->input('auto_convert_webp', true); // Default to true
             
             // Generate SEO-friendly filename and metadata
             $seoService = new SeoFileNamingService();
             $seoData = $seoService->generateSeoFilename($uploadedFile, $context, $customName);
             
-            // Store file with SEO-friendly name
+            // Store original file with SEO-friendly name
             $path = $uploadedFile->storeAs('uploads', $seoData['filename'], 'public');
+            
+            $mimeType = $uploadedFile->getMimeType();
+            $fileSize = $uploadedFile->getSize();
+            $webpPath = null;
+            $webpSize = null;
+            $conversionData = null;
+
+            // Auto-convert images to WebP for better performance (unless disabled)
+            if ($autoConvertWebp && str_starts_with($mimeType, 'image/') && $mimeType !== 'image/svg+xml') {
+                $conversionService = new ImageConversionService();
+                $conversionData = $conversionService->convertToWebP($uploadedFile, $path);
+                
+                if ($conversionData) {
+                    // Use WebP version as primary if conversion was successful and smaller
+                    if ($conversionData['size'] < $fileSize) {
+                        $webpPath = $conversionData['path'];
+                        $webpSize = $conversionData['size'];
+                        // Keep original path for reference, but use WebP as primary
+                        $path = $webpPath;
+                        $mimeType = 'image/webp';
+                        $fileSize = $webpSize;
+                    } else {
+                        // WebP is larger, keep original
+                        $webpPath = $conversionData['path'];
+                        $webpSize = $conversionData['size'];
+                    }
+                }
+            }
 
             $file = File::create([
                 'name' => pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME),
                 'original_name' => $uploadedFile->getClientOriginalName(),
                 'seo_name' => $seoData['seo_name'],
                 'path' => $path,
-                'mime_type' => $uploadedFile->getMimeType(),
-                'size' => $uploadedFile->getSize(),
+                'mime_type' => $mimeType,
+                'size' => $fileSize,
                 'is_public' => $request->has('is_public') ? filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN) : true,
                 'user_id' => auth('api')->id(),
-                'ai_metadata' => $seoData['ai_metadata'],
+                'ai_metadata' => array_merge($seoData['ai_metadata'], [
+                    'webp_converted' => $conversionData !== null,
+                    'webp_path' => $webpPath,
+                    'original_mime_type' => $uploadedFile->getMimeType(),
+                    'size_reduction_percent' => $conversionData ? $conversionData['reduction_percent'] : null,
+                ]),
                 'keywords' => $seoData['keywords'],
                 'description' => $seoData['description'],
                 'seo_score' => $seoData['ai_metadata']['seo_score'],
@@ -74,7 +110,7 @@ class FileController extends Controller
                 'ai_tags' => $seoData['ai_metadata']['ai_tags'],
             ]);
 
-            return response()->json([
+            $response = [
                 'message' => 'File uploaded successfully with SEO-friendly naming.',
                 'file' => $file->load('user'),
                 'seo_data' => [
@@ -84,7 +120,20 @@ class FileController extends Controller
                     'description' => $seoData['description'],
                     'seo_score' => $seoData['ai_metadata']['seo_score']
                 ]
-            ], 201);
+            ];
+
+            // Add conversion info if WebP was created
+            if ($conversionData) {
+                $response['webp_conversion'] = [
+                    'converted' => true,
+                    'webp_path' => $webpPath,
+                    'size_reduction_percent' => $conversionData['reduction_percent'],
+                    'original_size' => $conversionData['original_size'],
+                    'webp_size' => $conversionData['size'],
+                ];
+            }
+
+            return response()->json($response, 201);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -331,7 +380,7 @@ class FileController extends Controller
             // For converted files, always download. For images, display inline.
             $isDownload = strpos($path, 'converted-') !== false || 
                          strpos($path, 'converted_') !== false ||
-                         !in_array($mimeType, ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']);
+                         !in_array($mimeType, ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml']);
             
             // Add CORS headers to allow cross-origin access
             $corsHeaders = [

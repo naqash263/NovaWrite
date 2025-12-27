@@ -67,7 +67,7 @@ export default function Files() {
 
     // Client-side validation
     const maxSize = 10 * 1024 * 1024; // 10MB
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'application/zip', 'application/json'];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'application/zip', 'application/json'];
     
     if (file.size > maxSize) {
       setError('File size must not exceed 10MB.');
@@ -76,7 +76,7 @@ export default function Files() {
     }
     
     if (!allowedTypes.includes(file.type)) {
-      setError('Only JPG, PNG, PDF, DOC, DOCX, TXT, ZIP, and JSON files are allowed.');
+      setError('Only JPG, PNG, GIF, WebP, AVIF, SVG, PDF, DOC, DOCX, TXT, ZIP, and JSON files are allowed.');
       e.target.value = '';
       return;
     }

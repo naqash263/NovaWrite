@@ -12,16 +12,16 @@ class ImageCompressorController extends Controller
     public function compress(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,jpg,png,gif,webp|max:10240',
+            'image' => 'required|image|mimes:jpeg,jpg,png,gif,webp,avif|max:10240',
             'quality' => 'nullable|numeric|min:0.1|max:1.0',
             'maxWidth' => 'nullable|integer|min:100|max:4000',
             'maxHeight' => 'nullable|integer|min:100|max:4000',
             'maintainAspectRatio' => 'nullable|boolean',
-            'format' => 'nullable|string|in:jpeg,png,webp',
+            'format' => 'nullable|string|in:jpeg,png,webp,avif',
         ], [
             'image.required' => 'Please upload an image file.',
             'image.image' => 'The file must be an image.',
-            'image.mimes' => 'The image must be a JPEG, PNG, GIF, or WebP file.',
+            'image.mimes' => 'The image must be a JPEG, PNG, GIF, WebP, or AVIF file.',
             'image.max' => 'The image size must not exceed 10MB.',
         ]);
 
@@ -58,6 +58,8 @@ class ImageCompressorController extends Controller
                 $image = imagecreatefromgif($imagePath);
             } elseif ($mimeType === 'image/webp') {
                 $image = imagecreatefromwebp($imagePath);
+            } elseif ($mimeType === 'image/avif' && function_exists('imagecreatefromavif')) {
+                $image = imagecreatefromavif($imagePath);
             }
 
             if (!$image) {
@@ -127,6 +129,8 @@ class ImageCompressorController extends Controller
                 imagepng($compressedImage, $fullPath, $pngQuality);
             } elseif ($format === 'webp') {
                 imagewebp($compressedImage, $fullPath, $qualityInt);
+            } elseif ($format === 'avif' && function_exists('imageavif')) {
+                imageavif($compressedImage, $fullPath, $qualityInt);
             }
 
             // Clean up

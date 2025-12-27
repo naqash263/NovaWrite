@@ -77,6 +77,7 @@ const toolCategories = [
       { name: "CSS Formatter", path: "/resources/utility-tools?tool=css-formatter", icon: "🎨" },
       { name: "HTML Formatter", path: "/resources/utility-tools?tool=html-formatter", icon: "🌐" },
       { name: "Image Format Converter", path: "/resources/utility-tools?tool=image-format-converter", icon: "🔄" },
+      { name: "WebP & AVIF Converter", path: "/resources/utility-tools?tool=webp-converter", icon: "⚡" },
       { name: "Color Picker", path: "/resources/utility-tools?tool=color-picker", icon: "🎨" },
       { name: "Markdown Preview", path: "/resources/utility-tools?tool=markdown-preview", icon: "📄" },
       { name: "File Converter", path: "/resources/utility-tools?tool=file-converter", icon: "📁" },

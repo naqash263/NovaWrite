@@ -348,9 +348,9 @@ export default function Contact() {
     }
 
     // Validate file type
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedTypes.includes(file.type)) {
-      setErrors(prev => ({ ...prev, file: 'Please upload a PDF, image, or Word document' }));
+      setErrors(prev => ({ ...prev, file: 'Please upload a PDF, image (JPG, PNG, GIF, WebP, AVIF), or Word document' }));
       return;
     }
 

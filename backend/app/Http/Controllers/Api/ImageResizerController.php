@@ -17,17 +17,17 @@ class ImageResizerController extends Controller
     public function resize(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'image' => 'required|image|mimes:jpeg,jpg,png,gif,webp,bmp|max:10240', // 10MB max
+            'image' => 'required|image|mimes:jpeg,jpg,png,gif,webp,avif,bmp|max:10240', // 10MB max
             'width' => 'nullable|integer|min:1|max:10000',
             'height' => 'nullable|integer|min:1|max:10000',
             'preset' => 'nullable|string|in:instagram-post,instagram-story,instagram-reel,facebook-post,facebook-cover,twitter-post,twitter-header,linkedin-post,linkedin-cover,youtube-thumbnail,pinterest-pin,default',
             'maintain_aspect_ratio' => 'nullable|boolean',
             'quality' => 'nullable|numeric|min:0.1|max:1.0',
-            'format' => 'nullable|string|in:jpeg,png,webp',
+            'format' => 'nullable|string|in:jpeg,png,webp,avif',
         ], [
             'image.required' => 'Please upload an image file.',
             'image.image' => 'The uploaded file must be an image.',
-            'image.mimes' => 'Only JPEG, PNG, GIF, WebP, and BMP images are allowed.',
+            'image.mimes' => 'Only JPEG, PNG, GIF, WebP, AVIF, and BMP images are allowed.',
             'image.max' => 'Image size must not exceed 10MB.',
             'width.integer' => 'Width must be a number.',
             'width.min' => 'Width must be at least 1 pixel.',
@@ -106,10 +106,12 @@ class ImageResizerController extends Controller
                 $sourceImage = imagecreatefromgif($imagePath);
             } elseif ($mimeType === 'image/webp') {
                 $sourceImage = imagecreatefromwebp($imagePath);
+            } elseif ($mimeType === 'image/avif' && function_exists('imagecreatefromavif')) {
+                $sourceImage = imagecreatefromavif($imagePath);
             } else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unsupported image format. Please use JPEG, PNG, GIF, or WebP.'
+                    'message' => 'Unsupported image format. Please use JPEG, PNG, GIF, WebP, or AVIF.'
                 ], 422);
             }
 
@@ -161,6 +163,8 @@ class ImageResizerController extends Controller
                 imagepng($resizedImage, $fullPath, 9);
             } elseif ($format === 'webp') {
                 imagewebp($resizedImage, $fullPath, (int)($quality * 100));
+            } elseif ($format === 'avif' && function_exists('imageavif')) {
+                imageavif($resizedImage, $fullPath, (int)($quality * 100));
             }
 
             // Free memory

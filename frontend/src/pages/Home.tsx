@@ -7,6 +7,7 @@ import ServiceBookingModal from '../components/ServiceBookingModal';
 import { useSEO } from '../utils/seo';
 import { generateAISearchSchema, generateKnowledgeGraphSchema, generateFAQSchema, injectAISearchOptimizations } from '../utils/aiSearchOptimization';
 import { generateOrganizationSchema, injectStructuredData } from '../utils/structuredData';
+import { getImageSources } from '../utils/imageUtils';
 
 interface Post {
   id: number;
@@ -79,10 +80,28 @@ export default function Home() {
     return defaultValue;
   };
 
+  // Helper function to render image with WebP support
+  const renderImage = (src: string, alt: string, className: string = '', props: any = {}) => {
+    const sources = getImageSources(src);
+    
+    // Skip WebP for SVG, external URLs, or storage URLs (no conversion needed)
+    if (src.endsWith('.svg') || src.includes('/storage/') || src.startsWith('http') || sources.webpSrc === sources.originalSrc) {
+      return <img src={sources.originalSrc} alt={alt} className={className} {...props} />;
+    }
+    
+    // Use picture element with WebP fallback for local PNG/JPG images
+    return (
+      <picture>
+        <source srcSet={sources.webpSrc} type="image/webp" />
+        <img src={sources.originalSrc} alt={alt} className={className} {...props} />
+      </picture>
+    );
+  };
+
   useSEO({
     title: 'AI Automation, LLM Integration, AI Chatbots & AI Agents Services | Workflow Automation Expert | Business Intelligence Solutions',
     description: 'Expert AI automation, LLM integration, AI chatbots, and AI agents services. Specializing in GPT-4, OpenAI, large language models, conversational AI, intelligent workflow automation, AI-powered CRM integration, Power BI dashboards, and business intelligence solutions. 8+ years experience with n8n, Make.com, AI agents, and autonomous systems. Global remote services available.',
-    image: '/images/professional_busines_b4d6588a.jpg',
+    image: '/images/professional_busines_b4d6588a.webp',
     url: '/',
     keywords: [
       'AI automation expert', 'LLM integration services', 'GPT-4 integration', 'OpenAI automation', 
@@ -211,17 +230,28 @@ export default function Home() {
           }}
         />
         {/* Hero image as proper img element for better LCP - visible and high priority */}
-        <img 
-          src={getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg')} 
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover -z-10"
-          fetchPriority="high"
-          loading="eager"
-          decoding="async"
-          width="1920"
-          height="1080"
-          style={{ willChange: 'auto' }}
-        />
+        {(() => {
+          const heroImage = getImageUrl('hero_image', '/images/modern_technology_ab_8cef6e70.jpg');
+          const sources = getImageSources(heroImage);
+          return (
+            <picture>
+              {sources.webpSrc !== sources.originalSrc && !heroImage.includes('/storage/') && !heroImage.startsWith('http') && (
+                <source srcSet={sources.webpSrc} type="image/webp" />
+              )}
+              <img 
+                src={sources.originalSrc} 
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover -z-10"
+                fetchPriority="high"
+                loading="eager"
+                decoding="async"
+                width="1920"
+                height="1080"
+                style={{ willChange: 'auto' }}
+              />
+            </picture>
+          );
+        })()}
         {/* Enhanced Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
@@ -498,17 +528,12 @@ export default function Home() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-blue-100">
               <div className="mb-4">
-                <img 
-                  src="/images/AI Automation.png" 
-                  alt="AI Workflow Automation" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/AI Automation.png",
+                  "AI Workflow Automation",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Workflow Automation</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -531,17 +556,12 @@ export default function Home() {
             </div>
             <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-purple-100">
               <div className="mb-4">
-                <img 
-                  src="/images/Move_from_Data_to_Decisions_version_1.png" 
-                  alt="AI Business Intelligence" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/Move_from_Data_to_Decisions_version_1.png",
+                  "AI Business Intelligence",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Business Intelligence</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -564,17 +584,12 @@ export default function Home() {
             </div>
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-green-100">
               <div className="mb-4">
-                <img 
-                  src="/images/Automation.png" 
-                  alt="AI System Integrations" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/Automation.png",
+                  "AI System Integrations",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI System Integrations</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -597,17 +612,12 @@ export default function Home() {
           </div>
             <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-orange-100">
               <div className="mb-4">
-                <img 
-                  src="/images/Web_development.png" 
-                  alt="AI-Powered Full-Stack Development" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/Web_development.png",
+                  "AI-Powered Full-Stack Development",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
         </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered Full-Stack Development</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -630,17 +640,12 @@ export default function Home() {
                   </div>
             <div className="bg-gradient-to-br from-indigo-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-indigo-100">
               <div className="mb-4">
-                <img 
-                  src="/images/SEO.png" 
-                  alt="AI-Powered SEO & Digital Marketing" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/SEO.png",
+                  "AI-Powered SEO & Digital Marketing",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
                   </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered SEO & Digital Marketing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -663,17 +668,12 @@ export default function Home() {
         </div>
             <div className="bg-gradient-to-br from-pink-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-pink-100">
               <div className="mb-4">
-                <img 
-                  src="/images/Al Content Marketing.png" 
-                  alt="Content Marketing & SEO Writing" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/Al Content Marketing.png",
+                  "Content Marketing & SEO Writing",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
           </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Content Marketing & LLM-Powered SEO Writing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -696,17 +696,12 @@ export default function Home() {
             </div>
             <div className="bg-gradient-to-br from-cyan-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-cyan-100">
               <div className="mb-4">
-                <img 
-                  src="/images/link  Building.png" 
-                  alt="Link Building & Outreach" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/link  Building.png",
+                  "Link Building & Outreach",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Link Building & Outreach</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -729,17 +724,12 @@ export default function Home() {
             </div>
             <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-teal-100">
               <div className="mb-4">
-                <img 
-                  src="/images/AI Automation.png" 
-                  alt="AI Chatbots & Conversational AI" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/AI Automation.png",
+                  "AI Chatbots & Conversational AI",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Chatbots & Conversational AI</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -762,17 +752,12 @@ export default function Home() {
             </div>
             <div className="bg-gradient-to-br from-emerald-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-emerald-100">
               <div className="mb-4">
-                <img 
-                  src="/images/Workflow.png" 
-                  alt="AI Agents & Autonomous Systems" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/Workflow.png",
+                  "AI Agents & Autonomous Systems",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Agents & Autonomous Systems</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -795,17 +780,12 @@ export default function Home() {
             </div>
             <div className="bg-gradient-to-br from-rose-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-rose-100">
               <div className="mb-4">
-                <img 
-                  src="/images/Social Media.png" 
-                  alt="Social Media Marketing" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/Social Media.png",
+                  "Social Media Marketing",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Social Media Marketing</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -828,17 +808,12 @@ export default function Home() {
             </div>
             <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-teal-100">
               <div className="mb-4">
-                <img 
-                  src="/images/AI Analytics.png" 
-                  alt="AI Data Analytics & Intelligent Reporting" 
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                  width="400"
-                  height="192"
-                  decoding="async"
-                  fetchPriority="low"
-                  style={{ aspectRatio: '400/192', minHeight: '192px' }}
-                />
+                {renderImage(
+                  "/images/AI Analytics.png",
+                  "AI Data Analytics & Intelligent Reporting",
+                  "w-full h-48 object-cover rounded-lg",
+                  { loading: "lazy", width: "400", height: "192", decoding: "async", fetchPriority: "low", style: { aspectRatio: '400/192', minHeight: '192px' } }
+                )}
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Data Analytics & Intelligent Reporting</h3>
               <p className="text-gray-600 mb-4 leading-relaxed">
