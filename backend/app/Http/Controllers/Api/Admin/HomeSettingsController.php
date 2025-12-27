@@ -109,8 +109,14 @@ class HomeSettingsController extends Controller
     public function uploadImage(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp,avif|max:2048',
             'key' => 'required|string|max:255',
+        ], [
+            'image.required' => 'Please select an image file to upload.',
+            'image.image' => 'The uploaded file must be an image.',
+            'image.mimes' => 'The image must be a JPEG, PNG, JPG, GIF, SVG, WebP, or AVIF file.',
+            'image.max' => 'The image size must not exceed 2MB.',
+            'key.required' => 'The key field is required.',
         ]);
 
         if ($validator->fails()) {
