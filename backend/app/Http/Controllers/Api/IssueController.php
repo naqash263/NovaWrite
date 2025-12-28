@@ -1790,6 +1790,7 @@ class IssueController extends Controller
                 'viewer' => [
                     'user_id' => Auth::id(),
                     'user_name' => Auth::user()?->name,
+                    'user_type' => Auth::user() ? (Auth::user()->isAdmin() ? 'admin' : 'user') : 'guest',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ],
@@ -1867,6 +1868,7 @@ class IssueController extends Controller
                 'creator' => [
                     'user_id' => $user?->id,
                     'user_name' => $user?->name,
+                    'user_type' => $user ? ($user->isAdmin() ? 'admin' : 'user') : 'guest',
                     'guest_name' => $issue->guest_name,
                     'guest_email' => $issue->guest_email,
                     'ip_address' => $request->ip(),

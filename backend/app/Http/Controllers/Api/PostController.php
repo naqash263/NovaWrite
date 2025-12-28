@@ -4,13 +4,25 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\Models\N8nConfiguration;
 use App\Events\NewBlogPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
 class PostController extends Controller
 {
+    protected $client;
+
+    public function __construct()
+    {
+        $this->client = new Client();
+    }
+
     public function index(Request $request)
     {
         // Create cache key based on request parameters and last update timestamp
@@ -222,6 +234,10 @@ class PostController extends Controller
             event(new NewBlogPost($post));
         }
 
+        // Send post creation data to N8n (non-blocking)
+        $post->load(['category', 'user', 'tags']);
+        $this->sendPostCreatedToN8n($post, $request);
+
         // Clear related caches - comprehensive cache invalidation
         $this->clearPostsCache();
 
@@ -301,6 +317,10 @@ class PostController extends Controller
         if ($request->has('tags')) {
             $post->tags()->sync($request->tags);
         }
+
+        // Send post update data to N8n (non-blocking)
+        $post->load(['category', 'user', 'tags']);
+        $this->sendPostUpdatedToN8n($post, $request);
 
         // Clear related caches
         $this->clearPostsCache();
@@ -446,5 +466,187 @@ class PostController extends Controller
             'since' => $sinceDate->toISOString(),
             'fetched_at' => now()->toISOString()
         ]);
+    }
+
+    /**
+     * Send post creation data to N8n webhook (non-blocking)
+     */
+    private function sendPostCreatedToN8n(Post $post, Request $request): void
+    {
+        try {
+            $config = N8nConfiguration::getActive();
+            
+            if (!$config || !$config->isValidWebhookUrl()) {
+                // Silently fail if N8n is not configured
+                return;
+            }
+
+            $user = Auth::user();
+            $postUrl = config('app.url') . '/posts/' . ($post->slug ?? $post->id);
+
+            // Prepare payload
+            $payload = [
+                'action' => 'post_created',
+                'post' => [
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'slug' => $post->slug,
+                    'url' => $postUrl,
+                    'excerpt' => $post->excerpt,
+                    'content' => substr(strip_tags($post->content ?? ''), 0, 500), // First 500 chars
+                    'featured_image' => $post->featured_image,
+                    'category_id' => $post->category_id,
+                    'category' => $post->category ? [
+                        'id' => $post->category->id,
+                        'name' => $post->category->name,
+                        'slug' => $post->category->slug ?? null,
+                    ] : null,
+                    'is_published' => $post->is_published,
+                    'published_at' => $post->published_at?->toISOString(),
+                    'meta_description' => $post->meta_description,
+                    'meta_keywords' => $post->meta_keywords,
+                    'views' => $post->views ?? 0,
+                    'approval_status' => $post->approval_status ?? 'pending',
+                    'tags' => $post->tags ? $post->tags->map(function($tag) {
+                        return [
+                            'id' => $tag->id,
+                            'name' => $tag->name,
+                            'slug' => $tag->slug ?? null,
+                        ];
+                    })->toArray() : [],
+                    'created_at' => $post->created_at?->toISOString(),
+                    'updated_at' => $post->updated_at?->toISOString(),
+                ],
+                'author' => [
+                    'user_id' => $user?->id,
+                    'user_name' => $user?->name,
+                    'user_type' => $user ? ($user->isAdmin() ? 'admin' : 'user') : 'guest',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ],
+                'timestamp' => now()->toISOString(),
+            ];
+
+            // Send to N8n (fire and forget - non-blocking)
+            try {
+                $this->client->post($config->webhook_url, [
+                    'json' => $payload,
+                    'timeout' => min(5, $config->webhook_timeout ?? 30),
+                    'connect_timeout' => 2,
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json'
+                    ]
+                ]);
+                
+                Log::debug('Post creation data sent to N8n', [
+                    'post_id' => $post->id
+                ]);
+            } catch (RequestException $e) {
+                // Silently fail - don't block the response
+                Log::debug('N8n webhook call failed (non-critical)', [
+                    'post_id' => $post->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            // Log error but don't throw (non-blocking)
+            Log::warning('Error sending post creation data to N8n', [
+                'post_id' => $post->id ?? null,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Send post update data to N8n webhook (non-blocking)
+     */
+    private function sendPostUpdatedToN8n(Post $post, Request $request): void
+    {
+        try {
+            $config = N8nConfiguration::getActive();
+            
+            if (!$config || !$config->isValidWebhookUrl()) {
+                // Silently fail if N8n is not configured
+                return;
+            }
+
+            $user = Auth::user();
+            $postUrl = config('app.url') . '/posts/' . ($post->slug ?? $post->id);
+
+            // Prepare payload
+            $payload = [
+                'action' => 'post_updated',
+                'post' => [
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'slug' => $post->slug,
+                    'url' => $postUrl,
+                    'excerpt' => $post->excerpt,
+                    'content' => substr(strip_tags($post->content ?? ''), 0, 500), // First 500 chars
+                    'featured_image' => $post->featured_image,
+                    'category_id' => $post->category_id,
+                    'category' => $post->category ? [
+                        'id' => $post->category->id,
+                        'name' => $post->category->name,
+                        'slug' => $post->category->slug ?? null,
+                    ] : null,
+                    'is_published' => $post->is_published,
+                    'published_at' => $post->published_at?->toISOString(),
+                    'meta_description' => $post->meta_description,
+                    'meta_keywords' => $post->meta_keywords,
+                    'views' => $post->views ?? 0,
+                    'approval_status' => $post->approval_status ?? 'pending',
+                    'tags' => $post->tags ? $post->tags->map(function($tag) {
+                        return [
+                            'id' => $tag->id,
+                            'name' => $tag->name,
+                            'slug' => $tag->slug ?? null,
+                        ];
+                    })->toArray() : [],
+                    'created_at' => $post->created_at?->toISOString(),
+                    'updated_at' => $post->updated_at?->toISOString(),
+                ],
+                'author' => [
+                    'user_id' => $user?->id,
+                    'user_name' => $user?->name,
+                    'user_type' => $user ? ($user->isAdmin() ? 'admin' : 'user') : 'guest',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ],
+                'timestamp' => now()->toISOString(),
+            ];
+
+            // Send to N8n (fire and forget - non-blocking)
+            try {
+                $this->client->post($config->webhook_url, [
+                    'json' => $payload,
+                    'timeout' => min(5, $config->webhook_timeout ?? 30),
+                    'connect_timeout' => 2,
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json'
+                    ]
+                ]);
+                
+                Log::debug('Post update data sent to N8n', [
+                    'post_id' => $post->id
+                ]);
+            } catch (RequestException $e) {
+                // Silently fail - don't block the response
+                Log::debug('N8n webhook call failed (non-critical)', [
+                    'post_id' => $post->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            // Log error but don't throw (non-blocking)
+            Log::warning('Error sending post update data to N8n', [
+                'post_id' => $post->id ?? null,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }
