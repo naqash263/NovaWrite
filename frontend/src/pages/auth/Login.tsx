@@ -138,7 +138,7 @@ export default function Login() {
             <div className="text-6xl mb-4">🎉</div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Login Successful!</h3>
             <p className="text-gray-600 mb-4">
-              Welcome back! You can now enjoy our courses and workflows.
+              Welcome back! You can now enjoy our workflows and resources.
             </p>
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="text-sm text-gray-500 mt-2">Refreshing page...</p>
@@ -149,7 +149,7 @@ export default function Login() {
       <div className="max-w-md mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-4xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-          <p className="text-gray-600">Login to access courses and premium content</p>
+          <p className="text-gray-600">Login to access workflows and premium content</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">

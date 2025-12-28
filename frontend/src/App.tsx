@@ -24,14 +24,9 @@ const Register = lazy(() => import('./pages/auth/Register'));
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
 const EmailVerification = lazy(() => import('./pages/EmailVerification'));
-const Courses = lazy(() => import('./pages/courses/Courses'));
-const CourseDetail = lazy(() => import('./pages/courses/CourseDetail'));
-const MyCourses = lazy(() => import('./pages/courses/MyCourses'));
 const AdminLogin = lazy(() => import('./pages/Login'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
-const AdminCourses = lazy(() => import('./pages/admin/Courses'));
-const AdminLessons = lazy(() => import('./pages/admin/Lessons'));
 const Categories = lazy(() => import('./pages/admin/Categories'));
 const Posts = lazy(() => import('./pages/admin/Posts'));
 const Files = lazy(() => import('./pages/admin/Files'));
@@ -118,14 +113,9 @@ function App() {
               <Route path="/verify-email" element={<EmailVerification />} />
               <Route path="/auth/google/callback" element={<GoogleCallback />} />
               <Route path="/auth/google/success" element={<GoogleSuccess />} />
-              <Route path="/courses" element={<Courses />} />
-              <Route path="/courses/:slug" element={<CourseDetail />} />
-              <Route path="/my-courses" element={<MyCourses />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
               <Route path="/admin" element={<ProtectedRoute requireAdmin><Dashboard /></ProtectedRoute>} />
-              <Route path="/admin/courses" element={<ProtectedRoute requireAdmin><AdminCourses /></ProtectedRoute>} />
-              <Route path="/admin/courses/:courseId/lessons" element={<ProtectedRoute requireAdmin><AdminLessons /></ProtectedRoute>} />
               <Route path="/admin/categories" element={<ProtectedRoute requireAdmin><Categories /></ProtectedRoute>} />
               <Route path="/admin/posts" element={<ProtectedRoute requireAdmin><Posts /></ProtectedRoute>} />
               <Route path="/admin/files" element={<ProtectedRoute requireAdmin><Files /></ProtectedRoute>} />

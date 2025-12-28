@@ -159,7 +159,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       { path: '/admin/projects', label: 'My Projects', icon: '📁' },
       { path: '/admin/issues', label: 'Issues', icon: '🐛' },
       { path: '/admin/issue-categories', label: 'Issue Categories', icon: '📂' },
-          { path: '/admin/courses', label: 'Courses', icon: '📚' },
           { path: '/admin/files', label: 'Files', icon: '📁' },
           { path: '/admin/cv-templates', label: 'CV Templates', icon: '📄' },
           { path: '/admin/categories', label: 'Categories', icon: '🏷️' },
@@ -671,16 +670,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       Manage Projects
                     </Link>
                   )}
-                        
-                  <Link
-                    to="/my-courses"
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                          <span className="mr-3">📚</span>
-                    My Courses
-                  </Link>
-                        
                         <button
                           onClick={() => {
                             setUserDropdownOpen(false);
@@ -1079,15 +1068,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           Manage Projects
                         </Link>
                       )}
-                      
-                      <Link
-                        to="/my-courses"
-                        className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                      >
-                        <span className="mr-3">📚</span>
-                        My Courses
-                      </Link>
-                      
                       {user.role === 'admin' && (
                         <Link
                           to="/admin"

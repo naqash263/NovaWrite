@@ -111,7 +111,7 @@ export default function Register() {
         const { token } = response.data;
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
-        navigate('/courses');
+        navigate('/');
       }
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 
@@ -138,7 +138,7 @@ export default function Register() {
       <div className="max-w-md mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-4xl font-bold text-gray-900 mb-2">Create Account</h2>
-          <p className="text-gray-600">Join to access free courses and premium workflows</p>
+          <p className="text-gray-600">Join to access free workflows and premium resources</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">

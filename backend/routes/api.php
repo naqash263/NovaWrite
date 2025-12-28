@@ -530,7 +530,6 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\FileController;
-use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\Admin\HomeSettingsController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\LessonFileController;
@@ -701,24 +700,6 @@ Route::post('contact', [ContactController::class, 'submit']);
 Route::post('contact/analyze', [ContactController::class, 'analyze']);
 Route::post('bookings', [\App\Http\Controllers\Api\BookingController::class, 'bookService']);
 
-Route::get('courses', [CourseController::class, 'index']);
-Route::get('courses/{slug}', [CourseController::class, 'show']);
-Route::middleware('api.auth')->group(function () {
-    Route::post('courses/{id}/enroll', [CourseController::class, 'enroll']);
-    Route::get('my-courses', [CourseController::class, 'myCourses']);
-    
-    // Lesson Progress Management
-    Route::post('lessons/{lessonId}/complete', [App\Http\Controllers\Api\LessonProgressController::class, 'markCompleted']);
-    Route::get('lessons/{lessonId}/progress', [App\Http\Controllers\Api\LessonProgressController::class, 'getProgress']);
-    Route::get('courses/{courseId}/progress', [App\Http\Controllers\Api\LessonProgressController::class, 'getCourseProgress']);
-    Route::delete('lessons/{lessonId}/progress', [App\Http\Controllers\Api\LessonProgressController::class, 'resetProgress']);
-    
-    // Lesson Tests
-    Route::get('lessons/{lessonId}/test', [App\Http\Controllers\Api\LessonTestController::class, 'getTest']);
-    Route::post('lessons/{lessonId}/test/start', [App\Http\Controllers\Api\LessonTestController::class, 'startTest']);
-    Route::post('lessons/{lessonId}/test/submit', [App\Http\Controllers\Api\LessonTestController::class, 'submitTest']);
-    Route::get('lessons/{lessonId}/test/results', [App\Http\Controllers\Api\LessonTestController::class, 'getResults']);
-});
 
 Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->group(function () {
     // Issue Categories Management
@@ -735,23 +716,6 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     Route::get('user-activities/user/{userId}', [\App\Http\Controllers\Api\Admin\UserActivityController::class, 'userActivities']);
     Route::delete('user-activities/cleanup', [\App\Http\Controllers\Api\Admin\UserActivityController::class, 'cleanup']);
 
-    Route::get('courses', [CourseController::class, 'adminIndex']);
-    Route::post('courses', [CourseController::class, 'store']);
-    Route::put('courses/{id}', [CourseController::class, 'update']);
-    Route::delete('courses/{id}', [CourseController::class, 'destroy']);
-
-    // Course Files Management
-    Route::get('courses/{courseId}/files', [App\Http\Controllers\Api\CourseFileController::class, 'index']);
-    Route::post('courses/{courseId}/files', [App\Http\Controllers\Api\CourseFileController::class, 'store']);
-    Route::get('courses/{courseId}/files/{id}', [App\Http\Controllers\Api\CourseFileController::class, 'show']);
-    Route::put('courses/{courseId}/files/{id}', [App\Http\Controllers\Api\CourseFileController::class, 'update']);
-    Route::delete('courses/{courseId}/files/{id}', [App\Http\Controllers\Api\CourseFileController::class, 'destroy']);
-    Route::post('courses/{courseId}/files/reorder', [App\Http\Controllers\Api\CourseFileController::class, 'reorder']);
-
-    Route::get('courses/{courseId}/lessons', [LessonController::class, 'index']);
-    Route::post('courses/{courseId}/lessons', [LessonController::class, 'store']);
-    Route::put('courses/{courseId}/lessons/{id}', [LessonController::class, 'update']);
-    Route::delete('courses/{courseId}/lessons/{id}', [LessonController::class, 'destroy']);
 
     // Lesson Test Management (Admin)
     Route::get('lessons/{lessonId}/tests', [App\Http\Controllers\Api\Admin\LessonTestAdminController::class, 'index']);
@@ -898,7 +862,6 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     // Email management
     Route::post('emails/welcome', [EmailController::class, 'sendWelcomeEmail']);
     Route::post('emails/password-reset', [EmailController::class, 'sendPasswordResetEmail']);
-    Route::post('emails/course-enrollment', [EmailController::class, 'sendCourseEnrollmentEmail']);
     Route::post('emails/workflow-notification', [EmailController::class, 'sendWorkflowNotificationEmail']);
     Route::post('emails/bulk', [EmailController::class, 'sendBulkEmails']);
     Route::post('emails/test-configuration', [EmailController::class, 'testEmailConfiguration']);
