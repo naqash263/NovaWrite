@@ -319,7 +319,7 @@ class EmailService
     /**
      * Send email verification email
      */
-    public function sendEmailVerificationEmail($user, $verificationUrl): bool
+    public function sendEmailVerificationEmail($user, $verificationUrl, ?string $userType = null): bool
     {
         return $this->sendTemplateEmail('email_verification', [
             'user_name' => $user->name,
@@ -329,7 +329,7 @@ class EmailService
             'app_url' => config('app.url'),
             'support_email' => config('mail.from.address'),
             'current_year' => date('Y'),
-        ], $user->email, $user->name);
+        ], $user->email, $user->name, $userType);
     }
 
     /**
