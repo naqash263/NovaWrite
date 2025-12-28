@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useToast } from '../../hooks/use-toast';
 
@@ -81,6 +81,7 @@ export default function CourseDetail() {
   const [submittingTest, setSubmittingTest] = useState(false);
   const [completingLesson, setCompletingLesson] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     fetchCourse();
@@ -111,6 +112,8 @@ export default function CourseDetail() {
     const token = localStorage.getItem('token');
     
     if (!token) {
+      // Store current path for redirect after login
+      localStorage.setItem('redirectAfterLogin', location.pathname);
       navigate('/login');
       return;
     }

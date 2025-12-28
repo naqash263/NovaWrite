@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_CONFIG } from '../../config/api';
 
@@ -25,6 +25,7 @@ export default function MyCourses() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     fetchMyCourses();
@@ -34,6 +35,8 @@ export default function MyCourses() {
     const token = localStorage.getItem('token');
     
     if (!token) {
+      // Store current path for redirect after login
+      localStorage.setItem('redirectAfterLogin', location.pathname);
       navigate('/login');
       return;
     }

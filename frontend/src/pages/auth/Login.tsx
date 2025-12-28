@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { GoogleLoginButton } from '../../components/GoogleLoginButton';
 import axios from 'axios';
@@ -16,6 +16,8 @@ export default function Login() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
   const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Countdown timer effect
   useEffect(() => {
@@ -62,11 +64,23 @@ export default function Login() {
   };
 
   const handleGoogleSuccess = () => {
-    // Show success popup for all users - no automatic redirects
+    // Get redirect path from location state or localStorage
+    const from = (location.state as any)?.from?.pathname || 
+                 localStorage.getItem('redirectAfterLogin') || 
+                 '/';
+    
+    // Clear stored redirect path
+    localStorage.removeItem('redirectAfterLogin');
+    
+    // Show success popup briefly, then redirect
     setShowSuccess(true);
     setTimeout(() => {
-      window.location.reload(); // Refresh to show user name
-    }, 2000);
+      navigate(from, { replace: true });
+      // Small delay to ensure navigation completes before reload
+      setTimeout(() => {
+        window.location.reload(); // Refresh to show user name
+      }, 100);
+    }, 1500);
   };
 
   const handleGoogleError = (error: string) => {
@@ -81,11 +95,23 @@ export default function Login() {
     try {
       await login(email, password);
       
-      // Show success popup for all users - no automatic redirects
+      // Get redirect path from location state or localStorage
+      const from = (location.state as any)?.from?.pathname || 
+                   localStorage.getItem('redirectAfterLogin') || 
+                   '/';
+      
+      // Clear stored redirect path
+      localStorage.removeItem('redirectAfterLogin');
+      
+      // Show success popup briefly, then redirect
       setShowSuccess(true);
       setTimeout(() => {
-        window.location.reload(); // Refresh to show user name
-      }, 2000);
+        navigate(from, { replace: true });
+        // Small delay to ensure navigation completes before reload
+        setTimeout(() => {
+          window.location.reload(); // Refresh to show user name
+        }, 100);
+      }, 1500);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Login failed. Please try again.';
       const isEmailNotVerified = err.response?.data?.email_verification_required;

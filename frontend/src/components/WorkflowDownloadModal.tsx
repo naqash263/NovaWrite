@@ -69,6 +69,8 @@ export default function WorkflowDownloadModal({
       setError(errorData?.message || 'Failed to process download. Please try again.');
       if (errorData?.requires_auth) {
         setRequiresAuth(true);
+        // Store current path for redirect after login
+        localStorage.setItem('redirectAfterLogin', window.location.pathname);
         // Automatically redirect to login after 2 seconds
         setTimeout(() => {
           onClose();
@@ -81,6 +83,8 @@ export default function WorkflowDownloadModal({
   };
 
   const handleLoginRedirect = () => {
+    // Store current path for redirect after login
+    localStorage.setItem('redirectAfterLogin', window.location.pathname);
     onClose();
     navigate('/login');
   };
