@@ -19,14 +19,64 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:6',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
+        // Check if user already exists
+        $existingUser = User::where('email', $request->email)->first();
+
+        if ($existingUser) {
+            // If user exists and is verified, return error
+            if ($existingUser->hasVerifiedEmail()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This email is already registered. Please login instead.',
+                    'error' => 'email_already_registered',
+                    'errors' => [
+                        'email' => ['The email has already been taken.']
+                    ]
+                ], 422);
+            }
+
+            // If user exists but not verified, update password and resend verification
+            $existingUser->update([
+                'name' => $request->name,
+                'password' => Hash::make($request->password),
+            ]);
+
+            // Generate new verification token
+            $verificationToken = $existingUser->generateEmailVerificationToken();
+            $verificationUrl = config('app.url') . '/verify-email?token=' . $verificationToken . '&email=' . urlencode($existingUser->email);
+
+            // Send verification email via N8n
+            try {
+                $emailService = app(\App\Services\EmailService::class);
+                $userType = $existingUser->isAdmin() ? 'admin' : 'user';
+                $emailService->sendEmailVerificationEmail($existingUser, $verificationUrl, $userType);
+                Log::info("Verification email resent to unverified user via N8n", ['user_email' => $existingUser->email]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send verification email via N8n: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Account found but not verified. A new verification email has been sent. Please check your email to verify your account.',
+                'user' => $existingUser,
+                'email_verification_required' => true,
+                'resend_verification' => true,
+            ], 200);
+        }
+
+        // Create new user
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -41,11 +91,19 @@ class AuthController extends Controller
         try {
             $emailService = app(\App\Services\EmailService::class);
             $userType = $user->isAdmin() ? 'admin' : 'user';
-            $emailService->sendEmailVerificationEmail($user, $verificationUrl, $userType);
-            Log::info("Verification email sent to new user via N8n", ['user_email' => $user->email]);
+            $result = $emailService->sendEmailVerificationEmail($user, $verificationUrl, $userType);
+            
+            if ($result) {
+                Log::info("Verification email sent to new user via N8n", ['user_email' => $user->email]);
+            } else {
+                Log::warning("Verification email failed to send via N8n", ['user_email' => $user->email]);
+            }
         } catch (\Exception $e) {
             // Log error but don't fail registration
-            Log::error('Failed to send verification email via N8n: ' . $e->getMessage());
+            Log::error('Failed to send verification email via N8n: ' . $e->getMessage(), [
+                'user_email' => $user->email,
+                'trace' => $e->getTraceAsString()
+            ]);
         }
 
         // Send welcome email directly
@@ -58,6 +116,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
+            'success' => true,
             'message' => 'Registration successful! Please check your email to verify your account.',
             'user' => $user,
             'email_verification_required' => true,
@@ -168,18 +227,31 @@ class AuthController extends Controller
     public function resendVerification(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required|email',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
         $user = User::where('email', $request->email)->first();
 
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No account found with this email address. Please register first.',
+                'error' => 'user_not_found'
+            ], 404);
+        }
+
         if ($user->hasVerifiedEmail()) {
             return response()->json([
-                'message' => 'Email already verified',
+                'success' => true,
+                'message' => 'Email already verified. You can login now.',
             ], 200);
         }
 
@@ -194,20 +266,36 @@ class AuthController extends Controller
             $result = $emailService->sendEmailVerificationEmail($user, $verificationUrl, $userType);
             
             if ($result) {
+                Log::info("Verification email resent successfully via N8n", [
+                    'user_email' => $user->email,
+                    'user_id' => $user->id
+                ]);
                 return response()->json([
-                    'message' => 'Verification email sent successfully!',
+                    'success' => true,
+                    'message' => 'Verification email sent successfully! Please check your inbox.',
                 ], 200);
             } else {
+                Log::warning("Verification email failed to send via N8n", [
+                    'user_email' => $user->email,
+                    'user_id' => $user->id
+                ]);
                 return response()->json([
+                    'success' => false,
                     'error' => 'Failed to send verification email',
-                    'message' => 'Please try again later.',
+                    'message' => 'The email service is currently unavailable. Please try again later or contact support.',
                 ], 500);
             }
         } catch (\Exception $e) {
-            Log::error('Failed to resend verification email via N8n: ' . $e->getMessage());
+            Log::error('Failed to resend verification email via N8n', [
+                'user_email' => $user->email,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
+                'success' => false,
                 'error' => 'Failed to send verification email',
-                'message' => 'Please try again later.',
+                'message' => 'An error occurred while sending the verification email. Please try again later.',
             ], 500);
         }
     }

@@ -114,11 +114,20 @@ export default function Register() {
         navigate('/courses');
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || 
+      const errorMessage = err.response?.data?.message || 
         err.response?.data?.errors?.email?.[0] ||
-        'Registration failed. Please try again.'
-      );
+        err.response?.data?.error ||
+        'Registration failed. Please try again.';
+      
+      setError(errorMessage);
+      
+      // If it's an unverified user resend case, show success message
+      if (err.response?.data?.resend_verification) {
+        setSuccess(true);
+        setVerificationEmail(email);
+        setResendCooldown(60);
+        setError(''); // Clear error since we're showing success
+      }
     } finally {
       setLoading(false);
     }
