@@ -3,7 +3,7 @@ import apiClient from '../api/axios';
 
 interface NotificationPreferences {
   blogPosts: boolean;
-  courses: boolean;
+  issues: boolean;
   workflows: boolean;
   careerTools: boolean;
 }
@@ -15,7 +15,7 @@ export const useNotifications = () => {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     blogPosts: true,
-    courses: true,
+    issues: true,
     workflows: true,
     careerTools: true
   });

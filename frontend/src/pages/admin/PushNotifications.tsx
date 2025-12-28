@@ -8,7 +8,7 @@ interface NotificationStats {
   active_subscribers: number;
   notification_types: {
     blogPosts: number;
-    courses: number;
+    issues: number;
     workflows: number;
     careerTools: number;
   };
@@ -18,7 +18,7 @@ interface NotificationForm {
   title: string;
   body: string;
   url: string;
-  type: 'blogPosts' | 'courses' | 'workflows' | 'careerTools' | 'all';
+  type: 'blogPosts' | 'issues' | 'workflows' | 'careerTools' | 'all';
   imageUrl: string;
 }
 
@@ -180,8 +180,8 @@ const PushNotifications: React.FC = () => {
                         <span className="text-sm font-medium">{stats.notification_types?.blogPosts || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Courses</span>
-                        <span className="text-sm font-medium">{stats.notification_types?.courses || 0}</span>
+                        <span className="text-sm text-gray-600">Issues</span>
+                        <span className="text-sm font-medium">{stats.notification_types?.issues || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Workflows</span>
@@ -286,7 +286,7 @@ const PushNotifications: React.FC = () => {
                     >
                       <option value="all">All Subscribers</option>
                       <option value="blogPosts">Blog Posts Only</option>
-                      <option value="courses">Courses Only</option>
+                      <option value="issues">Issues Only</option>
                       <option value="workflows">Workflows Only</option>
                       <option value="careerTools">Career Tools Only</option>
                     </select>

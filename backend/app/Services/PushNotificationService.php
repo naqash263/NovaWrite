@@ -159,7 +159,7 @@ class PushNotificationService
             
             $notificationTypes = [
                 'blogPosts' => PushSubscription::active()->forNotificationType('blogPosts')->count(),
-                'courses' => PushSubscription::active()->forNotificationType('courses')->count(),
+                'issues' => PushSubscription::active()->forNotificationType('issues')->count(),
                 'workflows' => PushSubscription::active()->forNotificationType('workflows')->count(),
                 'careerTools' => PushSubscription::active()->forNotificationType('careerTools')->count(),
             ];

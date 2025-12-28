@@ -211,7 +211,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onClose }) 
               <div className="space-y-3">
                 {[
                   { key: 'blogPosts', label: 'Blog Posts', description: 'New blog posts and updates' },
-                  { key: 'courses', label: 'Courses', description: 'New courses and course updates' },
+                  { key: 'issues', label: 'Issues', description: 'New issues and issue updates' },
                   { key: 'workflows', label: 'Workflows', description: 'New automation workflows' },
                   { key: 'careerTools', label: 'Career Tools', description: 'Updates to career tools and features' }
                 ].map(({ key, label, description }) => (
