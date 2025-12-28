@@ -222,7 +222,7 @@ class PushNotificationController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'body' => 'required|string|max:1000',
-            'type' => 'required|in:all,blogPosts,courses,workflows,careerTools',
+            'type' => 'required|in:all,blogPosts,issues,workflows,careerTools',
             'url' => 'nullable|url',
             'imageUrl' => 'nullable|url',
         ]);
@@ -283,15 +283,61 @@ class PushNotificationController extends Controller
                     'error' => 'Authentication required'
                 ], 401);
             }
+
+            // Check if sending to all subscribers or just current user
+            $sendToAll = $request->input('send_to_all', false);
             
-            $result = $this->pushService->sendTestNotification($userId);
+            if ($sendToAll) {
+                // Send to all active subscribers
+                $result = $this->pushService->sendToAll(
+                    'Test Notification',
+                    'This is a test notification from the admin panel',
+                    [
+                        'url' => config('app.url'),
+                        'icon' => config('app.url') . '/pwa-192x192.png',
+                        'badge' => config('app.url') . '/pwa-192x192.png',
+                    ]
+                );
+            } else {
+                // Send to current user only
+                $result = $this->pushService->sendTestNotification($userId);
+                
+                // Check if user has subscription
+                $userSubscription = \App\Models\PushSubscription::where('user_id', $userId)
+                    ->where('is_active', true)
+                    ->first();
+                
+                if (!$userSubscription) {
+                    return response()->json([
+                        'message' => 'No active subscription found for current user',
+                        'result' => $result,
+                        'debug' => [
+                            'user_id' => $userId,
+                            'has_subscription' => false,
+                            'total_subscriptions' => \App\Models\PushSubscription::where('is_active', true)->count(),
+                            'hint' => 'Please subscribe to notifications first, or use send_to_all=true to test with all subscribers'
+                        ]
+                    ], 200);
+                }
+            }
 
             return response()->json([
                 'message' => 'Test notification sent successfully',
-                'result' => $result
+                'result' => $result,
+                'debug' => [
+                    'user_id' => $userId,
+                    'send_to_all' => $sendToAll,
+                    'total_active_subscriptions' => \App\Models\PushSubscription::where('is_active', true)->count(),
+                ]
             ]);
 
         } catch (Exception $e) {
+            \Log::error('Test notification error', [
+                'user_id' => Auth::guard('api')->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'message' => 'Failed to send test notification',
                 'error' => $e->getMessage()
@@ -316,6 +362,31 @@ class PushNotificationController extends Controller
             }
             
             $stats = $this->pushService->getStatistics();
+
+            // Add debugging information
+            $currentUserId = $user->id;
+            $userSubscription = PushSubscription::where('user_id', $currentUserId)
+                ->where('is_active', true)
+                ->first();
+
+            $stats['debug'] = [
+                'current_user_id' => $currentUserId,
+                'current_user_has_subscription' => $userSubscription ? true : false,
+                'current_user_subscription_preferences' => $userSubscription ? $userSubscription->preferences : null,
+                'all_subscriptions' => PushSubscription::select('id', 'user_id', 'is_active', 'preferences', 'created_at')
+                    ->orderBy('created_at', 'desc')
+                    ->limit(10)
+                    ->get()
+                    ->map(function($sub) {
+                        return [
+                            'id' => $sub->id,
+                            'user_id' => $sub->user_id,
+                            'is_active' => $sub->is_active,
+                            'preferences' => $sub->preferences,
+                            'created_at' => $sub->created_at,
+                        ];
+                    }),
+            ];
 
             return response()->json($stats);
 
