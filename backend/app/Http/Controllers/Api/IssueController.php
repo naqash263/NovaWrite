@@ -529,6 +529,9 @@ class IssueController extends Controller
             \Cache::put('issues.last_updated', now(), now()->addDays(30));
             \App\Http\Controllers\Api\SitemapController::clearCache();
 
+            // Dispatch event for push notifications
+            event(new \App\Events\NewIssue($issue));
+
             // Send issue creation data to N8n (non-blocking)
             $this->sendIssueCreatedToN8n($issue, $request, $user);
 

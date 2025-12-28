@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use App\Events\NewBlogPost;
 use App\Events\NewCourse;
 use App\Events\NewWorkflow;
+use App\Events\NewIssue;
 use App\Events\CareerToolUpdate;
 use App\Events\UserRegistered;
 use App\Events\UserLoggedIn;
@@ -20,6 +21,7 @@ use App\Events\PasswordResetRequested;
 use App\Listeners\SendBlogPostNotification;
 use App\Listeners\SendCourseNotification;
 use App\Listeners\SendWorkflowNotification;
+use App\Listeners\SendIssueNotification;
 use App\Listeners\SendCareerToolNotification;
 use App\Listeners\SendWelcomeEmail;
 use App\Listeners\SendPasswordResetEmail;
@@ -47,6 +49,10 @@ class EventServiceProvider extends ServiceProvider
 
         NewWorkflow::class => [
             SendWorkflowNotification::class,
+        ],
+
+        NewIssue::class => [
+            SendIssueNotification::class,
         ],
 
         CareerToolUpdate::class => [

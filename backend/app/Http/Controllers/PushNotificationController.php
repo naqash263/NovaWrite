@@ -30,7 +30,7 @@ class PushNotificationController extends Controller
             'subscription.keys.auth' => 'required|string',
             'preferences' => 'sometimes|array',
             'preferences.blogPosts' => 'sometimes|boolean',
-            'preferences.courses' => 'sometimes|boolean',
+            'preferences.issues' => 'sometimes|boolean',
             'preferences.workflows' => 'sometimes|boolean',
             'preferences.careerTools' => 'sometimes|boolean',
         ]);
@@ -46,7 +46,7 @@ class PushNotificationController extends Controller
             $subscriptionData = $request->input('subscription');
             $preferences = $request->input('preferences', [
                 'blogPosts' => true,
-                'courses' => true,
+                'issues' => true,
                 'workflows' => true,
                 'careerTools' => true,
             ]);
