@@ -1,3 +1,20 @@
+# Google Search Bot
+User-agent: Googlebot
+Allow: /
+
+# Bing Search Bot
+User-agent: Bingbot
+Allow: /
+
+# Twitter Bot
+User-agent: Twitterbot
+Allow: /
+
+# Facebook External Hit
+User-agent: facebookexternalhit
+Allow: /
+
+# All Other Bots
 User-agent: *
 Allow: /
 

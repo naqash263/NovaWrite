@@ -1,6 +1,14 @@
 # LLM Crawler Instructions for naqashthaheem.com
 # This file provides guidance for AI/LLM crawlers on what content can be accessed
 
+# Supported Bots
+# This site is configured to allow the following bots:
+# - Googlebot (Google Search)
+# - Bingbot (Bing Search)
+# - Twitterbot (Twitter)
+# - facebookexternalhit (Facebook)
+# - All other bots (User-agent: *)
+
 # Site Information
 Site: https://naqashthaheem.com
 Owner: Naqash Thaheem
