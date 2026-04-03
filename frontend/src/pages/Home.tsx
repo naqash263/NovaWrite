@@ -72,9 +72,12 @@ export default function Home() {
     if (!homeSettings) return defaultValue;
     const setting = homeSettings.settings.find(s => s.key === key);
     if (!setting || setting.type !== 'image') return defaultValue;
-    // If setting has image_url but it's using wrong port, construct correct URL
+    if (setting.image_url) return setting.image_url;
     if (setting.value) {
-      const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || import.meta.env.VITE_APP_URL || 'http://localhost:8001';
+      const baseUrl =
+        import.meta.env.VITE_API_URL?.replace('/api', '') ||
+        import.meta.env.VITE_APP_URL ||
+        (typeof window !== 'undefined' ? window.location.origin : '');
       return `${baseUrl}/api/storage/${setting.value}`;
     }
     return defaultValue;

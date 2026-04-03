@@ -11,6 +11,28 @@ use Illuminate\Support\Facades\Storage;
 
 class HomeSettingsController extends Controller
 {
+    private function publicStorageUrl(Request $request, string $path): string
+    {
+        $url = Storage::disk('public')->url($path);
+
+        // If the disk returns a relative URL (common), prefix with request origin.
+        if (str_starts_with($url, '/')) {
+            return rtrim($request->getSchemeAndHttpHost(), '/') . $url;
+        }
+
+        // If the disk returns an absolute URL but points to localhost, override with request origin.
+        if (preg_match('#^https?://localhost(?::\d+)?/#i', $url)) {
+            $parts = parse_url($url);
+            $relative = ($parts['path'] ?? '/')
+                . (isset($parts['query']) ? ('?' . $parts['query']) : '')
+                . (isset($parts['fragment']) ? ('#' . $parts['fragment']) : '');
+
+            return rtrim($request->getSchemeAndHttpHost(), '/') . $relative;
+        }
+
+        return $url;
+    }
+
     /**
      * Display a listing of home settings.
      */
@@ -141,7 +163,7 @@ class HomeSettingsController extends Controller
         return response()->json([
             'message' => 'Image uploaded successfully',
             'setting' => $setting,
-            'image_url' => Storage::disk('public')->url($path)
+            'image_url' => $this->publicStorageUrl($request, $path)
         ]);
     }
 
@@ -153,7 +175,7 @@ class HomeSettingsController extends Controller
         $settings = HomeSettings::active()
             ->orderBy('sort_order')
             ->get()
-            ->map(function ($setting) {
+            ->map(function ($setting) use ($request) {
                 $data = [
                     'key' => $setting->key,
                     'type' => $setting->type,
@@ -162,7 +184,7 @@ class HomeSettingsController extends Controller
 
                 // For images, return the full URL
                 if ($setting->type === 'image' && $setting->value) {
-                    $data['image_url'] = Storage::disk('public')->url($setting->value);
+                    $data['image_url'] = $this->publicStorageUrl($request, $setting->value);
                 }
 
                 return $data;

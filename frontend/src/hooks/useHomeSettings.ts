@@ -63,9 +63,10 @@ export function useHomeSettings() {
     
     // Fallback: construct URL using environment variable
     if (setting.value) {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
-      // Remove /api from base URL if present
-      const storageBaseUrl = baseUrl.replace('/api', '');
+      const storageBaseUrl =
+        import.meta.env.VITE_API_URL?.replace('/api', '') ||
+        import.meta.env.VITE_APP_URL ||
+        (typeof window !== 'undefined' ? window.location.origin : '');
       return `${storageBaseUrl}/api/storage/${setting.value}`;
     }
     
