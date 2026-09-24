@@ -1,359 +1,370 @@
-import { useState, useEffect } from 'react';
-import { Calendar, Filter, RefreshCw, TrendingUp, Users, Activity } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Activity, Calendar, Eraser, Filter, RefreshCw, TrendingUp, Users } from 'lucide-react';
 import apiClient from '../../api/axios';
 import Button from '../../components/ui/Button';
+import {
+  AdminCard,
+  AdminPageHeader,
+  Badge,
+  EmptyState,
+  ErrorState,
+  Field,
+  LoadingState,
+  Modal,
+  SearchInput,
+  StatCard,
+  TableShell,
+  inputClass,
+} from '../../components/admin/ui';
+import { apiErrorMessage, asList } from '../../components/admin/utils';
+import { useToast } from '../../hooks/use-toast';
+import { useSEO } from '../../utils/seo';
 
 interface UserActivity {
   id: number;
-  user_id: number;
-  activity_type: string;
-  description: string;
-  metadata: any;
-  ip_address: string;
-  user_agent: string;
-  created_at: string;
-  user: {
-    id: number;
-    name: string;
-    email: string;
-  };
+  user_id?: number;
+  activity_type?: string;
+  description?: string;
+  metadata?: unknown;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at?: string;
+  user?: { id: number; name?: string; email?: string } | null;
 }
 
 interface Statistics {
-  total_activities: number;
-  activities_by_type: Array<{ activity_type: string; count: number }>;
-  most_active_users: Array<{ user_id: number; activity_count: number; user: any }>;
-  timeline: Array<{ date: string; count: number }>;
-  recent_activities: UserActivity[];
+  total_activities?: number;
+  activities_by_type?: Array<{ activity_type: string; count: number }>;
+  most_active_users?: Array<{ user_id: number; activity_count: number; user?: { name?: string; email?: string } | null }>;
+  timeline?: Array<{ date: string; count: number }>;
 }
 
+type Filters = { activity_type: string; user_id: string; start_date: string; end_date: string; search: string };
+const emptyFilters: Filters = { activity_type: '', user_id: '', start_date: '', end_date: '', search: '' };
+
+const fmt = (n: unknown) => (typeof n === 'number' ? n.toLocaleString() : '—');
+const humanize = (type?: string) => (type ? type.replace(/_/g, ' ') : 'unknown');
+const formatDateTime = (value?: string) => {
+  if (!value) return '—';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
+};
+const toneFor = (type?: string): 'success' | 'info' | 'warning' | 'danger' | 'neutral' => {
+  if (!type) return 'neutral';
+  if (type === 'login' || type.endsWith('_completed')) return 'success';
+  if (type === 'register' || type.endsWith('_created') || type.endsWith('_enrolled')) return 'info';
+  if (type.includes('failed') || type.includes('deleted')) return 'danger';
+  if (type.includes('uploaded')) return 'warning';
+  return 'neutral';
+};
+const localDateKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 export default function UserActivities() {
-  const [activities, setActivities] = useState<UserActivity[]>([]);
-  const [statistics, setStatistics] = useState<Statistics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(true);
+  useSEO({ title: 'User Activities | Admin', robots: 'noindex, nofollow' });
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [filters, setFilters] = useState({
-    activity_type: '',
-    user_id: '',
-    start_date: '',
-    end_date: '',
-    search: '',
-  });
-  const [activityTypes, setActivityTypes] = useState<string[]>([]);
+  const [filters, setFilters] = useState<Filters>(emptyFilters);
+  const [searchInput, setSearchInput] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [cleanupOpen, setCleanupOpen] = useState(false);
+  const [cleanupDays, setCleanupDays] = useState('90');
+  const [cleanupError, setCleanupError] = useState<string | undefined>();
 
   useEffect(() => {
-    fetchActivities();
-    fetchStatistics();
-    fetchActivityTypes();
-  }, [currentPage, filters]);
+    const t = setTimeout(() => {
+      setFilters((prev) => (prev.search === searchInput.trim() ? prev : { ...prev, search: searchInput.trim() }));
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
-  const fetchActivities = async () => {
-    try {
-      setLoading(true);
+  const activitiesQuery = useQuery({
+    queryKey: ['admin-user-activities', currentPage, filters],
+    queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== '')),
+        ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== '')),
       });
-
       const response = await apiClient.get(`/admin/user-activities?${params}`);
-      if (response.data.success) {
-        setActivities(response.data.data.data);
-        setTotalPages(response.data.data.last_page);
-      }
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const paginator = (response.data?.data ?? {}) as { last_page?: number; total?: number };
+      return {
+        activities: asList<UserActivity>(response.data).filter((a) => a && typeof a === 'object'),
+        lastPage: typeof paginator.last_page === 'number' && paginator.last_page > 0 ? paginator.last_page : 1,
+        total: typeof paginator.total === 'number' ? paginator.total : undefined,
+      };
+    },
+    placeholderData: (prev) => prev,
+  });
 
-  const fetchStatistics = async () => {
-    try {
-      setStatsLoading(true);
+  const statsQuery = useQuery({
+    queryKey: ['admin-user-activities-stats', filters.start_date, filters.end_date],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (filters.start_date) params.append('start_date', filters.start_date);
       if (filters.end_date) params.append('end_date', filters.end_date);
-
       const response = await apiClient.get(`/admin/user-activities/statistics?${params}`);
-      if (response.data.success) {
-        setStatistics(response.data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching statistics:', error);
-    } finally {
-      setStatsLoading(false);
-    }
-  };
+      const data = response.data?.data;
+      return (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as Statistics;
+    },
+  });
 
-  const fetchActivityTypes = async () => {
-    try {
-      const response = await apiClient.get('/admin/user-activities/types');
-      if (response.data.success) {
-        setActivityTypes(response.data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching activity types:', error);
-    }
-  };
+  const typesQuery = useQuery({
+    queryKey: ['admin-user-activity-types'],
+    queryFn: async () => asList<string>((await apiClient.get('/admin/user-activities/types')).data).filter((t) => typeof t === 'string'),
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  const cleanupMutation = useMutation({
+    mutationFn: async (days: number) => {
+      const response = await apiClient.delete('/admin/user-activities/cleanup', { params: { days } });
+      return response.data as { message?: string; deleted_count?: number };
+    },
+    onSuccess: (data) => {
+      addToast({ type: 'success', title: 'Old activities removed', description: data?.message || 'Cleanup completed.' });
+      setCleanupOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-user-activities'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-user-activities-stats'] });
+    },
+    onError: (error) => {
+      setCleanupError(apiErrorMessage(error));
+      addToast({ type: 'error', title: 'Cleanup failed', description: apiErrorMessage(error) });
+    },
+  });
+
+  const activities = activitiesQuery.data?.activities ?? [];
+  const totalPages = activitiesQuery.data?.lastPage ?? 1;
+  const stats = statsQuery.data;
+  const byType = Array.isArray(stats?.activities_by_type) ? stats.activities_by_type : [];
+  const topUsers = Array.isArray(stats?.most_active_users) ? stats.most_active_users : [];
+  const timeline = Array.isArray(stats?.timeline) ? stats.timeline : [];
+  const today = localDateKey();
+  const todayCount = timeline.find((t) => typeof t?.date === 'string' && t.date.slice(0, 10) === today)?.count ?? 0;
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+
+  const setFilter = (key: keyof Filters, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   };
 
   const clearFilters = () => {
-    setFilters({
-      activity_type: '',
-      user_id: '',
-      start_date: '',
-      end_date: '',
-      search: '',
-    });
+    setFilters(emptyFilters);
+    setSearchInput('');
     setCurrentPage(1);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+  const refresh = () => {
+    activitiesQuery.refetch();
+    statsQuery.refetch();
   };
 
-  const getActivityColor = (type: string) => {
-    const colors: Record<string, string> = {
-      login: 'bg-green-100 text-green-800',
-      logout: 'bg-gray-100 text-gray-800',
-      register: 'bg-blue-100 text-blue-800',
-      cv_created: 'bg-purple-100 text-purple-800',
-      cv_template_created: 'bg-indigo-100 text-indigo-800',
-      course_enrolled: 'bg-yellow-100 text-yellow-800',
-      lesson_completed: 'bg-teal-100 text-teal-800',
-      file_uploaded: 'bg-pink-100 text-pink-800',
-    };
-    return colors[type] || 'bg-gray-100 text-gray-800';
+  const submitCleanup = (e: FormEvent) => {
+    e.preventDefault();
+    const days = Number(cleanupDays);
+    if (!cleanupDays.trim() || !Number.isInteger(days)) return setCleanupError('Enter a whole number of days.');
+    if (days < 30) return setCleanupError('Activities newer than 30 days cannot be removed.');
+    setCleanupError(undefined);
+    cleanupMutation.mutate(days);
   };
+
+  let tableContent;
+  if (activitiesQuery.isLoading) tableContent = <LoadingState label="Loading activities…" />;
+  else if (activitiesQuery.isError)
+    tableContent = <ErrorState title="Could not load activities" message={apiErrorMessage(activitiesQuery.error)} onRetry={() => activitiesQuery.refetch()} />;
+  else if (activities.length === 0)
+    tableContent = (
+      <EmptyState
+        icon={Activity}
+        title={activeFilterCount ? 'No activities match your filters' : 'No activity recorded yet'}
+        description={activeFilterCount ? 'Try widening the date range or clearing filters.' : 'User logins, registrations and other actions will appear here.'}
+        action={
+          activeFilterCount ? (
+            <Button variant="outline" size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" onClick={refresh} leftIcon={<RefreshCw className="h-4 w-4" />}>
+              Refresh
+            </Button>
+          )
+        }
+      />
+    );
+  else
+    tableContent = (
+      <TableShell caption="User activities">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Activity</th>
+            <th>Description</th>
+            <th>IP address</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {activities.map((activity) => (
+            <tr key={activity.id}>
+              <td>
+                <p className="whitespace-nowrap font-medium text-slate-900">{activity.user?.name ?? `User #${activity.user_id ?? '?'}`}</p>
+                <p className="text-xs text-slate-500">{activity.user?.email ?? 'Deleted user'}</p>
+              </td>
+              <td className="whitespace-nowrap">
+                <Badge tone={toneFor(activity.activity_type)}>{humanize(activity.activity_type)}</Badge>
+              </td>
+              <td className="min-w-[16rem]">{activity.description || '—'}</td>
+              <td className="whitespace-nowrap font-mono text-xs text-slate-500">{activity.ip_address || 'N/A'}</td>
+              <td className="whitespace-nowrap text-slate-500">{formatDateTime(activity.created_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </TableShell>
+    );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Activities</h1>
-          <p className="mt-2 text-gray-600">Track and analyze user behavior across the platform</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
-          >
-            <Filter size={16} />
-            Filters
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              fetchActivities();
-              fetchStatistics();
-            }}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw size={16} />
-            Refresh
-          </Button>
-        </div>
+      <AdminPageHeader
+        title="User Activities"
+        description="Track and analyse user behaviour across the platform."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-expanded={showFilters}
+              aria-controls="activity-filters"
+              onClick={() => setShowFilters((v) => !v)}
+              leftIcon={<Filter className="h-4 w-4" />}
+            >
+              Filters{activeFilterCount ? ` (${activeFilterCount})` : ''}
+            </Button>
+            <Button variant="outline" size="sm" onClick={refresh} disabled={activitiesQuery.isFetching} leftIcon={<RefreshCw className={`h-4 w-4 ${activitiesQuery.isFetching ? 'animate-spin' : ''}`} />}>
+              Refresh
+            </Button>
+            <Button variant="danger" size="sm" onClick={() => { setCleanupError(undefined); setCleanupOpen(true); }} leftIcon={<Eraser className="h-4 w-4" />}>
+              Clean up
+            </Button>
+          </>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="activity-stats">
+        <StatCard label="Total activities" icon={Activity} value={statsQuery.isLoading ? '…' : fmt(stats?.total_activities)} hint={filters.start_date || filters.end_date ? 'In selected range' : 'Last 30 days'} />
+        <StatCard label="Most active users" icon={Users} value={statsQuery.isLoading ? '…' : fmt(topUsers.length)} hint="Top 10 by activity count" />
+        <StatCard label="Activity types" icon={TrendingUp} value={statsQuery.isLoading ? '…' : fmt(byType.length)} />
+        <StatCard label="Today" icon={Calendar} value={statsQuery.isLoading ? '…' : fmt(todayCount)} />
       </div>
-
-      {/* Statistics Cards */}
-      {!statsLoading && statistics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Activities</p>
-                <p className="text-2xl font-bold text-gray-900">{statistics.total_activities}</p>
-              </div>
-              <Activity className="h-8 w-8 text-blue-500" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Users</p>
-                <p className="text-2xl font-bold text-gray-900">{statistics.most_active_users.length}</p>
-              </div>
-              <Users className="h-8 w-8 text-green-500" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Activity Types</p>
-                <p className="text-2xl font-bold text-gray-900">{statistics.activities_by_type.length}</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-purple-500" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Today's Activities</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {statistics.timeline[statistics.timeline.length - 1]?.count || 0}
-                </p>
-              </div>
-              <Calendar className="h-8 w-8 text-orange-500" />
-            </div>
-          </div>
-        </div>
+      {statsQuery.isError && (
+        <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          Activity statistics could not be loaded. The activity list below is still available.
+        </p>
       )}
 
-      {/* Filters */}
       {showFilters && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">Filters</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Activity Type</label>
-              <select
-                value={filters.activity_type}
-                onChange={(e) => handleFilterChange('activity_type', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">All Types</option>
-                {activityTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type.replace(/_/g, ' ').toUpperCase()}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-              <input
-                type="date"
-                value={filters.start_date}
-                onChange={(e) => handleFilterChange('start_date', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-              <input
-                type="date"
-                value={filters.end_date}
-                onChange={(e) => handleFilterChange('end_date', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                placeholder="Search in descriptions..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div className="md:col-span-3 flex justify-end">
-              <Button variant="outline" onClick={clearFilters}>
-                Clear Filters
-              </Button>
-            </div>
+        <AdminCard title="Filters" actions={<Button variant="ghost" size="sm" onClick={clearFilters} disabled={!activeFilterCount}>Clear filters</Button>}>
+          <div id="activity-filters" className="grid gap-4 md:grid-cols-3">
+            <Field label="Activity type">
+              {(p) => (
+                <select {...p} className={inputClass} value={filters.activity_type} onChange={(e) => setFilter('activity_type', e.target.value)}>
+                  <option value="">All types</option>
+                  {(typesQuery.data ?? []).map((type) => (
+                    <option key={type} value={type}>
+                      {humanize(type)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field label="Start date">
+              {(p) => <input {...p} type="date" className={inputClass} value={filters.start_date} max={filters.end_date || undefined} onChange={(e) => setFilter('start_date', e.target.value)} />}
+            </Field>
+            <Field label="End date">
+              {(p) => <input {...p} type="date" className={inputClass} value={filters.end_date} min={filters.start_date || undefined} onChange={(e) => setFilter('end_date', e.target.value)} />}
+            </Field>
           </div>
+        </AdminCard>
+      )}
+
+      {(byType.length > 0 || topUsers.length > 0) && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <AdminCard title="Activity by type">
+            {byType.length ? (
+              <ul className="space-y-2 text-sm">
+                {[...byType].sort((a, b) => (b?.count ?? 0) - (a?.count ?? 0)).slice(0, 8).map((row) => (
+                  <li key={row.activity_type} className="flex items-center justify-between gap-3">
+                    <Badge tone={toneFor(row.activity_type)}>{humanize(row.activity_type)}</Badge>
+                    <span className="tabular-nums text-slate-700">{fmt(row.count)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-slate-500">No activity in this period.</p>
+            )}
+          </AdminCard>
+          <AdminCard title="Most active users">
+            {topUsers.length ? (
+              <ol className="space-y-2 text-sm">
+                {topUsers.slice(0, 8).map((row) => (
+                  <li key={row.user_id} className="flex items-center justify-between gap-3">
+                    <span className="min-w-0 truncate text-slate-700">{row.user?.name ?? `User #${row.user_id}`}</span>
+                    <span className="tabular-nums text-slate-700">{fmt(row.activity_count)}</span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-slate-500">No activity in this period.</p>
+            )}
+          </AdminCard>
         </div>
       )}
 
-      {/* Activities Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activity</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP Address</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                    Loading activities...
-                  </td>
-                </tr>
-              ) : activities.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                    No activities found
-                  </td>
-                </tr>
-              ) : (
-                activities.map((activity) => (
-                  <tr key={activity.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{activity.user.name}</div>
-                        <div className="text-sm text-gray-500">{activity.user.email}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getActivityColor(activity.activity_type)}`}>
-                        {activity.activity_type.replace(/_/g, ' ').toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{activity.description}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {activity.ip_address || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(activity.created_at)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      <AdminCard padded={false}>
+        <div className="border-b border-slate-200 p-4">
+          <SearchInput label="Search activity descriptions" placeholder="Search in descriptions…" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
         </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
+        {tableContent}
+        {totalPages > 1 && !activitiesQuery.isError && (
+          <nav aria-label="Pagination" className="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm">
+            <p className="text-slate-600">
               Page {currentPage} of {totalPages}
-            </div>
+            </p>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => prev - 1)}
-              >
+              <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>
                 Previous
               </Button>
-              <Button
-                variant="outline"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => prev + 1)}
-              >
+              <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
                 Next
               </Button>
             </div>
-          </div>
+          </nav>
         )}
-      </div>
+      </AdminCard>
+
+      <Modal
+        open={cleanupOpen}
+        size="sm"
+        title="Clean up old activities"
+        description="Permanently delete activity records older than the given number of days."
+        onClose={() => setCleanupOpen(false)}
+        footer={
+          <>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setCleanupOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="activity-cleanup-form" variant="danger" size="sm" loading={cleanupMutation.isPending}>
+              Delete old activities
+            </Button>
+          </>
+        }
+      >
+        <form id="activity-cleanup-form" noValidate onSubmit={submitCleanup}>
+          <Field label="Delete activities older than (days)" required error={cleanupError} hint="Minimum 30 days. This cannot be undone.">
+            {(p) => <input {...p} type="number" min={30} step={1} inputMode="numeric" className={inputClass} value={cleanupDays} onChange={(e) => setCleanupDays(e.target.value)} />}
+          </Field>
+        </form>
+      </Modal>
     </div>
   );
 }
-
