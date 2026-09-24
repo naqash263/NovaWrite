@@ -1,111 +1,37 @@
-import { useState } from 'react';
+import UnitConverter, { type ConverterUnit } from './UnitConverter';
 
-interface Unit {
-  name: string;
-  symbol: string;
-  toMetersPerSecond: number;
-}
-
-const units: Unit[] = [
-  { name: 'Meters per Second', symbol: 'm/s', toMetersPerSecond: 1 },
-  { name: 'Kilometers per Hour', symbol: 'km/h', toMetersPerSecond: 0.277778 },
-  { name: 'Miles per Hour', symbol: 'mph', toMetersPerSecond: 0.44704 },
-  { name: 'Feet per Second', symbol: 'ft/s', toMetersPerSecond: 0.3048 },
-  { name: 'Knots', symbol: 'kn', toMetersPerSecond: 0.514444 },
-  { name: 'Mach', symbol: 'Ma', toMetersPerSecond: 343 }, // At sea level, 20°C
+// Factors to metres per second. Mach uses the speed of sound in the International
+// Standard Atmosphere at sea level (15 °C): 340.29 m/s. Real Mach 1 varies with temperature.
+const units: ConverterUnit[] = [
+  { id: 'kmh', name: 'Kilometers per hour', symbol: 'km/h', factor: 1 / 3.6 },
+  { id: 'mph', name: 'Miles per hour', symbol: 'mph', factor: 0.44704 },
+  { id: 'ms', name: 'Meters per second', symbol: 'm/s', factor: 1 },
+  { id: 'fts', name: 'Feet per second', symbol: 'ft/s', factor: 0.3048 },
+  { id: 'kn', name: 'Knots', symbol: 'kn', factor: 1852 / 3600 },
+  { id: 'kms', name: 'Kilometers per second', symbol: 'km/s', factor: 1000 },
+  { id: 'mach', name: 'Mach (sea level, 15 °C)', symbol: 'Ma', factor: 340.29 },
 ];
 
 export default function SpeedConverter() {
-  const [fromValue, setFromValue] = useState<string>('1');
-  const [fromUnit, setFromUnit] = useState<string>('km/h');
-  const [toUnit, setToUnit] = useState<string>('mph');
-
-  const convert = (value: number, from: string, to: string): number => {
-    const fromUnitData = units.find(u => u.symbol === from);
-    const toUnitData = units.find(u => u.symbol === to);
-    
-    if (!fromUnitData || !toUnitData) return 0;
-    
-    const metersPerSecond = value * fromUnitData.toMetersPerSecond;
-    return metersPerSecond / toUnitData.toMetersPerSecond;
-  };
-
-  const result = convert(parseFloat(fromValue) || 0, fromUnit, toUnit);
-
-  const swapUnits = () => {
-    const tempUnit = fromUnit;
-    setFromUnit(toUnit);
-    setToUnit(tempUnit);
-    setFromValue(result.toFixed(6));
-  };
-
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <input
-              type="number"
-              value={fromValue}
-              onChange={(e) => setFromValue(e.target.value)}
-              className="flex-1 min-w-0 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg"
-              placeholder="Enter speed"
-              inputMode="decimal"
-            />
-            <select
-              value={fromUnit}
-              onChange={(e) => setFromUnit(e.target.value)}
-              className="w-full sm:w-56 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base touch-manipulation"
-            >
-              {units.map(unit => (
-                <option key={unit.symbol} value={unit.symbol}>
-                  {unit.name} ({unit.symbol})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <input
-              type="text"
-              value={isNaN(result) ? '' : result.toFixed(6)}
-              readOnly
-              className="flex-1 min-w-0 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-base sm:text-lg font-semibold"
-            />
-            <select
-              value={toUnit}
-              onChange={(e) => setToUnit(e.target.value)}
-              className="w-full sm:w-56 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base touch-manipulation"
-            >
-              {units.map(unit => (
-                <option key={unit.symbol} value={unit.symbol}>
-                  {unit.name} ({unit.symbol})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <button
-          onClick={swapUnits}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-medium touch-manipulation shadow-sm"
-        >
-          ↕ Swap Units
-        </button>
-      </div>
-
-      <div className="bg-blue-50 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          <strong>Conversion:</strong> {fromValue || '0'} {units.find(u => u.symbol === fromUnit)?.name} = {result.toFixed(6)} {units.find(u => u.symbol === toUnit)?.name}
+    <UnitConverter
+      quantity="speed"
+      units={units}
+      defaultFrom="kmh"
+      defaultTo="mph"
+      defaultValue="100"
+      presets={[
+        { label: 'km/h → mph', value: '100', from: 'kmh', to: 'mph' },
+        { label: 'mph → km/h', value: '60', from: 'mph', to: 'kmh' },
+        { label: 'knots → km/h', value: '1', from: 'kn', to: 'kmh' },
+        { label: 'm/s → km/h', value: '1', from: 'ms', to: 'kmh' },
+      ]}
+      note={
+        <p>
+          Exact definitions: 1 mph = 1.609344 km/h, 1 knot = 1 nautical mile per hour = 1.852 km/h. Mach is an approximation based on the speed of
+          sound at sea level in the standard atmosphere (340.29 m/s).
         </p>
-      </div>
-    </div>
+      }
+    />
   );
 }
-

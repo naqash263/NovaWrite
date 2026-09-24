@@ -1,115 +1,33 @@
-import { useState } from 'react';
+import UnitConverter, { type ConverterUnit } from './UnitConverter';
 
-interface Unit {
-  name: string;
-  symbol: string;
-  toSquareMeters: number;
-}
-
-const units: Unit[] = [
-  { name: 'Square Meters', symbol: 'm²', toSquareMeters: 1 },
-  { name: 'Square Kilometers', symbol: 'km²', toSquareMeters: 1000000 },
-  { name: 'Square Centimeters', symbol: 'cm²', toSquareMeters: 0.0001 },
-  { name: 'Square Millimeters', symbol: 'mm²', toSquareMeters: 0.000001 },
-  { name: 'Square Feet', symbol: 'ft²', toSquareMeters: 0.092903 },
-  { name: 'Square Inches', symbol: 'in²', toSquareMeters: 0.00064516 },
-  { name: 'Square Yards', symbol: 'yd²', toSquareMeters: 0.836127 },
-  { name: 'Acres', symbol: 'ac', toSquareMeters: 4046.86 },
-  { name: 'Hectares', symbol: 'ha', toSquareMeters: 10000 },
-  { name: 'Square Miles', symbol: 'mi²', toSquareMeters: 2589988.11 },
+// Exact factors to square metres (derived from 1 ft = 0.3048 m).
+const units: ConverterUnit[] = [
+  { id: 'm2', name: 'Square meters', symbol: 'm²', factor: 1, group: 'Metric' },
+  { id: 'km2', name: 'Square kilometers', symbol: 'km²', factor: 1e6, group: 'Metric' },
+  { id: 'cm2', name: 'Square centimeters', symbol: 'cm²', factor: 1e-4, group: 'Metric' },
+  { id: 'mm2', name: 'Square millimeters', symbol: 'mm²', factor: 1e-6, group: 'Metric' },
+  { id: 'ha', name: 'Hectares', symbol: 'ha', factor: 1e4, group: 'Metric' },
+  { id: 'ac', name: 'Acres', symbol: 'ac', factor: 4046.8564224, group: 'Imperial / US' },
+  { id: 'mi2', name: 'Square miles', symbol: 'mi²', factor: 2589988.110336, group: 'Imperial / US' },
+  { id: 'yd2', name: 'Square yards', symbol: 'yd²', factor: 0.83612736, group: 'Imperial / US' },
+  { id: 'ft2', name: 'Square feet', symbol: 'ft²', factor: 0.09290304, group: 'Imperial / US' },
+  { id: 'in2', name: 'Square inches', symbol: 'in²', factor: 0.00064516, group: 'Imperial / US' },
 ];
 
 export default function AreaConverter() {
-  const [fromValue, setFromValue] = useState<string>('1');
-  const [fromUnit, setFromUnit] = useState<string>('m²');
-  const [toUnit, setToUnit] = useState<string>('ft²');
-
-  const convert = (value: number, from: string, to: string): number => {
-    const fromUnitData = units.find(u => u.symbol === from);
-    const toUnitData = units.find(u => u.symbol === to);
-    
-    if (!fromUnitData || !toUnitData) return 0;
-    
-    const squareMeters = value * fromUnitData.toSquareMeters;
-    return squareMeters / toUnitData.toSquareMeters;
-  };
-
-  const result = convert(parseFloat(fromValue) || 0, fromUnit, toUnit);
-
-  const swapUnits = () => {
-    const tempUnit = fromUnit;
-    setFromUnit(toUnit);
-    setToUnit(tempUnit);
-    setFromValue(result.toFixed(6));
-  };
-
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <input
-              type="number"
-              value={fromValue}
-              onChange={(e) => setFromValue(e.target.value)}
-              className="flex-1 min-w-0 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg"
-              placeholder="Enter value"
-              inputMode="decimal"
-            />
-            <select
-              value={fromUnit}
-              onChange={(e) => setFromUnit(e.target.value)}
-              className="w-full sm:w-56 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base touch-manipulation"
-            >
-              {units.map(unit => (
-                <option key={unit.symbol} value={unit.symbol}>
-                  {unit.name} ({unit.symbol})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <input
-              type="text"
-              value={isNaN(result) ? '' : result.toFixed(6)}
-              readOnly
-              className="flex-1 min-w-0 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-base sm:text-lg font-semibold"
-            />
-            <select
-              value={toUnit}
-              onChange={(e) => setToUnit(e.target.value)}
-              className="w-full sm:w-56 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base touch-manipulation"
-            >
-              {units.map(unit => (
-                <option key={unit.symbol} value={unit.symbol}>
-                  {unit.name} ({unit.symbol})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <button
-          onClick={swapUnits}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-medium touch-manipulation shadow-sm"
-        >
-          ↕ Swap Units
-        </button>
-      </div>
-
-      <div className="bg-blue-50 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          <strong>Conversion:</strong> {fromValue || '0'} {units.find(u => u.symbol === fromUnit)?.name} = {result.toFixed(6)} {units.find(u => u.symbol === toUnit)?.name}
-        </p>
-      </div>
-    </div>
+    <UnitConverter
+      quantity="area"
+      units={units}
+      defaultFrom="m2"
+      defaultTo="ft2"
+      presets={[
+        { label: 'm² → ft²', value: '1', from: 'm2', to: 'ft2' },
+        { label: 'acre → ha', value: '1', from: 'ac', to: 'ha' },
+        { label: 'acre → ft²', value: '1', from: 'ac', to: 'ft2' },
+        { label: 'ha → acres', value: '1', from: 'ha', to: 'ac' },
+      ]}
+      note={<p>Uses exact international definitions: 1 ft² = 0.09290304 m², 1 acre = 43,560 ft² = 4,046.8564224 m², 1 hectare = 10,000 m².</p>}
+    />
   );
 }
-
