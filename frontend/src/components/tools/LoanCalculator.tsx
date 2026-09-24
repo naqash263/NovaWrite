@@ -1,381 +1,354 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 
-interface PaymentSchedule {
-  month: number;
+type Frequency = 'monthly' | 'biweekly' | 'weekly';
+
+interface Row {
+  period: number;
   payment: number;
   principal: number;
   interest: number;
   balance: number;
 }
 
+const frequencies: Record<Frequency, { perYear: number; label: string; per: string }> = {
+  monthly: { perYear: 12, label: 'Monthly (12 per year)', per: 'per month' },
+  biweekly: { perYear: 26, label: 'Bi-weekly (26 per year)', per: 'every two weeks' },
+  weekly: { perYear: 52, label: 'Weekly (52 per year)', per: 'per week' },
+};
+
+const currencies = ['USD', 'EUR', 'GBP', 'INR', 'PKR', 'AED', 'CAD', 'AUD'];
+
+const parse = (s: string) => (s.trim() === '' ? NaN : Number(s));
+
+/** Standard amortising-loan payment: P·r / (1 − (1 + r)^−n), or P / n at 0%. */
+function periodicPayment(principal: number, ratePerPeriod: number, periods: number) {
+  if (ratePerPeriod === 0) return principal / periods;
+  return (principal * ratePerPeriod) / (1 - Math.pow(1 + ratePerPeriod, -periods));
+}
+
+function amortize(principal: number, ratePerPeriod: number, payment: number, extra: number, maxPeriods: number): Row[] {
+  const rows: Row[] = [];
+  let balance = principal;
+  for (let period = 1; period <= maxPeriods && balance > 0.005; period++) {
+    const interest = balance * ratePerPeriod;
+    const principalPaid = Math.min(payment + extra - interest, balance);
+    balance -= principalPaid;
+    if (balance < 0.005) balance = 0;
+    rows.push({ period, payment: principalPaid + interest, principal: principalPaid, interest, balance });
+  }
+  return rows;
+}
+
+interface FieldProps {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+  prefix?: string;
+  suffix?: string;
+  step?: string;
+  hint?: string;
+}
+
+function NumberField({ id, label, value, onChange, error, prefix, suffix, step, hint }: FieldProps) {
+  const describedBy = [error ? `${id}-error` : '', hint ? `${id}-hint` : ''].filter(Boolean).join(' ') || undefined;
+  return (
+    <div>
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
+      <div className="relative">
+        {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm" aria-hidden="true">{prefix}</span>}
+        <input
+          id={id}
+          type="number"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          min="0"
+          step={step}
+          aria-invalid={Boolean(error)}
+          aria-describedby={describedBy}
+          className={`w-full ${prefix ? 'pl-12' : 'pl-4'} ${suffix ? 'pr-10' : 'pr-4'} py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            error ? 'border-red-400' : 'border-gray-300'
+          }`}
+        />
+        {suffix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" aria-hidden="true">{suffix}</span>}
+      </div>
+      {hint && !error && (
+        <p id={`${id}-hint`} className="text-xs text-gray-500 mt-1">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={`${id}-error`} className="text-sm text-red-700 mt-1">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function LoanCalculator() {
-  const [loanAmount, setLoanAmount] = useState<number>(100000);
-  const [interestRate, setInterestRate] = useState<number>(5.0);
-  const [loanTerm, setLoanTerm] = useState<number>(30);
-  const [paymentFrequency, setPaymentFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
-  const [results, setResults] = useState<{
-    monthlyPayment: number;
-    totalPayment: number;
-    totalInterest: number;
-    schedule: PaymentSchedule[];
-  } | null>(null);
+  const [loanAmount, setLoanAmount] = useState('100000');
+  const [interestRate, setInterestRate] = useState('5');
+  const [loanTerm, setLoanTerm] = useState('30');
+  const [extraPayment, setExtraPayment] = useState('');
+  const [paymentFrequency, setPaymentFrequency] = useState<Frequency>('monthly');
+  const [currency, setCurrency] = useState('USD');
+  const [view, setView] = useState<'yearly' | 'all'>('yearly');
 
+  const amount = parse(loanAmount);
+  const rate = parse(interestRate);
+  const years = parse(loanTerm);
+  const extra = extraPayment.trim() === '' ? 0 : parse(extraPayment);
 
-  useEffect(() => {
-    calculateLoan();
-  }, [loanAmount, interestRate, loanTerm, paymentFrequency]);
+  const errors = {
+    amount: Number.isNaN(amount)
+      ? 'Enter the loan amount.'
+      : amount <= 0
+        ? 'The loan amount must be greater than 0.'
+        : amount > 1e12
+          ? 'Enter an amount up to 1,000,000,000,000.'
+          : '',
+    rate: Number.isNaN(rate) ? 'Enter the annual interest rate.' : rate < 0 || rate > 100 ? 'Enter a rate between 0 and 100%.' : '',
+    years: Number.isNaN(years) ? 'Enter the loan term.' : years <= 0 || years > 50 ? 'Enter a term between 0 and 50 years.' : '',
+    extra: Number.isNaN(extra) || extra < 0 ? 'Extra payment must be 0 or more.' : '',
+  };
+  const valid = !errors.amount && !errors.rate && !errors.years && !errors.extra;
 
-  const calculateLoan = () => {
-    const principal = loanAmount;
-    const annualRate = interestRate / 100;
-    
-    // Calculate payments per year
-    const paymentsPerYear = paymentFrequency === 'monthly' ? 12 : paymentFrequency === 'biweekly' ? 26 : 52;
-    const totalPayments = loanTerm * paymentsPerYear;
-    const monthlyRate = annualRate / paymentsPerYear;
+  const freq = frequencies[paymentFrequency];
 
-    // Calculate monthly payment using loan formula
-    let monthlyPayment = 0;
-    if (monthlyRate > 0) {
-      monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / 
-                       (Math.pow(1 + monthlyRate, totalPayments) - 1);
-    } else {
-      monthlyPayment = principal / totalPayments;
-    }
-
-    const totalPayment = monthlyPayment * totalPayments;
-    const totalInterest = totalPayment - principal;
-
-    // Generate amortization schedule
-    const schedule: PaymentSchedule[] = [];
-    let balance = principal;
-
-    for (let month = 1; month <= totalPayments; month++) {
-      const interestPayment = balance * monthlyRate;
-      const principalPayment = monthlyPayment - interestPayment;
-      balance -= principalPayment;
-
-      schedule.push({
-        month,
-        payment: monthlyPayment,
-        principal: principalPayment,
-        interest: interestPayment,
-        balance: Math.max(0, balance),
-      });
-    }
-
-    setResults({
-      monthlyPayment,
-      totalPayment,
-      totalInterest,
+  const results = useMemo(() => {
+    if (!valid) return null;
+    const periods = Math.max(1, Math.round(years * freq.perYear));
+    const r = rate / 100 / freq.perYear;
+    const payment = periodicPayment(amount, r, periods);
+    const base = amortize(amount, r, payment, 0, periods);
+    const schedule = extra > 0 ? amortize(amount, r, payment, extra, periods) : base;
+    const totalInterest = schedule.reduce((s, row) => s + row.interest, 0);
+    const baseInterest = base.reduce((s, row) => s + row.interest, 0);
+    return {
+      payment,
+      periods,
       schedule,
+      totalInterest,
+      totalPaid: amount + totalInterest,
+      interestSaved: baseInterest - totalInterest,
+      periodsSaved: periods - schedule.length,
+    };
+  }, [valid, amount, rate, years, extra, freq.perYear]);
+
+  const money = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(n);
+
+  const yearly = useMemo(() => {
+    if (!results) return [];
+    const out: { year: number; principal: number; interest: number; balance: number }[] = [];
+    results.schedule.forEach((row) => {
+      const year = Math.ceil(row.period / freq.perYear);
+      const last = out[out.length - 1];
+      if (!last || last.year !== year) out.push({ year, principal: row.principal, interest: row.interest, balance: row.balance });
+      else {
+        last.principal += row.principal;
+        last.interest += row.interest;
+        last.balance = row.balance;
+      }
     });
+    return out;
+  }, [results, freq.perYear]);
+
+  const describeDuration = (periods: number) => {
+    const totalYears = periods / freq.perYear;
+    let y = Math.floor(totalYears + 1e-9);
+    let rest = Math.round((totalYears - y) * 12);
+    if (rest === 12) {
+      y += 1;
+      rest = 0;
+    }
+    const parts = [y ? `${y} year${y !== 1 ? 's' : ''}` : '', rest ? `${rest} month${rest !== 1 ? 's' : ''}` : ''].filter(Boolean);
+    return parts.join(' ') || 'less than a month';
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+  const downloadCsv = () => {
+    if (!results) return;
+    const lines = ['Payment,Payment amount,Principal,Interest,Balance'];
+    results.schedule.forEach((r) =>
+      lines.push([r.period, r.payment.toFixed(2), r.principal.toFixed(2), r.interest.toFixed(2), r.balance.toFixed(2)].join(',')),
+    );
+    const url = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'amortization-schedule.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
+
+  const symbol = new Intl.NumberFormat('en-US', { style: 'currency', currency }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? '';
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          💰 Free Loan Calculator Online
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Free loan calculator online - no signup required. Calculate monthly payments, total interest, and view the complete amortization schedule for mortgages, auto loans, and personal loans instantly. Multiple payment frequencies. Perfect for financial planning.
-        </p>
-
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Input Section */}
-          <div>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Loan Amount
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    value={loanAmount}
-                    onChange={(e) => setLoanAmount(parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="1000"
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Annual Interest Rate (%)
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={interestRate}
-                    onChange={(e) => setInterestRate(parseFloat(e.target.value) || 0)}
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    className="w-full pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Loan Term (Years)
-                </label>
-                <input
-                  type="number"
-                  value={loanTerm}
-                  onChange={(e) => setLoanTerm(parseInt(e.target.value) || 1)}
-                  min="1"
-                  max="50"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Frequency
-                </label>
-                <select
-                  value={paymentFrequency}
-                  onChange={(e) => setPaymentFrequency(e.target.value as 'monthly' | 'biweekly' | 'weekly')}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="monthly">Monthly</option>
-                  <option value="biweekly">Bi-weekly</option>
-                  <option value="weekly">Weekly</option>
-                </select>
-              </div>
+          {/* Inputs */}
+          <div className="space-y-5">
+            <NumberField id="loan-amount" label="Loan amount" value={loanAmount} onChange={setLoanAmount} error={errors.amount} prefix={symbol} step="1000" />
+            <NumberField id="loan-rate" label="Annual interest rate (APR)" value={interestRate} onChange={setInterestRate} error={errors.rate} suffix="%" step="0.1" />
+            <NumberField id="loan-term" label="Loan term (years)" value={loanTerm} onChange={setLoanTerm} error={errors.years} step="1" />
+            <div>
+              <label htmlFor="loan-frequency" className="block text-sm font-medium text-gray-700 mb-2">
+                Payment frequency
+              </label>
+              <select
+                id="loan-frequency"
+                value={paymentFrequency}
+                onChange={(e) => setPaymentFrequency(e.target.value as Frequency)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {(Object.keys(frequencies) as Frequency[]).map((f) => (
+                  <option key={f} value={f}>
+                    {frequencies[f].label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <NumberField
+              id="loan-extra"
+              label="Extra payment each period (optional)"
+              value={extraPayment}
+              onChange={setExtraPayment}
+              error={errors.extra}
+              prefix={symbol}
+              step="10"
+              hint="Goes straight to principal and shortens the loan."
+            />
+            <div>
+              <label htmlFor="loan-currency" className="block text-sm font-medium text-gray-700 mb-2">
+                Currency
+              </label>
+              <select
+                id="loan-currency"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {currencies.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Results Section */}
-          <div>
-            {results && (
-              <div className="space-y-6">
+          {/* Results */}
+          <div aria-live="polite">
+            {!results ? (
+              <p className="p-4 bg-gray-50 rounded-lg text-gray-600" data-testid="loan-empty">
+                Enter a valid loan amount, rate and term to see your payment.
+              </p>
+            ) : (
+              <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="text-sm text-gray-600 mb-1">Payment Amount</div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatCurrency(results.monthlyPayment)}
+                  <div className="bg-blue-50 p-4 rounded-lg sm:col-span-2">
+                    <div className="text-sm text-gray-600 mb-1">Payment</div>
+                    <div className="text-3xl font-bold text-blue-700" data-testid="loan-payment">
+                      {money(results.payment)}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">per {paymentFrequency.slice(0, -2)}</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {freq.per} for {results.periods} payments
+                      {extra > 0 ? ` (plus ${money(extra)} extra)` : ''}
+                    </div>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
-                    <div className="text-sm text-gray-600 mb-1">Total Payment</div>
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(results.totalPayment)}
+                    <div className="text-sm text-gray-600 mb-1">Total paid</div>
+                    <div className="text-xl font-bold text-green-700" data-testid="loan-total">
+                      {money(results.totalPaid)}
                     </div>
                   </div>
                   <div className="bg-red-50 p-4 rounded-lg">
-                    <div className="text-sm text-gray-600 mb-1">Total Interest</div>
-                    <div className="text-2xl font-bold text-red-600">
-                      {formatCurrency(results.totalInterest)}
+                    <div className="text-sm text-gray-600 mb-1">Total interest</div>
+                    <div className="text-xl font-bold text-red-700" data-testid="loan-interest">
+                      {money(results.totalInterest)}
                     </div>
                   </div>
                   <div className="bg-purple-50 p-4 rounded-lg">
                     <div className="text-sm text-gray-600 mb-1">Principal</div>
-                    <div className="text-2xl font-bold text-purple-600">
-                      {formatCurrency(loanAmount)}
+                    <div className="text-xl font-bold text-purple-700">{money(amount)}</div>
+                  </div>
+                  <div className="bg-amber-50 p-4 rounded-lg">
+                    <div className="text-sm text-gray-600 mb-1">Paid off in</div>
+                    <div className="text-xl font-bold text-amber-800" data-testid="loan-duration">
+                      {describeDuration(results.schedule.length)}
                     </div>
                   </div>
                 </div>
+                {extra > 0 && results.interestSaved > 0.005 && (
+                  <p className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-900" data-testid="loan-savings">
+                    Paying {money(extra)} extra saves {money(results.interestSaved)} in interest
+                    {results.periodsSaved > 0 ? ` and finishes ${describeDuration(results.periodsSaved)} early` : ''}.
+                  </p>
+                )}
 
                 {/* Amortization Schedule */}
-                <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Amortization Schedule</h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
+                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <h2 className="text-sm font-semibold text-gray-800">Amortization schedule</h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden" role="group" aria-label="Schedule view">
+                        {(['yearly', 'all'] as const).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setView(v)}
+                            aria-pressed={view === v}
+                            className={`px-3 py-1 text-xs font-medium ${view === v ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+                          >
+                            {v === 'yearly' ? 'By year' : 'Every payment'}
+                          </button>
+                        ))}
+                      </div>
+                      <button type="button" onClick={downloadCsv} className="px-3 py-1 text-xs font-medium rounded-lg border border-gray-300 bg-white hover:bg-gray-100">
+                        Download CSV
+                      </button>
+                    </div>
+                  </div>
+                  <div className="max-h-96 overflow-auto">
+                    <table className="w-full text-xs sm:text-sm" data-testid="loan-schedule">
+                      <thead className="sticky top-0 bg-gray-50">
                         <tr className="border-b">
-                          <th className="text-left py-2 px-2">Month</th>
-                          <th className="text-right py-2 px-2">Payment</th>
-                          <th className="text-right py-2 px-2">Principal</th>
-                          <th className="text-right py-2 px-2">Interest</th>
-                          <th className="text-right py-2 px-2">Balance</th>
+                          <th scope="col" className="text-left py-2 px-1 sm:px-2">{view === 'yearly' ? 'Year' : '#'}</th>
+                          <th scope="col" className="text-right py-2 px-1 sm:px-2">Principal</th>
+                          <th scope="col" className="text-right py-2 px-1 sm:px-2">Interest</th>
+                          <th scope="col" className="text-right py-2 px-1 sm:px-2">Balance</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {results.schedule.slice(0, 12).map((row) => (
-                          <tr key={row.month} className="border-b">
-                            <td className="py-2 px-2">{row.month}</td>
-                            <td className="text-right py-2 px-2">{formatCurrency(row.payment)}</td>
-                            <td className="text-right py-2 px-2">{formatCurrency(row.principal)}</td>
-                            <td className="text-right py-2 px-2">{formatCurrency(row.interest)}</td>
-                            <td className="text-right py-2 px-2">{formatCurrency(row.balance)}</td>
+                        {(view === 'yearly'
+                          ? yearly.map((y) => ({ key: y.year, label: y.year, principal: y.principal, interest: y.interest, balance: y.balance }))
+                          : results.schedule.map((r) => ({ key: r.period, label: r.period, principal: r.principal, interest: r.interest, balance: r.balance }))
+                        ).map((row) => (
+                          <tr key={row.key} className="border-b last:border-0">
+                            <td className="py-1.5 px-1 sm:px-2">{row.label}</td>
+                            <td className="text-right py-1.5 px-1 sm:px-2 tabular-nums">{money(row.principal)}</td>
+                            <td className="text-right py-1.5 px-1 sm:px-2 tabular-nums">{money(row.interest)}</td>
+                            <td className="text-right py-1.5 px-1 sm:px-2 tabular-nums">{money(row.balance)}</td>
                           </tr>
                         ))}
-                        {results.schedule.length > 12 && (
-                          <tr>
-                            <td colSpan={5} className="text-center py-2 text-gray-500 text-xs">
-                              ... and {results.schedule.length - 12} more payments
-                            </td>
-                          </tr>
-                        )}
                       </tbody>
                     </table>
                   </div>
                 </div>
+                <p className="text-xs text-gray-500">
+                  Estimates use the standard amortization formula with a fixed rate. Taxes, insurance and fees are not included.
+                </p>
               </div>
             )}
           </div>
-        </div>
-
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Loan Calculator</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our Loan Calculator is a comprehensive financial tool that helps you understand the 
-              true cost of borrowing money. It calculates monthly payments, total interest, and 
-              provides a detailed amortization schedule showing how your loan balance decreases 
-              over time. All calculations use standard financial formulas and happen instantly 
-              in your browser.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Perfect for planning mortgages, auto loans, personal loans, and any other type of 
-              installment loan. The calculator supports multiple payment frequencies to help you 
-              explore different repayment strategies and understand how they affect total interest paid.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Calculating mortgage payments and total interest</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Planning auto loan payments</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Comparing different loan terms and rates</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Understanding amortization schedules</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Evaluating bi-weekly vs monthly payments</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Financial planning and budgeting</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Payment Calculation</h5>
-                  <p className="text-sm text-gray-600">Calculate monthly payments using standard amortization formula</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Interest Analysis</h5>
-                  <p className="text-sm text-gray-600">See total interest paid over the life of the loan</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Amortization Schedule</h5>
-                  <p className="text-sm text-gray-600">View detailed payment breakdown month by month</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Payment Frequencies</h5>
-                  <p className="text-sm text-gray-600">Compare monthly, bi-weekly, and weekly payment options</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
-            <div className="space-y-4">
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">How accurate are the calculations?</h5>
-                <p className="text-gray-700 text-sm">
-                  The calculator uses standard loan amortization formulas. Results are estimates 
-                  and may vary slightly from actual loan terms due to rounding, fees, and other 
-                  factors specific to your lender.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What's the difference between payment frequencies?</h5>
-                <p className="text-gray-700 text-sm">
-                  Bi-weekly and weekly payments can reduce total interest paid and shorten loan 
-                  term because you make more payments per year, effectively paying down principal faster.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Does this include fees and insurance?</h5>
-                <p className="text-gray-700 text-sm">
-                  No, this calculator shows principal and interest only. Actual loan payments may 
-                  include property taxes, insurance, PMI, and other fees. Always check with your 
-                  lender for exact payment amounts.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Can I use this for any type of loan?</h5>
-                <p className="text-gray-700 text-sm">
-                  Yes, this calculator works for mortgages, auto loans, personal loans, and any 
-                  fixed-rate installment loan. It may not be accurate for variable-rate loans or 
-                  loans with balloon payments.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Loan Calculator Tips</h4>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>This calculator uses the standard loan amortization formula</li>
-            <li>Results are estimates and may vary from actual loan terms</li>
-            <li>Bi-weekly and weekly payments can reduce total interest paid</li>
-            <li>Always consult with a financial advisor for actual loan decisions</li>
-            <li>Consider additional costs like insurance, taxes, and fees</li>
-          </ul>
         </div>
       </div>
     </div>
   );
 }
-

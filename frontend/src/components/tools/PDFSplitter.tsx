@@ -1,47 +1,113 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
+
+type SplitMode = 'all' | 'extract' | 'ranges' | 'every';
+
+interface SplitResult {
+  name: string;
+  url: string;
+  pages: number;
+}
+
+const isPdf = (file: File) => file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+
+const formatSize = (bytes: number) =>
+  bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(2)} MB` : `${(bytes / 1024).toFixed(1)} KB`;
+
+/**
+ * Parses "1-3, 5, 8-" into groups of zero-based page indices (one group per comma-separated part).
+ * Returns an error message instead when the input is invalid.
+ */
+function parsePageGroups(input: string, maxPages: number): number[][] | string {
+  const parts = input
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return 'Enter at least one page number or range, for example 1-3, 5.';
+
+  const groups: number[][] = [];
+  for (const part of parts) {
+    const match = part.match(/^(\d+)\s*(?:[-–]\s*(\d*))?$/);
+    if (!match) return `"${part}" is not a valid page or range. Use numbers like 3 or ranges like 2-5.`;
+    const start = parseInt(match[1], 10);
+    const isRange = part.includes('-') || part.includes('–');
+    const end = isRange ? (match[2] ? parseInt(match[2], 10) : maxPages) : start;
+    if (start < 1 || end < 1) return 'Page numbers start at 1.';
+    if (start > maxPages || end > maxPages) return `This PDF has ${maxPages} page${maxPages !== 1 ? 's' : ''}. "${part}" is out of range.`;
+    if (start > end) return `"${part}" is reversed. Write the lower page number first.`;
+    const group: number[] = [];
+    for (let i = start; i <= end; i++) group.push(i - 1);
+    groups.push(group);
+  }
+  return groups;
+}
 
 export default function PDFSplitter() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [pageCount, setPageCount] = useState<number>(0);
-  const [selectedPages, setSelectedPages] = useState<string>('');
-  const [splitMode, setSplitMode] = useState<'all' | 'range' | 'custom'>('all');
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [splitPdfs, setSplitPdfs] = useState<{ name: string; url: string }[]>([]);
+  const [pageCount, setPageCount] = useState(0);
+  const [selectedPages, setSelectedPages] = useState('');
+  const [everyN, setEveryN] = useState('2');
+  const [splitMode, setSplitMode] = useState<SplitMode>('all');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+  const [splitPdfs, setSplitPdfs] = useState<SplitResult[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Free object URLs of old results.
+  useEffect(() => {
+    return () => splitPdfs.forEach((pdf) => URL.revokeObjectURL(pdf.url));
+  }, [splitPdfs]);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const baseName = pdfFile ? pdfFile.name.replace(/\.pdf$/i, '') : 'document';
+
+  const loadFile = async (file: File | undefined) => {
     if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      setError('Please select a PDF file');
+    if (!isPdf(file)) {
+      setError(`${file.name} is not a PDF file. Please choose a .pdf file.`);
       return;
     }
-
-    setPdfFile(file);
     setError('');
     setSplitPdfs([]);
-
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      const pdfDoc = await PDFDocument.load(await file.arrayBuffer());
+      setPdfFile(file);
       setPageCount(pdfDoc.getPageCount());
-    } catch (err) {
-      setError('Failed to read PDF. It may be corrupted or password-protected.');
+    } catch {
+      setError(`Could not read ${file.name}. It may be corrupted or password-protected.`);
       setPdfFile(null);
+      setPageCount(0);
     }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
+
+  const buildGroups = (): number[][] | string => {
+    if (splitMode === 'all') return Array.from({ length: pageCount }, (_, i) => [i]);
+    if (splitMode === 'every') {
+      const n = Number(everyN);
+      if (!Number.isInteger(n) || n < 1) return 'Enter a whole number of pages (1 or more) for each file.';
+      const groups: number[][] = [];
+      for (let i = 0; i < pageCount; i += n) groups.push(Array.from({ length: Math.min(n, pageCount - i) }, (_, k) => i + k));
+      return groups;
+    }
+    const parsed = parsePageGroups(selectedPages, pageCount);
+    if (typeof parsed === 'string') return parsed;
+    if (splitMode === 'ranges') return parsed;
+    // extract: all selected pages into one file, in document order, without duplicates
+    return [[...new Set(parsed.flat())].sort((a, b) => a - b)];
+  };
+
+  const groupLabel = (group: number[]) =>
+    group.length === 1 ? `page_${group[0] + 1}` : `pages_${group[0] + 1}-${group[group.length - 1] + 1}`;
 
   const handleSplit = async () => {
     if (!pdfFile) {
-      setError('Please select a PDF file first');
+      setError('Please select a PDF file first.');
+      return;
+    }
+    const groups = buildGroups();
+    if (typeof groups === 'string') {
+      setError(groups);
       return;
     }
 
@@ -50,104 +116,28 @@ export default function PDFSplitter() {
     setSplitPdfs([]);
 
     try {
-      const arrayBuffer = await pdfFile.arrayBuffer();
-      const sourcePdf = await PDFDocument.load(arrayBuffer);
-      const totalPages = sourcePdf.getPageCount();
-      const results: { name: string; url: string }[] = [];
-
-      if (splitMode === 'all') {
-        // Split into individual pages
-        for (let i = 0; i < totalPages; i++) {
-          const newPdf = await PDFDocument.create();
-          const [page] = await newPdf.copyPages(sourcePdf, [i]);
-          newPdf.addPage(page);
-          const pdfBytes = await newPdf.save();
-          const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          results.push({
-            name: `${pdfFile.name.replace('.pdf', '')}_page_${i + 1}.pdf`,
-            url
-          });
-        }
-      } else if (splitMode === 'range') {
-        // Extract page range
-        const range = selectedPages.trim();
-        if (!range) {
-          setError('Please enter a page range (e.g., 1-5 or 1,3,5-10)');
-          setIsProcessing(false);
-          return;
-        }
-
-        const pages = parsePageRange(range, totalPages);
-        if (pages.length === 0) {
-          setError('Invalid page range');
-          setIsProcessing(false);
-          return;
-        }
-
+      const sourcePdf = await PDFDocument.load(await pdfFile.arrayBuffer());
+      const results: SplitResult[] = [];
+      for (const group of groups) {
         const newPdf = await PDFDocument.create();
-        const copiedPages = await newPdf.copyPages(sourcePdf, pages);
-        copiedPages.forEach(page => newPdf.addPage(page));
-        const pdfBytes = await newPdf.save();
-        const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
+        const copied = await newPdf.copyPages(sourcePdf, group);
+        copied.forEach((page) => newPdf.addPage(page));
+        const bytes = await newPdf.save();
+        const contiguous = group.every((p, i) => i === 0 || p === group[i - 1] + 1);
+        const label = splitMode === 'extract' && !contiguous ? 'extracted' : groupLabel(group);
         results.push({
-          name: `${pdfFile.name.replace('.pdf', '')}_pages_${range.replace(/,/g, '_')}.pdf`,
-          url
-        });
-      } else if (splitMode === 'custom') {
-        // Extract specific pages
-        const pages = parsePageRange(selectedPages, totalPages);
-        if (pages.length === 0) {
-          setError('Invalid page numbers');
-          setIsProcessing(false);
-          return;
-        }
-
-        const newPdf = await PDFDocument.create();
-        const copiedPages = await newPdf.copyPages(sourcePdf, pages);
-        copiedPages.forEach(page => newPdf.addPage(page));
-        const pdfBytes = await newPdf.save();
-        const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        results.push({
-          name: `${pdfFile.name.replace('.pdf', '')}_extracted.pdf`,
-          url
+          name: `${baseName}_${label}.pdf`,
+          url: URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' })),
+          pages: group.length,
         });
       }
-
       setSplitPdfs(results);
     } catch (err) {
       console.error('Split error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to split PDF. The file may be corrupted or password-protected.');
+      setError('Failed to split the PDF. The file may be corrupted or password-protected.');
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const parsePageRange = (range: string, maxPages: number): number[] => {
-    const pages: number[] = [];
-    const parts = range.split(',').map(p => p.trim());
-
-    for (const part of parts) {
-      if (part.includes('-')) {
-        const [start, end] = part.split('-').map(n => parseInt(n.trim()));
-        if (isNaN(start) || isNaN(end) || start < 1 || end > maxPages || start > end) {
-          return [];
-        }
-        for (let i = start - 1; i < end; i++) {
-          pages.push(i);
-        }
-      } else {
-        const page = parseInt(part);
-        if (isNaN(page) || page < 1 || page > maxPages) {
-          return [];
-        }
-        pages.push(page - 1);
-      }
-    }
-
-    return [...new Set(pages)].sort((a, b) => a - b);
   };
 
   const handleDownload = (url: string, name: string) => {
@@ -161,9 +151,7 @@ export default function PDFSplitter() {
 
   const handleDownloadAll = () => {
     splitPdfs.forEach((pdf, index) => {
-      setTimeout(() => {
-        handleDownload(pdf.url, pdf.name);
-      }, index * 200);
+      setTimeout(() => handleDownload(pdf.url, pdf.name), index * 250);
     });
   };
 
@@ -173,327 +161,205 @@ export default function PDFSplitter() {
     setSelectedPages('');
     setSplitMode('all');
     setError('');
-    splitPdfs.forEach((pdf: { name: string; url: string }) => URL.revokeObjectURL(pdf.url));
     setSplitPdfs([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
+
+  const modes: { value: SplitMode; title: string; text: string }[] = [
+    { value: 'all', title: 'Split into single pages', text: 'Creates one PDF for every page' },
+    { value: 'extract', title: 'Extract pages into one PDF', text: 'Pick pages such as 1-3, 7 and get a single file' },
+    { value: 'ranges', title: 'Split by custom ranges', text: 'Each range becomes its own PDF, e.g. 1-3, 4-6' },
+    { value: 'every', title: 'Split every N pages', text: 'Fixed-size chunks, e.g. every 2 pages' },
+  ];
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          ✂️ Free PDF Splitter Online
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Free PDF splitter online - no signup required. Split PDF files into individual pages or extract specific pages instantly. Extract page ranges, split by pages. All processing happens in your browser. Perfect for document management.
-        </p>
-
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
         {/* Stats */}
         {pdfFile && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-600">File Name</div>
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="bg-blue-50 p-3 rounded-lg min-w-0">
+              <div className="text-sm text-gray-600">File</div>
               <div className="text-sm font-bold text-blue-600 truncate">{pdfFile.name}</div>
             </div>
             <div className="bg-green-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-600">Total Pages</div>
-              <div className="text-2xl font-bold text-green-600">{pageCount}</div>
+              <div className="text-sm text-gray-600">Pages</div>
+              <div className="text-2xl font-bold text-green-600" data-testid="split-page-count">{pageCount}</div>
             </div>
             <div className="bg-purple-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-600">File Size</div>
-              <div className="text-sm font-bold text-purple-600">
-                {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
-              </div>
+              <div className="text-sm text-gray-600">Size</div>
+              <div className="text-sm font-bold text-purple-600">{formatSize(pdfFile.size)}</div>
             </div>
           </div>
         )}
 
         {/* File Upload */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select PDF File
+        <div
+          className={`mb-6 rounded-lg border-2 border-dashed p-4 transition-colors ${isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragOver(false);
+            void loadFile(e.dataTransfer.files?.[0]);
+          }}
+        >
+          <label htmlFor="pdf-splitter-input" className="block text-sm font-medium text-gray-700 mb-2">
+            Select a PDF file (or drop it here)
           </label>
           <input
+            id="pdf-splitter-input"
             ref={fileInputRef}
             type="file"
-            accept=".pdf"
-            onChange={handleFileSelect}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            accept=".pdf,application/pdf"
+            onChange={(e) => void loadFile(e.target.files?.[0])}
+            className="w-full min-w-0 p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          <p className="text-sm text-gray-500 mt-2">
-            Maximum file size: 50MB. Password-protected PDFs are not supported.
-          </p>
+          <p className="text-sm text-gray-500 mt-2">Password-protected PDFs are not supported.</p>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-800 text-sm">{error}</p>
           </div>
         )}
 
         {/* Split Options */}
         {pdfFile && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Split Mode
-            </label>
-            <div className="space-y-3">
-              <label className="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="splitMode"
-                  value="all"
-                  checked={splitMode === 'all'}
-                  onChange={(e) => setSplitMode(e.target.value as any)}
-                  className="mr-3"
-                />
-                <div>
-                  <div className="font-medium text-gray-900">Split into Individual Pages</div>
-                  <div className="text-sm text-gray-600">Creates a separate PDF for each page</div>
-                </div>
-              </label>
-              <label className="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="splitMode"
-                  value="range"
-                  checked={splitMode === 'range'}
-                  onChange={(e) => setSplitMode(e.target.value as any)}
-                  className="mr-3"
-                />
-                <div>
-                  <div className="font-medium text-gray-900">Extract Page Range</div>
-                  <div className="text-sm text-gray-600">Extract a range of pages (e.g., 1-5 or 1,3,5-10)</div>
-                </div>
-              </label>
-              <label className="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="splitMode"
-                  value="custom"
-                  checked={splitMode === 'custom'}
-                  onChange={(e) => setSplitMode(e.target.value as any)}
-                  className="mr-3"
-                />
-                <div>
-                  <div className="font-medium text-gray-900">Extract Specific Pages</div>
-                  <div className="text-sm text-gray-600">Extract specific pages (e.g., 1,3,5 or 1-5,10-15)</div>
-                </div>
-              </label>
+          <fieldset className="mb-6">
+            <legend className="block text-sm font-medium text-gray-700 mb-3">Split mode</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {modes.map((mode) => (
+                <label
+                  key={mode.value}
+                  className={`flex items-start p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 ${
+                    splitMode === mode.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="splitMode"
+                    value={mode.value}
+                    checked={splitMode === mode.value}
+                    onChange={() => {
+                      setSplitMode(mode.value);
+                      setError('');
+                    }}
+                    className="mr-3 mt-1"
+                  />
+                  <span>
+                    <span className="block font-medium text-gray-900">{mode.title}</span>
+                    <span className="block text-sm text-gray-600">{mode.text}</span>
+                  </span>
+                </label>
+              ))}
             </div>
 
-            {(splitMode === 'range' || splitMode === 'custom') && (
+            {(splitMode === 'extract' || splitMode === 'ranges') && (
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {splitMode === 'range' ? 'Page Range' : 'Page Numbers'}
+                <label htmlFor="pdf-splitter-pages" className="block text-sm font-medium text-gray-700 mb-2">
+                  {splitMode === 'extract' ? 'Pages to extract' : 'Ranges (one PDF per range)'}
                 </label>
                 <input
+                  id="pdf-splitter-pages"
                   type="text"
+                  inputMode="numeric"
                   value={selectedPages}
                   onChange={(e) => setSelectedPages(e.target.value)}
-                  placeholder={splitMode === 'range' ? 'e.g., 1-5 or 1,3,5-10' : 'e.g., 1,3,5 or 1-5,10-15'}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void handleSplit();
+                  }}
+                  placeholder={splitMode === 'extract' ? 'e.g. 1-3, 5, 8-' : 'e.g. 1-3, 4-6, 7-'}
+                  aria-describedby="pdf-splitter-pages-hint"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter page numbers (1-{pageCount}). Use commas for multiple pages, dashes for ranges.
+                <p id="pdf-splitter-pages-hint" className="text-xs text-gray-500 mt-1">
+                  Pages 1–{pageCount}. Separate with commas; use a dash for ranges. “8-” means page 8 to the end.
                 </p>
               </div>
             )}
-          </div>
+
+            {splitMode === 'every' && (
+              <div className="mt-4">
+                <label htmlFor="pdf-splitter-every" className="block text-sm font-medium text-gray-700 mb-2">
+                  Pages per file
+                </label>
+                <input
+                  id="pdf-splitter-every"
+                  type="number"
+                  min={1}
+                  max={pageCount}
+                  step={1}
+                  value={everyN}
+                  onChange={(e) => setEveryN(e.target.value)}
+                  className="w-full sm:w-40 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            )}
+          </fieldset>
         )}
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 mb-6">
           <button
+            type="button"
             onClick={handleSplit}
             disabled={!pdfFile || isProcessing}
             className="flex-1 sm:flex-none px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
           >
-            {isProcessing ? 'Processing...' : '✂️ Split PDF'}
+            {isProcessing ? 'Processing…' : 'Split PDF'}
           </button>
           {splitPdfs.length > 1 && (
             <button
+              type="button"
               onClick={handleDownloadAll}
               className="flex-1 sm:flex-none px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
             >
-              📥 Download All ({splitPdfs.length})
+              Download all ({splitPdfs.length})
             </button>
           )}
           <button
+            type="button"
             onClick={handleClear}
             className="flex-1 sm:flex-none px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors"
           >
-            🗑️ Clear
+            Clear
           </button>
         </div>
 
         {/* Results */}
         {splitPdfs.length > 0 && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Split Results ({splitPdfs.length} file{splitPdfs.length !== 1 ? 's' : ''})
-            </label>
-            <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4">
-              {splitPdfs.map((pdf, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="text-2xl">📄</span>
+          <div>
+            <h2 className="block text-sm font-medium text-gray-700 mb-2" role="status">
+              Result: {splitPdfs.length} file{splitPdfs.length !== 1 ? 's' : ''}
+            </h2>
+            <ul className="space-y-2 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-2 sm:p-4" data-testid="split-results">
+              {splitPdfs.map((pdf) => (
+                <li key={pdf.url} className="flex items-center justify-between gap-2 p-3 bg-gray-50 rounded-lg">
+                  <div className="min-w-0">
                     <p className="font-medium text-gray-900 truncate">{pdf.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {pdf.pages} page{pdf.pages !== 1 ? 's' : ''}
+                    </p>
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleDownload(pdf.url, pdf.name)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors"
+                    aria-label={`Download ${pdf.name}`}
+                    className="flex-none px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors"
                   >
                     Download
                   </button>
-                </div>
+                </li>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">About PDF Splitter</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our PDF Splitter is a powerful, client-side tool that splits PDF files into individual pages or extracts 
-              specific pages. All processing happens locally in your browser using the pdf-lib library, ensuring your 
-              files never leave your device. This provides maximum privacy and security for your documents.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Perfect for extracting specific pages from large documents, splitting multi-page PDFs, removing unwanted 
-              pages, or organizing your PDF files. The tool supports multiple split modes to suit different needs.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Extract specific pages from large documents</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Split multi-page PDFs into individual pages</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Remove unwanted pages from PDFs</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Extract page ranges for sharing</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Create page subsets from documents</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Organize and separate PDF content</span>
-              </li>
             </ul>
           </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Multiple Split Modes</h5>
-                  <p className="text-sm text-gray-600">Split into pages, extract ranges, or select specific pages</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Flexible Page Selection</h5>
-                  <p className="text-sm text-gray-600">Use ranges (1-5) or specific pages (1,3,5)</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Privacy-First</h5>
-                  <p className="text-sm text-gray-600">All processing happens in your browser</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Batch Download</h5>
-                  <p className="text-sm text-gray-600">Download all split files at once</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
-            <div className="space-y-4">
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Is my PDF data stored or uploaded?</h5>
-                <p className="text-gray-700 text-sm">
-                  No, all PDF splitting happens locally in your browser. Your files are never uploaded to any server 
-                  or stored anywhere. Your privacy is guaranteed.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">How do I specify page ranges?</h5>
-                <p className="text-gray-700 text-sm">
-                  Use dashes for ranges (e.g., 1-5 for pages 1 through 5) and commas for multiple pages or ranges 
-                  (e.g., 1,3,5-10 for pages 1, 3, and 5 through 10).
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Can I split password-protected PDFs?</h5>
-                <p className="text-gray-700 text-sm">
-                  Password-protected PDFs cannot be split. You'll need to remove the password first using a PDF 
-                  password remover tool.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What's the maximum file size?</h5>
-                <p className="text-gray-700 text-sm">
-                  There's no hard limit, but browser memory may limit very large files. We recommend files under 
-                  50MB for best performance.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>Use "Split into Individual Pages" to create separate PDFs for each page</li>
-            <li>Use ranges like "1-5" to extract pages 1 through 5</li>
-            <li>Use commas like "1,3,5" to extract specific pages</li>
-            <li>Combine ranges and pages: "1-5,10,15-20"</li>
-            <li>All processing happens in your browser - no uploads required</li>
-          </ul>
-        </div>
+        )}
       </div>
     </div>
   );
 }
-

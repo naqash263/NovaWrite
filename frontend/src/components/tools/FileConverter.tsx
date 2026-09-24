@@ -1,622 +1,582 @@
-import { useState, useRef, useEffect } from 'react';
+import { useDeferredValue, useMemo, useRef, useState } from 'react';
 
-type FileFormat = 'txt' | 'csv' | 'json' | 'xml' | 'yaml' | 'html';
+type SourceFormat = 'txt' | 'csv' | 'json' | 'xml' | 'html';
+type TargetFormat = 'txt' | 'csv' | 'json' | 'xml' | 'yaml' | 'html';
+type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
+
+const sourceLabels: Record<SourceFormat, string> = {
+  csv: 'CSV / TSV',
+  json: 'JSON',
+  xml: 'XML',
+  html: 'HTML (tables or text)',
+  txt: 'Plain text (one item per line)',
+};
+
+const targetLabels: Record<TargetFormat, string> = {
+  json: 'JSON',
+  csv: 'CSV',
+  xml: 'XML',
+  yaml: 'YAML',
+  html: 'HTML',
+  txt: 'Plain text',
+};
+
+const mimeTypes: Record<TargetFormat, string> = {
+  json: 'application/json',
+  csv: 'text/csv',
+  xml: 'application/xml',
+  yaml: 'application/yaml',
+  html: 'text/html',
+  txt: 'text/plain',
+};
+
+const SAMPLE = 'name,city,age\n"Smith, Anna",London,34\nJosé Pérez,Madrid,29\n';
+
+const isPlainObject = (v: unknown): v is { [key: string]: Json } => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+// ---------- detection ----------
+
+function detectFormat(fileName: string, content: string): SourceFormat {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  if (ext === 'csv' || ext === 'tsv') return 'csv';
+  if (ext === 'json') return 'json';
+  if (ext === 'xml') return 'xml';
+  if (ext === 'html' || ext === 'htm') return 'html';
+  const t = content.trim();
+  if (/^[[{]/.test(t)) {
+    try {
+      JSON.parse(t);
+      return 'json';
+    } catch {
+      /* not JSON */
+    }
+  }
+  if (/^<!doctype html|<html[\s>]|<table[\s>]|<body[\s>]/i.test(t)) return 'html';
+  if (t.startsWith('<')) return 'xml';
+  const firstLine = t.split(/\r?\n/)[0] ?? '';
+  if (t.includes('\n') && /[,;\t]/.test(firstLine)) return 'csv';
+  return 'txt';
+}
+
+// ---------- parsers ----------
+
+function detectDelimiter(text: string): string {
+  const firstLine = text.split(/\r?\n/)[0] ?? '';
+  const counts = [',', ';', '\t'].map((d) => ({ d, n: firstLine.split(d).length - 1 }));
+  counts.sort((a, b) => b.n - a.n);
+  return counts[0].n > 0 ? counts[0].d : ',';
+}
+
+/** RFC 4180 CSV parser: quoted fields, escaped quotes, CRLF and newlines inside quotes. */
+function parseCsvRows(text: string, delimiter: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else inQuotes = false;
+      } else field += c;
+    } else if (c === '"' && field === '') inQuotes = true;
+    else if (c === delimiter) {
+      row.push(field);
+      field = '';
+    } else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else field += c;
+  }
+  if (inQuotes) throw new Error('CSV error: a quoted field is not closed.');
+  if (field !== '' || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows.filter((r) => !(r.length === 1 && r[0] === ''));
+}
+
+function parseCsv(text: string): Json {
+  const rows = parseCsvRows(text.replace(/^\uFEFF/, ''), detectDelimiter(text));
+  if (rows.length === 0) return [];
+  const seen = new Map<string, number>();
+  const headers = rows[0].map((h, i) => {
+    let key = h.trim() || `column_${i + 1}`;
+    const count = seen.get(key) ?? 0;
+    seen.set(key, count + 1);
+    if (count) key = `${key}_${count + 1}`;
+    return key;
+  });
+  return rows.slice(1).map((r) => {
+    const obj: { [key: string]: Json } = {};
+    headers.forEach((h, i) => {
+      obj[h] = r[i] ?? '';
+    });
+    return obj;
+  });
+}
+
+function xmlElementToJson(el: Element): Json {
+  const obj: { [key: string]: Json } = {};
+  for (const attr of Array.from(el.attributes)) obj[`@${attr.name}`] = attr.value;
+  const children = Array.from(el.children);
+  const text = Array.from(el.childNodes)
+    .filter((n) => n.nodeType === Node.TEXT_NODE || n.nodeType === Node.CDATA_SECTION_NODE)
+    .map((n) => n.textContent ?? '')
+    .join('')
+    .trim();
+  if (children.length === 0 && el.attributes.length === 0) return text;
+  for (const child of children) {
+    const value = xmlElementToJson(child);
+    const key = child.tagName;
+    if (key in obj) {
+      const existing = obj[key];
+      obj[key] = Array.isArray(existing) ? [...existing, value] : [existing, value];
+    } else obj[key] = value;
+  }
+  if (text) obj['#text'] = text;
+  return obj;
+}
+
+function parseXml(text: string): Json {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  const err = doc.getElementsByTagName('parsererror')[0];
+  if (err) throw new Error(`XML error: ${(err.textContent ?? 'the document is not well-formed').split('\n')[0].trim()}`);
+  return { [doc.documentElement.tagName]: xmlElementToJson(doc.documentElement) };
+}
+
+function parseHtml(text: string): Json {
+  const doc = new DOMParser().parseFromString(text, 'text/html');
+  const table = doc.querySelector('table');
+  if (table) {
+    const rows = Array.from(table.querySelectorAll('tr')).map((tr) =>
+      Array.from(tr.querySelectorAll('th,td')).map((c) => (c.textContent ?? '').replace(/\s+/g, ' ').trim()),
+    );
+    if (rows.length === 0) return [];
+    const headers = rows[0].map((h, i) => h || `column_${i + 1}`);
+    return rows.slice(1).map((r) => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ''])));
+  }
+  return (doc.body?.innerText || doc.body?.textContent || '')
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
+function parseSource(format: SourceFormat, text: string): Json {
+  switch (format) {
+    case 'json':
+      try {
+        return JSON.parse(text) as Json;
+      } catch (e) {
+        throw new Error(`JSON error: ${e instanceof Error ? e.message : 'invalid JSON'}`);
+      }
+    case 'csv':
+      return parseCsv(text);
+    case 'xml':
+      return parseXml(text);
+    case 'html':
+      return parseHtml(text);
+    case 'txt':
+      return text.replace(/\r\n?/g, '\n').replace(/\n+$/, '').split('\n');
+  }
+}
+
+// ---------- serializers ----------
+
+/** Unwraps single-key wrappers such as {"root": {"item": [...]}} to reach tabular data. */
+function unwrap(v: Json): Json {
+  let cur = v;
+  for (let depth = 0; depth < 4 && isPlainObject(cur); depth++) {
+    const keys = Object.keys(cur);
+    if (keys.length !== 1) break;
+    const inner = cur[keys[0]];
+    if (!Array.isArray(inner) && !isPlainObject(inner)) break;
+    cur = inner;
+  }
+  return cur;
+}
+
+const cellText = (v: Json | undefined): string =>
+  v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+
+function toTable(v: Json): { headers: string[]; rows: string[][] } {
+  const data = unwrap(v);
+  const list: Json[] = Array.isArray(data) ? data : [data];
+  if (list.every((item) => !isPlainObject(item))) {
+    return { headers: ['value'], rows: list.map((item) => [cellText(item)]) };
+  }
+  const headers: string[] = [];
+  for (const item of list) if (isPlainObject(item)) for (const k of Object.keys(item)) if (!headers.includes(k)) headers.push(k);
+  const rows = list.map((item) => (isPlainObject(item) ? headers.map((h) => cellText(item[h])) : [cellText(item)]));
+  return { headers, rows };
+}
+
+const csvField = (s: string) => (/[",\r\n]|^\s|\s$/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
+
+function toCsv(v: Json): string {
+  const { headers, rows } = toTable(v);
+  return [headers, ...rows].map((r) => r.map(csvField).join(',')).join('\r\n');
+}
+
+const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function xmlName(key: string): string {
+  let name = key.replace(/[^A-Za-z0-9_.-]/g, '_');
+  if (!/^[A-Za-z_]/.test(name) || /^xml/i.test(name)) name = `_${name}`;
+  return name;
+}
+
+function toXml(v: Json): string {
+  const render = (value: Json, tag: string, indent: string): string => {
+    const name = xmlName(tag);
+    if (Array.isArray(value)) return value.map((item) => render(item, tag, indent)).join('\n');
+    if (isPlainObject(value)) {
+      const attrs = Object.entries(value)
+        .filter(([k, val]) => k.startsWith('@') && !isPlainObject(val) && !Array.isArray(val))
+        .map(([k, val]) => ` ${xmlName(k.slice(1))}="${escapeXml(cellText(val))}"`)
+        .join('');
+      const text = value['#text'];
+      const children = Object.entries(value).filter(([k]) => !k.startsWith('@') && k !== '#text');
+      if (children.length === 0) return `${indent}<${name}${attrs}>${text !== undefined ? escapeXml(cellText(text)) : ''}</${name}>`;
+      const inner = children.map(([k, val]) => render(val, k, `${indent}  `)).join('\n');
+      const textLine = text !== undefined ? `\n${indent}  ${escapeXml(cellText(text))}` : '';
+      return `${indent}<${name}${attrs}>${textLine}\n${inner}\n${indent}</${name}>`;
+    }
+    return `${indent}<${name}>${escapeXml(cellText(value))}</${name}>`;
+  };
+  let body: string;
+  if (isPlainObject(v) && Object.keys(v).length === 1 && !Array.isArray(Object.values(v)[0])) {
+    const [key, value] = Object.entries(v)[0];
+    body = render(value, key, '');
+  } else if (Array.isArray(v)) {
+    body = `<root>\n${v.map((item) => render(item, 'item', '  ')).join('\n')}\n</root>`;
+  } else {
+    body = render(v, 'root', '');
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${body}`;
+}
+
+function yamlScalar(v: Json): string {
+  if (v === null) return 'null';
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  const s = String(v);
+  const needsQuotes =
+    s === '' ||
+    /^\s|\s$/.test(s) ||
+    /[:#\n\r\t"'{}[\],&*!|>%@`]/.test(s) ||
+    /^[-?]/.test(s) ||
+    /^(true|false|yes|no|on|off|null|~)$/i.test(s) ||
+    /^[-+]?(\d[\d_]*(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/.test(s);
+  return needsQuotes ? JSON.stringify(s) : s;
+}
+
+function toYaml(v: Json, indent = ''): string {
+  if (Array.isArray(v)) {
+    if (v.length === 0) return '[]';
+    return v
+      .map((item) => {
+        if ((Array.isArray(item) && item.length) || (isPlainObject(item) && Object.keys(item).length)) {
+          const nested = toYaml(item, `${indent}  `);
+          return `${indent}- ${nested.trimStart()}`;
+        }
+        return `${indent}- ${Array.isArray(item) ? '[]' : isPlainObject(item) ? '{}' : yamlScalar(item)}`;
+      })
+      .join('\n');
+  }
+  if (isPlainObject(v)) {
+    const entries = Object.entries(v);
+    if (entries.length === 0) return '{}';
+    return entries
+      .map(([k, val]) => {
+        const key = yamlScalar(k);
+        if ((Array.isArray(val) && val.length) || (isPlainObject(val) && Object.keys(val).length)) {
+          return `${indent}${key}:\n${toYaml(val, `${indent}  `)}`;
+        }
+        return `${indent}${key}: ${Array.isArray(val) ? '[]' : isPlainObject(val) ? '{}' : yamlScalar(val)}`;
+      })
+      .join('\n');
+  }
+  return `${indent}${yamlScalar(v)}`;
+}
+
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function toHtml(v: Json): string {
+  const data = unwrap(v);
+  let body: string;
+  const list = Array.isArray(data) ? data : null;
+  if (list && list.length && list.every((i) => !isPlainObject(i) && !Array.isArray(i))) {
+    body = `<ul>\n${list.map((i) => `  <li>${escapeHtml(cellText(i))}</li>`).join('\n')}\n</ul>`;
+  } else if (list || isPlainObject(data)) {
+    const { headers, rows } = toTable(data);
+    body = `<table>\n  <thead>\n    <tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr>\n  </thead>\n  <tbody>\n${rows
+      .map((r) => `    <tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`)
+      .join('\n')}\n  </tbody>\n</table>`;
+  } else {
+    body = `<p>${escapeHtml(cellText(data))}</p>`;
+  }
+  return `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<title>Converted data</title>\n</head>\n<body>\n${body}\n</body>\n</html>`;
+}
+
+function toText(v: Json): string {
+  const data = unwrap(v);
+  if (typeof data === 'string') return data;
+  if (Array.isArray(data) && data.every((i) => !isPlainObject(i) && !Array.isArray(i))) return data.map(cellText).join('\n');
+  if (Array.isArray(data)) {
+    const { headers, rows } = toTable(data);
+    return [headers, ...rows].map((r) => r.join('\t')).join('\n');
+  }
+  return JSON.stringify(data, null, 2);
+}
+
+function convert(text: string, source: SourceFormat, target: TargetFormat): string {
+  const data = parseSource(source, text);
+  switch (target) {
+    case 'json':
+      return JSON.stringify(data, null, 2);
+    case 'csv':
+      return toCsv(data);
+    case 'xml':
+      return toXml(data);
+    case 'yaml':
+      return `${toYaml(data)}\n`;
+    case 'html':
+      return toHtml(data);
+    case 'txt':
+      return toText(data);
+  }
+}
+
+// ---------- component ----------
 
 export default function FileConverter() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileContent, setFileContent] = useState<string>('');
-  const [detectedFormat, setDetectedFormat] = useState<FileFormat | null>(null);
-  const [targetFormat, setTargetFormat] = useState<FileFormat>('json');
-  const [convertedContent, setConvertedContent] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [input, setInput] = useState('');
+  const [fileName, setFileName] = useState('');
+  const [sourceChoice, setSourceChoice] = useState<'auto' | SourceFormat>('auto');
+  const [targetFormat, setTargetFormat] = useState<TargetFormat>('json');
+  const [readError, setReadError] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const deferredInput = useDeferredValue(input);
 
+  const detected = useMemo(() => detectFormat(fileName, deferredInput), [fileName, deferredInput]);
+  const sourceFormat = sourceChoice === 'auto' ? detected : sourceChoice;
 
-  const detectFileFormat = (filename: string, content: string): FileFormat => {
-    const extension = filename.split('.').pop()?.toLowerCase();
-    
-    // Check by extension first
-    if (extension === 'csv') return 'csv';
-    if (extension === 'json') return 'json';
-    if (extension === 'xml') return 'xml';
-    if (extension === 'yaml' || extension === 'yml') return 'yaml';
-    if (extension === 'html' || extension === 'htm') return 'html';
-    
-    // Try to detect by content
-    const trimmed = content.trim();
-    
-    // JSON detection
-    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-        (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
-      try {
-        JSON.parse(trimmed);
-        return 'json';
-      } catch {}
+  const { output, error } = useMemo(() => {
+    if (!deferredInput.trim()) return { output: '', error: '' };
+    try {
+      return { output: convert(deferredInput, sourceFormat, targetFormat), error: '' };
+    } catch (e) {
+      return { output: '', error: e instanceof Error ? e.message : 'Conversion failed.' };
     }
-    
-    // XML detection
-    if (trimmed.startsWith('<?xml') || trimmed.startsWith('<')) {
-      return 'xml';
-    }
-    
-    // HTML detection
-    if (trimmed.includes('<html') || trimmed.includes('<!DOCTYPE html')) {
-      return 'html';
-    }
-    
-    // CSV detection (has commas and newlines)
-    if (trimmed.includes(',') && trimmed.includes('\n')) {
-      const lines = trimmed.split('\n');
-      if (lines.length > 1 && lines[0].split(',').length > 1) {
-        return 'csv';
-      }
-    }
-    
-    // Default to TXT
-    return 'txt';
-  };
+  }, [deferredInput, sourceFormat, targetFormat]);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const loadFile = (file: File | undefined) => {
     if (!file) return;
-
-    setError('');
-    setSelectedFile(file);
-    setConvertedContent('');
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      setFileContent(content);
-      const format = detectFileFormat(file.name, content);
-      setDetectedFormat(format);
-      setTargetFormat(format === 'txt' ? 'json' : format); // Default target
-    };
-    reader.onerror = () => {
-      setError('Failed to read file');
-    };
-    reader.readAsText(file);
-  };
-
-  const convertFile = () => {
-    if (!fileContent || !detectedFormat) {
-      setError('Please select a file first');
+    setReadError('');
+    if (file.size > 20 * 1024 * 1024) {
+      setReadError(`${file.name} is larger than 20 MB. Please use a smaller text file.`);
       return;
     }
-
-    setIsProcessing(true);
-    setError('');
-
-    try {
-      let converted = '';
-
-      // Convert from detected format to target format
-      if (detectedFormat === targetFormat) {
-        converted = fileContent;
-      } else {
-        // Parse source format
-        let parsedData: any;
-
-        switch (detectedFormat) {
-          case 'json':
-            parsedData = JSON.parse(fileContent);
-            break;
-          case 'csv':
-            parsedData = parseCSV(fileContent);
-            break;
-          case 'xml':
-            parsedData = parseXML(fileContent);
-            break;
-          case 'yaml':
-            setError('YAML parsing not fully supported. Please use JSON or XML.');
-            setIsProcessing(false);
-            return;
-          case 'html':
-          case 'txt':
-            parsedData = fileContent;
-            break;
-        }
-
-        // Convert to target format
-        switch (targetFormat) {
-          case 'json':
-            converted = JSON.stringify(parsedData, null, 2);
-            break;
-          case 'csv':
-            converted = convertToCSV(parsedData);
-            break;
-          case 'xml':
-            converted = convertToXML(parsedData);
-            break;
-          case 'yaml':
-            converted = convertToYAML(parsedData);
-            break;
-          case 'html':
-            converted = convertToHTML(parsedData);
-            break;
-          case 'txt':
-            converted = typeof parsedData === 'string' ? parsedData : JSON.stringify(parsedData, null, 2);
-            break;
-        }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? '');
+      if (text.includes('\u0000')) {
+        setReadError(`${file.name} looks like a binary file. This tool converts text formats only.`);
+        return;
       }
-
-      setConvertedContent(converted);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to convert file');
-      setConvertedContent('');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const parseCSV = (csv: string): any[] => {
-    const lines = csv.trim().split('\n');
-    if (lines.length === 0) return [];
-    
-    const headers = lines[0].split(',').map(h => h.trim());
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
-      const obj: any = {};
-      headers.forEach((header, index) => {
-        obj[header] = values[index] || '';
-      });
-      data.push(obj);
-    }
-    
-    return data;
-  };
-
-  const parseXML = (xml: string): any => {
-    // Simple XML to object parser
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xml, 'text/xml');
-    
-    const parseNode = (node: Element): any => {
-      const obj: any = {};
-      
-      if (node.children.length === 0) {
-        return node.textContent || '';
-      }
-      
-      Array.from(node.children).forEach(child => {
-        const tagName = child.tagName;
-        if (obj[tagName]) {
-          if (!Array.isArray(obj[tagName])) {
-            obj[tagName] = [obj[tagName]];
-          }
-          obj[tagName].push(parseNode(child));
-        } else {
-          obj[tagName] = parseNode(child);
-        }
-      });
-      
-      return obj;
+      setFileName(file.name);
+      setSourceChoice('auto');
+      setInput(text);
+      const fmt = detectFormat(file.name, text);
+      setTargetFormat(fmt === 'json' ? 'csv' : 'json');
     };
-    
-    return parseNode(doc.documentElement);
+    reader.onerror = () => setReadError(`Could not read ${file.name}.`);
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const convertToCSV = (data: any): string => {
-    if (Array.isArray(data)) {
-      if (data.length === 0) return '';
-      
-      const headers = Object.keys(data[0]);
-      const csv = [headers.join(',')];
-      
-      data.forEach(row => {
-        const values = headers.map(header => {
-          const value = row[header];
-          return typeof value === 'string' && value.includes(',') 
-            ? `"${value}"` 
-            : value;
-        });
-        csv.push(values.join(','));
-      });
-      
-      return csv.join('\n');
-    }
-    
-    return Object.entries(data).map(([key, value]) => `${key},${value}`).join('\n');
-  };
+  const baseName = fileName ? fileName.replace(/\.[^.]+$/, '') : 'converted';
 
-  const convertToXML = (data: any, rootName: string = 'root'): string => {
-    const convert = (obj: any, tag: string): string => {
-      if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
-        return `<${tag}>${obj}</${tag}>`;
-      }
-      
-      if (Array.isArray(obj)) {
-        return obj.map(item => convert(item, tag)).join('\n');
-      }
-      
-      if (typeof obj === 'object' && obj !== null) {
-        const entries = Object.entries(obj);
-        if (entries.length === 0) return `<${tag}></${tag}>`;
-        
-        return `<${tag}>\n${entries.map(([key, value]) => 
-          convert(value, key)
-        ).join('\n')}\n</${tag}>`;
-      }
-      
-      return `<${tag}></${tag}>`;
-    };
-    
-    return `<?xml version="1.0" encoding="UTF-8"?>\n${convert(data, rootName)}`;
-  };
-
-  const convertToYAML = (data: any, indent: number = 0): string => {
-    const spaces = '  '.repeat(indent);
-    
-    if (typeof data === 'string') {
-      return `${spaces}"${data}"`;
-    }
-    
-    if (typeof data === 'number' || typeof data === 'boolean') {
-      return `${spaces}${data}`;
-    }
-    
-    if (Array.isArray(data)) {
-      if (data.length === 0) return `${spaces}[]`;
-      return data.map(item => `- ${convertToYAML(item, indent + 1).trim()}`).join('\n');
-    }
-    
-    if (typeof data === 'object' && data !== null) {
-      const entries = Object.entries(data);
-      if (entries.length === 0) return `${spaces}{}`;
-      
-      return entries.map(([key, value]) => {
-        const valueStr = convertToYAML(value, indent + 1);
-        return `${spaces}${key}: ${valueStr.trim()}`;
-      }).join('\n');
-    }
-    
-    return `${spaces}null`;
-  };
-
-  const convertToHTML = (data: any): string => {
-    if (typeof data === 'string') {
-      return data;
-    }
-    
-    const toHTML = (obj: any, tag: string = 'div'): string => {
-      if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
-        return `<${tag}>${obj}</${tag}>`;
-      }
-      
-      if (Array.isArray(obj)) {
-        return `<ul>${obj.map(item => `<li>${toHTML(item, 'span')}</li>`).join('')}</ul>`;
-      }
-      
-      if (typeof obj === 'object' && obj !== null) {
-        const entries = Object.entries(obj);
-        return `<div>${entries.map(([key, value]) => 
-          `<div><strong>${key}:</strong> ${toHTML(value, 'span')}</div>`
-        ).join('')}</div>`;
-      }
-      
-      return '';
-    };
-    
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Converted File</title>
-</head>
-<body>
-  ${toHTML(data)}
-</body>
-</html>`;
-  };
-
-  const downloadConverted = () => {
-    if (!convertedContent || !selectedFile) return;
-
-    const blob = new Blob([convertedContent], { type: 'text/plain' });
+  const download = () => {
+    if (!output) return;
+    const blob = new Blob([output], { type: `${mimeTypes[targetFormat]};charset=utf-8` });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${selectedFile.name.split('.')[0]}.${targetFormat}`;
+    a.download = `${baseName}.${targetFormat}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const copy = async () => {
+    if (!output) return;
+    try {
+      await navigator.clipboard.writeText(output);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
   };
 
   const reset = () => {
-    setSelectedFile(null);
-    setFileContent('');
-    setDetectedFormat(null);
-    setConvertedContent('');
-    setError('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    setInput('');
+    setFileName('');
+    setSourceChoice('auto');
+    setReadError('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  useEffect(() => {
-    if (fileContent && detectedFormat && targetFormat) {
-      convertFile();
-    }
-  }, [targetFormat]);
+  const shownError = readError || error;
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free File Converter Online</h2>
-        <p className="text-gray-600 mb-6">
-          Free file converter online - no signup required. Convert files between TXT, CSV, JSON, XML, YAML, and HTML formats instantly. Automatic format detection, bidirectional conversions, real-time preview. All processing happens in your browser.
-        </p>
-
+    <div className="max-w-6xl mx-auto p-4 sm:p-6">
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
         {/* File Upload */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select File to Convert
+        <div
+          className={`mb-4 rounded-lg border-2 border-dashed p-4 transition-colors ${isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragOver(false);
+            loadFile(e.dataTransfer.files?.[0]);
+          }}
+        >
+          <label htmlFor="file-converter-input" className="block text-sm font-medium text-gray-700 mb-2">
+            Open a file (or drop it here), or paste content below
           </label>
           <input
+            id="file-converter-input"
             ref={fileInputRef}
             type="file"
-            accept=".txt,.csv,.json,.xml,.yaml,.yml,.html,.htm"
-            onChange={handleFileSelect}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            accept=".txt,.csv,.tsv,.json,.xml,.html,.htm"
+            onChange={(e) => loadFile(e.target.files?.[0])}
+            className="block w-full min-w-0 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           />
-          {detectedFormat && (
-            <p className="text-sm text-gray-600 mt-2">
-              Detected format: <span className="font-semibold">{detectedFormat.toUpperCase()}</span>
-            </p>
-          )}
         </div>
 
         {/* Format Selection */}
-        {selectedFile && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Source Format
-              </label>
-              <input
-                type="text"
-                value={detectedFormat?.toUpperCase() || ''}
-                readOnly
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Target Format
-              </label>
-              <select
-                value={targetFormat}
-                onChange={(e) => setTargetFormat(e.target.value as FileFormat)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="txt">TXT (Plain Text)</option>
-                <option value="csv">CSV (Comma Separated Values)</option>
-                <option value="json">JSON (JavaScript Object Notation)</option>
-                <option value="xml">XML (Extensible Markup Language)</option>
-                <option value="yaml">YAML (YAML Ain't Markup Language)</option>
-                <option value="html">HTML (HyperText Markup Language)</option>
-              </select>
-            </div>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm">{error}</p>
-          </div>
-        )}
-
-        {/* File Content Preview */}
-        {fileContent && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Original File Content
-                </label>
-                <span className="text-xs text-gray-500">{fileContent.length} characters</span>
-              </div>
-              <textarea
-                value={fileContent}
-                readOnly
-                className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none bg-gray-50 font-mono text-sm"
-              />
-            </div>
-
-            {convertedContent && (
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Converted Content ({targetFormat.toUpperCase()})
-                  </label>
-                  <button
-                    onClick={downloadConverted}
-                    className="text-sm text-blue-600 hover:text-blue-700"
-                  >
-                    Download
-                  </button>
-                </div>
-                <textarea
-                  value={convertedContent}
-                  readOnly
-                  className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none bg-gray-50 font-mono text-sm"
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        {selectedFile && (
-          <div className="flex gap-4">
-            <button
-              onClick={convertFile}
-              disabled={isProcessing || !detectedFormat}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label htmlFor="file-converter-source" className="block text-sm font-medium text-gray-700 mb-2">
+              From
+            </label>
+            <select
+              id="file-converter-source"
+              value={sourceChoice}
+              onChange={(e) => setSourceChoice(e.target.value as 'auto' | SourceFormat)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              {isProcessing ? 'Converting...' : 'Convert File'}
-            </button>
-            <button
-              onClick={reset}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              <option value="auto">Auto-detect{input.trim() ? ` (${sourceLabels[detected]})` : ''}</option>
+              {(Object.keys(sourceLabels) as SourceFormat[]).map((f) => (
+                <option key={f} value={f}>
+                  {sourceLabels[f]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="file-converter-target" className="block text-sm font-medium text-gray-700 mb-2">
+              To
+            </label>
+            <select
+              id="file-converter-target"
+              value={targetFormat}
+              onChange={(e) => setTargetFormat(e.target.value as TargetFormat)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              Reset
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* SEO Content */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">About File Converter</h3>
-        <div className="prose max-w-none">
-          <p className="text-gray-700 mb-4">
-            File Converter is a powerful, free online tool that converts files between TXT, CSV, JSON, XML, YAML, and HTML formats. 
-            All processing happens entirely in your browser, ensuring complete privacy and fast conversions. Perfect for developers, 
-            data analysts, and anyone who needs to transform data between different formats.
-          </p>
-          
-          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Formats</h4>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>TXT (Plain Text):</strong> Simple text files without formatting. Ideal for basic data storage and text processing.</li>
-            <li><strong>CSV (Comma-Separated Values):</strong> Spreadsheet data format used by Excel, Google Sheets, and database systems. Perfect for tabular data.</li>
-            <li><strong>JSON (JavaScript Object Notation):</strong> Lightweight data interchange format used in web APIs, configuration files, and modern applications.</li>
-            <li><strong>XML (Extensible Markup Language):</strong> Structured data format used in web services, configuration files, and document storage.</li>
-            <li><strong>YAML (YAML Ain't Markup Language):</strong> Human-readable data serialization format used in configuration files, CI/CD pipelines, and DevOps tools.</li>
-            <li><strong>HTML (HyperText Markup Language):</strong> Web page markup language. Can be converted to structured data formats for processing.</li>
-          </ul>
-
-          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Complete Conversion Matrix</h4>
-          <div className="overflow-x-auto mb-4">
-            <table className="min-w-full border border-gray-300">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="border border-gray-300 px-4 py-2 text-left">From</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">To</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className="border border-gray-300 px-4 py-2">TXT</td><td className="border border-gray-300 px-4 py-2">CSV, JSON, XML, YAML, HTML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
-                <tr><td className="border border-gray-300 px-4 py-2">CSV</td><td className="border border-gray-300 px-4 py-2">TXT, JSON, XML, YAML, HTML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
-                <tr><td className="border border-gray-300 px-4 py-2">JSON</td><td className="border border-gray-300 px-4 py-2">TXT, CSV, XML, YAML, HTML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
-                <tr><td className="border border-gray-300 px-4 py-2">XML</td><td className="border border-gray-300 px-4 py-2">TXT, CSV, JSON, YAML, HTML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
-                <tr><td className="border border-gray-300 px-4 py-2">YAML</td><td className="border border-gray-300 px-4 py-2">TXT, CSV, JSON, XML, HTML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
-                <tr><td className="border border-gray-300 px-4 py-2">HTML</td><td className="border border-gray-300 px-4 py-2">TXT, CSV, JSON, XML, YAML</td><td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h4>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>100% Client-Side Processing:</strong> All conversions happen in your browser. Your files never leave your device, ensuring complete privacy and security.</li>
-            <li><strong>Automatic Format Detection:</strong> Our intelligent system automatically detects the input file format based on content and extension.</li>
-            <li><strong>Bidirectional Conversions:</strong> Convert between any supported formats in both directions seamlessly.</li>
-            <li><strong>Real-Time Preview:</strong> See both original and converted content side-by-side before downloading.</li>
-            <li><strong>No File Size Limits:</strong> Process files of any size without restrictions (limited only by browser memory).</li>
-            <li><strong>Instant Downloads:</strong> Download converted files immediately after processing.</li>
-            <li><strong>Error Validation:</strong> Clear error messages help identify and fix issues with file formats or content.</li>
-            <li><strong>No Registration Required:</strong> Start converting files immediately without creating an account.</li>
-            <li><strong>Free Forever:</strong> All features are completely free with no hidden costs or premium tiers.</li>
-          </ul>
-
-          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>API Development:</strong> Convert CSV data to JSON format for REST APIs or convert JSON responses to CSV for spreadsheet analysis.</li>
-            <li><strong>Data Migration:</strong> Migrate data between systems that use different formats (e.g., XML to JSON for modern APIs).</li>
-            <li><strong>Configuration Management:</strong> Convert configuration files between YAML, JSON, and XML formats for different tools and platforms.</li>
-            <li><strong>Data Analysis:</strong> Convert structured data (JSON, XML) to CSV for analysis in Excel, Google Sheets, or data analysis tools.</li>
-            <li><strong>Web Development:</strong> Convert HTML content to structured data formats (JSON, XML) for processing or storage.</li>
-            <li><strong>DevOps & CI/CD:</strong> Transform configuration files between YAML and JSON formats for different CI/CD platforms.</li>
-            <li><strong>Legacy System Integration:</strong> Convert modern JSON data to XML format for legacy systems that require XML.</li>
-            <li><strong>Data Export:</strong> Export data from one format to another for compatibility with different applications.</li>
-            <li><strong>Content Processing:</strong> Extract structured data from HTML pages or convert text data to structured formats.</li>
-            <li><strong>Testing & Development:</strong> Quickly convert test data between formats for different testing scenarios.</li>
-          </ul>
-
-          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How It Works</h4>
-          <ol className="list-decimal list-inside text-gray-700 space-y-2">
-            <li><strong>Upload or Paste File:</strong> Select a file from your device or paste content directly into the tool.</li>
-            <li><strong>Automatic Detection:</strong> Our system automatically detects the file format based on content and file extension.</li>
-            <li><strong>Select Target Format:</strong> Choose the format you want to convert your file to (TXT, CSV, JSON, XML, YAML, or HTML).</li>
-            <li><strong>Instant Conversion:</strong> The conversion happens immediately in your browser using advanced parsing algorithms.</li>
-            <li><strong>Preview & Download:</strong> Review the converted content and download it as a new file.</li>
-          </ol>
-
-          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Privacy & Security</h4>
-          <p className="text-gray-700 mb-2">
-            Your privacy is guaranteed. All file conversions happen entirely in your browser using JavaScript. 
-            Your files are never uploaded to any server, never stored, and never accessed by third parties. 
-            This ensures complete privacy and security for sensitive data.
-          </p>
-
-          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Format-Specific Details</h4>
-          <div className="space-y-4">
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">CSV Conversions</h5>
-              <p className="text-gray-700 text-sm">CSV files are automatically parsed with proper handling of commas, quotes, and newlines. Headers are preserved when converting to structured formats.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">JSON Conversions</h5>
-              <p className="text-gray-700 text-sm">JSON files are validated before conversion. Invalid JSON will show clear error messages. Nested objects and arrays are properly handled.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">XML Conversions</h5>
-              <p className="text-gray-700 text-sm">XML files are parsed with proper handling of attributes, namespaces, and nested elements. Well-formed XML is required for successful conversion.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">YAML Conversions</h5>
-              <p className="text-gray-700 text-sm">YAML files support multi-line strings, lists, and nested structures. Indentation and formatting are preserved where possible.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">HTML Conversions</h5>
-              <p className="text-gray-700 text-sm">HTML content is parsed to extract text and structure. Tags are converted to appropriate elements in target formats.</p>
-            </div>
-          </div>
-
-          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h4>
-          <div className="space-y-4">
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">Is the File Converter free to use?</h5>
-              <p className="text-gray-700">Yes, our File Converter is completely free to use. No registration, no hidden fees, no limits on conversions.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">Are my files secure?</h5>
-              <p className="text-gray-700">Absolutely! All conversions happen in your browser. Your files never leave your device and are never uploaded to any server.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">What file sizes are supported?</h5>
-              <p className="text-gray-700">There are no strict file size limits. The only limitation is your browser's available memory. Most modern browsers can handle files up to several hundred megabytes.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">Can I convert multiple files at once?</h5>
-              <p className="text-gray-700">Currently, the tool processes one file at a time. For batch conversions, you can process files sequentially.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">What if my file format is not detected correctly?</h5>
-              <p className="text-gray-700">You can manually select the target format even if auto-detection fails. The tool will attempt to parse the content based on your selection.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">Will data be lost during conversion?</h5>
-              <p className="text-gray-700">Simple data conversions preserve all content. Complex structures (nested objects, arrays) are preserved where possible, but some formatting may be simplified.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">Can I convert binary files?</h5>
-              <p className="text-gray-700">No, this tool only works with text-based formats. Binary files (images, videos, executables) cannot be converted.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold text-gray-900 mb-1">Does the tool work offline?</h5>
-              <p className="text-gray-700">Yes! Once the page is loaded, all conversions happen in your browser without requiring an internet connection.</p>
-            </div>
+              {(Object.keys(targetLabels) as TargetFormat[]).map((f) => (
+                <option key={f} value={f}>
+                  {targetLabels[f]}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
+
+        {shownError && (
+          <div role="alert" className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 text-sm">{shownError}</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          <div className="min-w-0">
+            <div className="flex justify-between items-center mb-2 gap-2">
+              <label htmlFor="file-converter-text" className="text-sm font-medium text-gray-700">
+                Input{fileName ? ` · ${fileName}` : ''}
+              </label>
+              <button type="button" onClick={() => setInput(SAMPLE)} className="text-sm text-blue-700 hover:underline">
+                Load sample
+              </button>
+            </div>
+            <textarea
+              id="file-converter-text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              spellCheck={false}
+              placeholder={'Paste CSV, JSON, XML, HTML or text here…\n\nname,city\nAnna,London'}
+              className="w-full h-64 p-3 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">{input.length.toLocaleString()} characters</p>
+          </div>
+          <div className="min-w-0">
+            <div className="flex justify-between items-center mb-2 gap-2">
+              <label htmlFor="file-converter-output" className="text-sm font-medium text-gray-700">
+                Output ({targetLabels[targetFormat]})
+              </label>
+              <div className="flex gap-3">
+                <button type="button" onClick={copy} disabled={!output} className="text-sm text-blue-700 hover:underline disabled:text-gray-400 disabled:no-underline">
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+                <button type="button" onClick={download} disabled={!output} className="text-sm text-blue-700 hover:underline disabled:text-gray-400 disabled:no-underline">
+                  Download .{targetFormat}
+                </button>
+              </div>
+            </div>
+            <textarea
+              id="file-converter-output"
+              value={output}
+              readOnly
+              spellCheck={false}
+              placeholder="The converted result appears here as you type."
+              className="w-full h-64 p-3 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={download}
+            disabled={!output}
+            className="flex-1 sm:flex-none bg-blue-600 text-white py-2 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            Download converted file
+          </button>
+          <button type="button" onClick={reset} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+            Reset
+          </button>
+        </div>
+        <p className="mt-4 text-xs text-gray-500">
+          CSV headers become keys; XML attributes appear as “@name”. HTML input uses the first table, or the page text when there is no table.
+          YAML is available as an output format only.
+        </p>
       </div>
     </div>
   );
 }
-

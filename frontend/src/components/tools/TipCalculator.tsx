@@ -1,305 +1,269 @@
 import { useState } from 'react';
 
+const PRESETS = [10, 15, 18, 20, 25];
+const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'PKR', 'AED'];
+
+const parse = (s: string) => (s.trim() === '' ? NaN : Number(s));
+
 export default function TipCalculator() {
-  const [billAmount, setBillAmount] = useState<number>(100);
-  const [tipPercentage, setTipPercentage] = useState<number>(15);
-  const [customTip, setCustomTip] = useState<string>('');
-  const [numberOfPeople, setNumberOfPeople] = useState<number>(1);
-  const [roundUp, setRoundUp] = useState<boolean>(false);
+  const [bill, setBill] = useState('100');
+  const [tipPercent, setTipPercent] = useState('15');
+  const [people, setPeople] = useState('1');
+  const [tax, setTax] = useState('');
+  const [roundUp, setRoundUp] = useState(false);
+  const [currency, setCurrency] = useState('USD');
 
+  const billAmount = parse(bill);
+  const percent = parse(tipPercent);
+  const peopleCount = parse(people);
+  const taxAmount = tax.trim() === '' ? 0 : parse(tax);
 
-  const tipAmount = customTip ? parseFloat(customTip) || 0 : (billAmount * tipPercentage) / 100;
-  const totalAmount = billAmount + tipAmount;
-  const amountPerPerson = numberOfPeople > 0 ? totalAmount / numberOfPeople : totalAmount;
-  const tipPerPerson = numberOfPeople > 0 ? tipAmount / numberOfPeople : tipAmount;
-
-  const roundedAmountPerPerson = roundUp ? Math.ceil(amountPerPerson) : amountPerPerson;
-  const roundedTotal = roundUp ? roundedAmountPerPerson * numberOfPeople : totalAmount;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+  const errors = {
+    bill: Number.isNaN(billAmount)
+      ? 'Enter the bill amount.'
+      : billAmount < 0
+        ? 'The bill cannot be negative.'
+        : billAmount > 1e9
+          ? 'Enter a bill up to 1,000,000,000.'
+          : '',
+    percent: Number.isNaN(percent) ? 'Enter a tip percentage.' : percent < 0 || percent > 100 ? 'Enter a tip between 0 and 100%.' : '',
+    people: Number.isNaN(peopleCount)
+      ? 'Enter the number of people.'
+      : !Number.isInteger(peopleCount) || peopleCount < 1 || peopleCount > 1000
+        ? 'Enter a whole number of people from 1 to 1,000.'
+        : '',
+    tax:
+      Number.isNaN(taxAmount) || taxAmount < 0
+        ? 'Tax must be 0 or more.'
+        : !Number.isNaN(billAmount) && taxAmount > billAmount
+          ? 'Tax cannot be more than the bill.'
+          : '',
   };
+  const valid = !errors.bill && !errors.percent && !errors.people && !errors.tax;
+
+  let result: { tip: number; total: number; tipEach: number; totalEach: number; effectivePercent: number } | null = null;
+  if (valid) {
+    const tipBase = billAmount - taxAmount;
+    const tip = (tipBase * percent) / 100;
+    let totalEach = (billAmount + tip) / peopleCount;
+    // Round each person's share up to a whole unit; the extra goes to the tip.
+    if (roundUp) totalEach = Math.ceil(totalEach - 1e-9);
+    const total = totalEach * peopleCount;
+    const finalTip = total - billAmount;
+    result = {
+      tip: finalTip,
+      total,
+      tipEach: finalTip / peopleCount,
+      totalEach,
+      effectivePercent: tipBase > 0 ? (finalTip / tipBase) * 100 : 0,
+    };
+  }
+
+  const money = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(n);
+
+  const inputClass = (error: string) =>
+    `w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg ${error ? 'border-red-400' : 'border-gray-300'}`;
+
+  const presetValue = PRESETS.find((p) => parse(tipPercent) === p);
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          💵 Free Tip Calculator Online
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Free tip calculator online - no signup required. Calculate tip amount and split the bill among multiple people instantly. Multiple tip percentages, round up option. Perfect for restaurants and services. All calculations in your browser.
-        </p>
-
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Input Section */}
-          <div className="space-y-6">
+          {/* Inputs */}
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Bill Amount ($)
+              <label htmlFor="tip-bill" className="block text-sm font-medium text-gray-700 mb-2">
+                Bill amount
               </label>
               <input
+                id="tip-bill"
                 type="number"
-                value={billAmount}
-                onChange={(e) => setBillAmount(parseFloat(e.target.value) || 0)}
+                inputMode="decimal"
+                value={bill}
+                onChange={(e) => setBill(e.target.value)}
                 min="0"
                 step="0.01"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                placeholder="100.00"
+                aria-invalid={Boolean(errors.bill)}
+                aria-describedby={errors.bill ? 'tip-bill-error' : undefined}
+                className={inputClass(errors.bill)}
               />
+              {errors.bill && <p id="tip-bill-error" className="text-sm text-red-700 mt-1">{errors.bill}</p>}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tip Percentage
-              </label>
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {[10, 15, 18, 20].map((percent) => (
+            <fieldset>
+              <legend className="block text-sm font-medium text-gray-700 mb-2">Tip percentage</legend>
+              <div className="grid grid-cols-5 gap-2 mb-2">
+                {PRESETS.map((p) => (
                   <button
-                    key={percent}
-                    onClick={() => {
-                      setTipPercentage(percent);
-                      setCustomTip('');
-                    }}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      tipPercentage === percent && !customTip
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
-                        : 'border-gray-200 hover:border-gray-300'
+                    key={p}
+                    type="button"
+                    onClick={() => setTipPercent(String(p))}
+                    aria-pressed={presetValue === p}
+                    className={`py-2.5 rounded-lg border-2 text-sm sm:text-base transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      presetValue === p ? 'border-blue-500 bg-blue-50 text-blue-800 font-semibold' : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    {percent}%
+                    {p}%
                   </button>
                 ))}
               </div>
-              <input
-                type="number"
-                value={customTip || tipPercentage}
-                onChange={(e) => {
-                  const value = parseFloat(e.target.value);
-                  if (value >= 0 && value <= 100) {
-                    setTipPercentage(value);
-                    setCustomTip(e.target.value);
-                  }
-                }}
-                min="0"
-                max="100"
-                step="0.1"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Custom %"
-              />
+              <label htmlFor="tip-percent" className="block text-xs text-gray-600 mb-1">
+                Custom tip %
+              </label>
+              <div className="relative">
+                <input
+                  id="tip-percent"
+                  type="number"
+                  inputMode="decimal"
+                  value={tipPercent}
+                  onChange={(e) => setTipPercent(e.target.value)}
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  aria-invalid={Boolean(errors.percent)}
+                  aria-describedby={errors.percent ? 'tip-percent-error' : undefined}
+                  className={`${inputClass(errors.percent)} pr-10`}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" aria-hidden="true">%</span>
+              </div>
+              {errors.percent && <p id="tip-percent-error" className="text-sm text-red-700 mt-1">{errors.percent}</p>}
+            </fieldset>
+
+            <div>
+              <label htmlFor="tip-people" className="block text-sm font-medium text-gray-700 mb-2">
+                Number of people
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  aria-label="One person fewer"
+                  onClick={() => setPeople(String(Math.max(1, (Number.isInteger(peopleCount) ? peopleCount : 1) - 1)))}
+                  className="w-12 flex-none rounded-lg border border-gray-300 text-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  −
+                </button>
+                <input
+                  id="tip-people"
+                  type="number"
+                  inputMode="numeric"
+                  value={people}
+                  onChange={(e) => setPeople(e.target.value)}
+                  min="1"
+                  step="1"
+                  aria-invalid={Boolean(errors.people)}
+                  aria-describedby={errors.people ? 'tip-people-error' : undefined}
+                  className={`${inputClass(errors.people)} text-center min-w-0`}
+                />
+                <button
+                  type="button"
+                  aria-label="One more person"
+                  onClick={() => setPeople(String(Math.min(1000, (Number.isInteger(peopleCount) ? peopleCount : 0) + 1)))}
+                  className="w-12 flex-none rounded-lg border border-gray-300 text-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  +
+                </button>
+              </div>
+              {errors.people && <p id="tip-people-error" className="text-sm text-red-700 mt-1">{errors.people}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Number of People
+              <label htmlFor="tip-tax" className="block text-sm font-medium text-gray-700 mb-2">
+                Tax included in the bill (optional)
               </label>
               <input
+                id="tip-tax"
                 type="number"
-                value={numberOfPeople}
-                onChange={(e) => setNumberOfPeople(Math.max(1, parseInt(e.target.value) || 1))}
-                min="1"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                inputMode="decimal"
+                value={tax}
+                onChange={(e) => setTax(e.target.value)}
+                min="0"
+                step="0.01"
+                aria-invalid={Boolean(errors.tax)}
+                aria-describedby={errors.tax ? 'tip-tax-error' : 'tip-tax-hint'}
+                className={inputClass(errors.tax)}
               />
+              {errors.tax ? (
+                <p id="tip-tax-error" className="text-sm text-red-700 mt-1">{errors.tax}</p>
+              ) : (
+                <p id="tip-tax-hint" className="text-xs text-gray-500 mt-1">If entered, the tip is calculated on the pre-tax amount.</p>
+              )}
             </div>
 
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="roundUp"
-                checked={roundUp}
-                onChange={(e) => setRoundUp(e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="roundUp" className="ml-2 text-sm font-medium text-gray-700">
-                Round up to nearest dollar
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <label htmlFor="tip-round" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  id="tip-round"
+                  checked={roundUp}
+                  onChange={(e) => setRoundUp(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                Round each share up to a whole amount
+              </label>
+              <label htmlFor="tip-currency" className="flex items-center gap-2 text-sm text-gray-700">
+                Currency
+                <select
+                  id="tip-currency"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {currencies.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
           </div>
 
-          {/* Results Section */}
-          <div className="space-y-4">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Summary</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Bill Amount:</span>
-                  <span className="text-lg font-semibold text-gray-900">{formatCurrency(billAmount)}</span>
+          {/* Results */}
+          <div className="space-y-4" aria-live="polite">
+            {!result ? (
+              <p className="p-4 bg-gray-50 rounded-lg text-gray-600">Fix the highlighted fields to see the tip.</p>
+            ) : (
+              <>
+                <div className="bg-green-50 p-5 sm:p-6 rounded-lg">
+                  <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                    Per person{peopleCount > 1 ? ` (${peopleCount} people)` : ''}
+                  </h2>
+                  <dl className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <dt className="text-gray-700">Tip each</dt>
+                      <dd className="text-lg font-semibold text-green-700" data-testid="tip-each">{money(result.tipEach)}</dd>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <dt className="text-gray-700 font-medium">Total each</dt>
+                      <dd className="text-2xl font-bold text-green-800" data-testid="total-each">{money(result.totalEach)}</dd>
+                    </div>
+                  </dl>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Tip ({customTip || tipPercentage}%):</span>
-                  <span className="text-lg font-semibold text-green-600">{formatCurrency(tipAmount)}</span>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 sm:p-6 rounded-lg">
+                  <h2 className="text-lg font-semibold text-gray-800 mb-4">Whole bill</h2>
+                  <dl className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <dt className="text-gray-700">Bill</dt>
+                      <dd className="font-semibold text-gray-900">{money(billAmount)}</dd>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <dt className="text-gray-700">
+                        Tip ({Number(result.effectivePercent.toFixed(2))}%{taxAmount > 0 ? ' of pre-tax' : ''})
+                      </dt>
+                      <dd className="font-semibold text-green-700" data-testid="tip-total">{money(result.tip)}</dd>
+                    </div>
+                    <div className="flex justify-between items-center border-t border-gray-300 pt-3">
+                      <dt className="text-gray-800 font-medium">Total</dt>
+                      <dd className="text-2xl font-bold text-blue-700" data-testid="bill-total">{money(result.total)}</dd>
+                    </div>
+                  </dl>
                 </div>
-                <div className="border-t border-gray-300 pt-3 mt-3">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-700 font-medium">Total:</span>
-                    <span className="text-2xl font-bold text-blue-600">{formatCurrency(roundUp ? roundedTotal : totalAmount)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {numberOfPeople > 1 && (
-              <div className="bg-green-50 p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">Per Person</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Tip per person:</span>
-                    <span className="text-lg font-semibold text-green-600">
-                      {formatCurrency(roundUp ? Math.ceil(tipPerPerson) : tipPerPerson)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total per person:</span>
-                    <span className="text-xl font-bold text-green-700">
-                      {formatCurrency(roundedAmountPerPerson)}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              </>
             )}
           </div>
-        </div>
-
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Tip Calculator</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our Tip Calculator is a simple, free tool that helps you calculate tip amounts and split bills 
-              among multiple people. Perfect for restaurants, cafes, bars, and any service where tipping is customary.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              The calculator supports multiple tip percentages (10%, 15%, 18%, 20%), custom tip percentages, 
-              bill splitting, and a round-up option for convenience. All calculations happen instantly in your browser.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Calculate tip at restaurants</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Split bills among friends</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Calculate gratuity for services</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Determine fair tip amounts</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Calculate tip for delivery</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Split large group bills</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Quick Tip Percentages</h5>
-                  <p className="text-sm text-gray-600">Pre-set buttons for 10%, 15%, 18%, 20%</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Custom Tip Percentage</h5>
-                  <p className="text-sm text-gray-600">Enter any tip percentage you want</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Bill Splitting</h5>
-                  <p className="text-sm text-gray-600">Split bill and tip among multiple people</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Round Up Option</h5>
-                  <p className="text-sm text-gray-600">Round up to nearest dollar for convenience</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
-            <div className="space-y-4">
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What is a standard tip percentage?</h5>
-                <p className="text-gray-700 text-sm">
-                  Standard tip percentages vary by location and service. In the US, 15-20% is common for restaurants, 
-                  10-15% for delivery, and 15-20% for personal services. Use the calculator to find what works for you.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">How do I split the bill?</h5>
-                <p className="text-gray-700 text-sm">
-                  Enter the number of people in the "Number of People" field. The calculator will automatically 
-                  show the tip and total amount per person.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Can I use a custom tip percentage?</h5>
-                <p className="text-gray-700 text-sm">
-                  Yes, you can enter any tip percentage from 0% to 100% in the custom tip field. The calculator 
-                  will use your custom percentage instead of the preset buttons.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What does "Round up" do?</h5>
-                <p className="text-gray-700 text-sm">
-                  The round up option rounds the total per person to the nearest dollar, making it easier to pay 
-                  with cash or split evenly.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>Standard restaurant tip is 15-20% of the bill</li>
-            <li>Tip on the pre-tax amount, not the total with tax</li>
-            <li>Use the round up option for easier cash payments</li>
-            <li>Split bills evenly or calculate per person amounts</li>
-            <li>All calculations happen instantly in your browser</li>
-          </ul>
         </div>
       </div>
     </div>
   );
 }
-
