@@ -657,16 +657,17 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     
     
         // SMTP configuration management
-        Route::apiResource('smtp-configurations', SmtpConfigurationController::class);
-        Route::post('smtp-configurations/{id}/test', [SmtpConfigurationController::class, 'test']);
-        Route::post('smtp-configurations/{id}/set-active', [SmtpConfigurationController::class, 'setActive']);
-        Route::post('smtp-configurations/{id}/set-default', [SmtpConfigurationController::class, 'setDefault']);
-        Route::post('smtp-configurations/{id}/duplicate', [SmtpConfigurationController::class, 'duplicate']);
+        // Static paths must be registered before the resource's {smtp_configuration} route
         Route::get('smtp-configurations/mailer-types', [SmtpConfigurationController::class, 'getMailerTypes']);
         Route::get('smtp-configurations/encryption-types', [SmtpConfigurationController::class, 'getEncryptionTypes']);
         Route::get('smtp-configurations/common-ports', [SmtpConfigurationController::class, 'getCommonPorts']);
         Route::get('smtp-configurations/active', [SmtpConfigurationController::class, 'getActive']);
         Route::get('smtp-configurations/default', [SmtpConfigurationController::class, 'getDefault']);
+        Route::apiResource('smtp-configurations', SmtpConfigurationController::class);
+        Route::post('smtp-configurations/{id}/test', [SmtpConfigurationController::class, 'test']);
+        Route::post('smtp-configurations/{id}/set-active', [SmtpConfigurationController::class, 'setActive']);
+        Route::post('smtp-configurations/{id}/set-default', [SmtpConfigurationController::class, 'setDefault']);
+        Route::post('smtp-configurations/{id}/duplicate', [SmtpConfigurationController::class, 'duplicate']);
 
         // System email settings
         Route::get('system-email-settings', [App\Http\Controllers\Api\SystemEmailSettingsController::class, 'index']);
@@ -715,15 +716,15 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     
     // Email Queue Management
     Route::get('email-queue', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'index']);
+    Route::get('email-queue/stats', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'stats']);
     Route::get('email-queue/{id}', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'show']);
     Route::post('email-queue/{id}/retry', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'retry']);
     Route::post('email-queue/retry-all', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'retryAll']);
-    Route::get('email-queue/stats', [\App\Http\Controllers\Api\Admin\EmailQueueController::class, 'stats']);
     
     // Email Logs Management
     Route::get('email-logs', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'index']);
-    Route::get('email-logs/{id}', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'show']);
     Route::get('email-logs/stats', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'stats']);
+    Route::get('email-logs/{id}', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'show']);
 
     // Fallback Webhooks Management
     Route::get('fallback-webhooks', [\App\Http\Controllers\Api\Admin\FallbackWebhookController::class, 'index']);
