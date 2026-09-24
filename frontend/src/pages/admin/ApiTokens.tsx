@@ -26,6 +26,8 @@ interface ApiToken {
   id: number;
   name: string;
   token?: string;
+  /** Last 4 characters; the API no longer returns full tokens in listings. */
+  token_preview?: string;
   last_used_at: string | null;
   expires_at: string | null;
   created_at: string;
@@ -76,10 +78,18 @@ function validationErrors(error: unknown): FieldErrors {
 const formatDate = (value: string | null) => (value ? new Date(value).toLocaleDateString() : 'Never');
 const isExpired = (expiresAt: string | null) => !!expiresAt && new Date(expiresAt) < new Date();
 
-function TokenValue({ token }: { token?: string }) {
+function TokenValue({ token, preview }: { token?: string; preview?: string }) {
   const [revealed, setRevealed] = useState(false);
   const { addToast } = useToast();
-  if (!token) return <span className="text-slate-400">Hidden</span>;
+  if (!token) {
+    return preview ? (
+      <code className="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700" data-testid="token-value" title="Full tokens are shown only once, when created">
+        ••••••••{preview}
+      </code>
+    ) : (
+      <span className="text-slate-400">Hidden</span>
+    );
+  }
   return (
     <div className="flex items-center gap-1">
       <code className="max-w-[16rem] truncate rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700" data-testid="token-value">
@@ -272,7 +282,7 @@ export default function ApiTokens() {
                     </span>
                   </td>
                   <td>
-                    <TokenValue token={token.token} />
+                    <TokenValue token={token.token} preview={token.token_preview} />
                   </td>
                   <td>
                     <span className="flex flex-wrap gap-1">

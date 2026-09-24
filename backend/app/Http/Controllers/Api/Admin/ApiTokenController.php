@@ -24,7 +24,8 @@ class ApiTokenController extends Controller
                 return [
                     'id' => $token->id,
                     'name' => $token->name,
-                    'token' => $token->token, // Only show token in listing for admin
+                    // Full tokens are only returned once, when created. Listings show the last 4 characters.
+                    'token_preview' => substr($token->token, -4),
                     'permissions' => $token->permissions,
                     'last_used_at' => $token->last_used_at,
                     'expires_at' => $token->expires_at,

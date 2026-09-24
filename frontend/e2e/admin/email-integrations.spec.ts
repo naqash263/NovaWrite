@@ -50,6 +50,15 @@ test.describe('API tokens', () => {
     await expect(row.getByTestId('token-value')).toHaveText('••••••••WXYZ');
   });
 
+  test('shows the last four characters when the API returns only a preview', async ({ page }) => {
+    // Current backend: listings carry token_preview only; full tokens are returned once at creation.
+    await api(page, '/admin/api-tokens', [{ ...tokens[0], token: undefined, token_preview: 'WXYZ' }]);
+    await page.goto('/admin/api-tokens');
+    const row = page.getByRole('row', { name: /Zapier sync/ });
+    await expect(row.getByTestId('token-value')).toHaveText('••••••••WXYZ');
+    await expect(row.getByRole('button', { name: 'Reveal token' })).toHaveCount(0);
+  });
+
   test('shows an empty state with a primary action', async ({ page }) => {
     await api(page, '/admin/api-tokens', []);
     await page.goto('/admin/api-tokens');
