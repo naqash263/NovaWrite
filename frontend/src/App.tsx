@@ -18,6 +18,10 @@ const BlogPost = lazy(() => import('./pages/BlogPost'));
 const Workflows = lazy(() => import('./pages/Workflows'));
 const WorkflowDetail = lazy(() => import('./pages/WorkflowDetail'));
 const Projects = lazy(() => import('./pages/Projects'));
+const Services = lazy(() => import('./pages/Services'));
+const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
+const CaseStudies = lazy(() => import('./pages/CaseStudies'));
+const CaseStudyDetail = lazy(() => import('./pages/CaseStudyDetail'));
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const UserLogin = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
@@ -97,6 +101,10 @@ function App() {
               <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/services/:slug" element={<ServiceDetail />} />
+              <Route path="/case-studies" element={<CaseStudies />} />
+              <Route path="/case-studies/:slug" element={<CaseStudyDetail />} />
               <Route path="/workflows" element={<Workflows />} />
               <Route path="/workflows/:year/:month/:day/:slug" element={<WorkflowDetail />} />
               <Route path="/workflows/:slug" element={<WorkflowDetail />} /> {/* Backward compatibility */}

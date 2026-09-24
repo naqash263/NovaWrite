@@ -1,228 +1,162 @@
-import { useEffect } from 'react';
 import { useSEO } from '../utils/seo';
-import { useHomeSettings } from '../hooks/useHomeSettings';
-import { generatePersonSchema, generateBreadcrumbSchema, generateFAQSchema, injectStructuredData } from '../utils/structuredData';
+import { profile, backgroundPillars, processSteps, skillGroups, deliveryPrinciples, industries } from '../data/profile';
+import { personSchema, breadcrumbSchema } from '../utils/schema';
+import { Section, SectionHeading, PageHero, CheckList, Tags, CtaBand, Eyebrow } from '../components/site/ui';
 
 export default function About() {
-  const { getImageUrl } = useHomeSettings();
-  
   useSEO({
-    title: 'About Naqash Thaheem - AI Automation Expert with 8+ Years Experience',
-    description: 'Learn about Naqash Thaheem, a leading AI automation expert and Systems Analyst with 8+ years of experience in workflow automation, CRM integration, Power BI dashboards, and business intelligence. Serving clients globally with remote automation solutions.',
-    keywords: ['Naqash Thaheem', 'AI automation expert', 'systems analyst', 'workflow automation specialist', 'CRM integration expert', 'Power BI consultant', 'business intelligence specialist', 'global automation services', 'n8n expert', 'Make.com specialist', 'Zoho CRM expert', 'OpenAI integration', 'remote automation consultant', 'international consultant', '8 years experience'],
+    title: 'About Naqash Thaheem | Technical Project Manager, UAE',
+    description:
+      'Naqash Thaheem is a UAE-based Technical Project Manager combining project management, AI automation, CRM, technical SEO and QA to deliver business systems.',
     url: '/about',
-    structuredData: 'person',
-    customStructuredData: generatePersonSchema()
+    keywords: ['Naqash Thaheem', 'technical project manager UAE', 'AI automation specialist', 'business systems specialist'],
+    jsonLd: [
+      { ...personSchema(), mainEntityOfPage: 'https://naqashthaheem.com/about' },
+      breadcrumbSchema([
+        { name: 'Home', path: '/' },
+        { name: 'About', path: '/about' },
+      ]),
+    ],
   });
 
-  useEffect(() => {
-    // Add breadcrumb schema
-    const breadcrumbSchema = generateBreadcrumbSchema([
-      { name: 'Home', url: 'https://naqashthaheem.com' },
-      { name: 'About', url: 'https://naqashthaheem.com/about' }
-    ]);
-    injectStructuredData(breadcrumbSchema);
-
-    // Add FAQ schema for About page
-    const faqSchema = generateFAQSchema([
-      {
-        question: 'What is Naqash Thaheem\'s experience in AI automation?',
-        answer: 'Naqash Thaheem has 8+ years of experience in AI automation, specializing in n8n, Make.com, Zapier, and OpenAI integrations. He has delivered 100+ projects and created 50+ automation workflows for businesses globally.'
-      },
-      {
-        question: 'What services does Naqash Thaheem offer?',
-        answer: 'Naqash offers AI automation workflows, CRM integration services, Power BI dashboard development, web development, and business intelligence solutions. He specializes in Zoho CRM, HubSpot, n8n, Make.com, and OpenAI integrations.'
-      },
-      {
-        question: 'Where is Naqash Thaheem located?',
-        answer: 'Naqash Thaheem is based in Ajman, United Arab Emirates, but provides remote services to clients worldwide including the US, UK, Canada, Australia, Germany, Netherlands, and Singapore.'
-      },
-      {
-        question: 'What tools does Naqash use for automation?',
-        answer: 'Naqash uses n8n, Make.com, Zapier, OpenAI GPT models, Zoho CRM, HubSpot, Power BI, React, .NET Core, Laravel, and Python for creating comprehensive automation solutions and business intelligence dashboards.'
-      }
-    ]);
-    injectStructuredData(faqSchema);
-  }, []);
-
   return (
-    <div className="bg-gray-50">
-      {/* Hero Section with AI Image */}
-      <div 
-        className="relative bg-cover bg-center py-24 md:py-32 mb-16 overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(147, 51, 234, 0.8) 50%, rgba(219, 39, 119, 0.85) 100%), url('${getImageUrl('about_image', '/images/AI Analytics.png')}')`
-        }}
-      >
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        </div>
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold text-white mb-4">About Me</h1>
-          <p className="text-xl text-blue-100">Transforming Business Through Intelligent Automation</p>
-        </div>
-      </div>
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <div className="bg-white text-slate-900">
+      <PageHero
+        eyebrow="About"
+        title="Business + Project Management + Technology + Quality"
+        lead={`${profile.summary} ${profile.shortVersion}`}
+        breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'About' }]}
+      />
 
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Professional Summary</h2>
-          <p className="text-gray-700 leading-relaxed mb-6">
-            Systems Analyst and Automation Specialist with 8+ years of experience in building AI-powered automation workflows, CRM integrations, and scalable web platforms. Proven expertise in data scraping, processing, and enrichment for recruitment and business intelligence. Skilled at designing databases, developing backend/frontend applications, and leading cross-functional teams to deliver high-impact digital solutions. Strong focus on efficiency, compliance (GDPR/CCPA), and cloud security.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Core Skills</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold text-blue-600 mb-2">Automation & AI</h3>
-              <p className="text-gray-700 text-sm">n8n, Make.com, Zapier, OpenAI (GPT models), AI Agents, OCR, Embeddings, Pinecone, pgVector</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-blue-600 mb-2">Data Analysis & Power BI</h3>
-              <p className="text-gray-700 text-sm">Power BI Dashboard Design, DAX Formulas, Data Modeling, KPI Tracking, Predictive Analytics, Report Automation, Excel Power Query, SQL Analytics</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-blue-600 mb-2">CRM & Integrations</h3>
-              <p className="text-gray-700 text-sm">Zoho CRM, HubSpot, LinkedIn Recruiter, Zoho Creator, Wrike, Salesforce</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-blue-600 mb-2">Web & App Development</h3>
-              <p className="text-gray-700 text-sm">React.js, Vite, .NET Core, Django, Flutter, Supabase, Laravel, Node.js</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-blue-600 mb-2">Databases & Cloud</h3>
-              <p className="text-gray-700 text-sm">Azure MySQL, PostgreSQL, Firestore, Supabase, SharePoint/OneDrive Migration, Cloudflare, Microsoft 365, AWS</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-blue-600 mb-2">Data Scraping & Processing</h3>
-              <p className="text-gray-700 text-sm">Octoparse, Apify, Jobin, Zyte API, Custom parsing (LinkedIn, Indeed, Stepstone, Xing), BeautifulSoup, Selenium</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Featured Projects Section */}
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Featured Projects</h2>
-          <div className="space-y-6">
-            <div className="border-l-4 border-blue-600 pl-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">📊 Recruitment Analytics Dashboard (Power BI)</h3>
-              <p className="text-gray-700 mb-3">
-                Developed comprehensive Power BI dashboard for talent acquisition tracking with real-time metrics on candidate pipeline, source effectiveness, time-to-hire, and diversity analytics. Integrated with Azure SQL database and automated daily refreshes.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Power BI</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">DAX</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Azure SQL</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Dataflows</span>
-              </div>
-            </div>
-
-            <div className="border-l-4 border-blue-600 pl-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">🤖 AI Resume Parser & Matching System</h3>
-              <p className="text-gray-700 mb-3">
-                Built intelligent system to automatically parse resumes, extract skills, experience, and qualifications using GPT-4, then match candidates to job openings with similarity scoring. Integrated with CRM for automated candidate ranking.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">OpenAI GPT-4</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">n8n</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Embeddings</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Zoho CRM</span>
-              </div>
-            </div>
-
-            <div className="border-l-4 border-blue-600 pl-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">🔗 Multi-Platform Job Aggregation Pipeline</h3>
-              <p className="text-gray-700 mb-3">
-                Created automated pipeline to scrape and aggregate job postings from 15+ sources including LinkedIn, Indeed, and Glassdoor. Processes 10,000+ jobs daily with deduplication, data normalization, and enrichment with company data.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Apify</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Python</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">PostgreSQL</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Azure</span>
-              </div>
-            </div>
-
-            <div className="border-l-4 border-blue-600 pl-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">💻 TFT Recruitment Platform</h3>
-              <p className="text-gray-700 mb-3">
-                Full-stack recruitment platform with AI-powered talent-job matching, credit-based system, automated workflows, and comprehensive dashboards. Handles end-to-end recruitment process from sourcing to placement tracking.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">React</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">.NET Core</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">MySQL</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Power BI</span>
-              </div>
-            </div>
-
-            <div className="border-l-4 border-blue-600 pl-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">📈 Sales Performance Dashboard Suite</h3>
-              <p className="text-gray-700 mb-3">
-                Designed interactive Power BI dashboards for sales team with territory analysis, revenue forecasting, product performance metrics, and customer segmentation. Includes automated email distribution and mobile optimization.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Power BI</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Power Automate</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">Excel</span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">SharePoint</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Professional Experience</h2>
-          
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Chief Data Officer – Talent For The Team</h3>
-            <p className="text-gray-600 mb-2">2025 – Present</p>
-            <ul className="list-disc list-inside text-gray-700 space-y-2">
-              <li>Leading data-driven recruitment platform development combining AI job-talent matchmaking, CRM automation, and credit-based engagement system</li>
-              <li>Architected TFT Platform with React (frontend), .NET Core (backend), and MySQL (Azure)</li>
-              <li>Designed and implemented matching algorithms using embeddings + similarity search</li>
-              <li>Built dashboards in Power BI to track KPIs</li>
-            </ul>
-          </div>
-
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Systems Analyst – Private Company, UAE</h3>
-            <p className="text-gray-600 mb-2">2016 – Present</p>
-            <ul className="list-disc list-inside text-gray-700 space-y-2">
-              <li>Automated office operations, workflows, and client systems, reducing costs and improving efficiency</li>
-              <li>Implemented Zoho CRM + Make.com integrations for recruitment workflows</li>
-              <li>Developed custom dashboards and compliance pipelines</li>
-              <li>Built n8n-powered workflows for automation</li>
-            </ul>
-          </div>
-
+      <Section labelledBy="about-me-heading">
+        <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr]">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900">Freelance Automation & AI Developer</h3>
-            <p className="text-gray-600 mb-2">Ongoing</p>
-            <ul className="list-disc list-inside text-gray-700 space-y-2">
-              <li>Delivered n8n-based automation projects including Facebook API posting, LinkedIn scraping pipelines</li>
-              <li>Built AI chatbot workflows with memory & embeddings</li>
-              <li>Developed Zoho CRM Talents Module for recruitment companies</li>
-            </ul>
+            <SectionHeading id="about-me-heading" eyebrow="About me" title="From initial requirements through deployment" />
+            <div className="space-y-4 text-lg leading-relaxed text-slate-600">
+              <p>
+                I am a technology and project management professional with experience managing and implementing digital solutions from initial
+                requirements through deployment.
+              </p>
+              {profile.intro.map((p) => (
+                <p key={p}>{p}</p>
+              ))}
+              <p>
+                This combination allows me to communicate with both business stakeholders and technical teams while keeping the project focused on
+                measurable business outcomes.
+              </p>
+            </div>
           </div>
+          <aside className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8" aria-labelledby="positioning-heading">
+            <h3 id="positioning-heading" className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
+              At a glance
+            </h3>
+            <dl className="mt-5 space-y-4">
+              <div>
+                <dt className="text-sm text-slate-500">Role</dt>
+                <dd className="font-semibold text-slate-900">{profile.headline}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-slate-500">Based in</dt>
+                <dd className="font-semibold text-slate-900">{profile.location}, working with clients remotely</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-slate-500">Best fit</dt>
+                <dd className="text-slate-700">
+                  Projects where technology needs to connect multiple systems or departments.
+                </dd>
+              </div>
+            </dl>
+          </aside>
         </div>
+      </Section>
 
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Education & Languages</h2>
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-900">Master's in Information Technology</h3>
-            <p className="text-gray-600">Institute of Southern Punjab, Multan, Pakistan (2012 – 2014)</p>
-          </div>
+      <Section tone="muted" labelledBy="background-heading">
+        <SectionHeading
+          id="background-heading"
+          eyebrow="Background"
+          title="Disciplines usually handled by different people"
+          intro="My background combines several disciplines, which is what lets me take a project from business problem to production."
+        />
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {backgroundPillars.map((pillar) => (
+            <div key={pillar.title} className="rounded-2xl border border-slate-200 bg-white p-6">
+              <h3 className="font-semibold text-slate-900">{pillar.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{pillar.text}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section id="process" labelledBy="method-heading">
+        <SectionHeading
+          id="method-heading"
+          eyebrow="How I work"
+          title="Project methodology"
+          intro="A structured lifecycle, combining traditional project management discipline with Agile execution where appropriate."
+        />
+        <ol className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {processSteps.map((s) => (
+            <li key={s.step} className="rounded-2xl border border-slate-200 bg-white p-6">
+              <div className="flex items-baseline gap-3">
+                <span className="font-mono text-sm font-semibold text-blue-700">{s.step}</span>
+                <h3 className="text-lg font-semibold text-slate-900">{s.title}</h3>
+              </div>
+              <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{s.verb}</p>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {s.items.map((item) => (
+                  <li key={item} className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ol>
+      </Section>
+
+      <Section tone="muted" labelledBy="skills-heading">
+        <SectionHeading id="skills-heading" eyebrow="Skills" title="Technical skills" />
+        <div className="grid gap-5 md:grid-cols-2">
+          {skillGroups.map((group) => (
+            <div key={group.title} className="rounded-2xl border border-slate-200 bg-white p-6">
+              <h3 className="mb-4 font-semibold text-slate-900">{group.title}</h3>
+              <ul className="flex flex-wrap gap-1.5" aria-label={`${group.title} skills`}>
+                {group.skills.map((skill) => (
+                  <li key={skill} className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700">
+                    {skill}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section labelledBy="value-heading">
+        <div className="grid gap-12 lg:grid-cols-2">
           <div>
-            <h3 className="font-semibold text-gray-900 mb-2">Languages</h3>
-            <p className="text-gray-700">English (Fluent), Urdu (Fluent), Hindi (Fluent)</p>
+            <Eyebrow>Value proposition</Eyebrow>
+            <h2 id="value-heading" className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+              A project should not simply be technically functional
+            </h2>
+            <p className="mt-4 text-lg leading-relaxed text-slate-600">
+              My strongest contribution is usually where a business needs someone who can understand the operational problem, communicate with
+              stakeholders, translate requirements into a technical solution, coordinate implementation, verify quality, and drive the project toward
+              production.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+            <h3 className="mb-5 font-semibold text-slate-900">It should:</h3>
+            <CheckList items={deliveryPrinciples} columns={1} />
           </div>
         </div>
-      </div>
+        <div className="mt-12">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Industries</h3>
+          <Tags items={industries} label="Industries" />
+        </div>
+      </Section>
+
+      <CtaBand />
     </div>
   );
 }
