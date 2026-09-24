@@ -1,356 +1,211 @@
-import React, { useState, useEffect } from 'react';
+import { useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { BellRing, RefreshCw, Send, Users, UserCheck } from 'lucide-react';
+import apiClient from '../../api/axios';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
-import apiClient from '../../api/axios';
+import { AdminCard, AdminPageHeader, ErrorState, Field, LoadingState, StatCard, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage } from '../../components/admin/utils';
 
 interface NotificationStats {
-  total_subscribers: number;
-  active_subscribers: number;
-  notification_types: {
-    blogPosts: number;
-    issues: number;
-    workflows: number;
-    careerTools: number;
-  };
+  total_subscribers?: number;
+  active_subscribers?: number;
+  notification_types?: Partial<Record<'blogPosts' | 'issues' | 'workflows' | 'careerTools', number>>;
 }
+
+type NotificationType = 'all' | 'blogPosts' | 'issues' | 'workflows' | 'careerTools';
 
 interface NotificationForm {
   title: string;
   body: string;
   url: string;
-  type: 'blogPosts' | 'issues' | 'workflows' | 'careerTools' | 'all';
+  type: NotificationType;
   imageUrl: string;
 }
 
-const PushNotifications: React.FC = () => {
+type Errors = Partial<Record<keyof NotificationForm, string>>;
+
+const EMPTY_FORM: NotificationForm = { title: '', body: '', url: '', type: 'all', imageUrl: '' };
+
+const TYPES: { value: NotificationType; label: string }[] = [
+  { value: 'all', label: 'All subscribers' },
+  { value: 'blogPosts', label: 'Blog posts subscribers' },
+  { value: 'issues', label: 'Issues subscribers' },
+  { value: 'workflows', label: 'Workflows subscribers' },
+  { value: 'careerTools', label: 'Career tools subscribers' },
+];
+
+const CATEGORY_LABELS: Record<string, string> = { blogPosts: 'Blog posts', issues: 'Issues', workflows: 'Workflows', careerTools: 'Career tools' };
+
+const btnPrimary =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const btnSecondary =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-60';
+
+const isUrl = (v: string) => /^https?:\/\/\S+$/i.test(v);
+const fmt = (n: unknown) => (typeof n === 'number' ? n.toLocaleString() : '0');
+
+function validate(form: NotificationForm): Errors {
+  const errors: Errors = {};
+  if (!form.title.trim()) errors.title = 'Title is required.';
+  else if (form.title.length > 255) errors.title = 'Keep the title under 255 characters.';
+  if (!form.body.trim()) errors.body = 'Message is required.';
+  else if (form.body.length > 1000) errors.body = 'Keep the message under 1000 characters.';
+  if (form.url && !isUrl(form.url)) errors.url = 'Enter a full URL starting with http:// or https://.';
+  if (form.imageUrl && !isUrl(form.imageUrl)) errors.imageUrl = 'Enter a full URL starting with http:// or https://.';
+  return errors;
+}
+
+function serverErrors(error: unknown): Errors {
+  const bag = (error as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors;
+  return bag ? (Object.fromEntries(Object.entries(bag).map(([k, v]) => [k, v?.[0]])) as Errors) : {};
+}
+
+export default function PushNotifications() {
+  useSEO({ title: 'Push Notifications | Admin', description: 'Send push notifications to subscribers', url: '/admin/push-notifications', robots: 'noindex, nofollow' });
   const { addToast } = useToast();
-  const [stats, setStats] = useState<NotificationStats | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [form, setForm] = useState<NotificationForm>({
-    title: '',
-    body: '',
-    url: '',
-    type: 'all',
-    imageUrl: ''
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState<NotificationForm>(EMPTY_FORM);
+  const [errors, setErrors] = useState<Errors>({});
+
+  const statsQuery = useQuery({
+    queryKey: ['push-notification-stats'],
+    queryFn: async () => {
+      const data = (await apiClient.get('/admin/push-notifications/stats')).data;
+      return (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as NotificationStats;
+    },
+  });
+  const stats = statsQuery.data;
+
+  const sendMutation = useMutation({
+    mutationFn: async (payload: NotificationForm) => (await apiClient.post('/admin/push-notifications/send', payload)).data,
+    onSuccess: () => {
+      addToast({ type: 'success', title: 'Notification sent', description: 'Your push notification is on its way to subscribers.' });
+      setForm(EMPTY_FORM);
+      queryClient.invalidateQueries({ queryKey: ['push-notification-stats'] });
+    },
+    onError: (error) => {
+      setErrors(serverErrors(error));
+      addToast({ type: 'error', title: 'Send failed', description: apiErrorMessage(error) });
+    },
   });
 
-  useSEO({
-    title: 'Push Notifications - Admin Panel | Naqash Thaheem',
-    description: 'Manage push notifications and send updates to subscribers',
-    url: '/admin/push-notifications',
-    keywords: ['admin', 'push notifications', 'management']
+  const testMutation = useMutation({
+    mutationFn: async () => (await apiClient.post('/admin/push-notifications/test')).data as { message?: string },
+    onSuccess: (data) => {
+      // The API answers 200 even when the current admin has no subscription.
+      if (data?.message && /no active subscription/i.test(data.message)) {
+        addToast({ type: 'warning', title: 'No subscription on this account', description: 'Enable notifications in this browser first, then send the test again.' });
+      } else {
+        addToast({ type: 'success', title: 'Test sent', description: 'A test notification was sent to your devices.' });
+      }
+    },
+    onError: (error) => addToast({ type: 'error', title: 'Test failed', description: apiErrorMessage(error) }),
   });
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
-    setIsLoading(true);
-    try {
-      console.log('Fetching push notification stats...');
-      const response = await apiClient.get('/admin/push-notifications/stats');
-      console.log('Stats response:', response.data);
-      setStats(response.data);
-    } catch (error: any) {
-      console.error('Failed to fetch stats:', error);
-      console.error('Error details:', error.response?.data);
-      setStats(null);
-      addToast({
-        type: 'error',
-        title: 'Failed to Load Stats',
-        description: error.response?.data?.message || 'Could not load notification statistics.'
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const set = <K extends keyof NotificationForm>(key: K, value: NotificationForm[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSendNotification = async (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    
-    if (!form.title.trim() || !form.body.trim()) {
-      addToast({
-        type: 'error',
-        title: 'Validation Error',
-        description: 'Title and body are required.'
-      });
-      return;
-    }
-
-    setIsSending(true);
-    try {
-      await apiClient.post('/admin/push-notifications/send', form);
-      
-      addToast({
-        type: 'success',
-        title: 'Notification Sent',
-        description: 'Push notification has been sent successfully.'
-      });
-      
-      // Reset form
-      setForm({
-        title: '',
-        body: '',
-        url: '',
-        type: 'all',
-        imageUrl: ''
-      });
-      
-      // Refresh stats
-      fetchStats();
-    } catch (error: any) {
-      addToast({
-        type: 'error',
-        title: 'Send Failed',
-        description: error.response?.data?.message || error.message || 'Failed to send notification.'
-      });
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const handleTestNotification = async () => {
-    setIsSending(true);
-    try {
-      await apiClient.post('/admin/push-notifications/test');
-      
-      addToast({
-        type: 'success',
-        title: 'Test Sent',
-        description: 'Test notification has been sent to your device.'
-      });
-    } catch (error: any) {
-      addToast({
-        type: 'error',
-        title: 'Test Failed',
-        description: error.response?.data?.message || error.message || 'Failed to send test notification.'
-      });
-    } finally {
-      setIsSending(false);
-    }
+    const next = validate(form);
+    setErrors(next);
+    if (Object.keys(next).length) return;
+    sendMutation.mutate({ ...form, title: form.title.trim(), body: form.body.trim() });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Push Notifications</h1>
-          <p className="text-gray-600 mt-2">
-            Manage and send push notifications to your subscribers.
-          </p>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Push Notifications"
+        description="Send web push notifications to subscribers and monitor your audience."
+        actions={
+          <>
+            <button type="button" className={btnSecondary} onClick={() => statsQuery.refetch()} disabled={statsQuery.isFetching}>
+              <RefreshCw className={`h-4 w-4 ${statsQuery.isFetching ? 'animate-spin' : ''}`} aria-hidden="true" />
+              Refresh
+            </button>
+            <button type="button" className={btnSecondary} onClick={() => testMutation.mutate()} disabled={testMutation.isPending}>
+              <BellRing className="h-4 w-4" aria-hidden="true" />
+              {testMutation.isPending ? 'Sending…' : 'Send test to me'}
+            </button>
+          </>
+        }
+      />
+
+      {statsQuery.isLoading ? (
+        <AdminCard>
+          <LoadingState label="Loading statistics…" />
+        </AdminCard>
+      ) : statsQuery.isError ? (
+        <AdminCard>
+          <ErrorState title="Could not load statistics" message={apiErrorMessage(statsQuery.error)} onRetry={() => statsQuery.refetch()} />
+        </AdminCard>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2" data-testid="push-stats">
+          <StatCard label="Total subscribers" icon={Users} value={fmt(stats?.total_subscribers)} />
+          <StatCard
+            label="Active subscribers"
+            icon={UserCheck}
+            value={fmt(stats?.active_subscribers)}
+            hint={
+              stats?.notification_types
+                ? Object.entries(CATEGORY_LABELS)
+                    .map(([key, label]) => `${label}: ${fmt((stats.notification_types as Record<string, number | undefined>)[key])}`)
+                    .join(' · ')
+                : 'No subscribers yet'
+            }
+          />
         </div>
+      )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Stats Panel */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Statistics</h2>
-              
-              {isLoading ? (
-                <div className="animate-pulse space-y-4">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                </div>
-              ) : stats ? (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total Subscribers</span>
-                    <span className="text-2xl font-bold text-blue-600">{stats.total_subscribers || 0}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Active Subscribers</span>
-                    <span className="text-2xl font-bold text-green-600">{stats.active_subscribers || 0}</span>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <h3 className="font-medium text-gray-900 mb-3">By Category</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Blog Posts</span>
-                        <span className="text-sm font-medium">{stats.notification_types?.blogPosts || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Issues</span>
-                        <span className="text-sm font-medium">{stats.notification_types?.issues || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Workflows</span>
-                        <span className="text-sm font-medium">{stats.notification_types?.workflows || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Career Tools</span>
-                        <span className="text-sm font-medium">{stats.notification_types?.careerTools || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Debug info - remove in production */}
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
-                    <p className="text-xs text-yellow-800">
-                      <strong>Debug:</strong> Raw stats data: {JSON.stringify(stats, null, 2)}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-gray-500">
-                  <p>Failed to load statistics</p>
-                  <button
-                    onClick={fetchStats}
-                    className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
-                  >
-                    Retry
-                  </button>
-                </div>
+      <AdminCard title="Send notification" description="Delivered immediately to every matching active subscriber.">
+        <form onSubmit={handleSubmit} noValidate className="space-y-5">
+          <Field label="Title" required error={errors.title}>
+            {(props) => <input {...props} className={inputClass} maxLength={255} placeholder="New article: Automating SEO checks" value={form.title} onChange={(e) => set('title', e.target.value)} />}
+          </Field>
+          <Field label="Message" required error={errors.body} hint={`${form.body.length}/1000 characters`}>
+            {(props) => <textarea {...props} rows={3} maxLength={1000} className={inputClass} placeholder="A short summary subscribers will see" value={form.body} onChange={(e) => set('body', e.target.value)} />}
+          </Field>
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field label="Audience">
+              {(props) => (
+                <select {...props} className={inputClass} value={form.type} onChange={(e) => set('type', e.target.value as NotificationType)}>
+                  {TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
               )}
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow p-6 mt-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-              <div className="space-y-3">
-                <button
-                  onClick={handleTestNotification}
-                  disabled={isSending}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSending ? 'Sending...' : 'Send Test Notification'}
-                </button>
-                
-                <button
-                  onClick={fetchStats}
-                  disabled={isLoading}
-                  className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Refresh Statistics
-                </button>
-              </div>
-            </div>
+            </Field>
+            <Field label="Link URL" error={errors.url} hint="Optional page opened when the notification is clicked.">
+              {(props) => <input {...props} type="url" className={inputClass} placeholder="https://example.com/blog/post" value={form.url} onChange={(e) => set('url', e.target.value)} />}
+            </Field>
           </div>
-
-          {/* Send Notification Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Send Notification</h2>
-              
-              <form onSubmit={handleSendNotification} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={form.title}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter notification title"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Message *
-                  </label>
-                  <textarea
-                    name="body"
-                    value={form.body}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter notification message"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Type
-                    </label>
-                    <select
-                      name="type"
-                      value={form.type}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">All Subscribers</option>
-                      <option value="blogPosts">Blog Posts Only</option>
-                      <option value="issues">Issues Only</option>
-                      <option value="workflows">Workflows Only</option>
-                      <option value="careerTools">Career Tools Only</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      URL (Optional)
-                    </label>
-                    <input
-                      type="url"
-                      name="url"
-                      value={form.url}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="https://example.com"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image URL (Optional)
-                  </label>
-                  <input
-                    type="url"
-                    name="imageUrl"
-                    value={form.imageUrl}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-4">
-                  <button
-                    type="button"
-                    onClick={() => setForm({
-                      title: '',
-                      body: '',
-                      url: '',
-                      type: 'all',
-                      imageUrl: ''
-                    })}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Clear
-                  </button>
-                  
-                  <button
-                    type="submit"
-                    disabled={isSending}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSending ? 'Sending...' : 'Send Notification'}
-                  </button>
-                </div>
-              </form>
-            </div>
+          <Field label="Icon image URL" error={errors.imageUrl} hint="Optional. Square images of 192×192 px work best.">
+            {(props) => <input {...props} type="url" className={inputClass} placeholder="https://example.com/icon.png" value={form.imageUrl} onChange={(e) => set('imageUrl', e.target.value)} />}
+          </Field>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              className={btnSecondary}
+              onClick={() => {
+                setForm(EMPTY_FORM);
+                setErrors({});
+              }}
+            >
+              Clear
+            </button>
+            <button type="submit" className={btnPrimary} disabled={sendMutation.isPending}>
+              <Send className="h-4 w-4" aria-hidden="true" />
+              {sendMutation.isPending ? 'Sending…' : 'Send notification'}
+            </button>
           </div>
-        </div>
-      </div>
+        </form>
+      </AdminCard>
     </div>
   );
-};
-
-export default PushNotifications;
+}

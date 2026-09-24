@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
-import { useAuth } from '../../hooks/useAuth';
+import { useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Activity, Eye, EyeOff, Gauge, KeyRound, Pencil, Plus, Power, RotateCcw, Sparkles, Trash2, Users, Zap } from 'lucide-react';
 import apiClient from '../../api/axios';
+import { useSEO } from '../../utils/seo';
+import { useToast } from '../../hooks/use-toast';
+import { useConfirm } from '../../hooks/use-confirm';
+import { AdminCard, AdminPageHeader, Badge, EmptyState, ErrorState, Field, IconButton, LoadingState, Modal, StatCard, TableShell, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage } from '../../components/admin/utils';
 
 interface GeminiApiKey {
   id: number;
@@ -12,861 +16,562 @@ interface GeminiApiKey {
   used_requests: number;
   is_active: boolean;
   created_at: string;
-  updated_at: string;
 }
 
 interface UserApiKey {
   id: number;
   user_id: number;
   name: string;
-  requests_per_key: number;
-  usage_count: number;
+  requests_per_key?: number;
+  usage_count?: number;
   is_active: boolean;
   created_at: string;
-  updated_at: string;
-  user: {
-    id: number;
-    name: string;
-    email: string;
-  };
+  user?: { id: number; name: string; email: string } | null;
 }
 
-interface ApiStats {
-  total_keys: number;
-  total_requests: number;
-  used_requests: number;
-  available_requests: number;
-  gemini_keys?: {
-    total_keys: number;
-    active_keys: number;
-    total_requests: number;
-    used_requests: number;
-    available_requests: number;
-  };
-  user_keys?: {
-    total_keys: number;
-    total_requests: number;
-    used_requests: number;
-    available_requests: number;
-  };
-  overall?: {
-    total_keys: number;
-    total_requests: number;
-    used_requests: number;
-    available_requests: number;
-  };
+interface Totals {
+  total_keys?: number;
+  total_requests?: number;
+  used_requests?: number;
+  available_requests?: number;
 }
 
-export default function GeminiApiManagement() {
-  const { user } = useAuth();
-  const [apiKeys, setApiKeys] = useState<GeminiApiKey[]>([]);
-  const [userApiKeys, setUserApiKeys] = useState<UserApiKey[]>([]);
-  const [stats, setStats] = useState<ApiStats>({
-    total_keys: 0,
-    total_requests: 0,
-    used_requests: 0,
-    available_requests: 0
-  });
-  const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingKey, setEditingKey] = useState<GeminiApiKey | null>(null);
-  const [editingUserKey, setEditingUserKey] = useState<UserApiKey | null>(null);
-  const [showUserKeyModal, setShowUserKeyModal] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    api_key: '',
-    max_requests: 5,
-    is_active: true
-  });
-  const [userKeyFormData, setUserKeyFormData] = useState({
-    requests_per_key: 100,
-    is_active: true
-  });
-  const [testing, setTesting] = useState<number | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [activeTab, setActiveTab] = useState<'admin' | 'user'>('admin');
+interface ApiStats extends Totals {
+  gemini_keys?: Totals & { active_keys?: number };
+  user_keys?: Totals;
+  overall?: Totals;
+}
 
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      loadApiKeys();
-      loadUserApiKeys();
-      loadComprehensiveStats();
-    }
-  }, [user]);
+interface HealthResult {
+  total_keys?: number;
+  healthy_keys?: number;
+  unhealthy_keys?: number;
+  keys?: Array<{ id: number; name: string; is_healthy: boolean; details?: { status?: string; error_message?: string } }>;
+}
 
-  const loadApiKeys = async () => {
-    try {
-      const response = await apiClient.get('/admin/gemini-api-keys');
-      const data = response.data;
-      
-      console.log('API Response:', data);
-      console.log('API Keys:', data.data?.api_keys);
-      console.log('Stats:', data.data?.statistics);
-      
-      if (data.success) {
-        setApiKeys(data.data.api_keys || []);
-        setStats(data.data.statistics || {
-          total_keys: 0,
-          total_requests: 0,
-          used_requests: 0,
-          available_requests: 0
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load API keys:', error);
-      setError('Failed to load API keys. Please check console for details.');
-    } finally {
-      setLoading(false);
-    }
-  };
+interface KeyForm {
+  name: string;
+  api_key: string;
+  max_requests: number;
+  is_active: boolean;
+}
 
-  const loadUserApiKeys = async () => {
-    try {
-      const response = await apiClient.get('/admin/user-api-keys');
-      const data = response.data;
-      if (data.success) {
-        setUserApiKeys(data.data.user_api_keys);
-      }
-    } catch (error) {
-      console.error('Failed to load user API keys:', error);
-    }
-  };
+type KeyErrors = Partial<Record<keyof KeyForm, string>>;
+type Tab = 'admin' | 'user';
 
-  const loadComprehensiveStats = async () => {
-    try {
-      const response = await apiClient.get('/admin/gemini-api-keys/comprehensive-stats');
-      const data = response.data;
-      if (data.success) {
-        setStats(data.data);
-      }
-    } catch (error) {
-      console.error('Failed to load comprehensive stats:', error);
-    }
-  };
+const EMPTY_KEY: KeyForm = { name: '', api_key: '', max_requests: 5, is_active: true };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
+const btnPrimary =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const btnSecondary =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-60';
 
-    try {
-      let response;
-      if (editingKey) {
-        response = await apiClient.put(`/admin/gemini-api-keys/${editingKey.id}`, formData);
-      } else {
-        response = await apiClient.post('/admin/gemini-api-keys', formData);
-      }
+const num = (v: unknown) => (typeof v === 'number' ? v.toLocaleString() : '0');
 
-      const result = response.data;
+function ensureSuccess<T extends { success?: boolean; message?: string }>(data: T): T {
+  if (data && data.success === false) throw new Error(data.message || 'The request failed.');
+  return data;
+}
 
-      if (result.success) {
-        setSuccess(editingKey ? 'API key updated successfully' : 'API key added successfully');
-        setShowAddModal(false);
-        setEditingKey(null);
-        setFormData({ name: '', api_key: '', max_requests: 5, is_active: true });
-        loadApiKeys();
-        loadComprehensiveStats();
-      } else {
-        setError(result.message || 'Failed to save API key');
-      }
-    } catch (error) {
-      setError('Failed to save API key');
-    }
-  };
+function serverErrors(error: unknown): KeyErrors {
+  const bag = (error as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors;
+  return bag ? (Object.fromEntries(Object.entries(bag).map(([k, v]) => [k, v?.[0]])) as KeyErrors) : {};
+}
 
-  const handleEdit = (key: GeminiApiKey) => {
-    setEditingKey(key);
-    setFormData({
-      name: key.name,
-      api_key: '', // Don't show existing key for security
-      max_requests: key.max_requests,
-      is_active: key.is_active
-    });
-    setShowAddModal(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this API key?')) return;
-
-    try {
-      const response = await apiClient.delete(`/admin/gemini-api-keys/${id}`);
-      const result = response.data;
-
-      if (result.success) {
-        setSuccess('API key deleted successfully');
-        loadApiKeys();
-        loadComprehensiveStats();
-      } else {
-        setError(result.message || 'Failed to delete API key');
-      }
-    } catch (error) {
-      setError('Failed to delete API key');
-    }
-  };
-
-  const handleTest = async (id: number) => {
-    setTesting(id);
-    try {
-      const response = await apiClient.post(`/admin/gemini-api-keys/${id}/test`, {});
-      const result = response.data;
-      
-      if (result.success && result.valid) {
-        const details = result.details || {};
-        const message = `API key is working correctly. Status: ${details.status}, Response time: ${details.response_time}s, Quota: ${details.quota_status}`;
-        setSuccess(message);
-      } else {
-        const details = result.details || {};
-        const message = `API key test failed. Status: ${details.status}, Error: ${details.error_message || 'Unknown error'}`;
-        setError(message);
-      }
-    } catch (error) {
-      setError('Failed to test API key');
-    } finally {
-      setTesting(null);
-    }
-  };
-
-  const handleHealthCheck = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
-    
-    try {
-      console.log('Starting health check...');
-      const response = await apiClient.get('/admin/gemini-api-keys/health-check');
-      const result = response.data;
-      console.log('Health check result:', result);
-      
-      if (result.success) {
-        const data = result.data;
-        const message = `Health Check Complete: ${data.healthy_keys}/${data.total_keys} keys healthy. ${data.unhealthy_keys} keys have issues.`;
-        setSuccess(message);
-        
-        // Show detailed results
-        if (data.unhealthy_keys > 0) {
-          const unhealthyKeys = data.keys.filter((key: any) => !key.is_healthy);
-          const unhealthyNames = unhealthyKeys.map((key: any) => key.name).join(', ');
-          setError(`Unhealthy keys: ${unhealthyNames}`);
-        }
-      } else {
-        console.log('Health check failed:', result);
-        setError('Health check failed');
-      }
-    } catch (error) {
-      console.error('Health check error:', error);
-      setError('Failed to perform health check');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleActive = async (key: GeminiApiKey) => {
-    try {
-      const response = await apiClient.put(`/admin/gemini-api-keys/${key.id}`, {
-        ...formData,
-        is_active: !key.is_active
-      });
-
-      const result = response.data;
-
-      if (result.success) {
-        setSuccess(`API key ${!key.is_active ? 'activated' : 'deactivated'} successfully`);
-        loadApiKeys();
-        loadComprehensiveStats();
-      } else {
-        setError(result.message || 'Failed to update API key');
-      }
-    } catch (error) {
-      setError('Failed to update API key');
-    }
-  };
-
-  // User API Key Management Functions
-  const handleEditUserKey = (userKey: UserApiKey) => {
-    setEditingUserKey(userKey);
-    setUserKeyFormData({
-      requests_per_key: userKey.requests_per_key,
-      is_active: userKey.is_active
-    });
-    setShowUserKeyModal(true);
-  };
-
-  const handleUpdateUserKeyQuota = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingUserKey) return;
-
-    setError('');
-    setSuccess('');
-
-    try {
-      const response = await apiClient.put(`/admin/user-api-keys/${editingUserKey.id}/quota`, userKeyFormData);
-      const result = response.data;
-
-      if (result.success) {
-        setSuccess('User API key quota updated successfully');
-        setShowUserKeyModal(false);
-        setEditingUserKey(null);
-        setUserKeyFormData({ requests_per_key: 10, is_active: true });
-        loadUserApiKeys();
-        loadComprehensiveStats();
-      } else {
-        setError(result.message || 'Failed to update quota');
-      }
-    } catch (error) {
-      setError('Failed to update quota');
-    }
-  };
-
-  const handleResetUserKeyUsage = async (userKey: UserApiKey) => {
-    if (!confirm('Are you sure you want to reset usage for this user API key?')) return;
-
-    try {
-      const response = await apiClient.post(`/admin/user-api-keys/${userKey.id}/reset-usage`);
-      const result = response.data;
-
-      if (result.success) {
-        setSuccess('User API key usage reset successfully');
-        loadUserApiKeys();
-        loadComprehensiveStats();
-      } else {
-        setError(result.message || 'Failed to reset usage');
-      }
-    } catch (error) {
-      setError('Failed to reset usage');
-    }
-  };
-
-  const handleDeleteUserKey = async (userKey: UserApiKey) => {
-    if (!confirm('Are you sure you want to delete this user API key? This action cannot be undone.')) return;
-
-    try {
-      const response = await apiClient.delete(`/admin/user-api-keys/${userKey.id}`);
-      const result = response.data;
-
-      if (result.success) {
-        setSuccess('User API key deleted successfully');
-        loadUserApiKeys();
-        loadComprehensiveStats();
-      } else {
-        setError(result.message || 'Failed to delete user API key');
-      }
-    } catch (error) {
-      setError('Failed to delete user API key');
-    }
-  };
-
-  if (user?.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You need admin privileges to access this page.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading API keys...</p>
-        </div>
-      </div>
-    );
-  }
-
+function UsageBar({ used, total }: { used: number; total: number }) {
+  const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Gemini API Management</h1>
-          <p className="text-gray-600 mt-2">Manage your Gemini API keys and monitor usage</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Keys</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.overall?.total_keys || stats.total_keys}</p>
-                {stats.gemini_keys && stats.user_keys && (
-                  <p className="text-xs text-gray-500">
-                    Admin: {stats.gemini_keys.total_keys} | User: {stats.user_keys.total_keys}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Available Requests</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.overall?.available_requests || stats.available_requests}</p>
-                {stats.gemini_keys && stats.user_keys && (
-                  <p className="text-xs text-gray-500">
-                    Admin: {stats.gemini_keys.available_requests} | User: {stats.user_keys.available_requests}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Used Requests</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.overall?.used_requests || stats.used_requests}</p>
-                {stats.gemini_keys && stats.user_keys && (
-                  <p className="text-xs text-gray-500">
-                    Admin: {stats.gemini_keys.used_requests} | User: {stats.user_keys.used_requests}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Requests</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.overall?.total_requests || stats.total_requests}</p>
-                {stats.gemini_keys && stats.user_keys && (
-                  <p className="text-xs text-gray-500">
-                    Admin: {stats.gemini_keys.total_requests} | User: {stats.user_keys.total_requests}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Messages */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-700">{error}</p>
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <p className="text-green-700">{success}</p>
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div className="mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab('admin')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'admin'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Admin API Keys ({apiKeys.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('user')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'user'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                User API Keys ({userApiKeys.length})
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Admin API Keys Section */}
-        {activeTab === 'admin' && (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Admin API Keys</h2>
-              <div className="flex space-x-3">
-                <Button
-                  onClick={handleHealthCheck}
-                  disabled={loading}
-                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
-                >
-                  {loading ? 'Checking...' : 'Health Check'}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowAddModal(true);
-                    setEditingKey(null);
-                    setFormData({ name: '', api_key: '', max_requests: 5, is_active: true });
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  Add API Key
-                </Button>
-              </div>
-            </div>
-
-        {/* API Keys Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {apiKeys.length > 0 ? (
-                apiKeys.map((key) => (
-                  <tr key={key.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{key.name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {key.used_requests} / {key.total_requests}
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${(key.used_requests / key.total_requests) * 100}%` }}
-                        ></div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        key.is_active 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {key.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(key.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => handleEdit(key)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleTest(key.id)}
-                        disabled={testing === key.id}
-                        className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                      >
-                        {testing === key.id ? 'Testing...' : 'Test'}
-                      </button>
-                      <button
-                        onClick={() => toggleActive(key)}
-                        className={`${key.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
-                      >
-                        {key.is_active ? 'Deactivate' : 'Activate'}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(key.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center">
-                    <div className="text-gray-500">
-                      <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                      </svg>
-                      <p className="text-sm font-medium text-gray-900 mb-1">No Admin API keys found</p>
-                      <p className="text-sm text-gray-500 mb-4">Get started by adding your first Gemini API key</p>
-                      <Button
-                        onClick={() => {
-                          setShowAddModal(true);
-                          setEditingKey(null);
-                          setFormData({ name: '', api_key: '', max_requests: 5, is_active: true });
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        Add Your First API Key
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-          </>
-        )}
-
-        {/* User API Keys Section */}
-        {activeTab === 'user' && (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">User API Keys</h2>
-              <p className="text-sm text-gray-500">Manage user API key quotas and usage</p>
-            </div>
-
-            {/* User API Keys Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quota</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {userApiKeys.map((userKey) => (
-                    <tr key={userKey.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{userKey.user.name}</div>
-                          <div className="text-sm text-gray-500">{userKey.user.email}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {userKey.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {userKey.usage_count} / {userKey.requests_per_key}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {userKey.requests_per_key}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          userKey.is_active 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {userKey.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(userKey.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <button
-                          onClick={() => handleEditUserKey(userKey)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Edit Quota
-                        </button>
-                        <button
-                          onClick={() => handleResetUserKeyUsage(userKey)}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Reset Usage
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUserKey(userKey)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {userApiKeys.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
-                        No user API keys found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-
-        {/* Add/Edit Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  {editingKey ? 'Edit API Key' : 'Add New API Key'}
-                </h3>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                    <Input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="API Key Name"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      API Key {editingKey && '(leave empty to keep current)'}
-                    </label>
-                    <Input
-                      type="password"
-                      value={formData.api_key}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, api_key: e.target.value })}
-                      placeholder="Enter Gemini API Key"
-                      required={!editingKey}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Requests</label>
-                    <Input
-                      type="number"
-                      value={formData.max_requests}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, max_requests: parseInt(e.target.value) })}
-                      min="1"
-                      max="1000"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="is_active"
-                      checked={formData.is_active}
-                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
-                      Active
-                    </label>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <Button
-                      type="button"
-                      onClick={() => setShowAddModal(false)}
-                      variant="outline"
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit">
-                      {editingKey ? 'Update' : 'Add'} API Key
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* User API Key Quota Edit Modal */}
-        {showUserKeyModal && editingUserKey && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Edit User API Key Quota
-                </h3>
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600">
-                    <strong>User:</strong> {editingUserKey.user.name} ({editingUserKey.user.email})
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <strong>Key:</strong> {editingUserKey.name}
-                  </p>
-                </div>
-                <form onSubmit={handleUpdateUserKeyQuota} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Requests Per Key
-                    </label>
-                    <Input
-                      type="number"
-                      value={userKeyFormData.requests_per_key}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                        setUserKeyFormData({ ...userKeyFormData, requests_per_key: parseInt(e.target.value) })
-                      }
-                      min="1"
-                      max="10000"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="user_key_is_active"
-                      checked={userKeyFormData.is_active}
-                      onChange={(e) => setUserKeyFormData({ ...userKeyFormData, is_active: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="user_key_is_active" className="ml-2 block text-sm text-gray-900">
-                      Active
-                    </label>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setShowUserKeyModal(false);
-                        setEditingUserKey(null);
-                        setUserKeyFormData({ requests_per_key: 10, is_active: true });
-                      }}
-                      variant="outline"
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit">
-                      Update Quota
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
+    <div className="min-w-[8rem]">
+      <div className="text-xs tabular-nums text-slate-700">
+        {num(used)} / {num(total)}
+      </div>
+      <div className="mt-1 h-1.5 w-full rounded-full bg-slate-200" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Usage">
+        <div className={`h-1.5 rounded-full ${pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-blue-600'}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
 }
 
+export default function GeminiApiManagement() {
+  useSEO({ title: 'Gemini API | Admin', robots: 'noindex, nofollow' });
+  const { addToast } = useToast();
+  const { confirm } = useConfirm();
+  const queryClient = useQueryClient();
+  const [tab, setTab] = useState<Tab>('admin');
 
+  const keysQuery = useQuery({
+    queryKey: ['gemini-api-keys'],
+    queryFn: async () => {
+      const data = (await apiClient.get('/admin/gemini-api-keys')).data?.data;
+      return {
+        keys: (Array.isArray(data?.api_keys) ? data.api_keys : []) as GeminiApiKey[],
+        statistics: (data?.statistics ?? {}) as Totals,
+      };
+    },
+  });
+  const userKeysQuery = useQuery({
+    queryKey: ['gemini-user-api-keys'],
+    queryFn: async () => {
+      const data = (await apiClient.get('/admin/user-api-keys')).data?.data;
+      return (Array.isArray(data?.user_api_keys) ? data.user_api_keys : []) as UserApiKey[];
+    },
+  });
+  const statsQuery = useQuery({
+    queryKey: ['gemini-api-stats'],
+    queryFn: async () => {
+      const data = (await apiClient.get('/admin/gemini-api-keys/comprehensive-stats')).data?.data;
+      return (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as ApiStats;
+    },
+  });
 
+  const keys = keysQuery.data?.keys ?? [];
+  const userKeys = userKeysQuery.data ?? [];
+  const stats: ApiStats = { ...(keysQuery.data?.statistics ?? {}), ...(statsQuery.data ?? {}) };
+  const totals: Totals = stats.overall ?? stats;
+
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['gemini-api-keys'] });
+    queryClient.invalidateQueries({ queryKey: ['gemini-user-api-keys'] });
+    queryClient.invalidateQueries({ queryKey: ['gemini-api-stats'] });
+  };
+
+  // ---------------------------------------------------------------- admin keys
+  const [keyModal, setKeyModal] = useState(false);
+  const [editingKey, setEditingKey] = useState<GeminiApiKey | null>(null);
+  const [keyForm, setKeyForm] = useState<KeyForm>(EMPTY_KEY);
+  const [keyErrors, setKeyErrors] = useState<KeyErrors>({});
+  const [showKey, setShowKey] = useState(false);
+  const [health, setHealth] = useState<HealthResult | null>(null);
+
+  const saveKey = useMutation({
+    mutationFn: async (payload: Partial<KeyForm>) =>
+      ensureSuccess(editingKey ? (await apiClient.put(`/admin/gemini-api-keys/${editingKey.id}`, payload)).data : (await apiClient.post('/admin/gemini-api-keys', payload)).data),
+    onSuccess: () => {
+      addToast({ type: 'success', title: editingKey ? 'API key updated' : 'API key added' });
+      setKeyModal(false);
+      setKeyForm(EMPTY_KEY); // drop the typed secret from memory
+      invalidateAll();
+    },
+    onError: (error) => {
+      setKeyErrors(serverErrors(error));
+      addToast({ type: 'error', title: 'Could not save API key', description: apiErrorMessage(error) });
+    },
+  });
+
+  const keyAction = useMutation({
+    mutationFn: async ({ key, action }: { key: GeminiApiKey; action: 'toggle' | 'delete' | 'test' }) => {
+      if (action === 'toggle') return ensureSuccess((await apiClient.put(`/admin/gemini-api-keys/${key.id}`, { is_active: !key.is_active })).data);
+      if (action === 'delete') return ensureSuccess((await apiClient.delete(`/admin/gemini-api-keys/${key.id}`)).data);
+      return (await apiClient.post(`/admin/gemini-api-keys/${key.id}/test`, {})).data;
+    },
+    onSuccess: (data, { key, action }) => {
+      if (action === 'test') {
+        const d = data?.details ?? {};
+        if (data?.success && data?.valid) addToast({ type: 'success', title: `${key.name} is working`, description: [d.status && `Status: ${d.status}`, d.response_time && `Response: ${d.response_time}s`, d.quota_status && `Quota: ${d.quota_status}`].filter(Boolean).join(' · ') || data?.message });
+        else addToast({ type: 'error', title: `${key.name} failed the test`, description: d.error_message || data?.message || 'Unknown error' });
+        return;
+      }
+      addToast({ type: 'success', title: action === 'delete' ? 'API key deleted' : `${key.name} ${key.is_active ? 'deactivated' : 'activated'}` });
+      invalidateAll();
+    },
+    onError: (error, { action }) => addToast({ type: 'error', title: action === 'test' ? 'Test failed' : 'Action failed', description: apiErrorMessage(error) }),
+  });
+
+  const healthCheck = useMutation({
+    mutationFn: async () => ensureSuccess((await apiClient.get('/admin/gemini-api-keys/health-check')).data).data as HealthResult,
+    onSuccess: (data) => {
+      setHealth(data ?? {});
+      const unhealthy = data?.unhealthy_keys ?? 0;
+      addToast({ type: unhealthy ? 'warning' : 'success', title: 'Health check complete', description: `${num(data?.healthy_keys)}/${num(data?.total_keys)} active keys healthy.` });
+    },
+    onError: (error) => addToast({ type: 'error', title: 'Health check failed', description: apiErrorMessage(error) }),
+  });
+
+  const openAddKey = () => {
+    setEditingKey(null);
+    setKeyForm(EMPTY_KEY);
+    setKeyErrors({});
+    setShowKey(false);
+    setKeyModal(true);
+  };
+  const openEditKey = (key: GeminiApiKey) => {
+    setEditingKey(key);
+    setKeyForm({ name: key.name ?? '', api_key: '', max_requests: key.max_requests ?? 5, is_active: !!key.is_active });
+    setKeyErrors({});
+    setShowKey(false);
+    setKeyModal(true);
+  };
+  const submitKey = (e: FormEvent) => {
+    e.preventDefault();
+    const next: KeyErrors = {};
+    if (!keyForm.name.trim()) next.name = 'Name is required.';
+    if (!editingKey && !keyForm.api_key.trim()) next.api_key = 'API key is required.';
+    if (!(keyForm.max_requests >= 1 && keyForm.max_requests <= 1000)) next.max_requests = 'Use a value between 1 and 1000.';
+    setKeyErrors(next);
+    if (Object.keys(next).length) return;
+    const payload: Partial<KeyForm> = { ...keyForm, name: keyForm.name.trim(), api_key: keyForm.api_key.trim() };
+    // Blank on edit keeps the stored key (sending "" would fail validation and reset usage).
+    if (editingKey && !payload.api_key) delete payload.api_key;
+    saveKey.mutate(payload);
+  };
+  const keyBusy = (key: GeminiApiKey) => keyAction.isPending && keyAction.variables?.key.id === key.id;
+
+  // ---------------------------------------------------------------- user keys
+  const [quotaKey, setQuotaKey] = useState<UserApiKey | null>(null);
+  const [quotaForm, setQuotaForm] = useState({ requests_per_key: 100, is_active: true });
+  const [quotaError, setQuotaError] = useState<string>();
+
+  const userKeyAction = useMutation({
+    mutationFn: async ({ key, action }: { key: UserApiKey; action: 'quota' | 'reset' | 'delete' }) => {
+      if (action === 'quota') return ensureSuccess((await apiClient.put(`/admin/user-api-keys/${key.id}/quota`, quotaForm)).data);
+      if (action === 'reset') return ensureSuccess((await apiClient.post(`/admin/user-api-keys/${key.id}/reset-usage`)).data);
+      return ensureSuccess((await apiClient.delete(`/admin/user-api-keys/${key.id}`)).data);
+    },
+    onSuccess: (_d, { action }) => {
+      addToast({ type: 'success', title: action === 'quota' ? 'Quota updated' : action === 'reset' ? 'Usage reset' : 'User API key deleted' });
+      if (action === 'quota') setQuotaKey(null);
+      invalidateAll();
+    },
+    onError: (error, { action }) => {
+      if (action === 'quota') setQuotaError(apiErrorMessage(error));
+      else addToast({ type: 'error', title: 'Action failed', description: apiErrorMessage(error) });
+    },
+  });
+
+  const submitQuota = (e: FormEvent) => {
+    e.preventDefault();
+    if (!(quotaForm.requests_per_key >= 1 && quotaForm.requests_per_key <= 10000)) return setQuotaError('Use a value between 1 and 10,000.');
+    setQuotaError(undefined);
+    if (quotaKey) userKeyAction.mutate({ key: quotaKey, action: 'quota' });
+  };
+
+  const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const next: Tab = tab === 'admin' ? 'user' : 'admin';
+    setTab(next);
+    document.getElementById(`gemini-tab-${next}`)?.focus();
+  };
+
+  const unhealthy = health?.keys?.filter((k) => !k.is_healthy) ?? [];
+
+  return (
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Gemini API"
+        description="Manage the Gemini API keys the site rotates through and the quotas of users' own keys. Keys are stored encrypted and never displayed."
+        actions={
+          <>
+            <button type="button" className={btnSecondary} onClick={() => healthCheck.mutate()} disabled={healthCheck.isPending}>
+              <Activity className="h-4 w-4" aria-hidden="true" />
+              {healthCheck.isPending ? 'Checking…' : 'Health check'}
+            </button>
+            <button type="button" className={btnPrimary} onClick={openAddKey}>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add API key
+            </button>
+          </>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="gemini-stats">
+        <StatCard label="Total keys" icon={KeyRound} value={num(totals.total_keys)} hint={stats.gemini_keys && stats.user_keys ? `Admin ${num(stats.gemini_keys.total_keys)} · User ${num(stats.user_keys.total_keys)}` : undefined} />
+        <StatCard label="Available requests" icon={Gauge} value={num(totals.available_requests)} hint={stats.gemini_keys && stats.user_keys ? `Admin ${num(stats.gemini_keys.available_requests)} · User ${num(stats.user_keys.available_requests)}` : undefined} />
+        <StatCard label="Used requests" icon={Zap} value={num(totals.used_requests)} hint={stats.gemini_keys && stats.user_keys ? `Admin ${num(stats.gemini_keys.used_requests)} · User ${num(stats.user_keys.used_requests)}` : undefined} />
+        <StatCard label="Total requests" icon={Sparkles} value={num(totals.total_requests)} hint={stats.gemini_keys && stats.user_keys ? `Admin ${num(stats.gemini_keys.total_requests)} · User ${num(stats.user_keys.total_requests)}` : undefined} />
+      </div>
+
+      {health && (
+        <div role="status" className={`rounded-xl border px-4 py-3 text-sm ${unhealthy.length ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900'}`}>
+          <p className="font-medium">
+            Health check: {num(health.healthy_keys)} of {num(health.total_keys)} active keys healthy.
+          </p>
+          {unhealthy.length > 0 && (
+            <ul className="mt-1 list-disc pl-5">
+              {unhealthy.map((k) => (
+                <li key={k.id}>
+                  {k.name}: {k.details?.error_message || k.details?.status || 'unhealthy'}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      <div role="tablist" aria-label="Key type" className="flex gap-1 border-b border-slate-200">
+        {(
+          [
+            { id: 'admin', label: `Admin keys (${keys.length})` },
+            { id: 'user', label: `User keys (${userKeys.length})` },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.id}
+            id={`gemini-tab-${t.id}`}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            aria-controls={`gemini-panel-${t.id}`}
+            tabIndex={tab === t.id ? 0 : -1}
+            onClick={() => setTab(t.id)}
+            onKeyDown={onTabKey}
+            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+              tab === t.id ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'admin' ? (
+        <div role="tabpanel" id="gemini-panel-admin" aria-labelledby="gemini-tab-admin">
+          <AdminCard padded={false}>
+            {keysQuery.isLoading ? (
+              <LoadingState label="Loading API keys…" />
+            ) : keysQuery.isError ? (
+              <ErrorState message={apiErrorMessage(keysQuery.error)} onRetry={() => keysQuery.refetch()} />
+            ) : keys.length === 0 ? (
+              <EmptyState
+                icon={KeyRound}
+                title="No Gemini API keys"
+                description="Add a key from Google AI Studio so AI tools can make requests."
+                action={
+                  <button type="button" className={btnPrimary} onClick={openAddKey}>
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                    Add API key
+                  </button>
+                }
+              />
+            ) : (
+              <TableShell caption="Gemini API keys">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Key</th>
+                    <th scope="col">Usage</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Created</th>
+                    <th scope="col" className="relative">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {keys.map((key) => (
+                    <tr key={key.id}>
+                      <td className="font-medium text-slate-900">{key.name}</td>
+                      <td>
+                        <code className="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-500" title="Stored encrypted; never displayed">
+                          ••••••••
+                        </code>
+                      </td>
+                      <td>
+                        <UsageBar used={Number(key.used_requests) || 0} total={Number(key.total_requests) || 0} />
+                      </td>
+                      <td>
+                        <Badge tone={key.is_active ? 'success' : 'neutral'}>{key.is_active ? 'Active' : 'Inactive'}</Badge>
+                      </td>
+                      <td className="whitespace-nowrap text-xs">{key.created_at ? new Date(key.created_at).toLocaleDateString() : '—'}</td>
+                      <td>
+                        <div className="flex justify-end gap-1">
+                          <IconButton label={`Test ${key.name}`} icon={Zap} disabled={keyBusy(key)} onClick={() => keyAction.mutate({ key, action: 'test' })} />
+                          <IconButton label={`Edit ${key.name}`} icon={Pencil} onClick={() => openEditKey(key)} />
+                          <IconButton label={`${key.is_active ? 'Deactivate' : 'Activate'} ${key.name}`} icon={Power} disabled={keyBusy(key)} onClick={() => keyAction.mutate({ key, action: 'toggle' })} />
+                          <IconButton
+                            label={`Delete ${key.name}`}
+                            icon={Trash2}
+                            tone="danger"
+                            disabled={keyBusy(key)}
+                            onClick={async () => {
+                              if (await confirm({ title: 'Delete API key', message: `Delete "${key.name}"? Requests will rotate to the remaining keys.`, confirmText: 'Delete', type: 'danger' }))
+                                keyAction.mutate({ key, action: 'delete' });
+                            }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </TableShell>
+            )}
+          </AdminCard>
+        </div>
+      ) : (
+        <div role="tabpanel" id="gemini-panel-user" aria-labelledby="gemini-tab-user">
+          <AdminCard padded={false} description="Keys users added to their own accounts. Adjust quotas or reset usage.">
+            {userKeysQuery.isLoading ? (
+              <LoadingState label="Loading user keys…" />
+            ) : userKeysQuery.isError ? (
+              <ErrorState message={apiErrorMessage(userKeysQuery.error)} onRetry={() => userKeysQuery.refetch()} />
+            ) : userKeys.length === 0 ? (
+              <EmptyState icon={Users} title="No user API keys" description="Keys appear here when users add their own Gemini key." />
+            ) : (
+              <TableShell caption="User API keys">
+                <thead>
+                  <tr>
+                    <th scope="col">User</th>
+                    <th scope="col">Key name</th>
+                    <th scope="col">Usage</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Created</th>
+                    <th scope="col" className="relative">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {userKeys.map((key) => (
+                    <tr key={key.id}>
+                      <td>
+                        <div className="font-medium text-slate-900">{key.user?.name ?? `User #${key.user_id}`}</div>
+                        {key.user?.email && <div className="text-xs text-slate-500">{key.user.email}</div>}
+                      </td>
+                      <td>{key.name}</td>
+                      <td>
+                        <UsageBar used={Number(key.usage_count) || 0} total={Number(key.requests_per_key) || 0} />
+                      </td>
+                      <td>
+                        <Badge tone={key.is_active ? 'success' : 'neutral'}>{key.is_active ? 'Active' : 'Inactive'}</Badge>
+                      </td>
+                      <td className="whitespace-nowrap text-xs">{key.created_at ? new Date(key.created_at).toLocaleDateString() : '—'}</td>
+                      <td>
+                        <div className="flex justify-end gap-1">
+                          <IconButton
+                            label={`Edit quota for ${key.name}`}
+                            icon={Pencil}
+                            onClick={() => {
+                              setQuotaKey(key);
+                              setQuotaForm({ requests_per_key: Number(key.requests_per_key) || 100, is_active: !!key.is_active });
+                              setQuotaError(undefined);
+                            }}
+                          />
+                          <IconButton
+                            label={`Reset usage for ${key.name}`}
+                            icon={RotateCcw}
+                            onClick={async () => {
+                              if (await confirm({ title: 'Reset usage', message: `Reset the usage counter for "${key.name}"?`, confirmText: 'Reset usage', type: 'warning' })) userKeyAction.mutate({ key, action: 'reset' });
+                            }}
+                          />
+                          <IconButton
+                            label={`Delete ${key.name}`}
+                            icon={Trash2}
+                            tone="danger"
+                            onClick={async () => {
+                              if (await confirm({ title: 'Delete user API key', message: `Delete "${key.name}"? The user will need to add a key again.`, confirmText: 'Delete', type: 'danger' }))
+                                userKeyAction.mutate({ key, action: 'delete' });
+                            }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </TableShell>
+            )}
+          </AdminCard>
+        </div>
+      )}
+
+      <Modal
+        open={keyModal}
+        onClose={() => setKeyModal(false)}
+        title={editingKey ? `Edit ${editingKey.name}` : 'Add Gemini API key'}
+        description="The key is validated with Google before it is saved."
+        footer={
+          <>
+            <button type="button" className={btnSecondary} onClick={() => setKeyModal(false)}>
+              Cancel
+            </button>
+            <button type="submit" form="gemini-key-form" className={btnPrimary} disabled={saveKey.isPending}>
+              {saveKey.isPending ? 'Saving…' : editingKey ? 'Save changes' : 'Add API key'}
+            </button>
+          </>
+        }
+      >
+        <form id="gemini-key-form" onSubmit={submitKey} noValidate className="space-y-4" autoComplete="off">
+          <Field label="Name" required error={keyErrors.name}>
+            {(props) => <input {...props} className={inputClass} placeholder="e.g. Primary key" value={keyForm.name} onChange={(e) => setKeyForm((f) => ({ ...f, name: e.target.value }))} />}
+          </Field>
+          <Field label="API key" required={!editingKey} error={keyErrors.api_key} hint={editingKey ? 'A key is stored. Leave blank to keep it; entering a new key resets usage.' : 'Starts with AIza…'}>
+            {(props) => (
+              <div className="relative">
+                <input
+                  {...props}
+                  type={showKey ? 'text' : 'password'}
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={`${inputClass} pr-10 font-mono`}
+                  placeholder={editingKey ? '••••••••' : ''}
+                  value={keyForm.api_key}
+                  onChange={(e) => setKeyForm((f) => ({ ...f, api_key: e.target.value }))}
+                />
+                <IconButton
+                  label={showKey ? 'Hide API key' : 'Show API key'}
+                  icon={showKey ? EyeOff : Eye}
+                  aria-pressed={showKey}
+                  className="absolute right-1 top-1/2 -translate-y-1/2"
+                  onClick={() => setShowKey((v) => !v)}
+                />
+              </div>
+            )}
+          </Field>
+          <Field label="Max requests" required error={keyErrors.max_requests} hint="Requests this key may serve before it is rotated out (1–1000).">
+            {(props) => (
+              <input
+                {...props}
+                type="number"
+                min={1}
+                max={1000}
+                className={inputClass}
+                value={Number.isFinite(keyForm.max_requests) ? keyForm.max_requests : ''}
+                onChange={(e) => setKeyForm((f) => ({ ...f, max_requests: parseInt(e.target.value, 10) }))}
+              />
+            )}
+          </Field>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600" checked={keyForm.is_active} onChange={(e) => setKeyForm((f) => ({ ...f, is_active: e.target.checked }))} />
+            Active
+          </label>
+        </form>
+      </Modal>
+
+      <Modal
+        open={!!quotaKey}
+        onClose={() => setQuotaKey(null)}
+        title="Edit user key quota"
+        description={quotaKey ? `${quotaKey.user?.name ?? `User #${quotaKey.user_id}`} · ${quotaKey.name}` : undefined}
+        footer={
+          <>
+            <button type="button" className={btnSecondary} onClick={() => setQuotaKey(null)}>
+              Cancel
+            </button>
+            <button type="submit" form="gemini-quota-form" className={btnPrimary} disabled={userKeyAction.isPending}>
+              {userKeyAction.isPending ? 'Saving…' : 'Update quota'}
+            </button>
+          </>
+        }
+      >
+        <form id="gemini-quota-form" onSubmit={submitQuota} noValidate className="space-y-4">
+          <Field label="Requests per key" required error={quotaError}>
+            {(props) => (
+              <input
+                {...props}
+                type="number"
+                min={1}
+                max={10000}
+                className={inputClass}
+                value={Number.isFinite(quotaForm.requests_per_key) ? quotaForm.requests_per_key : ''}
+                onChange={(e) => setQuotaForm((f) => ({ ...f, requests_per_key: parseInt(e.target.value, 10) }))}
+              />
+            )}
+          </Field>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600" checked={quotaForm.is_active} onChange={(e) => setQuotaForm((f) => ({ ...f, is_active: e.target.checked }))} />
+            Active
+          </label>
+        </form>
+      </Modal>
+    </div>
+  );
+}

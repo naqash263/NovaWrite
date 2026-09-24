@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { ChevronRight, FileSearch, Lock, Unlock } from 'lucide-react';
 import { useSEO } from '../../utils/seo';
+import { AdminCard, AdminPageHeader, Badge, EmptyState, Field, Modal, SearchInput, TableShell, inputClass } from '../../components/admin/ui';
 
 interface ApiEndpoint {
   method: string;
@@ -15,7 +17,7 @@ interface ApiEndpoint {
   response?: {
     status: number;
     description: string;
-    example: any;
+    example: unknown;
   }[];
   authentication?: string;
   rateLimit?: string;
@@ -517,226 +519,201 @@ const API_ENDPOINTS: ApiEndpoint[] = [
   }
 ];
 
+const CATEGORIES = [
+  { value: 'all', label: 'All endpoints' },
+  { value: 'posts', label: 'Posts' },
+  { value: 'courses', label: 'Courses' },
+  { value: 'workflows', label: 'Workflows' },
+  { value: 'categories', label: 'Categories' },
+  { value: 'tags', label: 'Tags' },
+  { value: 'files', label: 'File management' },
+  { value: 'analytics', label: 'Analytics' },
+  { value: 'notifications', label: 'Push notifications' },
+  { value: 'admin', label: 'Admin only' },
+];
+
+const METHOD_STYLES: Record<string, string> = {
+  GET: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
+  POST: 'bg-blue-50 text-blue-800 ring-blue-200',
+  PUT: 'bg-amber-50 text-amber-800 ring-amber-200',
+  PATCH: 'bg-amber-50 text-amber-800 ring-amber-200',
+  DELETE: 'bg-red-50 text-red-800 ring-red-200',
+};
+
+function MethodBadge({ method }: { method: string }) {
+  return <span className={`inline-flex w-16 flex-none justify-center rounded-md px-2 py-0.5 font-mono text-xs font-semibold ring-1 ring-inset ${METHOD_STYLES[method] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}>{method}</span>;
+}
+
+const isPublic = (e: ApiEndpoint) => !e.authentication || /none/i.test(e.authentication);
+
 export default function ApiDocumentation() {
+  useSEO({ title: 'API Documentation | Admin', robots: 'noindex, nofollow' });
   const [selectedEndpoint, setSelectedEndpoint] = useState<ApiEndpoint | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  useSEO({ title: 'API Documentation | Admin' });
-
-  const categories = [
-    { value: 'all', label: 'All Endpoints' },
-    { value: 'posts', label: 'Posts' },
-    { value: 'courses', label: 'Courses' },
-    { value: 'workflows', label: 'Workflows' },
-    { value: 'categories', label: 'Categories' },
-    { value: 'tags', label: 'Tags' },
-    { value: 'files', label: 'File Management' },
-    { value: 'analytics', label: 'Analytics' },
-    { value: 'notifications', label: 'Push Notifications' },
-    { value: 'admin', label: 'Admin Only' }
-  ];
-
-  const filteredEndpoints = API_ENDPOINTS.filter(endpoint => {
-    const matchesSearch = endpoint.path.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         endpoint.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = selectedCategory === 'all' || 
-                           endpoint.path.includes(selectedCategory) ||
-                           (selectedCategory === 'admin' && endpoint.path.includes('/admin/')) ||
-                           (selectedCategory === 'notifications' && endpoint.path.includes('push')) ||
-                           (selectedCategory === 'files' && (endpoint.path.includes('files') || endpoint.path.includes('storage'))) ||
-                           (selectedCategory === 'analytics' && endpoint.path.includes('analytics'));
-    
-    return matchesSearch && matchesCategory;
-  });
-
-  const getMethodColor = (method: string) => {
-    switch (method) {
-      case 'GET': return 'bg-green-100 text-green-800';
-      case 'POST': return 'bg-blue-100 text-blue-800';
-      case 'PUT': return 'bg-yellow-100 text-yellow-800';
-      case 'DELETE': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const filteredEndpoints = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    return API_ENDPOINTS.filter((endpoint) => {
+      const matchesSearch = !q || endpoint.path.toLowerCase().includes(q) || endpoint.description.toLowerCase().includes(q) || endpoint.method.toLowerCase() === q;
+      const matchesCategory =
+        selectedCategory === 'all' ||
+        endpoint.path.includes(selectedCategory) ||
+        (selectedCategory === 'admin' && endpoint.path.includes('/admin/')) ||
+        (selectedCategory === 'notifications' && endpoint.path.includes('push')) ||
+        (selectedCategory === 'files' && (endpoint.path.includes('files') || endpoint.path.includes('storage'))) ||
+        (selectedCategory === 'analytics' && endpoint.path.includes('analytics'));
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchTerm, selectedCategory]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-3xl font-bold text-gray-900">API Documentation</h1>
-            <p className="mt-2 text-gray-600">
-              Complete reference for all available API endpoints, parameters, and responses.
-            </p>
-          </div>
+    <div className="space-y-6">
+      <AdminPageHeader title="API Documentation" description="Reference for the public and admin API endpoints: parameters, authentication, rate limits and example responses." />
 
-          <div className="p-6">
-            {/* Search and Filter */}
-            <div className="mb-6 space-y-4 sm:space-y-0 sm:flex sm:items-center sm:space-x-4">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Search endpoints..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                />
-              </div>
-              <div className="sm:w-48">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                >
-                  {categories.map(category => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+      <AdminCard>
+        <div className="grid gap-4 sm:grid-cols-[1fr_14rem]">
+          <Field label="Search">
+            {(props) => <SearchInput {...props} label="Search endpoints" placeholder="Path, description or method" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />}
+          </Field>
+          <Field label="Category">
+            {(props) => (
+              <select {...props} className={inputClass} value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+                {CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        </div>
+      </AdminCard>
 
-            {/* Endpoints List */}
-            <div className="space-y-4">
-              {filteredEndpoints.map((endpoint, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+      <AdminCard padded={false} title="Endpoints" description={`${filteredEndpoints.length} of ${API_ENDPOINTS.length} endpoints`}>
+        {filteredEndpoints.length === 0 ? (
+          <EmptyState
+            icon={FileSearch}
+            title="No endpoints match"
+            description="Try a different search term or category."
+            action={
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('all');
+                }}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Clear filters
+              </button>
+            }
+          />
+        ) : (
+          <ul className="divide-y divide-slate-100" aria-label="Endpoints">
+            {filteredEndpoints.map((endpoint) => (
+              <li key={`${endpoint.method} ${endpoint.path}`}>
+                <button
+                  type="button"
                   onClick={() => setSelectedEndpoint(endpoint)}
+                  className="group flex w-full items-start gap-3 px-5 py-4 text-left hover:bg-slate-50 focus:outline-none focus-visible:bg-slate-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <span className={`px-2 py-1 rounded text-sm font-medium ${getMethodColor(endpoint.method)}`}>
-                        {endpoint.method}
-                      </span>
-                      <code className="text-sm font-mono text-gray-900">{endpoint.path}</code>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {endpoint.authentication}
-                    </div>
-                  </div>
-                  <p className="mt-2 text-gray-600">{endpoint.description}</p>
-                  {endpoint.parameters && (
-                    <div className="mt-2 text-sm text-gray-500">
-                      {endpoint.parameters.length} parameter{endpoint.parameters.length !== 1 ? 's' : ''}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Endpoint Details Modal */}
-            {selectedEndpoint && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <span className={`px-3 py-1 rounded text-sm font-medium ${getMethodColor(selectedEndpoint.method)}`}>
-                          {selectedEndpoint.method}
+                  <MethodBadge method={endpoint.method} />
+                  <span className="min-w-0 flex-1">
+                    <code className="block break-all font-mono text-sm font-medium text-slate-900">{endpoint.path}</code>
+                    <span className="mt-0.5 block text-sm text-slate-600">{endpoint.description}</span>
+                    <span className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      {isPublic(endpoint) ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Unlock className="h-3 w-3" aria-hidden="true" /> Public
                         </span>
-                        <code className="text-lg font-mono text-gray-900">{selectedEndpoint.path}</code>
-                      </div>
-                      <button
-                        onClick={() => setSelectedEndpoint(null)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1">
+                          <Lock className="h-3 w-3" aria-hidden="true" /> {endpoint.authentication}
+                        </span>
+                      )}
+                      {endpoint.parameters && (
+                        <span>
+                          · {endpoint.parameters.length} parameter{endpoint.parameters.length === 1 ? '' : 's'}
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                  <ChevronRight className="mt-1 h-4 w-4 flex-none text-slate-400 group-hover:text-slate-700" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </AdminCard>
 
-                    <p className="text-gray-600 mb-6">{selectedEndpoint.description}</p>
-
-                    {/* Authentication & Rate Limit */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h3 className="font-semibold text-gray-900 mb-2">Authentication</h3>
-                        <p className="text-sm text-gray-600">{selectedEndpoint.authentication}</p>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h3 className="font-semibold text-gray-900 mb-2">Rate Limit</h3>
-                        <p className="text-sm text-gray-600">{selectedEndpoint.rateLimit}</p>
-                      </div>
-                    </div>
-
-                    {/* Parameters */}
-                    {selectedEndpoint.parameters && selectedEndpoint.parameters.length > 0 && (
-                      <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Parameters</h3>
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Required</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Example</th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {selectedEndpoint.parameters.map((param, index) => (
-                                <tr key={index}>
-                                  <td className="px-4 py-3 text-sm font-mono text-gray-900">{param.name}</td>
-                                  <td className="px-4 py-3 text-sm text-gray-600">{param.type}</td>
-                                  <td className="px-4 py-3 text-sm">
-                                    <span className={`px-2 py-1 rounded text-xs ${
-                                      param.required 
-                                        ? 'bg-red-100 text-red-800' 
-                                        : 'bg-gray-100 text-gray-800'
-                                    }`}>
-                                      {param.required ? 'Required' : 'Optional'}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-600">{param.description}</td>
-                                  <td className="px-4 py-3 text-sm font-mono text-gray-500">{param.example || '-'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Response Examples */}
-                    {selectedEndpoint.response && selectedEndpoint.response.length > 0 && (
-                      <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Response Examples</h3>
-                        <div className="space-y-4">
-                          {selectedEndpoint.response.map((response, index) => (
-                            <div key={index} className="border border-gray-200 rounded-lg p-4">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <span className={`px-2 py-1 rounded text-sm font-medium ${
-                                  response.status >= 200 && response.status < 300 
-                                    ? 'bg-green-100 text-green-800'
-                                    : response.status >= 400 && response.status < 500
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {response.status}
-                                </span>
-                                <span className="text-sm text-gray-600">{response.description}</span>
-                              </div>
-                              <pre className="bg-gray-50 p-3 rounded text-sm overflow-x-auto">
-                                <code>{JSON.stringify(response.example, null, 2)}</code>
-                              </pre>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+      <Modal open={!!selectedEndpoint} onClose={() => setSelectedEndpoint(null)} size="xl" title={selectedEndpoint ? `${selectedEndpoint.method} ${selectedEndpoint.path}` : 'Endpoint'} description={selectedEndpoint?.description}>
+        {selectedEndpoint && (
+          <div className="space-y-6">
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg bg-slate-50 p-3">
+                <dt className="text-xs font-semibold uppercase tracking-wider text-slate-500">Authentication</dt>
+                <dd className="mt-1 text-sm text-slate-800">{selectedEndpoint.authentication ?? 'Not specified'}</dd>
               </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <dt className="text-xs font-semibold uppercase tracking-wider text-slate-500">Rate limit</dt>
+                <dd className="mt-1 text-sm text-slate-800">{selectedEndpoint.rateLimit ?? 'Not specified'}</dd>
+              </div>
+            </dl>
+
+            {selectedEndpoint.parameters && selectedEndpoint.parameters.length > 0 && (
+              <section>
+                <h3 className="mb-2 text-sm font-semibold text-slate-900">Parameters</h3>
+                <div className="rounded-lg border border-slate-200">
+                  <TableShell caption="Parameters">
+                    <thead>
+                      <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Type</th>
+                        <th scope="col">Required</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Example</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {selectedEndpoint.parameters.map((param) => (
+                        <tr key={param.name}>
+                          <td className="font-mono text-xs text-slate-900">{param.name}</td>
+                          <td className="text-xs">{param.type}</td>
+                          <td>
+                            <Badge tone={param.required ? 'danger' : 'neutral'}>{param.required ? 'Required' : 'Optional'}</Badge>
+                          </td>
+                          <td className="min-w-[12rem] text-xs">{param.description}</td>
+                          <td className="font-mono text-xs text-slate-500">{param.example || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </TableShell>
+                </div>
+              </section>
+            )}
+
+            {selectedEndpoint.response && selectedEndpoint.response.length > 0 && (
+              <section>
+                <h3 className="mb-2 text-sm font-semibold text-slate-900">Responses</h3>
+                <div className="space-y-3">
+                  {selectedEndpoint.response.map((response) => (
+                    <div key={response.status} className="rounded-lg border border-slate-200 p-3">
+                      <div className="mb-2 flex items-center gap-2">
+                        <Badge tone={response.status < 300 ? 'success' : response.status < 500 ? 'warning' : 'danger'}>{response.status}</Badge>
+                        <span className="text-sm text-slate-600">{response.description}</span>
+                      </div>
+                      <pre className="overflow-x-auto rounded-md bg-slate-900 p-3 text-xs text-slate-100">
+                        <code>{JSON.stringify(response.example, null, 2)}</code>
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+              </section>
             )}
           </div>
-        </div>
-      </div>
+        )}
+      </Modal>
     </div>
   );
 }

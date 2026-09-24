@@ -1,475 +1,364 @@
-import React, { useState, useEffect } from 'react';
-import { RefreshCw, RotateCcw, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2, ChevronLeft, ChevronRight, Clock, Inbox, Lightbulb, RefreshCw, RotateCcw, TrendingUp, XCircle } from 'lucide-react';
+import apiClient from '../../api/axios';
+import { useSEO } from '../../utils/seo';
+import { useToast } from '../../hooks/use-toast';
+import { useConfirm } from '../../hooks/use-confirm';
+import { AdminCard, AdminPageHeader, Badge, EmptyState, ErrorState, Field, IconButton, LoadingState, SearchInput, StatCard, TableShell, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage, asList } from '../../components/admin/utils';
 
 interface EmailQueueItem {
   id: number;
   action: string;
   recipient_email: string;
   recipient_name: string | null;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | string;
   attempts: number;
   max_attempts: number;
   last_error: string | null;
-  next_retry_at: string | null;
-  completed_at: string | null;
   created_at: string;
   failure_reason_code?: string | null;
   failure_category?: string | null;
-  error_details?: any;
   http_status_code?: number | null;
-  provider_name?: string;
+  provider_name?: string | null;
 }
 
 interface FailureCategory {
   category: string;
   count: number;
-  description: string;
-  suggested_action: string;
+  description?: string;
+  suggested_action?: string;
 }
 
 interface QueueStats {
-  total: number;
-  pending: number;
-  processing: number;
-  completed: number;
-  failed: number;
-  success_rate: number;
-  recent_24h: number;
-  common_actions: Array<{ action: string; count: number }>;
+  total?: number;
+  pending?: number;
+  processing?: number;
+  completed?: number;
+  failed?: number;
+  success_rate?: number;
+  recent_24h?: number;
+  common_actions?: Array<{ action: string; count: number }>;
   failure_categories?: FailureCategory[];
   failure_by_provider?: Array<{ provider_name: string; count: number }>;
 }
 
-const EmailQueue: React.FC = () => {
-  const [queueItems, setQueueItems] = useState<EmailQueueItem[]>([]);
-  const [stats, setStats] = useState<QueueStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
-  const [filters, setFilters] = useState({
-    status: 'all',
-    action: 'all',
-    search: ''
+interface Meta {
+  current_page: number;
+  last_page: number;
+  total: number;
+}
+
+const STATUS_TONE: Record<string, 'warning' | 'info' | 'success' | 'danger' | 'neutral'> = { pending: 'warning', processing: 'info', completed: 'success', failed: 'danger' };
+
+const btnPrimary =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const btnSecondary =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-60';
+
+const num = (v: unknown) => (typeof v === 'number' ? v.toLocaleString() : '—');
+const canRetry = (item: EmailQueueItem) => item.status === 'failed' || (item.status === 'pending' && item.attempts >= item.max_attempts);
+
+function useDebounced<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
+export default function EmailQueue() {
+  useSEO({ title: 'Email Queue | Admin', robots: 'noindex, nofollow' });
+  const { addToast } = useToast();
+  const { confirm } = useConfirm();
+  const queryClient = useQueryClient();
+
+  const [status, setStatus] = useState('all');
+  const [action, setAction] = useState('all');
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounced(search);
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<number[]>([]);
+
+  const listQuery = useQuery({
+    queryKey: ['email-queue', status, action, debouncedSearch, page],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const params: Record<string, string | number> = { page };
+      if (status !== 'all') params.status = status;
+      if (action !== 'all') params.action = action;
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+      const payload = (await apiClient.get('/admin/email-queue', { params })).data;
+      const items = asList<EmailQueueItem>(payload);
+      const p = payload?.data;
+      const meta: Meta = { current_page: p?.current_page ?? 1, last_page: p?.last_page ?? 1, total: p?.total ?? items.length };
+      return { items, meta };
+    },
   });
 
-  useEffect(() => {
-    fetchQueueItems();
-    fetchStats();
-  }, [filters]);
+  const statsQuery = useQuery({
+    queryKey: ['email-queue-stats'],
+    queryFn: async () => {
+      const data = (await apiClient.get('/admin/email-queue/stats')).data?.data;
+      return (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as QueueStats;
+    },
+  });
 
-  const fetchQueueItems = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (filters.status !== 'all') params.append('status', filters.status);
-      if (filters.action !== 'all') params.append('action', filters.action);
-      if (filters.search) params.append('search', filters.search);
+  const items = useMemo(() => listQuery.data?.items ?? [], [listQuery.data]);
+  const meta = listQuery.data?.meta;
+  const stats = statsQuery.data;
+  const retryable = useMemo(() => items.filter(canRetry).map((i) => i.id), [items]);
+  const allSelected = retryable.length > 0 && retryable.every((id) => selected.includes(id));
+  const filtered = status !== 'all' || action !== 'all' || !!debouncedSearch.trim();
 
-      const response = await fetch(`/api/admin/email-queue?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setQueueItems(data.data?.data || data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching queue items:', error);
-    } finally {
-      setLoading(false);
-    }
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['email-queue'] });
+    queryClient.invalidateQueries({ queryKey: ['email-queue-stats'] });
   };
 
-  const fetchStats = async () => {
-    try {
-      const response = await fetch('/api/admin/email-queue/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setStats(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
+  const changeFilter = (fn: () => void) => {
+    fn();
+    setPage(1);
+    setSelected([]);
   };
 
-  const handleRetry = async (id: number) => {
-    try {
-      const response = await fetch(`/api/admin/email-queue/${id}/retry`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        fetchQueueItems();
-        fetchStats();
-      } else {
-        alert(data.message || 'Error retrying email');
-      }
-    } catch (error) {
-      console.error('Error retrying email:', error);
-      alert('Error retrying email');
-    }
-  };
+  const retryOne = useMutation({
+    mutationFn: async (id: number) => (await apiClient.post(`/admin/email-queue/${id}/retry`)).data as { message?: string },
+    onSuccess: (data) => {
+      addToast({ type: 'success', title: 'Email re-sent', description: data?.message });
+      refresh();
+    },
+    onError: (error) => {
+      addToast({ type: 'error', title: 'Retry failed', description: apiErrorMessage(error) });
+      refresh();
+    },
+  });
+
+  const retryAll = useMutation({
+    mutationFn: async () => (await apiClient.post('/admin/email-queue/retry-all')).data as { retry_count?: number; message?: string },
+    onSuccess: (data) => {
+      addToast({ type: 'success', title: 'Failed emails re-queued', description: data?.message ?? `Retried ${data?.retry_count ?? 0} failed emails.` });
+      refresh();
+    },
+    onError: (error) => addToast({ type: 'error', title: 'Could not retry emails', description: apiErrorMessage(error) }),
+  });
+
+  const retrySelected = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const results = await Promise.allSettled(ids.map((id) => apiClient.post(`/admin/email-queue/${id}/retry`)));
+      return { ok: results.filter((r) => r.status === 'fulfilled').length, total: ids.length };
+    },
+    onSuccess: ({ ok, total }) => {
+      addToast({ type: ok === total ? 'success' : 'warning', title: `Retried ${ok} of ${total} emails` });
+      setSelected([]);
+      refresh();
+    },
+  });
 
   const handleRetryAll = async () => {
-    if (!confirm('Are you sure you want to retry all failed emails?')) return;
-    
-    try {
-      const response = await fetch('/api/admin/email-queue/retry-all', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        alert(`Retried ${data.retry_count} failed emails`);
-        fetchQueueItems();
-        fetchStats();
-      } else {
-        alert(data.message || 'Error retrying emails');
-      }
-    } catch (error) {
-      console.error('Error retrying emails:', error);
-      alert('Error retrying emails');
-    }
+    const ok = await confirm({ title: 'Retry all failed emails', message: 'Every failed email will be reset and queued again. Continue?', confirmText: 'Retry all', type: 'warning' });
+    if (ok) retryAll.mutate();
   };
 
-  const handleBulkRetry = async () => {
-    if (selectedItems.length === 0) {
-      alert('Please select at least one item to retry');
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to retry ${selectedItems.length} selected item(s)?`)) return;
-    
-    try {
-      const promises = selectedItems.map(id => 
-        fetch(`/api/admin/email-queue/${id}/retry`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        })
-      );
-      
-      const results = await Promise.all(promises);
-      const successCount = results.filter(r => r.ok).length;
-      
-      alert(`Retried ${successCount} of ${selectedItems.length} emails`);
-      setSelectedItems([]);
-      fetchQueueItems();
-      fetchStats();
-    } catch (error) {
-      console.error('Error retrying emails:', error);
-      alert('Error retrying emails');
-    }
+  const handleRetrySelected = async () => {
+    const ok = await confirm({ title: 'Retry selected emails', message: `Retry ${selected.length} selected email(s) now?`, confirmText: 'Retry selected', type: 'warning' });
+    if (ok) retrySelected.mutate(selected);
   };
 
-  const toggleSelectItem = (id: number) => {
-    setSelectedItems(prev => 
-      prev.includes(id) 
-        ? prev.filter(item => item !== id)
-        : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    const selectableItems = queueItems.filter(item => 
-      item.status === 'failed' || item.status === 'pending'
-    ).map(item => item.id);
-    
-    setSelectedItems(prev => 
-      prev.length === selectableItems.length 
-        ? []
-        : selectableItems
-    );
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      case 'processing':
-        return <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />;
-      case 'completed':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'failed':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const categories = Array.isArray(stats?.failure_categories) ? stats.failure_categories : [];
+  const providers = Array.isArray(stats?.failure_by_provider) ? stats.failure_by_provider : [];
+  const actions = Array.isArray(stats?.common_actions) ? stats.common_actions : [];
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Email Queue</h1>
-        <div className="flex space-x-2">
-          <button
-            onClick={fetchQueueItems}
-            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </button>
-          <button
-            onClick={handleRetryAll}
-            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 flex items-center gap-2"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Retry All Failed
-          </button>
-          {selectedItems.length > 0 && (
-            <button
-              onClick={handleBulkRetry}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Retry Selected ({selectedItems.length})
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Email Queue"
+        description="Emails waiting to be delivered through n8n. Retry failures once the cause is fixed."
+        actions={
+          <>
+            <button type="button" className={btnSecondary} onClick={refresh} disabled={listQuery.isFetching}>
+              <RefreshCw className={`h-4 w-4 ${listQuery.isFetching ? 'animate-spin' : ''}`} aria-hidden="true" />
+              Refresh
             </button>
-          )}
-        </div>
-      </div>
+            {selected.length > 0 && (
+              <button type="button" className={btnSecondary} onClick={handleRetrySelected} disabled={retrySelected.isPending}>
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                Retry selected ({selected.length})
+              </button>
+            )}
+            <button type="button" className={btnPrimary} onClick={handleRetryAll} disabled={retryAll.isPending}>
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+              {retryAll.isPending ? 'Retrying…' : 'Retry all failed'}
+            </button>
+          </>
+        }
+      />
 
-      {/* Failure Analysis Section */}
-      {stats && stats.failure_categories && stats.failure_categories.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Failure Analysis</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {stats.failure_categories.map((category, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-900 capitalize">{category.category}</span>
-                  <span className="text-sm font-bold text-red-600">{category.count}</span>
+      {stats && !statsQuery.isError && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="queue-stats">
+          <StatCard label="Pending" icon={Clock} value={num(stats.pending)} hint={typeof stats.processing === 'number' ? `${num(stats.processing)} processing` : undefined} />
+          <StatCard label="Completed" icon={CheckCircle2} value={num(stats.completed)} />
+          <StatCard label="Failed" icon={XCircle} value={num(stats.failed)} />
+          <StatCard label="Success rate" icon={TrendingUp} value={typeof stats.success_rate === 'number' ? `${stats.success_rate}%` : '—'} hint={typeof stats.recent_24h === 'number' ? `${num(stats.recent_24h)} in the last 24 h` : undefined} />
+        </div>
+      )}
+
+      {categories.length > 0 && (
+        <AdminCard title="Failure analysis">
+          <div className="grid gap-3 md:grid-cols-2">
+            {categories.map((c) => (
+              <div key={c.category} className="rounded-lg border border-slate-200 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium capitalize text-slate-900">{c.category}</span>
+                  <Badge tone="danger">{c.count}</Badge>
                 </div>
-                <p className="text-xs text-gray-600 mb-2">{category.description}</p>
-                <p className="text-xs text-blue-600 italic">💡 {category.suggested_action}</p>
+                {c.description && <p className="mt-1 text-xs text-slate-600">{c.description}</p>}
+                {c.suggested_action && (
+                  <p className="mt-2 flex gap-1.5 text-xs text-blue-800">
+                    <Lightbulb className="h-3.5 w-3.5 flex-none" aria-hidden="true" />
+                    {c.suggested_action}
+                  </p>
+                )}
               </div>
             ))}
           </div>
-          {stats.failure_by_provider && stats.failure_by_provider.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Failures by Provider</h3>
-              <div className="flex flex-wrap gap-2">
-                {stats.failure_by_provider.map((provider, index) => (
-                  <span key={index} className="px-3 py-1 bg-gray-100 rounded-full text-xs">
-                    {provider.provider_name}: {provider.count}
-                  </span>
-                ))}
-              </div>
+          {providers.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4 text-xs text-slate-600">
+              <span className="font-medium text-slate-700">Failures by provider:</span>
+              {providers.map((p) => (
+                <Badge key={p.provider_name}>
+                  {p.provider_name}: {p.count}
+                </Badge>
+              ))}
             </div>
           )}
-        </div>
+        </AdminCard>
       )}
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Clock className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Pending</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.pending}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Completed</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.completed}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <XCircle className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Failed</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.failed}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <AlertCircle className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Success Rate</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.success_rate}%</p>
-              </div>
-            </div>
-          </div>
+      <AdminCard padded={false}>
+        <div className="grid gap-4 border-b border-slate-200 p-5 sm:grid-cols-3">
+          <Field label="Status">
+            {(props) => (
+              <select {...props} className={inputClass} value={status} onChange={(e) => changeFilter(() => setStatus(e.target.value))}>
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+              </select>
+            )}
+          </Field>
+          <Field label="Action">
+            {(props) => (
+              <select {...props} className={inputClass} value={action} onChange={(e) => changeFilter(() => setAction(e.target.value))}>
+                <option value="all">All actions</option>
+                {actions.map((a) => (
+                  <option key={a.action} value={a.action}>
+                    {a.action} ({a.count})
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <Field label="Recipient">{(props) => <SearchInput {...props} label="Search by recipient email" placeholder="Search email" value={search} onChange={(e) => changeFilter(() => setSearch(e.target.value))} />}</Field>
         </div>
-      )}
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Action</label>
-            <select
-              value={filters.action}
-              onChange={(e) => setFilters({ ...filters, action: e.target.value })}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Actions</option>
-              {stats?.common_actions?.map((action) => (
-                <option key={action.action} value={action.action}>
-                  {action.action} ({action.count})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search Email</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              placeholder="Search by email..."
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Queue Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <input
-                  type="checkbox"
-                  checked={selectedItems.length > 0 && selectedItems.length === queueItems?.filter(item => item.status === 'failed' || item.status === 'pending').length}
-                  onChange={toggleSelectAll}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-              </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attempts</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {queueItems?.map((item) => (
-              <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-blue-50' : ''}>
-                <td className="px-3 py-2 whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.includes(item.id)}
-                    onChange={() => toggleSelectItem(item.id)}
-                    disabled={item.status !== 'failed' && item.status !== 'pending'}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {item.action}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                  <div>
-                    <div className="font-medium">{item.recipient_email}</div>
-                    {item.recipient_name && (
-                      <div className="text-gray-400 text-xs">{item.recipient_name}</div>
-                    )}
-                  </div>
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-                    {getStatusIcon(item.status)}
-                    <span className="ml-1 capitalize">{item.status}</span>
-                  </span>
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                  {item.attempts}/{item.max_attempts}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
-                  {new Date(item.created_at).toLocaleString()}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
-                  {item.status === 'failed' && (
-                    <div className="flex flex-col gap-1">
-                      <button
-                        onClick={() => handleRetry(item.id)}
-                        className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                        Retry
-                      </button>
+        {listQuery.isLoading ? (
+          <LoadingState label="Loading queue…" />
+        ) : listQuery.isError ? (
+          <ErrorState message={apiErrorMessage(listQuery.error)} onRetry={() => listQuery.refetch()} />
+        ) : items.length === 0 ? (
+          filtered ? (
+            <EmptyState title="No emails match these filters" description="Try another status, action or search." />
+          ) : (
+            <EmptyState icon={Inbox} title="The queue is empty" description="Emails appear here while they wait to be delivered." action={<button type="button" className={btnSecondary} onClick={refresh}>Refresh</button>} />
+          )
+        ) : (
+          <>
+            <TableShell caption="Email queue">
+              <thead>
+                <tr>
+                  <th scope="col" className="w-10">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all retryable emails"
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                      checked={allSelected}
+                      disabled={retryable.length === 0}
+                      onChange={() => setSelected(allSelected ? [] : retryable)}
+                    />
+                  </th>
+                  <th scope="col">Action</th>
+                  <th scope="col">Recipient</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Attempts</th>
+                  <th scope="col">Created</th>
+                  <th scope="col" className="relative">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {items.map((item) => (
+                  <tr key={item.id} className={selected.includes(item.id) ? 'bg-blue-50/60' : ''}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select email to ${item.recipient_email}`}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 disabled:opacity-40"
+                        checked={selected.includes(item.id)}
+                        disabled={!canRetry(item)}
+                        onChange={() => setSelected((prev) => (prev.includes(item.id) ? prev.filter((x) => x !== item.id) : [...prev, item.id]))}
+                      />
+                    </td>
+                    <td className="font-mono text-xs text-slate-900">{item.action}</td>
+                    <td>
+                      <div className="font-medium text-slate-900">{item.recipient_email}</div>
+                      {item.recipient_name && <div className="text-xs text-slate-500">{item.recipient_name}</div>}
+                    </td>
+                    <td>
+                      <Badge tone={STATUS_TONE[item.status] ?? 'neutral'}>{item.status}</Badge>
                       {item.failure_category && (
-                        <span className="text-xs text-gray-500" title={item.failure_reason_code || ''}>
+                        <div className="mt-1 text-xs text-slate-500" title={item.last_error ?? item.failure_reason_code ?? undefined}>
                           {item.failure_category}
-                          {item.http_status_code && ` (${item.http_status_code})`}
-                        </span>
+                          {item.http_status_code ? ` (HTTP ${item.http_status_code})` : ''}
+                        </div>
                       )}
-                    </div>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                    </td>
+                    <td className="tabular-nums">
+                      {item.attempts}/{item.max_attempts}
+                    </td>
+                    <td className="whitespace-nowrap text-xs">{item.created_at ? new Date(item.created_at).toLocaleString() : '—'}</td>
+                    <td className="text-right">
+                      {canRetry(item) && (
+                        <IconButton
+                          label={`Retry email to ${item.recipient_email}`}
+                          icon={RotateCcw}
+                          disabled={retryOne.isPending && retryOne.variables === item.id}
+                          onClick={() => retryOne.mutate(item.id)}
+                        />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableShell>
+            {meta && meta.last_page > 1 && (
+              <nav aria-label="Pagination" className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-sm text-slate-600">
+                <span>
+                  Page {meta.current_page} of {meta.last_page} · {meta.total} emails
+                </span>
+                <span className="flex gap-1">
+                  <IconButton label="Previous page" icon={ChevronLeft} disabled={page <= 1} onClick={() => setPage((p) => p - 1)} />
+                  <IconButton label="Next page" icon={ChevronRight} disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)} />
+                </span>
+              </nav>
+            )}
+          </>
+        )}
+      </AdminCard>
     </div>
   );
-};
-
-export default EmailQueue;
+}

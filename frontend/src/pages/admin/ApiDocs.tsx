@@ -1,5 +1,9 @@
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { useSEO } from '../../utils/seo';
+import { AdminPageHeader } from '../../components/admin/ui';
+
+type JsonExample = Record<string, unknown> | unknown[] | string;
+type FieldRule = { adminOnly?: boolean; unique?: boolean; maxLength?: number | string };
 
 interface ApiEndpoint {
   method: string;
@@ -14,9 +18,9 @@ interface ApiEndpoint {
   }>;
   requestBody?: {
     type: string;
-    example: any;
+    example: JsonExample;
   };
-  responseExample: any;
+  responseExample: JsonExample;
 }
 
 const API_ENDPOINTS: ApiEndpoint[] = [
@@ -3228,9 +3232,24 @@ const FIELD_VALIDATION = {
   }
 } as const;
 
+const DOC_TABS = [
+  { id: 'overview', name: 'Overview' },
+  { id: 'endpoints', name: 'Endpoints' },
+  { id: 'examples', name: 'Examples' },
+  { id: 'validation', name: 'Field Validation' },
+] as const;
+
 export default function ApiDocs() {
   const [selectedEndpoint, setSelectedEndpoint] = useState<ApiEndpoint | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'endpoints' | 'examples' | 'validation'>('overview');
+  const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
+    const i = DOC_TABS.findIndex((t) => t.id === activeTab);
+    const next = e.key === 'ArrowRight' ? (i + 1) % DOC_TABS.length : e.key === 'ArrowLeft' ? (i - 1 + DOC_TABS.length) % DOC_TABS.length : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    setActiveTab(DOC_TABS[next].id);
+    document.getElementById(`api-docs-tab-${DOC_TABS[next].id}`)?.focus();
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     method: '',
@@ -3339,35 +3358,29 @@ export default function ApiDocs() {
   });
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">API Documentation</h1>
-        <p className="text-gray-600 mt-1">Complete API reference for NovaWrite platform integration</p>
-      </div>
+    // Long code samples and wide tables scroll inside their own boxes instead of widening the page.
+    <div className="min-w-0 space-y-6 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_table]:min-w-full">
+      <AdminPageHeader title="API Documentation" description="Complete API reference for NovaWrite platform integration: authentication, endpoints, examples and field validation." />
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {[
-          { id: 'overview', name: 'Overview' },
-          { id: 'endpoints', name: 'Endpoints' },
-          { id: 'examples', name: 'Examples' },
-          { id: 'validation', name: 'Field Validation' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.name}
-            </button>
-          ))}
-        </nav>
+      <div role="tablist" aria-label="Documentation sections" className="flex gap-1 overflow-x-auto border-b border-slate-200">
+        {DOC_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            id={`api-docs-tab-${tab.id}`}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            tabIndex={activeTab === tab.id ? 0 : -1}
+            onClick={() => setActiveTab(tab.id)}
+            onKeyDown={onTabKey}
+            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+              activeTab === tab.id ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            {tab.name}
+          </button>
+        ))}
       </div>
 
       {/* Overview Tab */}
@@ -4777,7 +4790,7 @@ curl -X POST "https://naqashthaheem.com/api/admin/bulk/posts/status" \\
                     <tr key={field}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{field}</code>
-                        {(rules as any).adminOnly && (
+                        {(rules as FieldRule).adminOnly && (
                           <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                             Admin Only
                           </span>
@@ -4796,7 +4809,7 @@ curl -X POST "https://naqashthaheem.com/api/admin/bulk/posts/status" \\
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{rules.type}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {(rules as any).unique ? (
+                        {(rules as FieldRule).unique ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                             Unique
                           </span>
@@ -4805,7 +4818,7 @@ curl -X POST "https://naqashthaheem.com/api/admin/bulk/posts/status" \\
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {(rules as any).maxLength || '-'}
+                        {(rules as FieldRule).maxLength || '-'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <div>
@@ -4858,7 +4871,7 @@ curl -X POST "https://naqashthaheem.com/api/admin/bulk/posts/status" \\
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{rules.type}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {(rules as any).unique ? (
+                        {(rules as FieldRule).unique ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                             Unique
                           </span>
@@ -4867,7 +4880,7 @@ curl -X POST "https://naqashthaheem.com/api/admin/bulk/posts/status" \\
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {(rules as any).maxLength || '-'}
+                        {(rules as FieldRule).maxLength || '-'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <div>
@@ -4920,7 +4933,7 @@ curl -X POST "https://naqashthaheem.com/api/admin/bulk/posts/status" \\
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{rules.type}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {(rules as any).unique ? (
+                        {(rules as FieldRule).unique ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                             Unique
                           </span>
@@ -4929,7 +4942,7 @@ curl -X POST "https://naqashthaheem.com/api/admin/bulk/posts/status" \\
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {(rules as any).maxLength || '-'}
+                        {(rules as FieldRule).maxLength || '-'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <div>

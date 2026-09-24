@@ -1,6 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight, Eye, FileText, Lock, Pencil, Plus, Power, Trash2 } from 'lucide-react';
 import apiClient from '../../api/axios';
+import { useSEO } from '../../utils/seo';
+import { useToast } from '../../hooks/use-toast';
+import { useConfirm } from '../../hooks/use-confirm';
+import {
+  AdminCard,
+  AdminPageHeader,
+  Badge,
+  EmptyState,
+  ErrorState,
+  Field,
+  IconButton,
+  LoadingState,
+  Modal,
+  SearchInput,
+  TableShell,
+  inputClass,
+} from '../../components/admin/ui';
+import { apiErrorMessage, asList } from '../../components/admin/utils';
 
 interface EmailTemplate {
   id: number;
@@ -9,591 +28,470 @@ interface EmailTemplate {
   body: string;
   type: string;
   category: string;
-  variables: string[];
-  description: string;
-  metadata: any;
+  variables?: string[] | null;
+  description?: string | null;
   is_active: boolean;
-  is_system: boolean;
-  language: string;
-  created_at: string;
-  updated_at: string;
+  is_system?: boolean;
+  language?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-interface TemplateFilters {
+interface TemplateForm {
+  name: string;
+  subject: string;
+  body: string;
+  description: string;
   category: string;
   type: string;
   language: string;
-  is_active: boolean | null;
-  search: string;
+  is_active: boolean;
 }
 
-const EmailTemplates: React.FC = () => {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
-  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
-  const [filters, setFilters] = useState<TemplateFilters>({
-    category: 'all',
-    type: 'all',
-    language: 'all',
-    is_active: null,
-    search: ''
-  });
-  const [pagination, setPagination] = useState({
-    current_page: 1,
-    last_page: 1,
-    per_page: 20,
-    total: 0
-  });
+interface Meta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
 
-  useSEO({
-    title: 'Email Templates - Admin Dashboard',
-    description: 'Manage email templates for the application'
-  });
+type Errors = Partial<Record<keyof TemplateForm, string>>;
 
-  const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'user', label: 'User Management' },
-    { value: 'course', label: 'Course Related' },
-    { value: 'workflow', label: 'Workflow Related' },
-    { value: 'marketing', label: 'Marketing' },
-    { value: 'system', label: 'System Notifications' }
-  ];
+const CATEGORIES = [
+  { value: 'general', label: 'General' },
+  { value: 'user', label: 'User management' },
+  { value: 'course', label: 'Course related' },
+  { value: 'workflow', label: 'Workflow related' },
+  { value: 'marketing', label: 'Marketing' },
+  { value: 'system', label: 'System notifications' },
+];
+const TYPES = [
+  { value: 'html', label: 'HTML' },
+  { value: 'markdown', label: 'Markdown' },
+];
+const LANGUAGES = [
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'fr', label: 'French' },
+];
 
-  const types = [
-    { value: 'all', label: 'All Types' },
-    { value: 'html', label: 'HTML' },
-    { value: 'markdown', label: 'Markdown' }
-  ];
+const EMPTY_FORM: TemplateForm = { name: '', subject: '', body: '', description: '', category: 'user', type: 'html', language: 'en', is_active: true };
+const PER_PAGE = 20;
 
-  const languages = [
-    { value: 'all', label: 'All Languages' },
-    { value: 'en', label: 'English' },
-    { value: 'es', label: 'Spanish' },
-    { value: 'fr', label: 'French' }
-  ];
+const btnPrimary =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const btnSecondary =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-60';
 
-  const fetchTemplates = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      
-      if (filters.category !== 'all') params.append('category', filters.category);
-      if (filters.type !== 'all') params.append('type', filters.type);
-      if (filters.language !== 'all') params.append('language', filters.language);
-      if (filters.is_active !== null) params.append('is_active', filters.is_active.toString());
-      if (filters.search) params.append('search', filters.search);
-      params.append('page', pagination.current_page.toString());
-      params.append('per_page', pagination.per_page.toString());
+const labelOf = (list: { value: string; label: string }[], value: string) => list.find((x) => x.value === value)?.label ?? value;
+const detectVariables = (text: string) => [...new Set([...text.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)].map((m) => m[1]))].sort();
 
-      const response = await apiClient.get(`/admin/email-templates?${params}`);
-      setTemplates(response.data.data);
-      setPagination(response.data.meta);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch email templates');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+function useDebounced<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
   useEffect(() => {
-    fetchTemplates();
-  }, [filters, pagination.current_page]);
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this template?')) return;
-    
-    try {
-      await apiClient.delete(`/admin/email-templates/${id}`);
-      fetchTemplates();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete template');
-    }
+function serverErrors(error: unknown): Errors {
+  const bag = (error as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors;
+  return bag ? (Object.fromEntries(Object.entries(bag).map(([k, v]) => [k, v?.[0]])) as Errors) : {};
+}
+
+/** Renders untrusted template HTML in a sandboxed frame so scripts and styles can't touch the admin app. */
+function EmailBodyPreview({ body, type }: { body: string; type: string }) {
+  if (type !== 'html') return <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-4 text-sm text-slate-800">{body}</pre>;
+  return <iframe title="Email body preview" sandbox="" srcDoc={body} className="h-96 w-full rounded-lg border border-slate-200 bg-white" />;
+}
+
+export default function EmailTemplates() {
+  useSEO({ title: 'Email Templates | Admin', description: 'Manage email templates for the application', robots: 'noindex, nofollow' });
+  const { addToast } = useToast();
+  const { confirm } = useConfirm();
+  const queryClient = useQueryClient();
+
+  const [filters, setFilters] = useState({ category: 'all', type: 'all', language: 'all', status: 'all' });
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounced(search);
+  const [page, setPage] = useState(1);
+
+  const [editing, setEditing] = useState<EmailTemplate | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [form, setForm] = useState<TemplateForm>(EMPTY_FORM);
+  const [errors, setErrors] = useState<Errors>({});
+  const [previewing, setPreviewing] = useState<EmailTemplate | null>(null);
+
+  useEffect(() => setPage(1), [filters, debouncedSearch]);
+
+  const listQuery = useQuery({
+    queryKey: ['email-templates', filters, debouncedSearch, page],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const params: Record<string, string | number> = { page, per_page: PER_PAGE };
+      if (filters.category !== 'all') params.category = filters.category;
+      if (filters.type !== 'all') params.type = filters.type;
+      if (filters.language !== 'all') params.language = filters.language;
+      if (filters.status !== 'all') params.is_active = filters.status === 'active' ? 'true' : 'false';
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+      const payload = (await apiClient.get('/admin/email-templates', { params })).data;
+      const items = asList<EmailTemplate>(payload);
+      const meta: Meta = { current_page: 1, last_page: 1, per_page: PER_PAGE, total: items.length, ...(payload?.meta ?? {}) };
+      return { items, meta };
+    },
+  });
+  const templates = listQuery.data?.items ?? [];
+  const meta = listQuery.data?.meta;
+  const hasFilters = filters.category !== 'all' || filters.type !== 'all' || filters.language !== 'all' || filters.status !== 'all' || !!debouncedSearch.trim();
+
+  const previewQuery = useQuery({
+    queryKey: ['email-template-preview', previewing?.id],
+    enabled: !!previewing,
+    queryFn: async () => {
+      const data = (await apiClient.get(`/admin/email-templates/${previewing!.id}/preview`)).data?.data;
+      return (data?.preview ?? null) as { subject?: string; body?: string } | null;
+    },
+  });
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['email-templates'] });
+
+  const saveMutation = useMutation({
+    mutationFn: async (payload: TemplateForm) =>
+      editing ? (await apiClient.put(`/admin/email-templates/${editing.id}`, payload)).data : (await apiClient.post('/admin/email-templates', payload)).data,
+    onSuccess: () => {
+      addToast({ type: 'success', title: editing ? 'Template updated' : 'Template created' });
+      setFormOpen(false);
+      invalidate();
+    },
+    onError: (error) => {
+      setErrors(serverErrors(error));
+      addToast({ type: 'error', title: 'Could not save template', description: apiErrorMessage(error) });
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async (t: EmailTemplate) => (await apiClient.patch(`/admin/email-templates/${t.id}/toggle-active`)).data,
+    onSuccess: (_d, t) => {
+      addToast({ type: 'success', title: t.is_active ? 'Template deactivated' : 'Template activated' });
+      invalidate();
+    },
+    onError: (error) => addToast({ type: 'error', title: 'Could not change status', description: apiErrorMessage(error) }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (t: EmailTemplate) => apiClient.delete(`/admin/email-templates/${t.id}`),
+    onSuccess: () => {
+      addToast({ type: 'success', title: 'Template deleted' });
+      invalidate();
+    },
+    onError: (error) => addToast({ type: 'error', title: 'Could not delete template', description: apiErrorMessage(error) }),
+  });
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(EMPTY_FORM);
+    setErrors({});
+    setFormOpen(true);
   };
 
-  const handleToggleActive = async (id: number) => {
-    try {
-      await apiClient.patch(`/admin/email-templates/${id}/toggle-active`);
-        fetchTemplates();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to toggle template status');
-    }
+  const openEdit = (t: EmailTemplate) => {
+    setEditing(t);
+    setForm({
+      name: t.name ?? '',
+      subject: t.subject ?? '',
+      body: t.body ?? '',
+      description: t.description ?? '',
+      category: t.category || 'user',
+      type: t.type || 'html',
+      language: t.language || 'en',
+      is_active: !!t.is_active,
+    });
+    setErrors({});
+    setFormOpen(true);
   };
 
-  const handlePreview = async (template: EmailTemplate) => {
-    try {
-      const response = await apiClient.get(`/admin/email-templates/${template.id}/preview`);
-      setPreviewTemplate({ ...template, ...response.data.data });
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to preview template');
-    }
+  const set = <K extends keyof TemplateForm>(key: K, value: TemplateForm[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
 
-  const handleEdit = (template: EmailTemplate) => {
-    setEditingTemplate(template);
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const next: Errors = {};
+    if (!form.name.trim()) next.name = 'Template name is required.';
+    else if (!/^[a-z0-9_.-]+$/i.test(form.name.trim())) next.name = 'Use letters, numbers, dots, dashes or underscores only.';
+    if (!form.subject.trim()) next.subject = 'Subject is required.';
+    if (!form.body.trim()) next.body = 'Email body is required.';
+    setErrors(next);
+    if (Object.keys(next).length) return;
+    saveMutation.mutate({ ...form, name: form.name.trim(), subject: form.subject.trim() });
   };
 
-  const handleSave = async () => {
-    try {
-      if (editingTemplate?.id) {
-        // Update existing template
-        await apiClient.put(`/admin/email-templates/${editingTemplate?.id}`, editingTemplate);
-        await fetchTemplates();
-      } else {
-        // Create new template
-        await apiClient.post('/admin/email-templates', editingTemplate);
-        await fetchTemplates();
-      }
-      setEditingTemplate(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save template');
-    }
+  const handleDelete = async (t: EmailTemplate) => {
+    const ok = await confirm({ title: 'Delete template', message: `Delete the "${t.name}" template? Emails that use it will fail to send.`, confirmText: 'Delete', type: 'danger' });
+    if (ok) deleteMutation.mutate(t);
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: { [key: string]: string } = {
-      user: 'bg-blue-100 text-blue-800',
-      course: 'bg-green-100 text-green-800',
-      workflow: 'bg-purple-100 text-purple-800',
-      marketing: 'bg-pink-100 text-pink-800',
-      system: 'bg-yellow-100 text-yellow-800'
-    };
-    return colors[category] || 'bg-gray-100 text-gray-800';
-  };
+  const detected = useMemo(() => detectVariables(`${form.subject} ${form.body}`), [form.subject, form.body]);
 
-  const getTypeColor = (type: string) => {
-    return type === 'html' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-white rounded-lg shadow p-6">
-                  <div className="h-4 bg-gray-300 rounded w-3/4 mb-4"></div>
-                  <div className="h-3 bg-gray-300 rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-gray-300 rounded w-2/3"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const filterSelect = (key: keyof typeof filters, label: string, options: { value: string; label: string }[]) => (
+    <Field label={label}>
+      {(props) => (
+        <select {...props} className={inputClass} value={filters[key]} onChange={(e) => setFilters((f) => ({ ...f, [key]: e.target.value }))}>
+          <option value="all">All</option>
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      )}
+    </Field>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Email Templates</h1>
-            <p className="text-gray-600">Manage email templates for your application</p>
-          </div>
-          <button
-            onClick={() => setEditingTemplate({
-              id: 0,
-              name: '',
-              subject: '',
-              body: '',
-              description: '',
-              category: 'user',
-              type: 'html',
-              language: 'en',
-              is_active: true,
-              is_system: false,
-              variables: [],
-              metadata: {},
-              created_at: '',
-              updated_at: ''
-            } as EmailTemplate)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center space-x-2"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Add New Template</span>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Email Templates"
+        description="Subjects and bodies for transactional and marketing emails. Use {{variable}} placeholders for dynamic content."
+        actions={
+          <button type="button" className={btnPrimary} onClick={openCreate}>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            New template
           </button>
-        </div>
+        }
+      />
 
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error</h3>
-                <div className="mt-2 text-sm text-red-700">{error}</div>
-              </div>
-            </div>
+      <AdminCard>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="sm:col-span-2 lg:col-span-1">
+            <Field label="Search">{(props) => <SearchInput {...props} label="Search templates" placeholder="Name or subject" value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
           </div>
-        )}
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow mb-6 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-              <select
-                value={filters.category}
-                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-              <select
-                value={filters.type}
-                onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {types.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
-              <select
-                value={filters.language}
-                onChange={(e) => setFilters({ ...filters, language: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {languages.map(lang => (
-                  <option key={lang.value} value={lang.value}>{lang.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={filters.is_active === null ? 'all' : filters.is_active.toString()}
-                onChange={(e) => setFilters({ 
-                  ...filters, 
-                  is_active: e.target.value === 'all' ? null : e.target.value === 'true' 
-                })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                placeholder="Search templates..."
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          {filterSelect('category', 'Category', CATEGORIES)}
+          {filterSelect('type', 'Type', TYPES)}
+          {filterSelect('language', 'Language', LANGUAGES)}
+          {filterSelect('status', 'Status', [
+            { value: 'active', label: 'Active' },
+            { value: 'inactive', label: 'Inactive' },
+          ])}
         </div>
-      </div>
+      </AdminCard>
 
-        {/* Templates Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates.map((template) => (
-            <div key={template.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{template.name}</h3>
-                    <p className="text-sm text-gray-600">{template.subject}</p>
-                  </div>
-                  <div className="flex space-x-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(template.category)}`}>
-                      {template.category}
-                  </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(template.type)}`}>
-                  {template.type}
-                    </span>
-                  </div>
-                </div>
-
-                {template.description && (
-                  <p className="text-sm text-gray-600 mb-4">{template.description}</p>
-                )}
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <div>
-                    <span>Variables: {template.variables?.length || 0}</span>
-                    {template.variables && template.variables.length > 0 && (
-                      <div className="mt-1">
-                        <div className="flex flex-wrap gap-1">
-                          {template.variables.slice(0, 3).map((variable, index) => (
-                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700">
-                              {`{{${variable}}}`}
-                            </span>
-                          ))}
-                          {template.variables.length > 3 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700">
-                              +{template.variables.length - 3} more
-                            </span>
+      <AdminCard padded={false} title="Templates" description={meta ? `${meta.total} template${meta.total === 1 ? '' : 's'}` : undefined}>
+        {listQuery.isLoading ? (
+          <LoadingState label="Loading templates…" />
+        ) : listQuery.isError ? (
+          <ErrorState message={apiErrorMessage(listQuery.error)} onRetry={() => listQuery.refetch()} />
+        ) : templates.length === 0 ? (
+          hasFilters ? (
+            <EmptyState title="No templates match your filters" description="Try a different search or clear the filters." />
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="No email templates yet"
+              description="Create a template to reuse subjects and bodies across the emails the site sends."
+              action={
+                <button type="button" className={btnPrimary} onClick={openCreate}>
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  New template
+                </button>
+              }
+            />
+          )
+        ) : (
+          <>
+            <TableShell caption="Email templates">
+              <thead>
+                <tr>
+                  <th scope="col">Template</th>
+                  <th scope="col">Category</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Variables</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" className="relative">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {templates.map((t) => {
+                  const vars = Array.isArray(t.variables) ? t.variables : [];
+                  return (
+                    <tr key={t.id}>
+                      <td className="min-w-[14rem]">
+                        <div className="flex items-center gap-2 font-medium text-slate-900">
+                          {t.name}
+                          {t.is_system && (
+                            <Badge tone="warning">
+                              <Lock className="mr-1 h-3 w-3" aria-hidden="true" />
+                              System
+                            </Badge>
                           )}
                         </div>
-                  </div>
-                    )}
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    template.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {template.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
+                        <div className="max-w-md truncate text-xs text-slate-500">{t.subject}</div>
+                      </td>
+                      <td>
+                        <Badge tone="info">{labelOf(CATEGORIES, t.category)}</Badge>
+                      </td>
+                      <td className="whitespace-nowrap">
+                        {labelOf(TYPES, t.type)}
+                        {t.language ? <span className="text-slate-400"> · {t.language.toUpperCase()}</span> : null}
+                      </td>
+                      <td>
+                        <span className="flex max-w-xs flex-wrap gap-1">
+                          {vars.slice(0, 3).map((v) => (
+                            <code key={v} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700">{`{{${v}}}`}</code>
+                          ))}
+                          {vars.length > 3 && <span className="text-xs text-slate-500">+{vars.length - 3} more</span>}
+                          {vars.length === 0 && <span className="text-xs text-slate-400">None</span>}
+                        </span>
+                      </td>
+                      <td>
+                        <Badge tone={t.is_active ? 'success' : 'neutral'}>{t.is_active ? 'Active' : 'Inactive'}</Badge>
+                      </td>
+                      <td>
+                        <div className="flex justify-end gap-1">
+                          <IconButton label={`Preview ${t.name}`} icon={Eye} onClick={() => setPreviewing(t)} />
+                          {!t.is_system && (
+                            <>
+                              <IconButton label={`Edit ${t.name}`} icon={Pencil} onClick={() => openEdit(t)} />
+                              <IconButton
+                                label={`${t.is_active ? 'Deactivate' : 'Activate'} ${t.name}`}
+                                icon={Power}
+                                disabled={toggleMutation.isPending && toggleMutation.variables?.id === t.id}
+                                onClick={() => toggleMutation.mutate(t)}
+                              />
+                              <IconButton label={`Delete ${t.name}`} icon={Trash2} tone="danger" onClick={() => handleDelete(t)} />
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </TableShell>
+            {meta && meta.last_page > 1 && (
+              <nav aria-label="Pagination" className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-sm text-slate-600">
+                <span>
+                  Page {meta.current_page} of {meta.last_page}
+                </span>
+                <span className="flex gap-1">
+                  <IconButton label="Previous page" icon={ChevronLeft} disabled={page <= 1} onClick={() => setPage((p) => p - 1)} />
+                  <IconButton label="Next page" icon={ChevronRight} disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)} />
+                </span>
+              </nav>
+            )}
+          </>
+        )}
+      </AdminCard>
 
-                {template.is_system && (
-                  <div className="mb-4">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                      System Template
-                    </span>
-                  </div>
-                )}
+      <Modal
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        size="xl"
+        title={editing ? `Edit template: ${editing.name}` : 'New email template'}
+        footer={
+          <>
+            <button type="button" className={btnSecondary} onClick={() => setFormOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" form="email-template-form" className={btnPrimary} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Saving…' : editing ? 'Save changes' : 'Create template'}
+            </button>
+          </>
+        }
+      >
+        <form id="email-template-form" onSubmit={handleSubmit} noValidate className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Template name" required error={errors.name} hint={editing ? 'The name is used by the code and cannot be changed.' : 'e.g. welcome_email, password_reset'}>
+              {(props) => <input {...props} className={`${inputClass} font-mono`} value={form.name} disabled={!!editing} onChange={(e) => set('name', e.target.value)} />}
+            </Field>
+            <Field label="Subject" required error={errors.subject}>
+              {(props) => <input {...props} className={inputClass} placeholder="Welcome to {{app_name}}!" value={form.subject} onChange={(e) => set('subject', e.target.value)} />}
+            </Field>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Category" error={errors.category}>
+              {(props) => (
+                <select {...props} className={inputClass} value={form.category} onChange={(e) => set('category', e.target.value)}>
+                  {CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field label="Type" error={errors.type}>
+              {(props) => (
+                <select {...props} className={inputClass} value={form.type} onChange={(e) => set('type', e.target.value)}>
+                  {TYPES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field label="Language" error={errors.language}>
+              {(props) => (
+                <select {...props} className={inputClass} value={form.language} onChange={(e) => set('language', e.target.value)}>
+                  {LANGUAGES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          </div>
+          <Field label="Description" error={errors.description}>
+            {(props) => <textarea {...props} rows={2} className={inputClass} placeholder="What this template is for" value={form.description} onChange={(e) => set('description', e.target.value)} />}
+          </Field>
+          <Field label="Email body" required error={errors.body} hint={form.type === 'html' ? 'HTML is allowed. Wrap variables in double braces, e.g. {{user_name}}.' : 'Markdown. Wrap variables in double braces, e.g. {{user_name}}.'}>
+            {(props) => <textarea {...props} rows={10} className={`${inputClass} font-mono text-xs`} value={form.body} onChange={(e) => set('body', e.target.value)} />}
+          </Field>
+          <div>
+            <p className="mb-1 text-sm font-medium text-slate-700">Detected variables</p>
+            <div className="flex min-h-[2.5rem] flex-wrap items-center gap-1.5 rounded-lg border border-dashed border-slate-300 p-2" aria-live="polite">
+              {detected.length ? (
+                detected.map((v) => <code key={v} className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-800">{`{{${v}}}`}</code>)
+              ) : (
+                <span className="text-xs text-slate-500">No variables yet.</span>
+              )}
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)} />
+            Active
+          </label>
+        </form>
+      </Modal>
 
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handlePreview(template)}
-                    className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    Preview
-                  </button>
-                  {!template.is_system && (
-                    <>
-                      <button
-                        onClick={() => handleEdit(template)}
-                        className="flex-1 bg-gray-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleToggleActive(template.id)}
-                        className={`px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 ${
-                          template.is_active
-                            ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
-                            : 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
-                        }`}
-                      >
-                        {template.is_active ? 'Deactivate' : 'Activate'}
-                      </button>
-                    </>
-                  )}
-                  {!template.is_system && (
-                    <button
-                      onClick={() => handleDelete(template.id)}
-                      className="bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
+      <Modal open={!!previewing} onClose={() => setPreviewing(null)} size="xl" title={previewing ? `Preview: ${previewing.name}` : 'Preview'} description="Rendered with sample data.">
+        {previewing &&
+          (previewQuery.isLoading ? (
+            <LoadingState label="Rendering preview…" />
+          ) : (
+            <div className="space-y-4">
+              {previewQuery.isError && (
+                <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                  Could not render with sample data ({apiErrorMessage(previewQuery.error)}). Showing the raw template.
+                </p>
+              )}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Subject</p>
+                <p className="mt-1 text-sm text-slate-900">{previewQuery.data?.subject ?? previewing.subject}</p>
+              </div>
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">Body</p>
+                <EmailBodyPreview body={previewQuery.data?.body ?? previewing.body ?? ''} type={previewing.type} />
               </div>
             </div>
           ))}
-          </div>
-
-        {templates.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No templates found</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating a new email template.</p>
-        </div>
-      )}
-
-      {/* Preview Modal */}
-        {previewTemplate && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Template Preview: {previewTemplate.name}</h3>
-                <button
-                    onClick={() => setPreviewTemplate(null)}
-                    className="text-gray-400 hover:text-gray-600"
-                >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-                </div>
-                <div className="border rounded-lg p-4 bg-gray-50">
-                  <div className="mb-4">
-                    <h4 className="font-medium text-gray-900 mb-2">Subject:</h4>
-                    <p className="text-sm text-gray-700">{previewTemplate.subject}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Body:</h4>
-                    <div 
-                      className="text-sm text-gray-700 max-h-96 overflow-y-auto"
-                      dangerouslySetInnerHTML={{ __html: previewTemplate.body }}
-                    />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-        {/* Edit/Create Modal */}
-        {editingTemplate && (
-          <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-6 border-b">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {editingTemplate.id ? `Edit Template: ${editingTemplate.name}` : 'Create New Template'}
-                </h3>
-                <button
-                  onClick={() => setEditingTemplate(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Template Name</label>
-                    <input
-                      type="text"
-                      value={editingTemplate.name || ''}
-                      onChange={(e) => setEditingTemplate({...editingTemplate, name: e.target.value})}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={!!editingTemplate.id}
-                      placeholder="e.g., welcome_email, password_reset"
-                    />
-                    {editingTemplate.id && (
-                      <p className="text-xs text-gray-500 mt-1">Template name cannot be changed</p>
-                    )}
-              </div>
-              
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                    <input
-                      type="text"
-                      value={editingTemplate.subject || ''}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      onChange={(e) => setEditingTemplate({...editingTemplate, subject: e.target.value})}
-                      placeholder="e.g., Welcome to {{app_name}}!"
-                    />
-              </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                      <select
-                        value={editingTemplate.category || 'user'}
-                        onChange={(e) => setEditingTemplate({...editingTemplate, category: e.target.value})}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="user">User Management</option>
-                        <option value="course">Course Related</option>
-                        <option value="workflow">Workflow Related</option>
-                        <option value="marketing">Marketing</option>
-                        <option value="system">System Notifications</option>
-                      </select>
-                              </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-                      <select
-                        value={editingTemplate.type || 'html'}
-                        onChange={(e) => setEditingTemplate({...editingTemplate, type: e.target.value})}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="html">HTML</option>
-                        <option value="markdown">Markdown</option>
-                      </select>
-                            </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
-                      <select
-                        value={editingTemplate.language || 'en'}
-                        onChange={(e) => setEditingTemplate({...editingTemplate, language: e.target.value})}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="en">English</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                      </select>
-                          </div>
-                        </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea
-                      value={editingTemplate.description || ''}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows={3}
-                      onChange={(e) => setEditingTemplate({...editingTemplate, description: e.target.value})}
-                      placeholder="Brief description of this template's purpose"
-                    />
-                    </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Body</label>
-                    <textarea
-                      value={editingTemplate.body || ''}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows={10}
-                      onChange={(e) => setEditingTemplate({...editingTemplate, body: e.target.value})}
-                      placeholder="Enter your email template content here. Use {{variable_name}} for dynamic content."
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Use HTML tags for formatting. Variables should be wrapped in double curly braces like {'{{user_name}}'}.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Variables</label>
-                    <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
-                      <div className="flex flex-wrap gap-2">
-                        {editingTemplate.variables?.map((variable, index) => (
-                          <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                            {`{{${variable}}}`}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">Variables are automatically detected from the template content</p>
-                    </div>
-              </div>
-
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <button
-                      onClick={() => setEditingTemplate(null)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                    >
-                      Cancel
-                    </button>
-                <button
-                      onClick={handleSave}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {editingTemplate.id ? 'Save Changes' : 'Create Template'}
-                </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        </div>
+      </Modal>
     </div>
   );
-};
-
-export default EmailTemplates;
+}

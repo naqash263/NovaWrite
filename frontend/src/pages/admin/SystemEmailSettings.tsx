@@ -1,395 +1,281 @@
-import React, { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { Activity, Bell, KeyRound, Mail, Save, Send, Server, UserPlus, type LucideIcon } from 'lucide-react';
 import apiClient from '../../api/axios';
-import Select from 'react-select';
+import { useSEO } from '../../utils/seo';
+import { useToast } from '../../hooks/use-toast';
+import { AdminCard, AdminPageHeader, EmptyState, ErrorState, Field, LoadingState, Modal, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage, asList } from '../../components/admin/utils';
 
 interface SmtpConfiguration {
   id: number;
   name: string;
-  host: string;
-  port: number;
   from_address: string;
-  from_name: string;
-  is_active: boolean;
-  is_default: boolean;
+  from_name?: string;
+  is_active?: boolean;
+  is_default?: boolean;
 }
 
-interface SystemEmailSettings {
+interface SystemEmailSettingsData {
   password_reset_smtp_id: number | null;
   welcome_email_smtp_id: number | null;
   notification_smtp_id: number | null;
   default_smtp_id: number | null;
 }
 
-const SystemEmailSettings: React.FC = () => {
-  const [smtpConfigurations, setSmtpConfigurations] = useState<SmtpConfiguration[]>([]);
-  const [settings, setSettings] = useState<SystemEmailSettings>({
-    password_reset_smtp_id: null,
-    welcome_email_smtp_id: null,
-    notification_smtp_id: null,
-    default_smtp_id: null,
-  });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+type SettingKey = keyof SystemEmailSettingsData;
+type TestType = 'password_reset' | 'welcome_email' | 'notification';
 
-  useSEO({
-    title: 'System Email Settings - Admin Dashboard',
-    description: 'Configure SMTP settings for system emails',
+const EMPTY: SystemEmailSettingsData = { password_reset_smtp_id: null, welcome_email_smtp_id: null, notification_smtp_id: null, default_smtp_id: null };
+
+const ROWS: { key: SettingKey; title: string; description: string; icon: LucideIcon; testType?: TestType }[] = [
+  { key: 'password_reset_smtp_id', title: 'Password reset emails', description: 'Sent when a user asks to reset their password.', icon: KeyRound, testType: 'password_reset' },
+  { key: 'welcome_email_smtp_id', title: 'Welcome emails', description: 'Sent to new users after they register.', icon: UserPlus, testType: 'welcome_email' },
+  { key: 'notification_smtp_id', title: 'Notification emails', description: 'Course updates, workflow notifications and similar messages.', icon: Bell, testType: 'notification' },
+  { key: 'default_smtp_id', title: 'Default', description: 'Used for any system email without its own configuration.', icon: Server },
+];
+
+const btnPrimary =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const btnSecondary =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-60';
+
+function normalise(payload: unknown): SystemEmailSettingsData {
+  const raw = (payload as { data?: unknown })?.data;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return EMPTY;
+  const id = (v: unknown) => (v === null || v === undefined || v === '' || Number.isNaN(Number(v)) ? null : Number(v));
+  const r = raw as Record<string, unknown>;
+  return {
+    password_reset_smtp_id: id(r.password_reset_smtp_id),
+    welcome_email_smtp_id: id(r.welcome_email_smtp_id),
+    notification_smtp_id: id(r.notification_smtp_id),
+    default_smtp_id: id(r.default_smtp_id),
+  };
+}
+
+export default function SystemEmailSettings() {
+  useSEO({ title: 'System Email Settings | Admin', description: 'Configure SMTP settings for system emails', robots: 'noindex, nofollow' });
+  const { addToast } = useToast();
+  const queryClient = useQueryClient();
+
+  const smtpQuery = useQuery({
+    queryKey: ['smtp-configurations'],
+    queryFn: async () => asList<SmtpConfiguration>((await apiClient.get('/admin/smtp-configurations')).data),
+  });
+  const settingsQuery = useQuery({
+    queryKey: ['system-email-settings'],
+    queryFn: async () => normalise((await apiClient.get('/admin/system-email-settings')).data),
   });
 
+  const [settings, setSettings] = useState<SystemEmailSettingsData>(EMPTY);
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (settingsQuery.data) setSettings(settingsQuery.data);
+  }, [settingsQuery.data]);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [smtpRes, settingsRes] = await Promise.all([
-        apiClient.get('/admin/smtp-configurations'),
-        apiClient.get('/admin/system-email-settings'),
-      ]);
+  const [testOpen, setTestOpen] = useState(false);
+  const [testForm, setTestForm] = useState<{ email_type: TestType; test_email: string }>({ email_type: 'password_reset', test_email: '' });
+  const [testError, setTestError] = useState<string>();
 
-      setSmtpConfigurations(smtpRes.data.data || []);
-      setSettings(settingsRes.data.data || {
-        password_reset_smtp_id: null,
-        welcome_email_smtp_id: null,
-        notification_smtp_id: null,
-        default_smtp_id: null,
-      });
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch data');
-    } finally {
-      setLoading(false);
-    }
+  const configs = smtpQuery.data ?? [];
+  const byId = (id: number | null) => (id ? configs.find((c) => c.id === id) : undefined);
+  const effectiveSmtp = (type: TestType) => byId(settings[`${type}_smtp_id` as SettingKey]) ?? byId(settings.default_smtp_id) ?? configs.find((c) => c.is_default) ?? configs.find((c) => c.is_active);
+
+  const saveMutation = useMutation({
+    mutationFn: async (data: SystemEmailSettingsData) => (await apiClient.post('/admin/system-email-settings', data, { timeout: 15000 })).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['system-email-settings'] });
+      addToast({ type: 'success', title: 'Settings saved', description: 'System email routing was updated.' });
+    },
+    onError: (error) => addToast({ type: 'error', title: 'Could not save settings', description: apiErrorMessage(error) }),
+  });
+
+  const healthMutation = useMutation({
+    mutationFn: async () => (await apiClient.get('/admin/system-email-settings/health')).data as { message?: string },
+    onSuccess: (data) => addToast({ type: 'success', title: 'Service is healthy', description: data?.message }),
+    onError: (error) => addToast({ type: 'error', title: 'Health check failed', description: apiErrorMessage(error) }),
+  });
+
+  const testMutation = useMutation({
+    mutationFn: async (payload: { email_type: TestType; smtp_id: number; test_email: string }) => (await apiClient.post('/admin/system-email-settings/test', payload)).data as { message?: string },
+    onSuccess: (data) => {
+      setTestOpen(false);
+      addToast({ type: 'success', title: 'Test email sent', description: data?.message });
+    },
+    onError: (error) => setTestError(apiErrorMessage(error)),
+  });
+
+  const submitTest = (e: FormEvent) => {
+    e.preventDefault();
+    const email = testForm.test_email.trim();
+    if (!email) return setTestError('Recipient email is required.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setTestError('Enter a valid email address.');
+    const config = effectiveSmtp(testForm.email_type);
+    if (!config) return setTestError('Assign an SMTP configuration to this email type first.');
+    setTestError(undefined);
+    testMutation.mutate({ email_type: testForm.email_type, smtp_id: config.id, test_email: email });
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      setError(null);
-      setSuccess(null);
-
-      console.log('Saving system email settings:', settings);
-
-      // Add timeout to prevent hanging
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.log('Request timed out after 10 seconds');
-        controller.abort();
-      }, 10000); // 10 second timeout
-
-      console.log('Sending request to /admin/system-email-settings');
-      const response = await apiClient.post('/admin/system-email-settings', settings, {
-        signal: controller.signal,
-        timeout: 10000
-      });
-
-      clearTimeout(timeoutId);
-      console.log('Response received:', response.data);
-      setSuccess('System email settings saved successfully!');
-    } catch (err: any) {
-      console.error('Error saving settings:', err);
-      if (err.name === 'AbortError') {
-        setError('Request timed out. Please try again.');
-      } else if (err.code === 'ECONNABORTED') {
-        setError('Request timed out. Please check your connection and try again.');
-      } else {
-        setError(err.response?.data?.message || 'Failed to save settings');
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const getSmtpOption = (smtpId: number | null) => {
-    if (!smtpId) return null;
-    const config = smtpConfigurations.find(c => c.id === smtpId);
-    return config ? {
-      value: config.id,
-      label: `${config.name} (${config.from_address})`
-    } : null;
-  };
-
-  const handleSmtpChange = (field: keyof SystemEmailSettings, option: any) => {
-    setSettings(prev => ({
-      ...prev,
-      [field]: option ? option.value : null
-    }));
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-              <div className="space-y-4">
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const loading = smtpQuery.isLoading || settingsQuery.isLoading;
+  const error = smtpQuery.error ?? settingsQuery.error;
+  const describe = (c?: SmtpConfiguration) => (c ? `${c.from_name ? `${c.from_name} ` : ''}<${c.from_address}>` : undefined);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <style>{`
-        .react-select-container .react-select__control {
-          border: 1px solid #d1d5db;
-          border-radius: 0.375rem;
-          min-height: 42px;
-        }
-        .react-select-container .react-select__control:hover {
-          border-color: #9ca3af;
-        }
-        .react-select-container .react-select__control--is-focused {
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 1px #3b82f6;
-        }
-        .react-select-container .react-select__placeholder {
-          color: #6b7280;
-        }
-        .react-select-container .react-select__single-value {
-          color: #374151;
-        }
-        .react-select-container .react-select__input-container {
-          color: #374151;
-        }
-        .react-select-container .react-select__menu {
-          border: 1px solid #d1d5db;
-          border-radius: 0.375rem;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-        .react-select-container .react-select__option {
-          color: #374151;
-        }
-        .react-select-container .react-select__option--is-focused {
-          background-color: #f3f4f6;
-        }
-        .react-select-container .react-select__option--is-selected {
-          background-color: #3b82f6;
-          color: white;
-        }
-      `}</style>
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">System Email Settings</h1>
-            <p className="mt-1 text-sm text-gray-600">
-              Configure which SMTP configuration to use for different types of system emails
-            </p>
-          </div>
-
-          <div className="p-6">
-            {error && (
-              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-                {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
-                {success}
-              </div>
-            )}
-
-            <div className="space-y-8">
-              {/* Password Reset Emails */}
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <span className="text-2xl mr-3">🔐</span>
-                  Password Reset Emails
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Choose which SMTP configuration to use when sending password reset emails to users.
-                </p>
-                <div className="max-w-md">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    SMTP Configuration
-                  </label>
-                  <Select
-                    value={getSmtpOption(settings.password_reset_smtp_id)}
-                    onChange={(option) => handleSmtpChange('password_reset_smtp_id', option)}
-                    options={smtpConfigurations.map(config => ({
-                      value: config.id,
-                      label: `${config.name} (${config.from_address})`
-                    }))}
-                    placeholder="Use default SMTP configuration"
-                    isSearchable
-                    isClearable
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    {settings.password_reset_smtp_id ? 
-                      `Will send from: ${smtpConfigurations.find(c => c.id === settings.password_reset_smtp_id)?.from_name} <${smtpConfigurations.find(c => c.id === settings.password_reset_smtp_id)?.from_address}>` : 
-                      'Will use the default SMTP configuration'
-                    }
-                  </p>
-                </div>
-              </div>
-
-              {/* Welcome Emails */}
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <span className="text-2xl mr-3">👋</span>
-                  Welcome Emails
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Choose which SMTP configuration to use when sending welcome emails to new users.
-                </p>
-                <div className="max-w-md">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    SMTP Configuration
-                  </label>
-                  <Select
-                    value={getSmtpOption(settings.welcome_email_smtp_id)}
-                    onChange={(option) => handleSmtpChange('welcome_email_smtp_id', option)}
-                    options={smtpConfigurations.map(config => ({
-                      value: config.id,
-                      label: `${config.name} (${config.from_address})`
-                    }))}
-                    placeholder="Use default SMTP configuration"
-                    isSearchable
-                    isClearable
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    {settings.welcome_email_smtp_id ? 
-                      `Will send from: ${smtpConfigurations.find(c => c.id === settings.welcome_email_smtp_id)?.from_name} <${smtpConfigurations.find(c => c.id === settings.welcome_email_smtp_id)?.from_address}>` : 
-                      'Will use the default SMTP configuration'
-                    }
-                  </p>
-                </div>
-              </div>
-
-              {/* Notification Emails */}
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <span className="text-2xl mr-3">🔔</span>
-                  Notification Emails
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Choose which SMTP configuration to use when sending notification emails (course updates, workflow notifications, etc.).
-                </p>
-                <div className="max-w-md">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    SMTP Configuration
-                  </label>
-                  <Select
-                    value={getSmtpOption(settings.notification_smtp_id)}
-                    onChange={(option) => handleSmtpChange('notification_smtp_id', option)}
-                    options={smtpConfigurations.map(config => ({
-                      value: config.id,
-                      label: `${config.name} (${config.from_address})`
-                    }))}
-                    placeholder="Use default SMTP configuration"
-                    isSearchable
-                    isClearable
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    {settings.notification_smtp_id ? 
-                      `Will send from: ${smtpConfigurations.find(c => c.id === settings.notification_smtp_id)?.from_name} <${smtpConfigurations.find(c => c.id === settings.notification_smtp_id)?.from_address}>` : 
-                      'Will use the default SMTP configuration'
-                    }
-                  </p>
-                </div>
-              </div>
-
-              {/* Default SMTP */}
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <span className="text-2xl mr-3">⚙️</span>
-                  Default SMTP Configuration
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  This will be used for any system emails that don't have a specific SMTP configuration assigned.
-                </p>
-                <div className="max-w-md">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    SMTP Configuration
-                  </label>
-                  <Select
-                    value={getSmtpOption(settings.default_smtp_id)}
-                    onChange={(option) => handleSmtpChange('default_smtp_id', option)}
-                    options={smtpConfigurations.map(config => ({
-                      value: config.id,
-                      label: `${config.name} (${config.from_address})`
-                    }))}
-                    placeholder="Select default SMTP configuration"
-                    isSearchable
-                    isClearable
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    {settings.default_smtp_id ? 
-                      `Default sender: ${smtpConfigurations.find(c => c.id === settings.default_smtp_id)?.from_name} <${smtpConfigurations.find(c => c.id === settings.default_smtp_id)?.from_address}>` : 
-                      'No default SMTP configuration selected'
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-8 flex justify-between">
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="System Email Settings"
+        description="Choose which SMTP configuration sends each type of system email."
+        actions={
+          <>
+            <button type="button" className={btnSecondary} onClick={() => healthMutation.mutate()} disabled={healthMutation.isPending}>
+              <Activity className="h-4 w-4" aria-hidden="true" />
+              {healthMutation.isPending ? 'Checking…' : 'Check service'}
+            </button>
+            {configs.length > 0 && (
               <button
-                onClick={async () => {
-                  try {
-                    console.log('Testing health endpoint...');
-                    const response = await apiClient.get('/admin/system-email-settings/health');
-                    console.log('Health check response:', response.data);
-                    setSuccess('Health check successful!');
-                  } catch (err: any) {
-                    console.error('Health check failed:', err);
-                    setError('Health check failed: ' + (err.response?.data?.message || err.message));
-                  }
+                type="button"
+                className={btnSecondary}
+                onClick={() => {
+                  setTestError(undefined);
+                  setTestOpen(true);
                 }}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center space-x-2"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Test Connection</span>
+                <Send className="h-4 w-4" aria-hidden="true" />
+                Send test email
               </button>
+            )}
+          </>
+        }
+      />
 
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-              >
-                {saving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Save Settings</span>
-                  </>
-                )}
-              </button>
-            </div>
+      {loading ? (
+        <AdminCard>
+          <LoadingState label="Loading email settings…" />
+        </AdminCard>
+      ) : error ? (
+        <AdminCard>
+          <ErrorState
+            message={apiErrorMessage(error)}
+            onRetry={() => {
+              smtpQuery.refetch();
+              settingsQuery.refetch();
+            }}
+          />
+        </AdminCard>
+      ) : configs.length === 0 ? (
+        <AdminCard>
+          <EmptyState
+            icon={Mail}
+            title="No SMTP configurations yet"
+            description="Add an SMTP configuration before routing system emails."
+            action={
+              <Link to="/admin/smtp-configurations" className={btnPrimary}>
+                Add SMTP configuration
+              </Link>
+            }
+          />
+        </AdminCard>
+      ) : (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            saveMutation.mutate(settings);
+          }}
+          className="space-y-6"
+        >
+          <AdminCard padded={false}>
+            <ul className="divide-y divide-slate-100">
+              {ROWS.map(({ key, title, description, icon: Icon }) => {
+                const selected = byId(settings[key]);
+                const fallback = key === 'default_smtp_id' ? undefined : byId(settings.default_smtp_id);
+                return (
+                  <li key={key} className="grid gap-4 p-5 md:grid-cols-[1fr_minmax(0,22rem)] md:items-start">
+                    <div className="flex gap-3">
+                      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+                        <p className="text-sm text-slate-500">{description}</p>
+                      </div>
+                    </div>
+                    <Field
+                      label={`${title} SMTP`}
+                      hint={
+                        selected
+                          ? `Sends from ${describe(selected)}`
+                          : key === 'default_smtp_id'
+                            ? 'No default selected.'
+                            : fallback
+                              ? `Uses the default: ${describe(fallback)}`
+                              : 'Uses the default configuration.'
+                      }
+                    >
+                      {(props) => (
+                        <select
+                          {...props}
+                          className={inputClass}
+                          value={settings[key] ?? ''}
+                          onChange={(e) => setSettings((prev) => ({ ...prev, [key]: e.target.value ? Number(e.target.value) : null }))}
+                        >
+                          <option value="">{key === 'default_smtp_id' ? 'None' : 'Use default'}</option>
+                          {configs.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name} ({c.from_address})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </Field>
+                  </li>
+                );
+              })}
+            </ul>
+          </AdminCard>
+          <div className="flex justify-end">
+            <button type="submit" className={btnPrimary} disabled={saveMutation.isPending}>
+              <Save className="h-4 w-4" aria-hidden="true" />
+              {saveMutation.isPending ? 'Saving…' : 'Save settings'}
+            </button>
           </div>
-        </div>
-      </div>
+        </form>
+      )}
+
+      <Modal
+        open={testOpen}
+        onClose={() => setTestOpen(false)}
+        title="Send test email"
+        description="Sends a short test message through the configuration assigned to that email type."
+        footer={
+          <>
+            <button type="button" className={btnSecondary} onClick={() => setTestOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" form="system-email-test-form" className={btnPrimary} disabled={testMutation.isPending}>
+              {testMutation.isPending ? 'Sending…' : 'Send test'}
+            </button>
+          </>
+        }
+      >
+        <form id="system-email-test-form" onSubmit={submitTest} noValidate className="space-y-4">
+          <Field label="Email type" hint={describe(effectiveSmtp(testForm.email_type)) ? `Will send from ${describe(effectiveSmtp(testForm.email_type))}` : undefined}>
+            {(props) => (
+              <select {...props} className={inputClass} value={testForm.email_type} onChange={(e) => setTestForm((f) => ({ ...f, email_type: e.target.value as TestType }))}>
+                {ROWS.filter((r) => r.testType).map((r) => (
+                  <option key={r.key} value={r.testType}>
+                    {r.title}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <Field label="Recipient email" required error={testError}>
+            {(props) => (
+              <input {...props} type="email" className={inputClass} placeholder="you@example.com" value={testForm.test_email} onChange={(e) => setTestForm((f) => ({ ...f, test_email: e.target.value }))} />
+            )}
+          </Field>
+        </form>
+      </Modal>
     </div>
   );
-};
-
-export default SystemEmailSettings;
+}
