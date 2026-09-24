@@ -224,6 +224,16 @@ try {
     });
   }
 
+  // llms.txt / llm.txt: the hand-written site summary from public/ plus an always-current
+  // list of every free tool, generated from the registry.
+  const llmsBase = fs.readFileSync(path.join(root, 'public/llms.txt'), 'utf8').trimEnd();
+  const toolSections = Object.values(hubs)
+    .map((h) => `## ${h.name}\n\n${h.answer}\n\n` + toolsInHub(h.hub).map((t) => `- [${t.name}](${SITE}${toolPath(t)}): ${t.summary}`).join('\n'))
+    .join('\n\n');
+  const career = `## Career tools\n\n` + careerTools.map((c) => `- [${c.name}](${SITE}/resources/${c.slug}): ${c.summary}`).join('\n');
+  const llms = `${llmsBase}\n\n# Free tools (${allTools.length + careerTools.length})\n\n${toolSections}\n\n${career}\n`;
+  for (const name of ['llms.txt', 'llm.txt']) fs.writeFileSync(path.join(dist, name), llms);
+
   console.log(`Prerendered ${routes.length} pages into ${path.relative(root, outDir)}/`);
 } finally {
   await vite.close();
