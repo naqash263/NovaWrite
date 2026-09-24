@@ -1,34 +1,46 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FileJson, ImageOff, Pencil, Plus, Trash2, Upload, Workflow as WorkflowIcon } from 'lucide-react';
 import apiClient from '../../api/axios';
 import EnhancedImageUpload from '../../components/EnhancedImageUpload';
 import RichTextEditor from '../../components/RichTextEditor';
 import { useSEO } from '../../utils/seo';
+import { useToast } from '../../hooks/use-toast';
+import { useConfirm } from '../../hooks/use-confirm';
+import { AdminCard, AdminPageHeader, Badge, EmptyState, ErrorState, Field, IconButton, LoadingState, Modal, SearchInput, TableShell, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage, asList } from '../../components/admin/utils';
+
+interface WorkflowFile {
+  id: number;
+  file_id?: number;
+  display_name?: string | null;
+  description?: string | null;
+  file?: { id: number; original_name?: string; name?: string } | null;
+}
 
 interface Workflow {
   id: number;
   title: string;
   slug: string;
-  summary?: string;
-  description?: string;
-  tools?: string[];
-  benefits?: string[];
+  summary?: string | null;
+  description?: string | null;
+  product_description?: string | null;
+  meta_description?: string | null;
+  meta_keywords?: string | string[] | null;
+  seo_title?: string | null;
+  tools?: string[] | null;
+  benefits?: string[] | null;
+  tags?: string[] | null;
+  instructions?: string | null;
+  estimated_time?: string | null;
+  difficulty?: string | null;
   status: string;
   is_premium: boolean;
-  workflow_category_id: number;
-  image_url?: string;
-  category?: {
-    id: number;
-    name: string;
-  };
-  created_at: string;
-  files?: WorkflowFile[];
-}
-
-interface WorkflowFile {
-  id: number;
-  file_path: string;
-  description?: string;
+  workflow_category_id: number | null;
+  image_url?: string | null;
+  category?: { id: number; name: string } | null;
+  created_at?: string;
+  files?: WorkflowFile[] | null;
 }
 
 interface WorkflowCategory {
@@ -36,677 +48,529 @@ interface WorkflowCategory {
   name: string;
 }
 
+const emptyForm = {
+  workflow_category_id: '',
+  title: '',
+  summary: '',
+  description: '',
+  product_description: '',
+  meta_description: '',
+  meta_keywords: '',
+  seo_title: '',
+  // Raw comma-separated text while typing; parsed into arrays on submit.
+  tools: '',
+  benefits: '',
+  status: 'draft',
+  is_premium: false,
+  image_url: '',
+  estimated_time: '',
+  difficulty: 'intermediate',
+  tags: '',
+  instructions: '',
+};
+
+type FormState = typeof emptyForm;
+type FormErrors = Partial<Record<keyof FormState, string>>;
+
+const primaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const secondaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-60';
+
+const splitList = (value: string) =>
+  value
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+const joinList = (value: unknown) => (Array.isArray(value) ? value.join(', ') : typeof value === 'string' ? value : '');
+
+const formatDate = (value?: string) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+};
+
+function serverErrors(error: unknown): FormErrors {
+  const errors = (error as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors ?? {};
+  const result: FormErrors = {};
+  for (const [key, messages] of Object.entries(errors)) {
+    const field = key.split('.')[0] as keyof FormState;
+    if (!result[field]) result[field] = messages?.[0];
+  }
+  return result;
+}
+
+function SectionTitle({ children }: { children: string }) {
+  return <h3 className="border-b border-slate-200 pb-2 text-sm font-semibold text-slate-900">{children}</h3>;
+}
+
 export default function Workflows() {
-  const [showForm, setShowForm] = useState(false);
+  useSEO({ title: 'Manage Workflows | Admin', robots: 'noindex, nofollow' });
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
+  const { confirm } = useConfirm();
+
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState({
-    workflow_category_id: '',
-    title: '',
-    summary: '',
-    description: '',
-    product_description: '',
-    meta_description: '',
-    meta_keywords: '',
-    seo_title: '',
-    tools: [] as string[],
-    benefits: [] as string[],
-    status: 'draft',
-    is_premium: false,
-    image_url: '',
-    estimated_time: '',
-    difficulty: 'intermediate',
-    tags: [] as string[],
-    instructions: '',
-  });
+  const [formData, setFormData] = useState<FormState>(emptyForm);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [fileDescription, setFileDescription] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [fileInputKey, setFileInputKey] = useState(0);
 
-  const queryClient = useQueryClient();
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => setFormData((prev) => ({ ...prev, [key]: value }));
 
-  useSEO({ title: 'Manage Workflows | Admin' });
-
-  const { data: workflows = [], isLoading } = useQuery({
+  const { data: workflows = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['workflows-admin'],
-    queryFn: async () => {
-      const response = await apiClient.get('/admin/workflows');
-      return response.data;
-    },
+    queryFn: async () => asList<Workflow>((await apiClient.get('/admin/workflows')).data),
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['admin-workflow-categories'],
-    queryFn: async () => {
-      const response = await apiClient.get('/admin/workflow-categories');
-      return response.data.data || response.data || [];
-    },
+    queryFn: async () => asList<WorkflowCategory>((await apiClient.get('/admin/workflow-categories')).data),
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiClient.post('/admin/workflows', data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflows-admin'] });
-      setSuccess('Workflow created successfully!');
-      resetForm();
-      setTimeout(() => setSuccess(''), 3000);
-    },
-    onError: (err: any) => {
-      setError(err.response?.data?.message || 'Error creating workflow');
-      setTimeout(() => setError(''), 3000);
-    },
-  });
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return workflows.filter((w) => {
+      if (statusFilter === 'premium' ? !w.is_premium : statusFilter && w.status !== statusFilter) return false;
+      if (!term) return true;
+      return [w.title, w.summary, w.slug, w.category?.name].some((v) => typeof v === 'string' && v.toLowerCase().includes(term));
+    });
+  }, [workflows, search, statusFilter]);
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const response = await apiClient.put(`/admin/workflows/${id}`, data);
-      return response.data;
-    },
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['workflows-admin'] });
+
+  const saveMutation = useMutation({
+    mutationFn: async (data: Record<string, unknown>) =>
+      (editingId ? await apiClient.put(`/admin/workflows/${editingId}`, data) : await apiClient.post('/admin/workflows', data)).data,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflows-admin'] });
-      setSuccess('Workflow updated successfully!');
-      resetForm();
-      setTimeout(() => setSuccess(''), 3000);
+      addToast({ type: 'success', title: editingId ? 'Workflow updated' : 'Workflow created' });
+      invalidate();
+      closeModal();
     },
-    onError: (err: any) => {
-      setError(err.response?.data?.message || 'Error updating workflow');
-      setTimeout(() => setError(''), 3000);
+    onError: (err) => {
+      setErrors(serverErrors(err));
+      addToast({ type: 'error', title: 'Could not save workflow', description: apiErrorMessage(err) });
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiClient.delete(`/admin/workflows/${id}`);
-    },
+    mutationFn: (id: number) => apiClient.delete(`/admin/workflows/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflows-admin'] });
-      setSuccess('Workflow deleted successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      addToast({ type: 'success', title: 'Workflow deleted' });
+      invalidate();
     },
-    onError: (err: any) => {
-      setError(err.response?.data?.message || 'Error deleting workflow');
-      setTimeout(() => setError(''), 3000);
-    },
+    onError: (err) => addToast({ type: 'error', title: 'Could not delete workflow', description: apiErrorMessage(err) }),
   });
 
   const uploadFileMutation = useMutation({
     mutationFn: async ({ workflowId, file, description }: { workflowId: number; file: File; description: string }) => {
-      // Step 1: Upload file to /api/files
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const uploadResponse = await apiClient.post('/files', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
-      const fileId = uploadResponse.data.file.id;
-      
-      // Step 2: Attach file to workflow
+      // Step 1: upload to the file library.
+      const body = new FormData();
+      body.append('file', file);
+      const uploadResponse = await apiClient.post('/files', body, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const fileId = uploadResponse.data?.file?.id;
+      if (!fileId) throw new Error('The upload did not return a file id.');
+      // Step 2: attach it to the workflow.
       const response = await apiClient.post(`/admin/workflows/${workflowId}/files`, {
         file_id: fileId,
         display_name: file.name,
         description: description || '',
-        sort_order: 0
+        sort_order: 0,
       });
-      
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflows-admin'] });
-      setSuccess('File uploaded successfully!');
+      addToast({ type: 'success', title: 'File attached' });
       setUploadFile(null);
       setFileDescription('');
-      setTimeout(() => setSuccess(''), 3000);
+      setFileInputKey((k) => k + 1);
+      invalidate();
     },
-    onError: (err: any) => {
-      setError(err.response?.data?.message || 'Error uploading file');
-      setTimeout(() => setError(''), 3000);
-    },
+    onError: (err) => addToast({ type: 'error', title: 'Could not upload file', description: apiErrorMessage(err) }),
   });
 
   const deleteFileMutation = useMutation({
-    mutationFn: async ({ workflowId, fileId }: { workflowId: number; fileId: number }) => {
-      await apiClient.delete(`/admin/workflows/${workflowId}/files/${fileId}`);
-    },
+    mutationFn: ({ workflowId, fileId }: { workflowId: number; fileId: number }) => apiClient.delete(`/admin/workflows/${workflowId}/files/${fileId}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflows-admin'] });
-      setSuccess('File deleted successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      addToast({ type: 'success', title: 'File removed' });
+      invalidate();
     },
-    onError: (err: any) => {
-      setError(err.response?.data?.message || 'Error deleting file');
-      setTimeout(() => setError(''), 3000);
-    },
+    onError: (err) => addToast({ type: 'error', title: 'Could not remove file', description: apiErrorMessage(err) }),
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    const data = {
-      ...formData,
-      workflow_category_id: Number(formData.workflow_category_id),
-    };
-
-    if (editingId) {
-      updateMutation.mutate({ id: editingId, data });
-    } else {
-      createMutation.mutate(data);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      workflow_category_id: '',
-      title: '',
-      summary: '',
-      description: '',
-      product_description: '',
-      meta_description: '',
-      meta_keywords: '',
-      seo_title: '',
-      tools: [],
-      benefits: [],
-      status: 'draft',
-      is_premium: false,
-      image_url: '',
-      estimated_time: '',
-      difficulty: 'intermediate',
-      tags: [],
-      instructions: '',
-    });
+  const openCreate = () => {
     setEditingId(null);
-    setShowForm(false);
+    setFormData(emptyForm);
+    setErrors({});
     setUploadFile(null);
     setFileDescription('');
+    setModalOpen(true);
   };
 
-  const handleEdit = (workflow: Workflow) => {
+  const openEdit = (workflow: Workflow) => {
     setFormData({
-      workflow_category_id: String(workflow.workflow_category_id),
-      title: workflow.title,
-      summary: workflow.summary || '',
-      description: workflow.description || '',
-      product_description: (workflow as any).product_description || '',
-      meta_description: (workflow as any).meta_description || '',
-      meta_keywords: typeof (workflow as any).meta_keywords === 'string' 
-        ? (workflow as any).meta_keywords 
-        : ((workflow as any).meta_keywords || []).join(', '),
-      seo_title: (workflow as any).seo_title || '',
-      tools: workflow.tools || [],
-      benefits: workflow.benefits || [],
+      workflow_category_id: workflow.workflow_category_id ? String(workflow.workflow_category_id) : '',
+      title: workflow.title ?? '',
+      summary: workflow.summary ?? '',
+      description: workflow.description ?? '',
+      product_description: workflow.product_description ?? '',
+      meta_description: workflow.meta_description ?? '',
+      meta_keywords: joinList(workflow.meta_keywords),
+      seo_title: workflow.seo_title ?? '',
+      tools: joinList(workflow.tools),
+      benefits: joinList(workflow.benefits),
       status: workflow.status || 'draft',
-      is_premium: workflow.is_premium,
-      image_url: workflow.image_url || '',
-      estimated_time: (workflow as any).estimated_time || '',
-      difficulty: (workflow as any).difficulty || 'intermediate',
-      tags: (workflow as any).tags || [],
-      instructions: (workflow as any).instructions || '',
+      is_premium: Boolean(workflow.is_premium),
+      image_url: workflow.image_url ?? '',
+      estimated_time: workflow.estimated_time ?? '',
+      difficulty: workflow.difficulty || 'intermediate',
+      tags: joinList(workflow.tags),
+      instructions: workflow.instructions ?? '',
     });
     setEditingId(workflow.id);
-    setShowForm(true);
-    setError('');
-    setSuccess('');
+    setErrors({});
+    setUploadFile(null);
+    setFileDescription('');
+    setModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this workflow?')) {
-      setError('');
-      setSuccess('');
-      deleteMutation.mutate(id);
-    }
+  function closeModal() {
+    setModalOpen(false);
+    setEditingId(null);
+    setErrors({});
+  }
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const next: FormErrors = {};
+    if (!formData.workflow_category_id) next.workflow_category_id = 'Select a category.';
+    if (!formData.title.trim()) next.title = 'Title is required.';
+    if (!formData.description.trim()) next.description = 'Description is required.';
+    setErrors(next);
+    if (Object.keys(next).length) return;
+    saveMutation.mutate({
+      ...formData,
+      title: formData.title.trim(),
+      tools: splitList(formData.tools),
+      benefits: splitList(formData.benefits),
+      tags: splitList(formData.tags),
+      workflow_category_id: Number(formData.workflow_category_id),
+    });
   };
 
-  const handleFileUpload = async (workflowId: number) => {
-    if (!uploadFile) {
-      setError('Please select a file to upload');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    uploadFileMutation.mutate({ workflowId, file: uploadFile, description: fileDescription });
+  const handleDelete = async (workflow: Workflow) => {
+    const ok = await confirm({ title: 'Delete workflow', message: `Delete "${workflow.title}" and its attached files? This cannot be undone.`, confirmText: 'Delete', type: 'danger' });
+    if (ok) deleteMutation.mutate(workflow.id);
   };
 
-  const handleDeleteFile = (workflowId: number, fileId: number) => {
-    if (confirm('Are you sure you want to delete this file?')) {
-      deleteFileMutation.mutate({ workflowId, fileId });
-    }
+  const handleDeleteFile = async (workflowId: number, file: WorkflowFile) => {
+    const ok = await confirm({ title: 'Remove file', message: `Remove "${fileLabel(file)}" from this workflow?`, confirmText: 'Remove', type: 'danger' });
+    if (ok) deleteFileMutation.mutate({ workflowId, fileId: file.id });
   };
 
-  const currentWorkflow = workflows.find((w: Workflow) => w.id === editingId);
+  const currentWorkflow = workflows.find((w) => w.id === editingId);
+  const currentFiles = asList<WorkflowFile>(currentWorkflow?.files);
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Workflow Templates Management</h1>
-        <button
-          onClick={() => { 
-            if (showForm) {
-              resetForm();
-            } else {
-              setShowForm(true);
-              setError('');
-              setSuccess('');
-            }
-          }}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          {showForm ? 'Cancel' : 'Create Workflow'}
-        </button>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Workflows"
+        description="Automation workflow templates, their SEO metadata and downloadable files."
+        actions={
+          <button type="button" className={primaryBtn} onClick={openCreate}>
+            <Plus className="h-4 w-4" aria-hidden="true" /> New workflow
+          </button>
+        }
+      />
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-          {success}
-        </div>
-      )}
-
-      {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <select
-                value={formData.workflow_category_id}
-                onChange={(e) => setFormData({ ...formData, workflow_category_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                required
-              >
-                <option value="">Select Category</option>
-                {Array.isArray(categories) && categories.map((cat: WorkflowCategory) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+      <AdminCard
+        padded={false}
+        title="All workflows"
+        description={
+          isLoading || isError
+            ? undefined
+            : `${workflows.length} total · ${workflows.filter((w) => w.status === 'published').length} published · ${workflows.filter((w) => w.is_premium).length} premium`
+        }
+        actions={
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <div className="sm:w-60">
+              <SearchInput label="Search workflows" placeholder="Search workflows…" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Summary</label>
-              <input
-                type="text"
-                value={formData.summary}
-                onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <RichTextEditor
-                value={formData.description}
-                onChange={(description) => setFormData({ ...formData, description })}
-                placeholder="Enter workflow description..."
-                height={300}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product Description (AI & SEO Friendly)
-                <span className="text-xs text-gray-500 ml-2">Used for product listings and search engines</span>
-              </label>
-              <RichTextEditor
-                value={formData.product_description}
-                onChange={(product_description) => setFormData({ ...formData, product_description })}
-                placeholder="Enter detailed product description optimized for AI and search engines..."
-                height={250}
-              />
-              <p className="text-xs text-gray-500 mt-1">This description will be used for SEO and AI search optimization</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  SEO Title
-                  <span className="text-xs text-gray-500 ml-2">(Optional - defaults to workflow title)</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.seo_title}
-                  onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="e.g., Best AI Automation Workflow for CRM Integration"
-                  maxLength={70}
-                />
-                <p className="text-xs text-gray-500 mt-1">Recommended: 50-60 characters</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Meta Description
-                  <span className="text-xs text-gray-500 ml-2">(For search engines)</span>
-                </label>
-                <textarea
-                  value={formData.meta_description}
-                  onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="Brief description for search engine results..."
-                  rows={3}
-                  maxLength={160}
-                />
-                <p className="text-xs text-gray-500 mt-1">Recommended: 120-160 characters</p>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Meta Keywords
-                <span className="text-xs text-gray-500 ml-2">(Comma-separated for SEO)</span>
-              </label>
-              <input
-                type="text"
-                value={formData.meta_keywords}
-                onChange={(e) => setFormData({ ...formData, meta_keywords: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="e.g., AI automation, workflow, CRM integration, business intelligence"
-              />
-              <p className="text-xs text-gray-500 mt-1">Separate keywords with commas</p>
-            </div>
-
-            <EnhancedImageUpload
-              onImageUploaded={(imageUrl) => setFormData({ ...formData, image_url: imageUrl })}
-              currentImage={formData.image_url}
-              label="Workflow Image"
-              maxSize={5}
-            />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tools Used</label>
-              <input
-                type="text"
-                value={formData.tools.join(', ')}
-                onChange={(e) => {
-                  const tools = e.target.value
-                    .split(',')
-                    .map(t => t.trim())
-                    .filter(t => t.length > 0);
-                  setFormData({ ...formData, tools });
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="e.g., React, Node.js, PostgreSQL (separate with commas)"
-              />
-              <p className="text-xs text-gray-500 mt-1">Separate multiple tools with commas</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Key Benefits</label>
-              <input
-                type="text"
-                value={formData.benefits.join(', ')}
-                onChange={(e) => {
-                  const benefits = e.target.value
-                    .split(',')
-                    .map(b => b.trim())
-                    .filter(b => b.length > 0);
-                  setFormData({ ...formData, benefits });
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="e.g., Faster processing, Better accuracy, Cost savings (separate with commas)"
-              />
-              <p className="text-xs text-gray-500 mt-1">Separate multiple benefits with commas</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Time</label>
-                <input
-                  type="text"
-                  value={formData.estimated_time}
-                  onChange={(e) => setFormData({ ...formData, estimated_time: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="e.g., 30 minutes, 2-3 hours"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty Level</label>
-                <select
-                  value={formData.difficulty}
-                  onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                >
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
-              <RichTextEditor
-                value={formData.instructions}
-                onChange={(instructions) => setFormData({ ...formData, instructions })}
-                placeholder="Enter step-by-step instructions for this workflow..."
-                height={250}
-              />
-              <p className="text-xs text-gray-500 mt-1">Detailed instructions on how to use this workflow</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-              <input
-                type="text"
-                value={formData.tags.join(', ')}
-                onChange={(e) => {
-                  const tags = e.target.value
-                    .split(',')
-                    .map(t => t.trim())
-                    .filter(t => t.length > 0);
-                  setFormData({ ...formData, tags });
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="e.g., automation, n8n, productivity (separate with commas)"
-              />
-              <p className="text-xs text-gray-500 mt-1">Separate tags with commas</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-              </select>
-            </div>
-
-            <div className="flex gap-6">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="published"
-                  checked={formData.status === 'published'}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.checked ? 'published' : 'draft' })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="published" className="ml-2 text-sm font-medium text-gray-700">
-                  Published
-                </label>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="premium"
-                  checked={formData.is_premium}
-                  onChange={(e) => setFormData({ ...formData, is_premium: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="premium" className="ml-2 text-sm font-medium text-gray-700">
-                  Premium
-                </label>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {createMutation.isPending || updateMutation.isPending
-                ? 'Saving...'
-                : editingId
-                ? 'Update Workflow'
-                : 'Create Workflow'}
-            </button>
-          </form>
-
-          {editingId && currentWorkflow && (
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Attached Files</h3>
-              
-              {currentWorkflow.files && currentWorkflow.files.length > 0 && (
-                <div className="mb-6 space-y-2">
-                  {currentWorkflow.files.map((file: WorkflowFile) => (
-                    <div key={file.id} className="flex items-center justify-between bg-gray-50 p-3 rounded">
-                      <div>
-                        <p className="font-medium text-gray-900">{file.file_path}</p>
-                        {file.description && <p className="text-sm text-gray-600">{file.description}</p>}
-                      </div>
-                      <button
-                        onClick={() => handleDeleteFile(editingId, file.id)}
-                        className="text-red-600 hover:text-red-800 font-medium"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Upload File (JSON)</label>
-                  <input
-                    type="file"
-                    accept=".json"
-                    onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">File Description</label>
-                  <input
-                    type="text"
-                    value={fileDescription}
-                    onChange={(e) => setFileDescription(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    placeholder="Optional description for the file"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleFileUpload(editingId)}
-                  disabled={uploadFileMutation.isPending || !uploadFile}
-                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {uploadFileMutation.isPending ? 'Uploading...' : 'Upload File'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <select aria-label="Filter workflows" className={`${inputClass} sm:w-40`} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="">All workflows</option>
+              <option value="published">Published</option>
+              <option value="draft">Drafts</option>
+              <option value="premium">Premium</option>
+            </select>
+          </div>
+        }
+      >
         {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Loading workflows...</div>
+          <LoadingState label="Loading workflows…" />
+        ) : isError ? (
+          <ErrorState message={apiErrorMessage(error)} onRetry={() => refetch()} />
         ) : workflows.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No workflows found. Create one to get started!</div>
+          <EmptyState
+            icon={WorkflowIcon}
+            title="No workflows yet"
+            description="Create your first workflow template."
+            action={
+              <button type="button" className={primaryBtn} onClick={openCreate}>
+                <Plus className="h-4 w-4" aria-hidden="true" /> New workflow
+              </button>
+            }
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState title="No matching workflows" description="Try a different search or filter." />
         ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <TableShell caption="Workflows">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Premium</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th scope="col">Workflow</th>
+                <th scope="col">Category</th>
+                <th scope="col">Status</th>
+                <th scope="col">Files</th>
+                <th scope="col">Created</th>
+                <th scope="col" className="!text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {workflows.map((workflow: Workflow) => (
+            <tbody className="divide-y divide-slate-100">
+              {filtered.map((workflow) => (
                 <tr key={workflow.id}>
-                  <td className="px-6 py-4 font-medium text-gray-900">{workflow.title}</td>
-                  <td className="px-6 py-4">
-                    {workflow.image_url ? (
-                      <img
-                        src={workflow.image_url}
-                        alt={workflow.title}
-                        className="w-16 h-16 object-cover rounded-lg border border-gray-300"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-400 text-xs">
-                        No Image
+                  <td>
+                    <div className="flex items-center gap-3">
+                      {workflow.image_url ? (
+                        <img src={workflow.image_url} alt="" className="h-10 w-10 flex-none rounded-lg border border-slate-200 object-cover" loading="lazy" />
+                      ) : (
+                        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400">
+                          <ImageOff className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-medium text-slate-900">{workflow.title}</p>
+                        {workflow.summary && <p className="line-clamp-1 max-w-xs text-xs text-slate-500">{workflow.summary}</p>}
                       </div>
-                    )}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {workflow.category?.name || 'N/A'}
+                  <td className="whitespace-nowrap">{workflow.category?.name || <span className="text-slate-400">—</span>}</td>
+                  <td>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge tone={workflow.status === 'published' ? 'success' : 'neutral'}>{workflow.status === 'published' ? 'Published' : 'Draft'}</Badge>
+                      {workflow.is_premium && <Badge tone="info">Premium</Badge>}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${workflow.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {workflow.status === 'published' ? 'Published' : 'Draft'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${workflow.is_premium ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {workflow.is_premium ? 'Premium' : 'Regular'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                    {new Date(workflow.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
-                    <button
-                      onClick={() => handleEdit(workflow)}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(workflow.id)}
-                      disabled={deleteMutation.isPending}
-                      className="text-red-600 hover:text-red-800 font-medium disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
+                  <td className="tabular-nums text-slate-500">{asList(workflow.files).length}</td>
+                  <td className="whitespace-nowrap text-slate-500">{formatDate(workflow.created_at)}</td>
+                  <td>
+                    <div className="flex justify-end gap-1">
+                      <IconButton label={`Edit ${workflow.title}`} icon={Pencil} onClick={() => openEdit(workflow)} />
+                      <IconButton
+                        label={`Delete ${workflow.title}`}
+                        icon={Trash2}
+                        tone="danger"
+                        disabled={deleteMutation.isPending && deleteMutation.variables === workflow.id}
+                        onClick={() => handleDelete(workflow)}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </TableShell>
         )}
-      </div>
+      </AdminCard>
+
+      <Modal
+        open={modalOpen}
+        onClose={closeModal}
+        size="xl"
+        title={editingId ? 'Edit workflow' : 'New workflow'}
+        description="Fields marked * are required."
+        footer={
+          <>
+            <button type="button" className={secondaryBtn} onClick={closeModal}>
+              Cancel
+            </button>
+            <button type="submit" form="workflow-form" className={primaryBtn} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Saving…' : editingId ? 'Update workflow' : 'Create workflow'}
+            </button>
+          </>
+        }
+      >
+        <form id="workflow-form" onSubmit={handleSubmit} noValidate className="space-y-6">
+          <section className="space-y-4">
+            <SectionTitle>Basics</SectionTitle>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Category" required error={errors.workflow_category_id}>
+                {(props) => (
+                  <select {...props} className={inputClass} value={formData.workflow_category_id} onChange={(e) => update('workflow_category_id', e.target.value)}>
+                    <option value="">Select category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              <Field label="Title" required error={errors.title}>
+                {(props) => <input {...props} type="text" maxLength={255} className={inputClass} value={formData.title} onChange={(e) => update('title', e.target.value)} />}
+              </Field>
+            </div>
+            <Field label="Summary" error={errors.summary}>
+              {(props) => <input {...props} type="text" className={inputClass} value={formData.summary} onChange={(e) => update('summary', e.target.value)} />}
+            </Field>
+            <div>
+              <p className="mb-1 text-sm font-medium text-slate-700">
+                Description <span className="text-red-600" aria-hidden="true">*</span>
+              </p>
+              <RichTextEditor value={formData.description} onChange={(description) => update('description', description)} placeholder="Enter workflow description..." height={280} />
+              {errors.description && (
+                <p role="alert" className="mt-1 text-xs text-red-600">
+                  {errors.description}
+                </p>
+              )}
+            </div>
+            <EnhancedImageUpload onImageUploaded={(imageUrl) => update('image_url', imageUrl)} currentImage={formData.image_url} label="Workflow Image" maxSize={5} />
+          </section>
+
+          <section className="space-y-4">
+            <SectionTitle>Details</SectionTitle>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Tools used" hint="Separate with commas" error={errors.tools}>
+                {(props) => <input {...props} type="text" className={inputClass} placeholder="n8n, OpenAI, Slack" value={formData.tools} onChange={(e) => update('tools', e.target.value)} />}
+              </Field>
+              <Field label="Key benefits" hint="Separate with commas" error={errors.benefits}>
+                {(props) => (
+                  <input {...props} type="text" className={inputClass} placeholder="Faster processing, Cost savings" value={formData.benefits} onChange={(e) => update('benefits', e.target.value)} />
+                )}
+              </Field>
+              <Field label="Estimated time" error={errors.estimated_time}>
+                {(props) => (
+                  <input {...props} type="text" className={inputClass} placeholder="e.g., 30 minutes" value={formData.estimated_time} onChange={(e) => update('estimated_time', e.target.value)} />
+                )}
+              </Field>
+              <Field label="Difficulty" error={errors.difficulty}>
+                {(props) => (
+                  <select {...props} className={inputClass} value={formData.difficulty} onChange={(e) => update('difficulty', e.target.value)}>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                )}
+              </Field>
+              <Field label="Tags" hint="Separate with commas" error={errors.tags}>
+                {(props) => <input {...props} type="text" className={inputClass} placeholder="automation, n8n, productivity" value={formData.tags} onChange={(e) => update('tags', e.target.value)} />}
+              </Field>
+              <Field label="Status" error={errors.status}>
+                {(props) => (
+                  <select {...props} className={inputClass} value={formData.status} onChange={(e) => update('status', e.target.value)}>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                )}
+              </Field>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-blue-600" checked={formData.is_premium} onChange={(e) => update('is_premium', e.target.checked)} />
+              Premium workflow
+            </label>
+            <div>
+              <p className="mb-1 text-sm font-medium text-slate-700">Instructions</p>
+              <RichTextEditor value={formData.instructions} onChange={(instructions) => update('instructions', instructions)} placeholder="Enter step-by-step instructions for this workflow..." height={220} />
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <SectionTitle>SEO</SectionTitle>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="SEO title" hint="Defaults to the workflow title. Recommended 50–60 characters." error={errors.seo_title}>
+                {(props) => <input {...props} type="text" maxLength={70} className={inputClass} value={formData.seo_title} onChange={(e) => update('seo_title', e.target.value)} />}
+              </Field>
+              <Field label="Meta keywords" hint="Comma-separated" error={errors.meta_keywords}>
+                {(props) => <input {...props} type="text" className={inputClass} value={formData.meta_keywords} onChange={(e) => update('meta_keywords', e.target.value)} />}
+              </Field>
+            </div>
+            <Field label="Meta description" hint={`${formData.meta_description.length}/160 characters`} error={errors.meta_description}>
+              {(props) => (
+                <textarea {...props} rows={2} maxLength={160} className={inputClass} value={formData.meta_description} onChange={(e) => update('meta_description', e.target.value)} />
+              )}
+            </Field>
+            <div>
+              <p className="mb-1 text-sm font-medium text-slate-700">Product description (AI &amp; SEO friendly)</p>
+              <RichTextEditor
+                value={formData.product_description}
+                onChange={(product_description) => update('product_description', product_description)}
+                placeholder="Enter detailed product description optimized for AI and search engines..."
+                height={220}
+              />
+            </div>
+          </section>
+        </form>
+
+        {editingId && (
+          <section className="mt-6 space-y-4" aria-label="Attached files">
+            <SectionTitle>Attached files</SectionTitle>
+            {currentFiles.length > 0 ? (
+              <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+                {currentFiles.map((file) => (
+                  <li key={file.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <FileJson className="h-4 w-4 flex-none text-slate-400" aria-hidden="true" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-900">{fileLabel(file)}</p>
+                        {file.description && <p className="truncate text-xs text-slate-500">{file.description}</p>}
+                      </div>
+                    </div>
+                    <IconButton label={`Remove ${fileLabel(file)}`} icon={Trash2} tone="danger" onClick={() => handleDeleteFile(editingId, file)} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-slate-500">No files attached yet.</p>
+            )}
+            <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+              <Field label="Upload file (JSON)">
+                {(props) => (
+                  <input
+                    {...props}
+                    key={fileInputKey}
+                    type="file"
+                    accept=".json"
+                    className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-slate-200"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  />
+                )}
+              </Field>
+              <Field label="File description">
+                {(props) => (
+                  <input {...props} type="text" className={inputClass} placeholder="Optional" value={fileDescription} onChange={(e) => setFileDescription(e.target.value)} />
+                )}
+              </Field>
+              <button
+                type="button"
+                className={secondaryBtn}
+                disabled={uploadFileMutation.isPending || !uploadFile}
+                onClick={() => uploadFile && uploadFileMutation.mutate({ workflowId: editingId, file: uploadFile, description: fileDescription })}
+              >
+                <Upload className="h-4 w-4" aria-hidden="true" />
+                {uploadFileMutation.isPending ? 'Uploading…' : 'Upload'}
+              </button>
+            </div>
+          </section>
+        )}
+      </Modal>
     </div>
   );
+}
+
+function fileLabel(file: WorkflowFile) {
+  return file.display_name || file.file?.original_name || file.file?.name || `File #${file.id}`;
 }

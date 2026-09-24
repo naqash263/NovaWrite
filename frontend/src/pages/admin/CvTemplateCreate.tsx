@@ -1,9 +1,12 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
-import { useAuth } from '../../hooks/useAuth';
+import { useState, type ReactNode } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, ArrowRight, Check, Lightbulb } from 'lucide-react';
 import apiClient from '../../api/axios';
+import { useSEO } from '../../utils/seo';
+import { useToast } from '../../hooks/use-toast';
+import { AdminCard, AdminPageHeader, Field, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage } from '../../components/admin/utils';
 
 interface CvTemplateFormData {
   name: string;
@@ -11,249 +14,49 @@ interface CvTemplateFormData {
   category: string;
   ats_score: number;
   html_content: string;
-  json_config: any;
+  json_config: Record<string, unknown>;
   customizable_options: string[];
   thumbnail: File | null;
   field_mappings: Record<string, string>;
 }
 
-// Step Components
-const StepIndicator = ({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) => (
-  <div className="flex items-center justify-center mb-6">
-    <div className="flex items-center space-x-4">
-      {Array.from({ length: totalSteps }, (_, index) => (
-        <div key={index} className="flex items-center">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-            index + 1 < currentStep 
-              ? 'bg-green-500 text-white' 
-              : index + 1 === currentStep 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-300 text-gray-600'
-          }`}>
-            {index + 1 < currentStep ? '✓' : index + 1}
-          </div>
-          {index < totalSteps - 1 && (
-            <div className={`w-12 h-1 mx-2 ${
-              index + 1 < currentStep ? 'bg-green-500' : 'bg-gray-300'
-            }`} />
-          )}
-        </div>
-      ))}
-    </div>
-  </div>
-);
+type FormErrors = Partial<Record<keyof CvTemplateFormData, string>>;
 
-const Step1BasicInfo = ({ formData, setFormData }: { formData: CvTemplateFormData; setFormData: (data: CvTemplateFormData) => void }) => (
-  <div className="space-y-6">
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <h4 className="text-lg font-semibold text-blue-800 mb-2">📋 Step 1: Basic Information</h4>
-      <p className="text-blue-700 text-sm">
-        Let's start by defining the basic details of your CV template. This information will help users understand what your template is designed for.
-      </p>
-    </div>
+const STEPS = [
+  { title: 'Basic information', description: 'Name, category and ATS score' },
+  { title: 'HTML & CSS', description: 'Template markup with placeholders' },
+  { title: 'Preview', description: 'Check the rendered layout' },
+  { title: 'Review & save', description: 'Confirm and create' },
+];
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Template Name *
-        </label>
-        <Input
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
-          placeholder="e.g., Modern Professional, Executive Classic"
-          required
-        />
-        <p className="text-xs text-gray-500 mt-1">Choose a descriptive name that reflects the template's style</p>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Category *
-        </label>
-        <select
-          value={formData.category}
-          onChange={(e) => setFormData({...formData, category: e.target.value})}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        >
-          <option value="general">General - Suitable for most professions</option>
-          <option value="executive">Executive - For senior leadership roles</option>
-          <option value="tech">Tech - For technology professionals</option>
-          <option value="creative">Creative - For designers, artists, writers</option>
-          <option value="minimal">Minimal - Clean, simple design</option>
-          <option value="professional">Professional - Traditional business style</option>
-        </select>
-        <p className="text-xs text-gray-500 mt-1">Select the category that best fits your template's target audience</p>
-      </div>
-    </div>
+const CATEGORY_OPTIONS = [
+  { value: 'general', label: 'General – suitable for most professions' },
+  { value: 'executive', label: 'Executive – senior leadership roles' },
+  { value: 'tech', label: 'Tech – technology professionals' },
+  { value: 'creative', label: 'Creative – designers, artists, writers' },
+  { value: 'minimal', label: 'Minimal – clean, simple design' },
+  { value: 'professional', label: 'Professional – traditional business style' },
+];
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Description
-      </label>
-      <textarea
-        value={formData.description}
-        onChange={(e) => setFormData({...formData, description: e.target.value})}
-        placeholder="Describe your template's features, target audience, and unique characteristics..."
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        rows={4}
-      />
-      <p className="text-xs text-gray-500 mt-1">Help users understand when to use this template</p>
-    </div>
+const SINGLE_PLACEHOLDERS = ['fullName', 'jobTitle', 'email', 'phoneNumber', 'address', 'professionalSummary', 'skills'];
+const ARRAY_PLACEHOLDERS: [string, string][] = [
+  ['workExperience', 'Work experience cards with job titles, companies, dates and descriptions'],
+  ['projects', 'Project cards with tech tags, descriptions, links and dates'],
+  ['education', 'Education entries with degrees, institutions and graduation years'],
+  ['certificates', 'Certificate items with verification links and credential IDs'],
+  ['languages', 'Language proficiency levels'],
+  ['achievements', 'Achievements with titles, descriptions and dates'],
+];
+const STYLE_PLACEHOLDERS = ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'];
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          ATS Score (1-10) *
-        </label>
-        <input
-          type="number"
-          min="1"
-          max="10"
-          value={formData.ats_score}
-          onChange={(e) => setFormData({...formData, ats_score: parseInt(e.target.value)})}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        />
-        <p className="text-xs text-gray-500 mt-1">Rate how ATS-friendly this template is (10 = perfect for ATS systems)</p>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Thumbnail Image
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFormData({...formData, thumbnail: e.target.files?.[0] || null})}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <p className="text-xs text-gray-500 mt-1">Upload a preview image of your template (optional)</p>
-      </div>
-    </div>
-
-    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-      <h5 className="font-medium text-green-800 mb-2">✅ What's Next?</h5>
-      <p className="text-green-700 text-sm">
-        Once you've filled in the basic information, click "Next" to proceed to Step 2 where you'll create the HTML/CSS template code.
-      </p>
-    </div>
-  </div>
-);
-
-const Step2HTMLContent = ({ formData, setFormData }: { formData: CvTemplateFormData; setFormData: (data: CvTemplateFormData) => void }) => (
-  <div className="space-y-6">
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <h4 className="text-lg font-semibold text-blue-800 mb-2">💻 Step 2: HTML/CSS Template & Field Mappings</h4>
-      <p className="text-blue-700 text-sm">
-        Create your template's HTML and CSS code using placeholders like {'{{fullName}}'}, {'{{jobTitle}}'} etc. for dynamic content. All placeholders are automatically mapped to CV data fields.
-      </p>
-    </div>
-
-    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-      <h5 className="font-medium text-yellow-800 mb-2">💡 Template Tips:</h5>
-      <ul className="text-yellow-700 text-sm space-y-1">
-        <li>• Use semantic HTML elements (header, section, article, etc.)</li>
-        <li>• Include CSS styles within &lt;style&gt; tags</li>
-        <li>• Use placeholders like {'{{fullName}}'}, {'{{jobTitle}}'}, {'{{email}}'} for dynamic content</li>
-        <li>• Keep the design clean and ATS-friendly</li>
-        <li>• Use responsive CSS for mobile compatibility</li>
-      </ul>
-    </div>
-
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        HTML/CSS Template Code *
-      </label>
-      <textarea
-        value={formData.html_content}
-        onChange={(e) => setFormData({...formData, html_content: e.target.value})}
-        placeholder={`<div class="cv-template">
+const DEFAULT_HTML = `<div class="cv-template">
   <style>
     .cv-template { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; }
     .header { background: {{primaryColor}}; color: white; padding: 20px; }
     .name { font-size: 24px; font-weight: bold; }
     .job-title { font-size: 16px; margin-top: 5px; }
-    
-    /* Enhanced CSS classes for professional array formatting */
-    .experience-card, .project-card, .certificate-item, .education-item, .achievement-item { 
-      margin-bottom: 20px; 
-      padding: 15px; 
-      border-left: 4px solid {{primaryColor}}; 
-      background: #fafafa; 
-      border-radius: 0 8px 8px 0;
-      transition: all 0.3s ease;
-    }
-    .experience-header, .project-header, .certificate-header, .education-header, .achievement-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 8px;
-    }
-    .item-title { font-weight: bold; font-size: 16px; color: #2c3e50; margin-bottom: 4px; }
-    .item-subtitle { color: {{secondaryColor}}; font-size: 14px; font-weight: 500; margin-bottom: 4px; }
-    .item-date { 
-      color: #666; 
-      font-size: 12px; 
-      font-weight: 500;
-      background: #e8f4f8;
-      padding: 2px 8px;
-      border-radius: 12px;
-      white-space: nowrap;
-    }
-    .item-description { margin-top: 8px; font-size: 13px; line-height: 1.5; color: #555; }
-    .tech-tags { margin: 8px 0; }
-    .tech-tag { 
-      background: {{primaryColor}}; 
-      color: white; 
-      padding: 3px 10px; 
-      border-radius: 15px; 
-      font-size: 11px; 
-      margin-right: 6px; 
-      display: inline-block;
-      margin-bottom: 4px;
-    }
-    .project-link, .certificate-link { 
-      color: {{primaryColor}}; 
-      text-decoration: none; 
-      font-size: 12px; 
-      font-weight: 500;
-      border-bottom: 1px solid transparent;
-      transition: border-bottom 0.3s ease;
-    }
-    .project-link:hover, .certificate-link:hover {
-      border-bottom-color: {{primaryColor}};
-    }
-    .language-item { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center;
-      margin-bottom: 8px; 
-      padding: 8px 12px;
-      background: #f8f9fa;
-      border-radius: 6px;
-    }
-    .language-name { font-weight: 500; }
-    .proficiency-level { 
-      font-style: italic; 
-      color: #666; 
-      font-size: 12px;
-      background: #e9ecef;
-      padding: 2px 8px;
-      border-radius: 10px;
-    }
-    .skills-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
-    }
-    .skill-category {
-      background: #f8f9fa;
-      padding: 12px;
-      border-radius: 6px;
-      border-left: 3px solid {{primaryColor}};
-    }
   </style>
-  
+
   <div class="header">
     <div class="name">{{fullName}}</div>
     <div class="job-title">{{jobTitle}}</div>
@@ -261,534 +64,432 @@ const Step2HTMLContent = ({ formData, setFormData }: { formData: CvTemplateFormD
       <span>{{email}}</span> | <span>{{phoneNumber}}</span> | <span>{{address}}</span>
     </div>
   </div>
-  
+
   <div class="content">
     <section>
       <h2>Professional Summary</h2>
       <p>{{professionalSummary}}</p>
     </section>
-    
+
     <section>
       <h2>Work Experience</h2>
       {{workExperience}}
     </section>
-    
-    <section>
-      <h2>Projects</h2>
-      {{projects}}
-    </section>
-    
+
     <section>
       <h2>Education</h2>
       {{education}}
     </section>
-    
-    <section>
-      <h2>Certificates</h2>
-      {{certificates}}
-    </section>
-    
-    <section>
-      <h2>Languages</h2>
-      {{languages}}
-    </section>
-    
-    <section>
-      <h2>Achievements</h2>
-      {{achievements}}
-    </section>
-    
+
     <section>
       <h2>Skills</h2>
       {{skills}}
     </section>
   </div>
-</div>`}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-        rows={20}
-        required
-      />
-      <div className="text-xs text-gray-500 mt-1">
-        <p className="mb-2">Write your complete HTML/CSS template code with placeholders for dynamic content</p>
-        <div className="bg-gray-50 p-3 rounded border">
-          <p className="font-semibold mb-2">📝 Available Placeholders:</p>
-          
-          <div className="space-y-3">
-            <div>
-              <p className="font-medium text-sm text-gray-800 mb-1">👤 Personal Information (Single Values):</p>
-              <div className="flex flex-wrap gap-1 text-xs">
-                <code className="bg-blue-100 px-2 py-1 rounded">{"{{fullName}}"}</code>
-                <code className="bg-blue-100 px-2 py-1 rounded">{"{{jobTitle}}"}</code>
-                <code className="bg-blue-100 px-2 py-1 rounded">{"{{email}}"}</code>
-                <code className="bg-blue-100 px-2 py-1 rounded">{"{{phoneNumber}}"}</code>
-                <code className="bg-blue-100 px-2 py-1 rounded">{"{{address}}"}</code>
-                <code className="bg-blue-100 px-2 py-1 rounded">{"{{professionalSummary}}"}</code>
-                <code className="bg-blue-100 px-2 py-1 rounded">{"{{skills}}"}</code>
-              </div>
-            </div>
-            
-            <div>
-              <p className="font-medium text-sm text-gray-800 mb-1">📋 Array Fields (Auto-formatted HTML):</p>
-              <div className="space-y-2">
-                <div className="bg-white p-2 rounded border-l-4 border-green-400">
-                  <p className="text-xs font-medium text-green-800">{"{{workExperience}}"}</p>
-                  <p className="text-xs text-gray-600">Generates professional work experience cards with job titles, companies, dates, and descriptions</p>
-                </div>
-                <div className="bg-white p-2 rounded border-l-4 border-green-400">
-                  <p className="text-xs font-medium text-green-800">{"{{projects}}"}</p>
-                  <p className="text-xs text-gray-600">Creates project cards with tech tags, descriptions, links, and dates</p>
-                </div>
-                <div className="bg-white p-2 rounded border-l-4 border-green-400">
-                  <p className="text-xs font-medium text-green-800">{"{{education}}"}</p>
-                  <p className="text-xs text-gray-600">Formats education entries with degrees, institutions, and graduation years</p>
-                </div>
-                <div className="bg-white p-2 rounded border-l-4 border-green-400">
-                  <p className="text-xs font-medium text-green-800">{"{{certificates}}"}</p>
-                  <p className="text-xs text-gray-600">Creates certificate items with verification links and credential IDs</p>
-                </div>
-                <div className="bg-white p-2 rounded border-l-4 border-green-400">
-                  <p className="text-xs font-medium text-green-800">{"{{languages}}"}</p>
-                  <p className="text-xs text-gray-600">Shows language proficiency levels in a clean format</p>
-                </div>
-                <div className="bg-white p-2 rounded border-l-4 border-green-400">
-                  <p className="text-xs font-medium text-green-800">{"{{achievements}}"}</p>
-                  <p className="text-xs text-gray-600">Displays achievements with titles, descriptions, and dates</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
-            <p className="text-xs font-medium text-yellow-800 mb-1">💡 Pro Tips:</p>
-            <ul className="text-xs text-yellow-700 space-y-1">
-              <li>• Array fields automatically generate professional HTML - no manual formatting needed!</li>
-              <li>• Empty sections are automatically hidden from the final CV</li>
-              <li>• Use CSS classes like <code>.experience-card</code>, <code>.project-card</code> for custom styling</li>
-              <li>• All placeholders are case-sensitive and must use double curly braces</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
+</div>`;
 
-    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-      <h5 className="font-medium text-green-800 mb-2">🔗 Available Placeholders</h5>
-      <p className="text-green-700 text-sm mb-3">
-        All placeholders are automatically mapped to their corresponding CV data fields. No configuration needed!
-      </p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <h6 className="font-medium text-gray-800 mb-2 text-sm">👤 Personal Information</h6>
-          <div className="space-y-2">
-            {Object.entries(formData.field_mappings).slice(0, 5).map(([placeholder, field]) => (
-              <div key={placeholder} className="flex items-center justify-between p-2 bg-gray-50 rounded border text-xs">
-                <span className="font-mono bg-blue-100 px-2 py-1 rounded">{placeholder}</span>
-                <span className="text-gray-400 mx-1">→</span>
-                <span className="text-gray-700">{field}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <h6 className="font-medium text-gray-800 mb-2 text-sm">💼 Professional Content</h6>
-          <div className="space-y-2">
-            {Object.entries(formData.field_mappings).slice(5, 10).map(([placeholder, field]) => (
-              <div key={placeholder} className="flex items-center justify-between p-2 bg-gray-50 rounded border text-xs">
-                <span className="font-mono bg-blue-100 px-2 py-1 rounded">{placeholder}</span>
-                <span className="text-gray-400 mx-1">→</span>
-                <span className="text-gray-700">{field}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div>
-          <h6 className="font-medium text-gray-800 mb-2 text-sm">📋 Additional Fields</h6>
-          <div className="space-y-2">
-            {Object.entries(formData.field_mappings).slice(10, 14).map(([placeholder, field]) => (
-              <div key={placeholder} className="flex items-center justify-between p-2 bg-gray-50 rounded border text-xs">
-                <span className="font-mono bg-blue-100 px-2 py-1 rounded">{placeholder}</span>
-                <span className="text-gray-400 mx-1">→</span>
-                <span className="text-gray-700">{field}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <h6 className="font-medium text-gray-800 mb-2 text-sm">🎨 Styling Variables</h6>
-          <div className="space-y-2">
-            {Object.entries(formData.field_mappings).slice(14).map(([placeholder, field]) => (
-              <div key={placeholder} className="flex items-center justify-between p-2 bg-gray-50 rounded border text-xs">
-                <span className="font-mono bg-blue-100 px-2 py-1 rounded">{placeholder}</span>
-                <span className="text-gray-400 mx-1">→</span>
-                <span className="text-gray-700">{field}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-      <h5 className="font-medium text-green-800 mb-2">✅ What's Next?</h5>
-      <p className="text-green-700 text-sm">
-        After writing your HTML/CSS code, click "Next" to preview your template in Step 3.
-      </p>
-    </div>
-  </div>
+const FIELD_MAPPINGS: Record<string, string> = Object.fromEntries(
+  [
+    'fullName',
+    'jobTitle',
+    'email',
+    'phoneNumber',
+    'address',
+    'professionalSummary',
+    'workExperience',
+    'education',
+    'skills',
+    'projects',
+    'certificates',
+    'languages',
+    'interests',
+    'references',
+    ...STYLE_PLACEHOLDERS,
+  ].map((key) => [`{{${key}}}`, key]),
 );
 
-const Step3Preview = ({ formData }: { formData: CvTemplateFormData }) => (
-  <div className="space-y-6">
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <h4 className="text-lg font-semibold text-blue-800 mb-2">👀 Step 3: Preview & Test</h4>
-      <p className="text-blue-700 text-sm">
-        Preview your template to see how it will look with actual CV data. This helps you verify that all placeholders are working correctly.
-      </p>
-    </div>
+const initialForm: CvTemplateFormData = {
+  name: '',
+  description: '',
+  category: 'general',
+  ats_score: 8,
+  html_content: DEFAULT_HTML,
+  json_config: {
+    layout: 'single-column',
+    sections: ['header', 'summary', 'experience', 'education', 'skills'],
+    features: ['responsive', 'ats-friendly', 'print-ready'],
+  },
+  customizable_options: STYLE_PLACEHOLDERS,
+  thumbnail: null,
+  field_mappings: FIELD_MAPPINGS,
+};
 
-    {formData.html_content ? (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h5 className="font-medium text-gray-800 mb-3">Template Preview</h5>
-        <div className="bg-white border border-gray-300 rounded p-4 max-h-96 overflow-y-auto">
-          <div dangerouslySetInnerHTML={{ __html: formData.html_content }} />
-        </div>
-        <p className="text-gray-600 text-xs mt-2">
-          This is a preview of your template. The placeholders will be replaced with actual CV data when used.
-        </p>
-      </div>
-    ) : (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h5 className="font-medium text-red-800 mb-2">⚠️ No Template Code</h5>
-        <p className="text-red-700 text-sm">
-          Please go back to Step 2 and add your HTML/CSS template code to see the preview.
-        </p>
-      </div>
-    )}
+/** Sample values so the preview looks like a real CV instead of raw placeholders. */
+const SAMPLE_DATA: Record<string, string> = {
+  fullName: 'Jane Doe',
+  jobTitle: 'Senior Software Engineer',
+  email: 'jane.doe@example.com',
+  phoneNumber: '+1 (555) 123-4567',
+  address: 'San Francisco, CA',
+  professionalSummary: 'Engineer with 7+ years of experience building reliable web platforms.',
+  workExperience: '<div class="experience-card"><div class="item-title">Lead Engineer · Tech Corp</div><div class="item-date">2020 – Present</div></div>',
+  education: '<div class="education-item"><div class="item-title">BSc Computer Science</div><div class="item-subtitle">University of Technology</div></div>',
+  skills: 'JavaScript, React, Node.js, SQL',
+  projects: '',
+  certificates: '',
+  languages: '',
+  achievements: '',
+  interests: '',
+  references: '',
+  primaryColor: '#1d4ed8',
+  secondaryColor: '#0f766e',
+  fontFamily: 'Arial, sans-serif',
+  fontSize: '14px',
+};
 
-    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-      <h5 className="font-medium text-green-800 mb-2">✅ What's Next?</h5>
-      <p className="text-green-700 text-sm">
-        If your preview looks good, click "Next" to proceed to the final step where you'll review and save your template.
-      </p>
-    </div>
-  </div>
-);
+const fillSample = (html: string) => html.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key: string) => SAMPLE_DATA[key] ?? match);
 
-const Step4Review = ({ formData }: { formData: CvTemplateFormData }) => (
-  <div className="space-y-6">
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <h4 className="text-lg font-semibold text-blue-800 mb-2">🎯 Step 4: Final Review & Save</h4>
-      <p className="text-blue-700 text-sm">
-        Review all your template details before saving. Make sure everything looks correct!
-      </p>
-    </div>
+const primaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const secondaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-60';
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-4">
-        <h5 className="font-medium text-gray-800">Template Details</h5>
-        <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-          <div><strong>Name:</strong> {formData.name}</div>
-          <div><strong>Category:</strong> {formData.category}</div>
-          <div><strong>ATS Score:</strong> {formData.ats_score}/10</div>
-          <div><strong>Description:</strong> {formData.description || 'No description provided'}</div>
-        </div>
-      </div>
-      
-      <div className="space-y-4">
-        <h5 className="font-medium text-gray-800">Template Code</h5>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <div className="text-sm text-gray-600">
-            {formData.html_content ? (
-              <div>
-                <div className="font-mono text-xs bg-white p-2 rounded border max-h-32 overflow-y-auto">
-                  {formData.html_content.substring(0, 200)}...
-                </div>
-                <p className="mt-2 text-xs">Template code length: {formData.html_content.length} characters</p>
-              </div>
-            ) : (
-              <p className="text-red-600">No template code provided</p>
-            )}
-          </div>
-        </div>
-      </div>
+function Callout({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex gap-3 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
+      <Lightbulb className="mt-0.5 h-4 w-4 flex-none text-blue-600" aria-hidden="true" />
+      <div>{children}</div>
     </div>
+  );
+}
 
-    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-      <h5 className="font-medium text-green-800 mb-2">✅ Ready to Save</h5>
-      <p className="text-green-700 text-sm">
-        Click "Save Template" to create your new CV template. You can always edit it later from the templates list.
-      </p>
-    </div>
-  </div>
-);
+function StepIndicator({ currentStep }: { currentStep: number }) {
+  return (
+    <ol className="grid gap-2 sm:grid-cols-4" aria-label="Progress">
+      {STEPS.map((step, index) => {
+        const number = index + 1;
+        const done = number < currentStep;
+        const current = number === currentStep;
+        return (
+          <li
+            key={step.title}
+            aria-current={current ? 'step' : undefined}
+            className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${current ? 'border-blue-300 bg-blue-50' : 'border-slate-200 bg-white'}`}
+          >
+            <span
+              className={`flex h-7 w-7 flex-none items-center justify-center rounded-full text-xs font-semibold ${
+                done ? 'bg-emerald-600 text-white' : current ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+              }`}
+            >
+              {done ? <Check className="h-4 w-4" aria-label="Completed" /> : number}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-slate-900">{step.title}</span>
+              <span className="block truncate text-xs text-slate-500">{step.description}</span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+const STEP_OF_FIELD: Partial<Record<keyof CvTemplateFormData, number>> = { name: 1, description: 1, category: 1, ats_score: 1, thumbnail: 1, html_content: 2 };
 
 export default function CvTemplateCreate() {
-  const { user } = useAuth();
+  useSEO({ title: 'Create CV Template | Admin', robots: 'noindex, nofollow' });
   const navigate = useNavigate();
-  
-  // Step-by-step wizard state
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [totalSteps] = useState(4);
-  const [formData, setFormData] = useState<CvTemplateFormData>({
-    name: '',
-    description: '',
-    category: 'general',
-    ats_score: 8,
-    html_content: `<div class="cv-template">
-  <style>
-    .cv-template { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; }
-    .header { background: {{primaryColor}}; color: white; padding: 20px; }
-    .name { font-size: 24px; font-weight: bold; }
-    .job-title { font-size: 16px; margin-top: 5px; }
-  </style>
-  
-  <div class="header">
-    <div class="name">{{fullName}}</div>
-    <div class="job-title">{{jobTitle}}</div>
-    <div class="contact">
-      <span>{{email}}</span> | <span>{{phoneNumber}}</span> | <span>{{address}}</span>
-    </div>
-  </div>
-  
-  <div class="content">
-    <section>
-      <h2>Professional Summary</h2>
-      <p>{{professionalSummary}}</p>
-    </section>
-    
-    <section>
-      <h2>Work Experience</h2>
-      {{workExperience}}
-    </section>
-    
-    <section>
-      <h2>Education</h2>
-      {{education}}
-    </section>
-    
-    <section>
-      <h2>Skills</h2>
-      {{skills}}
-    </section>
-  </div>
-</div>`,
-    json_config: {
-      layout: 'single-column',
-      sections: ['header', 'summary', 'experience', 'education', 'skills'],
-      features: ['responsive', 'ats-friendly', 'print-ready']
+  const [formData, setFormData] = useState<CvTemplateFormData>(initialForm);
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const update = <K extends keyof CvTemplateFormData>(key: K, value: CvTemplateFormData[K]) => setFormData((prev) => ({ ...prev, [key]: value }));
+
+  const validateStep = (step: number): FormErrors => {
+    const next: FormErrors = {};
+    if (step >= 1) {
+      if (!formData.name.trim()) next.name = 'Template name is required.';
+      if (!Number.isInteger(formData.ats_score) || formData.ats_score < 1 || formData.ats_score > 10) next.ats_score = 'ATS score must be a whole number from 1 to 10.';
+      if (formData.thumbnail && formData.thumbnail.size > 2 * 1024 * 1024) next.thumbnail = 'Thumbnail must be 2MB or smaller.';
+    }
+    if (step >= 2 && !formData.html_content.trim()) next.html_content = 'HTML content is required.';
+    return next;
+  };
+
+  const goToFirstErrorStep = (errs: FormErrors) => {
+    const steps = (Object.keys(errs) as (keyof CvTemplateFormData)[]).map((key) => STEP_OF_FIELD[key] ?? currentStep);
+    if (steps.length) setCurrentStep(Math.min(...steps));
+  };
+
+  const handleNextStep = () => {
+    const next = validateStep(currentStep);
+    setErrors(next);
+    if (Object.keys(next).length) {
+      goToFirstErrorStep(next);
+      return;
+    }
+    setCurrentStep((s) => Math.min(s + 1, STEPS.length));
+  };
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const body = new FormData();
+      body.append('name', formData.name.trim());
+      body.append('description', formData.description);
+      body.append('category', formData.category);
+      body.append('ats_score', String(formData.ats_score));
+      body.append('html_content', formData.html_content);
+      body.append('json_config', JSON.stringify(formData.json_config));
+      body.append('customizable_options', JSON.stringify(formData.customizable_options));
+      body.append('field_mappings', JSON.stringify(formData.field_mappings));
+      if (formData.thumbnail) body.append('thumbnail', formData.thumbnail);
+      const { data } = await apiClient.post('/admin/cv-templates-temp', body, { headers: { 'Content-Type': 'multipart/form-data' } });
+      if (!data?.success) throw Object.assign(new Error(data?.message || 'Failed to save template'), { response: { data } });
+      return data;
     },
-    customizable_options: ['primaryColor', 'secondaryColor', 'fontFamily', 'fontSize'],
-    thumbnail: null,
-    field_mappings: {
-      '{{fullName}}': 'fullName',
-      '{{jobTitle}}': 'jobTitle',
-      '{{email}}': 'email',
-      '{{phoneNumber}}': 'phoneNumber',
-      '{{address}}': 'address',
-      '{{professionalSummary}}': 'professionalSummary',
-      '{{workExperience}}': 'workExperience',
-      '{{education}}': 'education',
-      '{{skills}}': 'skills',
-      '{{projects}}': 'projects',
-      '{{certificates}}': 'certificates',
-      '{{languages}}': 'languages',
-      '{{interests}}': 'interests',
-      '{{references}}': 'references',
-      '{{primaryColor}}': 'primaryColor',
-      '{{secondaryColor}}': 'secondaryColor',
-      '{{fontFamily}}': 'fontFamily',
-      '{{fontSize}}': 'fontSize'
+    onSuccess: () => {
+      addToast({ type: 'success', title: 'Template created', description: `"${formData.name.trim()}" is now available.` });
+      queryClient.invalidateQueries({ queryKey: ['admin-cv-templates'] });
+      navigate('/admin/cv-templates');
+    },
+    onError: (err) => {
+      const raw = (err as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors ?? {};
+      const fieldErrors: FormErrors = {};
+      for (const [key, messages] of Object.entries(raw)) fieldErrors[key as keyof CvTemplateFormData] = Array.isArray(messages) ? messages[0] : String(messages);
+      setErrors(fieldErrors);
+      goToFirstErrorStep(fieldErrors);
+      addToast({ type: 'error', title: 'Could not create template', description: apiErrorMessage(err) });
     },
   });
 
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Step navigation functions
-  const handleNextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+  const handleSave = () => {
+    const next = validateStep(STEPS.length);
+    setErrors(next);
+    if (Object.keys(next).length) {
+      goToFirstErrorStep(next);
+      return;
     }
+    createMutation.mutate();
   };
-
-  const handlePrevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleCancel = () => {
-    navigate('/admin/cv-templates');
-  };
-
-  const handleSubmit = async () => {
-    setError('');
-    setSuccess('');
-    setIsSubmitting(true);
-
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('category', formData.category);
-      formDataToSend.append('ats_score', formData.ats_score.toString());
-      formDataToSend.append('html_content', formData.html_content);
-      formDataToSend.append('json_config', JSON.stringify(formData.json_config));
-      formDataToSend.append('customizable_options', JSON.stringify(formData.customizable_options));
-      formDataToSend.append('field_mappings', JSON.stringify(formData.field_mappings));
-      
-      if (formData.thumbnail) {
-        formDataToSend.append('thumbnail', formData.thumbnail);
-      }
-
-        const response = await apiClient.post('/admin/cv-templates-temp', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      const result = response.data;
-
-      if (result.success) {
-        setSuccess('Template created successfully!');
-        setTimeout(() => {
-          navigate('/admin/cv-templates');
-        }, 2000);
-      } else {
-        setError(result.message || 'Failed to save template');
-        if (result.errors) {
-          console.error('Validation errors:', result.errors);
-          // Display specific validation errors
-          const errorMessages = Object.values(result.errors).flat().join('\n');
-          setError(prev => prev + '\n' + errorMessages);
-        }
-      }
-    } catch (error) {
-      console.error('Error saving template:', error);
-      setError('Failed to save template');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You need admin privileges to access this page.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto py-8 px-4">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Create CV Template"
+        description="Design a custom CV template for the CV builder in four steps."
+        actions={
+          <Link to="/admin/cv-templates" className={secondaryBtn}>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to templates
+          </Link>
+        }
+      />
+
+      <StepIndicator currentStep={currentStep} />
+
+      <AdminCard title={`Step ${currentStep} of ${STEPS.length}: ${STEPS[currentStep - 1].title}`}>
+        <div className="space-y-5">
+          {currentStep === 1 && (
+            <>
+              <Callout>This information helps users understand what the template is designed for.</Callout>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Template name" required hint="A descriptive name such as “Modern Professional”." error={errors.name}>
+                  {(props) => (
+                    <input
+                      {...props}
+                      type="text"
+                      maxLength={255}
+                      className={inputClass}
+                      placeholder="e.g., Modern Professional"
+                      value={formData.name}
+                      onChange={(e) => update('name', e.target.value)}
+                    />
+                  )}
+                </Field>
+                <Field label="Category" required error={errors.category}>
+                  {(props) => (
+                    <select {...props} className={inputClass} value={formData.category} onChange={(e) => update('category', e.target.value)}>
+                      {CATEGORY_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+              </div>
+              <Field label="Description" hint="When should users pick this template?" error={errors.description}>
+                {(props) => (
+                  <textarea
+                    {...props}
+                    rows={4}
+                    className={inputClass}
+                    placeholder="Describe the template's features, target audience and unique characteristics..."
+                    value={formData.description}
+                    onChange={(e) => update('description', e.target.value)}
+                  />
+                )}
+              </Field>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="ATS score (1–10)" required hint="10 = perfect for applicant tracking systems." error={errors.ats_score}>
+                  {(props) => (
+                    <input
+                      {...props}
+                      type="number"
+                      min={1}
+                      max={10}
+                      className={inputClass}
+                      value={Number.isNaN(formData.ats_score) ? '' : formData.ats_score}
+                      onChange={(e) => update('ats_score', parseInt(e.target.value, 10))}
+                    />
+                  )}
+                </Field>
+                <Field label="Thumbnail image" hint="Optional. JPG, PNG or GIF up to 2MB." error={errors.thumbnail}>
+                  {(props) => (
+                    <input
+                      {...props}
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif"
+                      className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-slate-200"
+                      onChange={(e) => update('thumbnail', e.target.files?.[0] || null)}
+                    />
+                  )}
+                </Field>
+              </div>
+            </>
+          )}
+
+          {currentStep === 2 && (
+            <>
+              <Callout>
+                Use semantic HTML, put CSS inside a <code>&lt;style&gt;</code> tag and use placeholders like <code>{'{{fullName}}'}</code> for dynamic content. Array fields generate
+                formatted HTML automatically and empty sections are hidden.
+              </Callout>
+              <Field label="HTML/CSS template code" required error={errors.html_content}>
+                {(props) => (
+                  <textarea
+                    {...props}
+                    rows={20}
+                    spellCheck={false}
+                    className={`${inputClass} font-mono text-xs`}
+                    value={formData.html_content}
+                    onChange={(e) => update('html_content', e.target.value)}
+                  />
+                )}
+              </Field>
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Single values</p>
+                  <div className="flex flex-wrap gap-1">
+                    {SINGLE_PLACEHOLDERS.map((key) => (
+                      <code key={key} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{`{{${key}}}`}</code>
+                    ))}
+                  </div>
+                  <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Styling variables</p>
+                  <div className="flex flex-wrap gap-1">
+                    {STYLE_PLACEHOLDERS.map((key) => (
+                      <code key={key} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{`{{${key}}}`}</code>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3 lg:col-span-2">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Array fields (auto-formatted HTML)</p>
+                  <dl className="grid gap-2 sm:grid-cols-2">
+                    {ARRAY_PLACEHOLDERS.map(([key, description]) => (
+                      <div key={key}>
+                        <dt>
+                          <code className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-800">{`{{${key}}}`}</code>
+                        </dt>
+                        <dd className="mt-0.5 text-xs text-slate-600">{description}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <p className="mt-3 text-xs text-slate-500">
+                    Style generated items with classes such as <code>.experience-card</code>, <code>.project-card</code>, <code>.item-title</code> and <code>.item-date</code>. Placeholders are
+                    case-sensitive.
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {currentStep === 3 && (
+            <>
+              <Callout>The preview fills placeholders with sample data. It is rendered in an isolated frame so template styles do not affect the admin.</Callout>
+              {formData.html_content.trim() ? (
+                <iframe
+                  title="CV template preview"
+                  sandbox=""
+                  srcDoc={fillSample(formData.html_content)}
+                  className="h-[28rem] w-full rounded-lg border border-slate-200 bg-white"
+                />
+              ) : (
+                <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  No template code yet. Go back to step 2 and add your HTML/CSS.
+                </p>
+              )}
+            </>
+          )}
+
+          {currentStep === 4 && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <dl className="space-y-2 rounded-lg border border-slate-200 p-4 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-slate-500">Name</dt>
+                  <dd className="text-right font-medium text-slate-900">{formData.name || '—'}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-slate-500">Category</dt>
+                  <dd className="text-right font-medium capitalize text-slate-900">{formData.category}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-slate-500">ATS score</dt>
+                  <dd className="text-right font-medium text-slate-900">{formData.ats_score}/10</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-slate-500">Thumbnail</dt>
+                  <dd className="truncate text-right font-medium text-slate-900">{formData.thumbnail?.name ?? 'None'}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Description</dt>
+                  <dd className="mt-1 text-slate-900">{formData.description || 'No description provided'}</dd>
+                </div>
+              </dl>
+              <div className="rounded-lg border border-slate-200 p-4 text-sm">
+                <p className="text-slate-500">Template code</p>
+                <pre className="mt-2 max-h-40 overflow-auto rounded bg-slate-50 p-2 font-mono text-xs text-slate-700">{formData.html_content.substring(0, 400)}</pre>
+                <p className="mt-2 text-xs text-slate-500">{formData.html_content.length.toLocaleString()} characters</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Create New CV Template</h1>
-              <p className="text-gray-600 mt-1">Design a custom CV template for your users</p>
+              {currentStep > 1 && (
+                <button type="button" className={secondaryBtn} onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}>
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Previous
+                </button>
+              )}
             </div>
-            <Button
-              onClick={handleCancel}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              ← Back to Templates
-            </Button>
-          </div>
-
-          {/* Step Indicator */}
-          <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
-        </div>
-
-        {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="space-y-6">
-            {/* Error/Success Messages */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">Error</h3>
-                    <div className="mt-2 text-sm text-red-700">{error}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {success && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-green-800">Success</h3>
-                    <div className="mt-2 text-sm text-green-700">{success}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step Content */}
-            {currentStep === 1 && <Step1BasicInfo formData={formData} setFormData={setFormData} />}
-            {currentStep === 2 && <Step2HTMLContent formData={formData} setFormData={setFormData} />}
-            {currentStep === 3 && <Step3Preview formData={formData} />}
-            {currentStep === 4 && <Step4Review formData={formData} />}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between pt-6 border-t border-gray-200">
-              <div>
-                {currentStep > 1 && (
-                  <Button
-                    type="button"
-                    onClick={handlePrevStep}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    ← Previous
-                  </Button>
-                )}
-              </div>
-              
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  onClick={handleCancel}
-                  variant="outline"
-                >
-                  Cancel
-                </Button>
-                
-                {currentStep < totalSteps ? (
-                  <Button
-                    type="button"
-                    onClick={handleNextStep}
-                    className="flex items-center gap-2"
-                  >
-                    Next →
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="flex items-center gap-2"
-                  >
-                    {isSubmitting ? 'Saving...' : 'Save Template'}
-                  </Button>
-                )}
-              </div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              <Link to="/admin/cv-templates" className={secondaryBtn}>
+                Cancel
+              </Link>
+              {currentStep < STEPS.length ? (
+                <button type="button" className={primaryBtn} onClick={handleNextStep}>
+                  Next <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+              ) : (
+                <button type="button" className={primaryBtn} onClick={handleSave} disabled={createMutation.isPending}>
+                  {createMutation.isPending ? 'Saving…' : 'Save template'}
+                </button>
+              )}
             </div>
           </div>
         </div>
-      </div>
+      </AdminCard>
     </div>
   );
 }

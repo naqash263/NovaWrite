@@ -1,264 +1,253 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Pencil, Plus, Tags as TagsIcon, Trash2 } from 'lucide-react';
 import apiClient from '../../api/axios';
 import { useSEO } from '../../utils/seo';
+import { useToast } from '../../hooks/use-toast';
+import { useConfirm } from '../../hooks/use-confirm';
+import { AdminCard, AdminPageHeader, Badge, EmptyState, ErrorState, Field, IconButton, LoadingState, Modal, SearchInput, TableShell, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage, asList } from '../../components/admin/utils';
 
 interface Tag {
   id: number;
   name: string;
   slug: string;
-  description?: string;
-  color?: string;
-  created_at: string;
-  updated_at: string;
+  description?: string | null;
+  color?: string | null;
+  posts_count?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
+type FormErrors = Partial<Record<'name' | 'description' | 'color', string>>;
+
+const DEFAULT_COLOR = '#3B82F6';
+const HEX = /^#[0-9A-Fa-f]{6}$/;
+
+const primaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const secondaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-60';
+
+function serverErrors(error: unknown): FormErrors {
+  const errors = (error as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors ?? {};
+  return { name: errors.name?.[0], description: errors.description?.[0], color: errors.color?.[0] };
+}
+
+const formatDate = (value?: string) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+};
+
 export default function Tags() {
-  const [showForm, setShowForm] = useState(false);
-  const [editingTag, setEditingTag] = useState<Tag | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    color: '#3B82F6',
-  });
-
-  useSEO({ title: 'Tags Management | Admin' });
-
+  useSEO({ title: 'Tags Management | Admin', robots: 'noindex, nofollow' });
   const queryClient = useQueryClient();
+  const { addToast } = useToast();
+  const { confirm } = useConfirm();
 
-  // Fetch tags
-  const { data: tags = [], isLoading } = useQuery({
+  const [search, setSearch] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
+  const [formData, setFormData] = useState({ name: '', description: '', color: DEFAULT_COLOR });
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const { data: tags = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['tags'],
-    queryFn: async () => {
-      const response = await apiClient.get('/tags');
-      // Handle both old format (array) and new format (object with data property)
-      return Array.isArray(response.data) ? response.data : response.data.data || [];
-    },
+    queryFn: async () => asList<Tag>((await apiClient.get('/tags')).data),
   });
 
-  // Create tag mutation
-  const createMutation = useMutation({
-    mutationFn: async (data: Partial<Tag>) => {
-      const response = await apiClient.post('/tags', data);
-      return response.data;
-    },
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return tags;
+    return tags.filter((t) => [t.name, t.slug, t.description].some((v) => v?.toLowerCase().includes(term)));
+  }, [tags, search]);
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: typeof formData) => (editingTag ? apiClient.put(`/tags/${editingTag.id}`, payload) : apiClient.post('/tags', payload)),
     onSuccess: () => {
+      addToast({ type: 'success', title: editingTag ? 'Tag updated' : 'Tag created' });
+      closeModal();
       queryClient.invalidateQueries({ queryKey: ['tags'] });
-      resetForm();
+    },
+    onError: (err) => {
+      setErrors(serverErrors(err));
+      addToast({ type: 'error', title: 'Could not save tag', description: apiErrorMessage(err) });
     },
   });
 
-  // Update tag mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<Tag> }) => {
-      const response = await apiClient.put(`/tags/${id}`, data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
-      resetForm();
-    },
-  });
-
-  // Delete tag mutation
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiClient.delete(`/tags/${id}`);
-    },
+    mutationFn: (id: number) => apiClient.delete(`/tags/${id}`),
     onSuccess: () => {
+      addToast({ type: 'success', title: 'Tag deleted' });
       queryClient.invalidateQueries({ queryKey: ['tags'] });
     },
+    onError: (err) => addToast({ type: 'error', title: 'Could not delete tag', description: apiErrorMessage(err) }),
   });
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      color: '#3B82F6',
-    });
+  const openCreate = () => {
     setEditingTag(null);
-    setShowForm(false);
+    setFormData({ name: '', description: '', color: DEFAULT_COLOR });
+    setErrors({});
+    setModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (editingTag) {
-      updateMutation.mutate({
-        id: editingTag.id,
-        data: formData,
-      });
-    } else {
-      createMutation.mutate(formData);
-    }
-  };
-
-  const handleEdit = (tag: Tag) => {
-    setFormData({
-      name: tag.name,
-      description: tag.description || '',
-      color: tag.color || '#3B82F6',
-    });
+  const openEdit = (tag: Tag) => {
     setEditingTag(tag);
-    setShowForm(true);
+    setFormData({ name: tag.name ?? '', description: tag.description ?? '', color: tag.color || DEFAULT_COLOR });
+    setErrors({});
+    setModalOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this tag?')) {
-      deleteMutation.mutate(id);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-      </div>
-    );
+  function closeModal() {
+    setModalOpen(false);
+    setEditingTag(null);
+    setErrors({});
   }
 
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const next: FormErrors = {};
+    if (!formData.name.trim()) next.name = 'Tag name is required.';
+    if (formData.color && !HEX.test(formData.color)) next.color = 'Use a hex colour such as #3B82F6.';
+    setErrors(next);
+    if (Object.keys(next).length) return;
+    saveMutation.mutate({ ...formData, name: formData.name.trim() });
+  };
+
+  const handleDelete = async (tag: Tag) => {
+    const ok = await confirm({ title: 'Delete tag', message: `Delete the tag "${tag.name}"? It will be removed from all posts.`, confirmText: 'Delete', type: 'danger' });
+    if (ok) deleteMutation.mutate(tag.id);
+  };
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tags Management</h1>
-          <p className="text-gray-600 mt-1">Organize content with tags</p>
-        </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Add Tag
-        </button>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Tags"
+        description="Label posts with tags so readers can find related content."
+        actions={
+          <button type="button" className={primaryBtn} onClick={openCreate}>
+            <Plus className="h-4 w-4" aria-hidden="true" /> Add tag
+          </button>
+        }
+      />
 
-      {/* Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
-              {editingTag ? 'Edit Tag' : 'Add New Tag'}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tag Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Color
-                </label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                >
-                  {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </form>
+      <AdminCard
+        padded={false}
+        title="All tags"
+        description={isLoading ? undefined : `${tags.length} total`}
+        actions={
+          <div className="w-full sm:w-64">
+            <SearchInput label="Search tags" placeholder="Search tags…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-        </div>
-      )}
-
-      {/* Tags List */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        {tags.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🏷️</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No tags yet</h3>
-            <p className="text-gray-500 mb-6">Create your first tag to get started.</p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Add Tag
-            </button>
-          </div>
+        }
+      >
+        {isLoading ? (
+          <LoadingState label="Loading tags…" />
+        ) : isError ? (
+          <ErrorState message={apiErrorMessage(error)} onRetry={() => refetch()} />
+        ) : tags.length === 0 ? (
+          <EmptyState
+            icon={TagsIcon}
+            title="No tags yet"
+            description="Create your first tag to get started."
+            action={
+              <button type="button" className={primaryBtn} onClick={openCreate}>
+                <Plus className="h-4 w-4" aria-hidden="true" /> Add tag
+              </button>
+            }
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState title="No matching tags" description={`Nothing matches "${search}".`} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-            {tags.map((tag: Tag) => (
-              <div key={tag.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <div 
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: tag.color }}
-                  ></div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleEdit(tag)}
-                      className="text-gray-400 hover:text-blue-600 transition-colors"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => handleDelete(tag.id)}
-                      className="text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-                <h3 className="font-medium text-gray-900 mb-1">{tag.name}</h3>
-                {tag.description && (
-                  <p className="text-sm text-gray-500 mb-2">{tag.description}</p>
-                )}
-                <div className="text-xs text-gray-400">
-                  Created {new Date(tag.created_at).toLocaleDateString()}
-                </div>
-              </div>
-            ))}
-          </div>
+          <TableShell caption="Tags">
+            <thead>
+              <tr>
+                <th scope="col">Tag</th>
+                <th scope="col">Slug</th>
+                <th scope="col">Posts</th>
+                <th scope="col">Created</th>
+                <th scope="col" className="!text-right">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filtered.map((tag) => (
+                <tr key={tag.id}>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <span className="h-3 w-3 flex-none rounded-full ring-1 ring-black/10" style={{ backgroundColor: tag.color || DEFAULT_COLOR }} aria-hidden="true" />
+                      <span className="font-medium text-slate-900">{tag.name}</span>
+                    </div>
+                    {tag.description && <p className="mt-0.5 line-clamp-1 max-w-md pl-5 text-xs text-slate-500">{tag.description}</p>}
+                  </td>
+                  <td className="whitespace-nowrap font-mono text-xs text-slate-500">{tag.slug}</td>
+                  <td>
+                    <Badge tone={tag.posts_count ? 'info' : 'neutral'}>{tag.posts_count ?? 0}</Badge>
+                  </td>
+                  <td className="whitespace-nowrap text-slate-500">{formatDate(tag.created_at)}</td>
+                  <td>
+                    <div className="flex justify-end gap-1">
+                      <IconButton label={`Edit ${tag.name}`} icon={Pencil} onClick={() => openEdit(tag)} />
+                      <IconButton
+                        label={`Delete ${tag.name}`}
+                        icon={Trash2}
+                        tone="danger"
+                        disabled={deleteMutation.isPending && deleteMutation.variables === tag.id}
+                        onClick={() => handleDelete(tag)}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </TableShell>
         )}
-      </div>
+      </AdminCard>
+
+      <Modal
+        open={modalOpen}
+        onClose={closeModal}
+        title={editingTag ? 'Edit tag' : 'New tag'}
+        footer={
+          <>
+            <button type="button" className={secondaryBtn} onClick={closeModal}>
+              Cancel
+            </button>
+            <button type="submit" form="tag-form" className={primaryBtn} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Saving…' : editingTag ? 'Save changes' : 'Create tag'}
+            </button>
+          </>
+        }
+      >
+        <form id="tag-form" onSubmit={handleSubmit} noValidate className="space-y-4">
+          <Field label="Tag name" required error={errors.name}>
+            {(props) => (
+              <input {...props} type="text" maxLength={255} className={inputClass} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            )}
+          </Field>
+          <Field label="Description" error={errors.description}>
+            {(props) => (
+              <textarea {...props} rows={3} className={inputClass} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+            )}
+          </Field>
+          <Field label="Colour" hint="Hex value, e.g. #3B82F6" error={errors.color}>
+            {(props) => (
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  aria-label="Pick colour"
+                  value={HEX.test(formData.color) ? formData.color : DEFAULT_COLOR}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  className="h-10 w-12 flex-none cursor-pointer rounded-lg border border-slate-300 bg-white p-1"
+                />
+                <input {...props} type="text" className={inputClass} value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} />
+              </div>
+            )}
+          </Field>
+        </form>
+      </Modal>
     </div>
   );
 }
-
-
-
-
-
-
