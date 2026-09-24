@@ -1,372 +1,274 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-interface JWTParts {
-  header: any;
-  payload: any;
+type Json = Record<string, unknown>;
+
+interface Decoded {
+  header: Json;
+  payload: Json | null;
+  payloadText?: string;
   signature: string;
-  headerRaw: string;
-  payloadRaw: string;
+  encrypted: boolean;
 }
 
+/** Decodes one Base64URL segment (RFC 7515: '-' and '_' alphabet, padding optional) to UTF-8 text. */
+function base64UrlDecode(segment: string, part: string): string {
+  if (!/^[A-Za-z0-9_-]*={0,2}$/.test(segment)) {
+    const bad = segment.match(/[^A-Za-z0-9_=-]/)?.[0];
+    throw new Error(`The ${part} is not valid Base64URL${bad ? ` (unexpected "${bad}")` : ''}.`);
+  }
+  const b64 = segment.replace(/=+$/, '').replace(/-/g, '+').replace(/_/g, '/');
+  if (b64.length % 4 === 1) throw new Error(`The ${part} has an invalid Base64URL length. The token may be truncated.`);
+  const binary = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    throw new Error(`The ${part} is not UTF-8 text.`);
+  }
+}
+
+function base64UrlEncode(text: string) {
+  const bytes = new TextEncoder().encode(text);
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function parseJsonObject(text: string, part: string): Json {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    throw new Error(`The ${part} decodes to text that is not valid JSON.`);
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`The ${part} must be a JSON object.`);
+  return value as Json;
+}
+
+function decodeToken(raw: string): Decoded {
+  const token = raw.trim().replace(/^Bearer\s+/i, '').replace(/\s+/g, '');
+  const parts = token.split('.');
+  if (parts.length === 5) {
+    const header = parseJsonObject(base64UrlDecode(parts[0], 'header'), 'header');
+    return { header, payload: null, signature: '', encrypted: true };
+  }
+  if (parts.length !== 3) {
+    throw new Error(`A JWT has 3 parts separated by dots (header.payload.signature); this input has ${parts.length}.`);
+  }
+  const header = parseJsonObject(base64UrlDecode(parts[0], 'header'), 'header');
+  const payloadText = base64UrlDecode(parts[1], 'payload');
+  let payload: Json | null = null;
+  try {
+    payload = parseJsonObject(payloadText, 'payload');
+  } catch {
+    // Some JWS payloads are not JSON; show the raw text instead.
+  }
+  return { header, payload, payloadText, signature: parts[2], encrypted: false };
+}
+
+function sampleToken() {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = { sub: '1234567890', name: 'José Müller ✓', email: 'jose@example.com', roles: ['editor'], iat: now, exp: now + 3600 };
+  return `${base64UrlEncode(JSON.stringify(header))}.${base64UrlEncode(JSON.stringify(payload))}.c2FtcGxlLXNpZ25hdHVyZS1ub3QtdmFsaWQ`;
+}
+
+const CLAIMS: Record<string, string> = {
+  iss: 'Issuer',
+  sub: 'Subject',
+  aud: 'Audience',
+  exp: 'Expires',
+  nbf: 'Not before',
+  iat: 'Issued at',
+  jti: 'JWT ID',
+};
+
+function relative(seconds: number, now: number) {
+  const diff = seconds - now;
+  const abs = Math.abs(diff);
+  if (abs < 10) return 'just now';
+  const [value, unit] = abs < 60 ? [abs, 'second'] : abs < 3600 ? [Math.round(abs / 60), 'minute'] : abs < 86400 ? [Math.round(abs / 3600), 'hour'] : [Math.round(abs / 86400), 'day'];
+  const label = `${value} ${unit}${value === 1 ? '' : 's'}`;
+  return diff >= 0 ? `in ${label}` : `${label} ago`;
+}
+
+function display(value: unknown) {
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value);
+}
+
+const btn = 'rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+
 export default function JWTDecoder() {
-  const [token, setToken] = useState<string>('');
-  const [decoded, setDecoded] = useState<JWTParts | null>(null);
-  const [error, setError] = useState<string>('');
+  const [token, setToken] = useState('');
+  const [notice, setNotice] = useState('');
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
 
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Math.floor(Date.now() / 1000)), 30_000);
+    return () => window.clearInterval(t);
+  }, []);
 
-  const decodeBase64 = (str: string): string => {
+  const result = useMemo((): { decoded: Decoded | null; error: string } => {
+    if (!token.trim()) return { decoded: null, error: '' };
     try {
-      // Add padding if needed
-      let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-      while (base64.length % 4) {
-        base64 += '=';
-      }
-      return decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-    } catch (err) {
-      throw new Error('Invalid Base64 encoding');
+      return { decoded: decodeToken(token), error: '' };
+    } catch (e) {
+      return { decoded: null, error: e instanceof Error ? e.message : 'Could not decode this token.' };
     }
+  }, [token]);
+
+  const flash = (msg: string) => {
+    setNotice(msg);
+    window.setTimeout(() => setNotice((n) => (n === msg ? '' : n)), 2500);
   };
 
-  const decodeJWT = () => {
-    setError('');
-    setDecoded(null);
-
-    if (!token.trim()) {
-      setError('Please enter a JWT token');
-      return;
-    }
-
-    try {
-      const parts = token.split('.');
-      if (parts.length !== 3) {
-        throw new Error('Invalid JWT format. JWT should have 3 parts separated by dots.');
-      }
-
-      const [headerRaw, payloadRaw, signature] = parts;
-
-      const header = JSON.parse(decodeBase64(headerRaw));
-      const payload = JSON.parse(decodeBase64(payloadRaw));
-
-      setDecoded({
-        header,
-        payload,
-        signature,
-        headerRaw,
-        payloadRaw,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to decode JWT token');
-      setDecoded(null);
-    }
-  };
-
-  const copyToClipboard = async (text: string) => {
+  const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-    } catch (err) {
-      console.error('Failed to copy:', err);
+      flash('Copied to clipboard.');
+    } catch {
+      flash('Copy failed. Select the text and press Ctrl+C.');
     }
   };
 
-  const formatDate = (timestamp: number): string => {
-    if (!timestamp) return 'N/A';
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleString();
-  };
+  const { decoded, error } = result;
+  const payload = decoded?.payload;
+  const exp = typeof payload?.exp === 'number' ? payload.exp : undefined;
+  const nbf = typeof payload?.nbf === 'number' ? payload.nbf : undefined;
+  const status = exp !== undefined && exp < now ? 'expired' : nbf !== undefined && nbf > now ? 'not-yet-valid' : exp !== undefined ? 'active' : null;
+  const alg = decoded ? String(decoded.header.alg ?? '') : '';
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔓 Free JWT Decoder Online
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Free JWT decoder online - no signup required. Decode JWT tokens to view header and payload instantly. Pretty print JSON, view token claims, and validate structure. Perfect for debugging and understanding JWT structure. All processing in your browser.
-        </p>
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div role="note" data-testid="jwt-warning" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <strong>Decode only – the signature is not verified.</strong> Anyone can create a token with any claims, so never trust
+        decoded values until your server has verified the signature with the correct key. Tokens are decoded in your browser and are not sent anywhere.
+      </div>
 
-        {/* Input */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            JWT Token
-          </label>
-          <textarea
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            placeholder="Paste your JWT token here (e.g., eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...)"
-            className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-          />
-          <div className="flex gap-3 mt-3">
-            <button
-              onClick={decodeJWT}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-            >
-              Decode
-            </button>
-            <button
-              onClick={() => {
-                setToken('');
-                setDecoded(null);
-                setError('');
-              }}
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm">{error}</p>
-          </div>
-        )}
-
-        {/* Decoded Results */}
-        {decoded && (
-          <div className="space-y-6">
-            {/* Header */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-900">Header</h3>
-                <button
-                  onClick={() => copyToClipboard(JSON.stringify(decoded.header, null, 2))}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  Copy
-                </button>
-              </div>
-              <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm font-mono">
-                {JSON.stringify(decoded.header, null, 2)}
-              </pre>
-            </div>
-
-            {/* Payload */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-900">Payload</h3>
-                <button
-                  onClick={() => copyToClipboard(JSON.stringify(decoded.payload, null, 2))}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  Copy
-                </button>
-              </div>
-              <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm font-mono">
-                {JSON.stringify(decoded.payload, null, 2)}
-              </pre>
-
-              {/* Payload Info */}
-              {decoded.payload && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-2">Token Information</h4>
-                  <div className="space-y-2 text-sm">
-                    {decoded.payload.iss && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Issuer (iss):</span>
-                        <span className="font-mono">{decoded.payload.iss}</span>
-                      </div>
-                    )}
-                    {decoded.payload.sub && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Subject (sub):</span>
-                        <span className="font-mono">{decoded.payload.sub}</span>
-                      </div>
-                    )}
-                    {decoded.payload.aud && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Audience (aud):</span>
-                        <span className="font-mono">{decoded.payload.aud}</span>
-                      </div>
-                    )}
-                    {decoded.payload.exp && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Expires (exp):</span>
-                        <span className="font-mono">{formatDate(decoded.payload.exp)}</span>
-                      </div>
-                    )}
-                    {decoded.payload.iat && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Issued At (iat):</span>
-                        <span className="font-mono">{formatDate(decoded.payload.iat)}</span>
-                      </div>
-                    )}
-                    {decoded.payload.nbf && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Not Before (nbf):</span>
-                        <span className="font-mono">{formatDate(decoded.payload.nbf)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Signature */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-900">Signature</h3>
-                <button
-                  onClick={() => copyToClipboard(decoded.signature)}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  Copy
-                </button>
-              </div>
-              <code className="block bg-gray-50 p-4 rounded-lg font-mono text-sm break-all">
-                {decoded.signature}
-              </code>
-              <p className="text-xs text-gray-500 mt-2">
-                Note: Signature verification requires the secret key. This tool only decodes the token structure.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">About JWT Decoder</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              JWT (JSON Web Token) is a compact, URL-safe token format used for authentication and authorization. 
-              JWTs consist of three parts: header, payload, and signature, separated by dots.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Our JWT decoder helps you decode and view the contents of JWT tokens without verifying the signature. 
-              Perfect for debugging, understanding token structure, and viewing claims.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Debug JWT tokens in development</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>View token claims and expiration</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Understand JWT structure</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Verify token payload contents</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Check token expiration dates</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Debug authentication issues</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Decode Header & Payload</h5>
-                  <p className="text-sm text-gray-600">View JWT header and payload as JSON</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Pretty Print JSON</h5>
-                  <p className="text-sm text-gray-600">Formatted JSON for easy reading</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Token Information</h5>
-                  <p className="text-sm text-gray-600">View issuer, subject, expiration, and more</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Copy to Clipboard</h5>
-                  <p className="text-sm text-gray-600">One-click copy for header, payload, or signature</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
-            <div className="space-y-4">
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What is a JWT token?</h5>
-                <p className="text-gray-700 text-sm">
-                  JWT (JSON Web Token) is a compact token format consisting of three Base64-encoded parts: header, 
-                  payload, and signature. It's commonly used for authentication and authorization in web applications.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Does this tool verify the signature?</h5>
-                <p className="text-gray-700 text-sm">
-                  No, this tool only decodes the token structure. Signature verification requires the secret key, 
-                  which should never be shared. This tool is for viewing token contents, not for verification.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What are common JWT claims?</h5>
-                <p className="text-gray-700 text-sm">
-                  Common claims include: <strong>iss</strong> (issuer), <strong>sub</strong> (subject), 
-                  <strong>aud</strong> (audience), <strong>exp</strong> (expiration), <strong>iat</strong> (issued at), 
-                  and <strong>nbf</strong> (not before).
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Is my token data secure?</h5>
-                <p className="text-gray-700 text-sm">
-                  Yes, all decoding happens locally in your browser. Your token is never sent to any server or stored 
-                  anywhere. However, be cautious when sharing decoded tokens as they may contain sensitive information.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>JWT tokens have three parts separated by dots: header.payload.signature</li>
-            <li>Check the 'exp' claim to see when the token expires</li>
-            <li>This tool does not verify signatures - use it for debugging only</li>
-            <li>All processing happens in your browser - no uploads required</li>
-            <li>Never share your JWT secret key or tokens containing sensitive data</li>
-          </ul>
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+        <label htmlFor="jwt-input" className="block text-sm font-medium text-slate-700">
+          Encoded token (JWT)
+        </label>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setToken(sampleToken())} className={`${btn} bg-slate-100 px-3 py-1 text-xs text-slate-800 hover:bg-slate-200`}>
+            Load sample
+          </button>
+          <button type="button" onClick={() => setToken('')} disabled={!token} className={`${btn} bg-slate-100 px-3 py-1 text-xs text-slate-800 hover:bg-slate-200`}>
+            Clear
+          </button>
         </div>
       </div>
+      <textarea
+        id="jwt-input"
+        value={token}
+        onChange={(e) => setToken(e.target.value)}
+        spellCheck={false}
+        autoComplete="off"
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? 'jwt-error' : undefined}
+        placeholder="Paste a token such as eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9… (a leading “Bearer ” is removed automatically)"
+        className="h-32 w-full resize-y break-all rounded-lg border border-slate-300 p-3 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      {error && (
+        <div id="jwt-error" role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+          {error}
+        </div>
+      )}
+
+      {decoded && (
+        <div className="mt-5 space-y-4">
+          {(alg.toLowerCase() === 'none' || (!decoded.encrypted && !decoded.signature)) && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+              This token is unsigned (alg “none” or empty signature). Servers must reject unsigned tokens.
+            </p>
+          )}
+          {decoded.encrypted && (
+            <p className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+              This is an encrypted token (JWE, 5 parts). Only the header can be read; the payload needs the recipient’s private key.
+            </p>
+          )}
+
+          {status && (
+            <p
+              data-testid="jwt-status"
+              className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                status === 'expired' ? 'bg-red-100 text-red-800' : status === 'not-yet-valid' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+              }`}
+            >
+              {status === 'expired' ? `Expired ${relative(exp!, now)}` : status === 'not-yet-valid' ? `Not valid until ${new Date(nbf! * 1000).toLocaleString()}` : `Not expired – expires ${relative(exp!, now)}`}
+              <span className="font-normal"> (based on your device clock)</span>
+            </p>
+          )}
+
+          <section aria-labelledby="jwt-header-h" className="rounded-lg border border-slate-200 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 id="jwt-header-h" className="text-base font-semibold text-rose-700">
+                Header <span className="text-sm font-normal text-slate-500">{alg ? `· ${alg}` : ''}</span>
+              </h2>
+              <button type="button" onClick={() => copy(JSON.stringify(decoded.header, null, 2))} className="rounded px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                Copy
+              </button>
+            </div>
+            <pre data-testid="jwt-header" className="overflow-x-auto rounded-md bg-slate-50 p-3 font-mono text-sm">
+              {JSON.stringify(decoded.header, null, 2)}
+            </pre>
+          </section>
+
+          {!decoded.encrypted && (
+            <section aria-labelledby="jwt-payload-h" className="rounded-lg border border-slate-200 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 id="jwt-payload-h" className="text-base font-semibold text-violet-700">
+                  Payload
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => copy(payload ? JSON.stringify(payload, null, 2) : decoded.payloadText ?? '')}
+                  className="rounded px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  Copy
+                </button>
+              </div>
+              <pre data-testid="jwt-payload" className="overflow-x-auto whitespace-pre-wrap break-words rounded-md bg-slate-50 p-3 font-mono text-sm">
+                {payload ? JSON.stringify(payload, null, 2) : decoded.payloadText}
+              </pre>
+
+              {payload && Object.keys(CLAIMS).some((k) => k in payload) && (
+                <dl className="mt-3 divide-y divide-slate-100 rounded-md border border-slate-100 text-sm" data-testid="jwt-claims">
+                  {Object.entries(CLAIMS)
+                    .filter(([k]) => k in payload)
+                    .map(([k, label]) => {
+                      const v = payload[k];
+                      const isTime = ['exp', 'nbf', 'iat'].includes(k) && typeof v === 'number';
+                      return (
+                        <div key={k} className="grid grid-cols-1 gap-1 px-3 py-2 sm:grid-cols-[10rem_minmax(0,1fr)]">
+                          <dt className="text-slate-500">
+                            {label} <code className="text-xs">({k})</code>
+                          </dt>
+                          <dd className="min-w-0 break-all font-mono">
+                            {isTime ? `${new Date((v as number) * 1000).toISOString()} · ${relative(v as number, now)}` : Array.isArray(v) ? v.map(display).join(', ') : display(v)}
+                          </dd>
+                        </div>
+                      );
+                    })}
+                </dl>
+              )}
+            </section>
+          )}
+
+          {!decoded.encrypted && (
+            <section aria-labelledby="jwt-sig-h" className="rounded-lg border border-slate-200 p-3">
+              <h2 id="jwt-sig-h" className="mb-2 text-base font-semibold text-sky-700">
+                Signature <span className="text-sm font-normal text-slate-500">(not verified)</span>
+              </h2>
+              <code className="block break-all rounded-md bg-slate-50 p-3 font-mono text-sm">{decoded.signature || '(empty)'}</code>
+            </section>
+          )}
+        </div>
+      )}
+
+      <p aria-live="polite" className="mt-2 min-h-[1.25rem] text-sm text-slate-600">
+        {notice}
+      </p>
     </div>
   );
 }
-

@@ -1,505 +1,409 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+
+const FLAGS = [
+  { flag: 'g', label: 'global', hint: 'Find all matches, not just the first' },
+  { flag: 'i', label: 'ignore case', hint: 'Case-insensitive matching' },
+  { flag: 'm', label: 'multiline', hint: '^ and $ match at line breaks' },
+  { flag: 's', label: 'dotAll', hint: '. also matches line breaks' },
+  { flag: 'u', label: 'unicode', hint: 'Full Unicode matching and stricter syntax' },
+  { flag: 'y', label: 'sticky', hint: 'Match only at lastIndex' },
+] as const;
+
+const PRESETS = [
+  { name: 'Email address', pattern: '[\\w.+-]+@[\\w-]+\\.[\\w.-]+', sample: 'Contact ada@example.com or grace.hopper+news@navy.mil today' },
+  { name: 'URL', pattern: 'https?:\\/\\/[^\\s/$.?#][^\\s]*', sample: 'Visit https://example.com/docs?page=2 or http://test.org today' },
+  { name: 'IPv4 address', pattern: '\\b(?:(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\b', sample: 'Hosts: 192.168.0.1, 10.0.0.255 and 999.1.1.1' },
+  { name: 'Date (YYYY-MM-DD)', pattern: '\\b(\\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])\\b', sample: 'Released 2026-09-24, patched 2026-10-01.' },
+  { name: 'Hex colour', pattern: '#(?:[0-9a-fA-F]{3}){1,2}\\b', sample: 'Brand colours: #1d4ed8, #fff and #10B981.' },
+  { name: 'Named groups', pattern: '(?<key>\\w+)=(?<value>[^&\\s]+)', sample: 'utm_source=newsletter&utm_medium=email' },
+];
+
+const MAX_TEXT = 200_000;
+const MAX_MATCHES = 2_000;
+
+interface Match {
+  text: string;
+  index: number;
+  groups: (string | undefined)[];
+}
+
+type Outcome =
+  | { kind: 'idle' }
+  | { kind: 'error'; message: string }
+  | { kind: 'ok'; matches: Match[]; truncated: boolean; ms: number; replaced?: string };
+
+/**
+ * Heuristic for patterns that can backtrack exponentially in JavaScript's regex engine,
+ * such as (a+)+, (\w*)* or (a|a)*. Browsers cannot interrupt a running regex, so these are
+ * only run on demand.
+ */
+function riskyPattern(pattern: string) {
+  return /\((?:[^()\\]|\\.)*(?:[+*]|,\})(?:[^()\\]|\\.)*\)(?:[+*]|\{\d+,\})/.test(pattern) || /\(([^()|]+)\|\1\)[+*{]/.test(pattern);
+}
+
+/** Names of capture groups in order (undefined for unnamed groups). */
+function groupNames(pattern: string): (string | undefined)[] {
+  const names: (string | undefined)[] = [];
+  let inClass = false;
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern[i];
+    if (c === '\\') {
+      i++;
+      continue;
+    }
+    if (inClass) {
+      if (c === ']') inClass = false;
+      continue;
+    }
+    if (c === '[') inClass = true;
+    else if (c === '(') {
+      if (pattern[i + 1] !== '?') names.push(undefined);
+      else {
+        const named = pattern.slice(i).match(/^\(\?<([A-Za-z_$][\w$]*)>/);
+        if (named) names.push(named[1]);
+      }
+    }
+  }
+  return names;
+}
+
+function runRegex(pattern: string, flags: string, text: string, replacement: string | null): Outcome {
+  let re: RegExp;
+  try {
+    re = new RegExp(pattern, flags);
+  } catch (e) {
+    return { kind: 'error', message: e instanceof Error ? e.message : 'Invalid regular expression' };
+  }
+  const start = performance.now();
+  const matches: Match[] = [];
+  const repeat = flags.includes('g');
+  let truncated = false;
+  re.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    matches.push({ text: m[0], index: m.index, groups: m.slice(1) });
+    if (!repeat) break;
+    if (matches.length >= MAX_MATCHES) {
+      truncated = true;
+      break;
+    }
+    if (m[0] === '') {
+      const code = text.codePointAt(re.lastIndex) ?? 0;
+      re.lastIndex += flags.includes('u') && code > 0xffff ? 2 : 1;
+    }
+  }
+  let replaced: string | undefined;
+  if (replacement !== null) {
+    re.lastIndex = 0;
+    replaced = text.replace(re, replacement);
+  }
+  return { kind: 'ok', matches, truncated, ms: performance.now() - start, replaced };
+}
+
+function Highlighted({ text, matches }: { text: string; matches: Match[] }) {
+  const parts: ReactNode[] = [];
+  let pos = 0;
+  matches.forEach((m, i) => {
+    if (m.index < pos) return;
+    if (m.index > pos) parts.push(text.slice(pos, m.index));
+    parts.push(
+      <mark key={i} title={`Match ${i + 1}`} className={`rounded px-0.5 ${i % 2 ? 'bg-amber-200' : 'bg-yellow-300'}`}>
+        {m.text || '​'}
+      </mark>,
+    );
+    pos = m.index + m.text.length;
+  });
+  parts.push(text.slice(pos));
+  return <>{parts}</>;
+}
+
+const btn = 'rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
 export default function RegexTester() {
-  const [pattern, setPattern] = useState<string>('');
-  const [testString, setTestString] = useState<string>('');
-  const [flags, setFlags] = useState<string>('g');
-  const [matches, setMatches] = useState<RegExpMatchArray | null>(null);
-  const [matchDetails, setMatchDetails] = useState<Array<{ match: string; index: number; groups?: string[] }>>([]);
-  const [error, setError] = useState<string>('');
+  const [pattern, setPattern] = useState('');
+  const [flags, setFlags] = useState('g');
+  const [text, setText] = useState('');
+  const [useReplace, setUseReplace] = useState(false);
+  const [replacement, setReplacement] = useState('');
+  const [outcome, setOutcome] = useState<Outcome>({ kind: 'idle' });
+  const [notice, setNotice] = useState('');
 
+  const risky = useMemo(() => riskyPattern(pattern), [pattern]);
+  const tooLong = text.length > MAX_TEXT;
+  const live = !risky && !tooLong;
 
-  const commonPatterns = [
-    { name: 'Email', pattern: '^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$', description: 'Matches email addresses' },
-    { name: 'URL', pattern: '^https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$', description: 'Matches URLs' },
-    { name: 'Phone (US)', pattern: '^\\+?1?[-.\\s]?\\(?([0-9]{3})\\)?[-.\\s]?([0-9]{3})[-.\\s]?([0-9]{4})$', description: 'Matches US phone numbers' },
-    { name: 'IP Address', pattern: '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$', description: 'Matches IPv4 addresses' },
-    { name: 'Date (YYYY-MM-DD)', pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'Matches dates in YYYY-MM-DD format' },
-    { name: 'Credit Card', pattern: '^\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}$', description: 'Matches credit card numbers' },
-    { name: 'Password (8+ chars, 1 upper, 1 lower, 1 number)', pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$', description: 'Strong password pattern' },
-    { name: 'Hex Color', pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$', description: 'Matches hex color codes' },
-  ];
-
-  const testRegex = () => {
-    setError('');
-    setMatches(null);
-    setMatchDetails([]);
-
-    if (!pattern.trim()) {
-      setError('Please enter a regex pattern');
+  const run = () => {
+    if (!pattern) {
+      setOutcome({ kind: 'idle' });
       return;
     }
-
-    try {
-      const regex = new RegExp(pattern, flags);
-      const result = testString.match(regex);
-      setMatches(result);
-
-      // Get detailed match information including indices and groups
-      const details: Array<{ match: string; index: number; groups?: string[] }> = [];
-      if (result) {
-        // Reset regex to get all matches with indices
-        regex.lastIndex = 0;
-        let match;
-        while ((match = regex.exec(testString)) !== null) {
-          details.push({
-            match: match[0],
-            index: match.index,
-            groups: match.length > 1 ? Array.from(match).slice(1) : undefined
-          });
-          // Prevent infinite loop if global flag is not set
-          if (!flags.includes('g')) {
-            break;
-          }
-          // If regex doesn't advance, break to prevent infinite loop
-          if (match.index === regex.lastIndex) {
-            regex.lastIndex++;
-          }
-        }
-      }
-      setMatchDetails(details);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid regex pattern');
-      setMatches(null);
-      setMatchDetails([]);
-    }
+    setOutcome(runRegex(pattern, flags, text.slice(0, MAX_TEXT), useReplace ? replacement : null));
   };
 
-  const handlePatternChange = (value: string) => {
+  useEffect(() => {
+    if (!pattern) {
+      setOutcome({ kind: 'idle' });
+      return;
+    }
+    // Syntax errors are reported instantly even when live matching is paused.
+    try {
+      new RegExp(pattern, flags);
+    } catch (e) {
+      setOutcome({ kind: 'error', message: e instanceof Error ? e.message : 'Invalid regular expression' });
+      return;
+    }
+    if (!live) {
+      setOutcome({ kind: 'idle' });
+      return;
+    }
+    const t = window.setTimeout(() => setOutcome(runRegex(pattern, flags, text, useReplace ? replacement : null)), 120);
+    return () => window.clearTimeout(t);
+  }, [pattern, flags, text, useReplace, replacement, live]);
+
+  const onPatternChange = (value: string) => {
+    // Accept a pasted literal such as /ab+c/gi and split it into pattern + flags.
+    const literal = value.match(/^\/(.+)\/([dgimsuvy]*)$/s);
+    if (literal && !pattern) {
+      setPattern(literal[1]);
+      setFlags(Array.from(new Set(literal[2].replace(/[dv]/g, ''))).join(''));
+      return;
+    }
     setPattern(value);
-    setError('');
-    setMatches(null);
-    setMatchDetails([]);
-    if (value.trim() && testString.trim()) {
-      testRegex();
-    }
   };
 
-  const handleTestStringChange = (value: string) => {
-    setTestString(value);
-    setError('');
-    setMatches(null);
-    setMatchDetails([]);
-    if (pattern.trim()) {
-      testRegex();
-    }
+  const toggleFlag = (flag: string) => setFlags((f) => (f.includes(flag) ? f.replace(flag, '') : FLAGS.map((x) => x.flag).filter((x) => f.includes(x) || x === flag).join('')));
+
+  const flash = (msg: string) => {
+    setNotice(msg);
+    window.setTimeout(() => setNotice((n) => (n === msg ? '' : n)), 2500);
   };
 
-  const handleFlagChange = (flag: string, checked: boolean) => {
-    let newFlags = flags;
-    if (checked) {
-      if (!flags.includes(flag)) {
-        newFlags = flags + flag;
-      } else {
-        return; // Already has flag, no change needed
-      }
-    } else {
-      newFlags = flags.replace(flag, '');
-    }
-    setFlags(newFlags);
-    // Re-test with new flags if we have pattern and test string
-    if (pattern.trim() && testString.trim()) {
-      setTimeout(() => {
-        // Update flags to test with new flags
-        setFlags(newFlags);
-        // Use the pattern and testString with new flags
-        setError('');
-        setMatches(null);
-        setMatchDetails([]);
-        try {
-          const regex = new RegExp(pattern, newFlags);
-          const result = testString.match(regex);
-          setMatches(result);
-
-          // Get detailed match information
-          const details: Array<{ match: string; index: number; groups?: string[] }> = [];
-          if (result) {
-            regex.lastIndex = 0;
-            let match;
-            while ((match = regex.exec(testString)) !== null) {
-              details.push({
-                match: match[0],
-                index: match.index,
-                groups: match.length > 1 ? Array.from(match).slice(1) : undefined
-              });
-              if (!newFlags.includes('g')) {
-                break;
-              }
-              if (match.index === regex.lastIndex) {
-                regex.lastIndex++;
-              }
-            }
-          }
-          setMatchDetails(details);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Invalid regex pattern');
-          setMatches(null);
-          setMatchDetails([]);
-        }
-      }, 10);
-    }
-  };
-
-  const loadPattern = (patternStr: string) => {
-    setPattern(patternStr);
-    setError('');
-    setMatches(null);
-    if (testString.trim()) {
-      setTimeout(() => testRegex(), 100);
-    }
-  };
-
-  const highlightMatches = (text: string, pattern: string, flags: string): string => {
-    if (!pattern || !text) return text;
+  const copy = async (value: string) => {
     try {
-      const regex = new RegExp(pattern, flags);
-      
-      // Build array of match positions to highlight all matches properly
-      const matches: Array<{ start: number; end: number; text: string }> = [];
-      regex.lastIndex = 0;
-      let match;
-      
-      while ((match = regex.exec(text)) !== null) {
-        matches.push({
-          start: match.index,
-          end: match.index + match[0].length,
-          text: match[0]
-        });
-        // Prevent infinite loop
-        if (!flags.includes('g')) {
-          break;
-        }
-        if (match.index === regex.lastIndex) {
-          regex.lastIndex++;
-        }
-      }
-      
-      // Sort matches by position (reverse order for easier replacement)
-      matches.sort((a, b) => b.start - a.start);
-      
-      // Replace from end to start to maintain correct indices
-      let highlighted = text;
-      matches.forEach((m, index) => {
-        const before = highlighted.substring(0, m.start);
-        const after = highlighted.substring(m.end);
-        highlighted = before + `<mark class="bg-yellow-300 px-1 rounded" title="Match ${matches.length - index}">${m.text}</mark>` + after;
-      });
-      
-      return highlighted;
+      await navigator.clipboard.writeText(value);
+      flash('Copied to clipboard.');
     } catch {
-      return text;
+      flash('Copy failed. Select the text and press Ctrl+C.');
     }
   };
+
+  const matches = outcome.kind === 'ok' ? outcome.matches : [];
+  const names = useMemo(() => groupNames(pattern), [pattern]);
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔍 Free Regex Tester Online
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Free regex tester online - no signup required. Test regular expressions with real-time matching and highlighting. Supports all regex flags and common patterns. Perfect for developers. All processing in your browser.
-        </p>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Input Area */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Pattern Input */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Regular Expression Pattern
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={pattern}
-                  onChange={(e) => handlePatternChange(e.target.value)}
-                  placeholder="/your pattern here/"
-                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                />
-                <button
-                  onClick={testRegex}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-                >
-                  Test
-                </button>
-              </div>
-            </div>
-
-            {/* Flags */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Flags
-              </label>
-              <div className="flex gap-3">
-                {['g', 'i', 'm', 's', 'u', 'y'].map((flag) => (
-                  <label key={flag} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={flags.includes(flag)}
-                      onChange={(e) => handleFlagChange(flag, e.target.checked)}
-                      className="mr-2"
-                    />
-                    <span className="text-sm font-mono">{flag}</span>
-                    <span className="text-xs text-gray-500 ml-1">
-                      {flag === 'g' ? '(global)' : flag === 'i' ? '(ignore case)' : flag === 'm' ? '(multiline)' : flag === 's' ? '(dotall)' : flag === 'u' ? '(unicode)' : '(sticky)'}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Test String */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Test String
-              </label>
-              <textarea
-                value={testString}
-                onChange={(e) => handleTestStringChange(e.target.value)}
-                placeholder="Enter text to test against the regex pattern..."
-                className="w-full h-48 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="min-w-0 space-y-4 lg:col-span-2">
+          <div>
+            <label htmlFor="regex-pattern" className="mb-1.5 block text-sm font-medium text-slate-700">
+              Regular expression
+            </label>
+            <div className="flex items-stretch overflow-hidden rounded-lg border border-slate-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+              <span className="flex items-center bg-slate-50 px-2 font-mono text-slate-400" aria-hidden="true">/</span>
+              <input
+                id="regex-pattern"
+                type="text"
+                value={pattern}
+                onChange={(e) => onPatternChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') run();
+                }}
+                spellCheck={false}
+                autoComplete="off"
+                aria-invalid={outcome.kind === 'error'}
+                aria-describedby={outcome.kind === 'error' ? 'regex-error' : undefined}
+                placeholder="e.g. (\w+)@(\w+)\.com"
+                className="min-w-0 flex-1 px-1 py-2.5 font-mono text-sm focus:outline-none"
               />
+              <span className="flex items-center bg-slate-50 px-2 font-mono text-slate-500" data-testid="regex-flags-display">
+                /{flags}
+              </span>
             </div>
+          </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm font-mono">{error}</p>
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium text-slate-700">Flags</legend>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {FLAGS.map(({ flag, label, hint }) => (
+                <label key={flag} className="flex items-center gap-1.5 text-sm text-slate-700" title={hint}>
+                  <input type="checkbox" checked={flags.includes(flag)} onChange={() => toggleFlag(flag)} className="h-4 w-4 rounded border-slate-300" />
+                  <span className="font-mono font-semibold">{flag}</span>
+                  <span className="text-slate-500">{label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <div>
+            <label htmlFor="regex-text" className="mb-1.5 block text-sm font-medium text-slate-700">
+              Test string
+            </label>
+            <textarea
+              id="regex-text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              spellCheck={false}
+              placeholder="Paste the text to search…"
+              className="h-40 w-full resize-y rounded-lg border border-slate-300 p-3 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <input type="checkbox" checked={useReplace} onChange={(e) => setUseReplace(e.target.checked)} className="h-4 w-4 rounded border-slate-300" />
+              Replace matches
+            </label>
+            {useReplace && (
+              <div className="mt-2">
+                <label htmlFor="regex-replacement" className="sr-only">
+                  Replacement
+                </label>
+                <input
+                  id="regex-replacement"
+                  type="text"
+                  value={replacement}
+                  onChange={(e) => setReplacement(e.target.value)}
+                  spellCheck={false}
+                  placeholder="Replacement, e.g. $2 or $<name>"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="mt-1 text-xs text-slate-500">Use $1, $2 … for numbered groups, $&lt;name&gt; for named groups and $&amp; for the whole match.</p>
               </div>
             )}
+          </div>
 
-            {/* Results */}
-            {matches && matches.length > 0 && (
-              <div className="space-y-4">
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-semibold text-green-800 mb-2">
-                    ✅ Found {matches.length} match{matches.length !== 1 ? 'es' : ''}
-                  </h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {matchDetails.length > 0 ? (
-                      matchDetails.map((detail, index) => (
-                        <div key={index} className="bg-white p-3 rounded border">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="font-mono text-sm">
-                                <span className="text-gray-600">Match {index + 1}:</span>{' '}
-                                <span className="text-green-600 font-bold">{detail.match}</span>
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                Position: {detail.index} - {detail.index + detail.match.length - 1}
-                              </div>
-                              {detail.groups && detail.groups.length > 0 && (
-                                <div className="mt-2 space-y-1">
-                                  <div className="text-xs font-semibold text-gray-600">Capture Groups:</div>
-                                  {detail.groups.map((group, groupIndex) => (
-                                    <div key={groupIndex} className="text-xs text-blue-600 font-mono ml-2">
-                                      Group {groupIndex + 1}: <span className="text-blue-800">{group || '(empty)'}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => {
-                                // Copy match to clipboard
-                                navigator.clipboard.writeText(detail.match);
-                              }}
-                              className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 transition-colors"
-                              title="Copy match"
-                            >
-                              Copy
-                            </button>
+          {(risky || tooLong) && pattern && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" data-testid="regex-risky">
+              {tooLong
+                ? `The test string is longer than ${MAX_TEXT.toLocaleString()} characters, so live matching is paused and only the first ${MAX_TEXT.toLocaleString()} characters are tested.`
+                : 'This pattern has nested quantifiers (like (a+)+) that can cause catastrophic backtracking and freeze the page on some inputs. Live matching is paused.'}
+              <button type="button" onClick={run} className={`${btn} ml-0 mt-2 block bg-amber-600 px-3 py-1.5 text-white hover:bg-amber-700`}>
+                Run once
+              </button>
+            </div>
+          )}
+
+          {outcome.kind === 'error' && (
+            <div id="regex-error" role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+              <p className="font-semibold">Invalid pattern</p>
+              <p className="mt-1 break-words font-mono text-xs">{outcome.message}</p>
+            </div>
+          )}
+
+          {outcome.kind === 'ok' && (
+            <div className="space-y-3">
+              <p
+                data-testid="regex-summary"
+                className={`rounded-lg border px-3 py-2 text-sm ${matches.length ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900'}`}
+              >
+                {matches.length
+                  ? `${matches.length.toLocaleString()}${outcome.truncated ? '+' : ''} match${matches.length === 1 ? '' : 'es'}${!flags.includes('g') && matches.length ? ' (first match only – enable g for all)' : ''}`
+                  : 'No matches'}
+                <span className="text-slate-500"> · {outcome.ms < 1 ? '<1' : Math.round(outcome.ms)} ms</span>
+              </p>
+
+              {text && matches.length > 0 && (
+                <div>
+                  <h2 className="mb-1.5 text-sm font-semibold text-slate-700">Highlighted matches</h2>
+                  <div data-testid="regex-highlight" className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-sm">
+                    <Highlighted text={text.slice(0, MAX_TEXT)} matches={matches} />
+                  </div>
+                </div>
+              )}
+
+              {outcome.replaced !== undefined && (
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-slate-700">Replacement result</h2>
+                    <button type="button" onClick={() => copy(outcome.replaced ?? '')} className={`${btn} bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700`}>
+                      Copy
+                    </button>
+                  </div>
+                  <pre data-testid="regex-replaced" className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-sm">
+                    {outcome.replaced}
+                  </pre>
+                </div>
+              )}
+
+              {matches.length > 0 && (
+                <div>
+                  <h2 className="mb-1.5 text-sm font-semibold text-slate-700">Match details</h2>
+                  <ol className="max-h-72 space-y-2 overflow-auto" data-testid="regex-matches">
+                    {matches.slice(0, 200).map((m, i) => (
+                      <li key={i} className="rounded-lg border border-slate-200 p-2.5 text-sm">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 font-mono">
+                            <span className="text-slate-500">#{i + 1}</span> <span className="break-all font-semibold text-emerald-700">{m.text === '' ? '(empty)' : m.text}</span>
+                            <span className="ml-2 text-xs text-slate-500">
+                              index {m.index}–{m.index + m.text.length}
+                            </span>
                           </div>
+                          <button type="button" onClick={() => copy(m.text)} className="rounded px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label={`Copy match ${i + 1}`}>
+                            Copy
+                          </button>
                         </div>
-                      ))
-                    ) : (
-                      matches.map((match, index) => (
-                        <div key={index} className="bg-white p-2 rounded border font-mono text-sm">
-                          Match {index + 1}: <span className="text-green-600 font-bold">{match}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                        {m.groups.length > 0 && (
+                          <ul className="mt-1.5 space-y-0.5 pl-4 font-mono text-xs text-slate-700">
+                            {m.groups.map((g, gi) => {
+                              const name = names[gi];
+                              return (
+                                <li key={gi} className="break-all">
+                                  Group {gi + 1}
+                                  {name ? ` (${name})` : ''}: <span className="text-blue-800">{g === undefined ? 'undefined' : g === '' ? '(empty)' : g}</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                  {matches.length > 200 && <p className="mt-1 text-xs text-slate-500">Showing the first 200 matches.</p>}
                 </div>
-
-                {/* Highlighted Text */}
-                {testString && (
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <h4 className="font-semibold text-gray-700 mb-2">Highlighted Matches</h4>
-                    <div
-                      className="font-mono text-sm whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{
-                        __html: highlightMatches(testString, pattern, flags)
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {pattern && testString && !matches && !error && (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-yellow-800 text-sm">No matches found</p>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar - Common Patterns */}
-          <div className="lg:col-span-1">
-            <div className="bg-gray-50 rounded-lg p-4 sticky top-4">
-              <h4 className="font-semibold text-gray-900 mb-3">Common Patterns</h4>
-              <div className="space-y-2">
-                {commonPatterns.map((item, index) => (
-                  <button
-                    key={index}
-                    onClick={() => loadPattern(item.pattern)}
-                    className="w-full text-left p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors"
-                  >
-                    <div className="font-semibold text-sm text-gray-900 mb-1">{item.name}</div>
-                    <div className="text-xs text-gray-600 font-mono break-all">{item.pattern}</div>
-                    <div className="text-xs text-gray-500 mt-1">{item.description}</div>
-                  </button>
-                ))}
-              </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
 
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Regex Tester</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our Regex Tester is a powerful tool for testing and debugging regular expressions. Regular expressions 
-              (regex) are patterns used to match character combinations in strings. They're essential for form validation, 
-              text processing, and data extraction.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              The tool provides real-time matching, highlighting, and supports all standard regex flags. Perfect for 
-              developers working with form validation, text processing, and pattern matching.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Form validation (email, phone, etc.)</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Text search and replace</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Data extraction from text</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Input sanitization</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>URL pattern matching</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Password strength validation</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Real-Time Testing</h5>
-                  <p className="text-sm text-gray-600">Test patterns as you type</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Match Highlighting</h5>
-                  <p className="text-sm text-gray-600">Visual highlighting of matches</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">All Regex Flags</h5>
-                  <p className="text-sm text-gray-600">Support for g, i, m, s, u, y flags</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Common Patterns</h5>
-                  <p className="text-sm text-gray-600">Pre-built patterns for quick testing</p>
-                </div>
-              </div>
+        <div className="min-w-0">
+          <div className="rounded-lg bg-slate-50 p-4">
+            <h2 className="mb-3 text-sm font-semibold text-slate-900">Common patterns</h2>
+            <div className="space-y-2">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.name}
+                  type="button"
+                  onClick={() => {
+                    setPattern(p.pattern);
+                    setFlags('g');
+                    if (!text) setText(p.sample);
+                  }}
+                  className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-left transition-colors hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <span className="block text-sm font-semibold text-slate-900">{p.name}</span>
+                  <span className="block break-all font-mono text-xs text-slate-600">{p.pattern}</span>
+                </button>
+              ))}
             </div>
           </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
-            <div className="space-y-4">
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What are regex flags?</h5>
-                <p className="text-gray-700 text-sm">
-                  Regex flags modify how the pattern is matched: <strong>g</strong> (global - find all matches), 
-                  <strong>i</strong> (ignore case), <strong>m</strong> (multiline), <strong>s</strong> (dotall), 
-                  <strong>u</strong> (unicode), and <strong>y</strong> (sticky).
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">How do I escape special characters?</h5>
-                <p className="text-gray-700 text-sm">
-                  Use a backslash (\) to escape special regex characters like . * + ? ^ $ { } [ ] | ( ). 
-                  For example, to match a literal dot, use \.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What are common regex patterns?</h5>
-                <p className="text-gray-700 text-sm">
-                  Common patterns include: <strong>.</strong> (any character), <strong>\d</strong> (digit), 
-                  <strong>\w</strong> (word character), <strong>+</strong> (one or more), <strong>*</strong> (zero or more), 
-                  <strong>?</strong> (zero or one), <strong>^</strong> (start), <strong>$</strong> (end).
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>Use the common patterns sidebar for quick testing</li>
-            <li>Enable the 'g' flag to find all matches, not just the first</li>
-            <li>Use 'i' flag for case-insensitive matching</li>
-            <li>Test with various input strings to ensure your pattern works correctly</li>
-            <li>All processing happens in your browser - no uploads required</li>
-          </ul>
+          <button
+            type="button"
+            onClick={() => {
+              setPattern('');
+              setText('');
+              setReplacement('');
+              setFlags('g');
+            }}
+            className={`${btn} mt-3 w-full bg-slate-100 text-slate-800 hover:bg-slate-200`}
+          >
+            Clear all
+          </button>
         </div>
       </div>
+
+      <p aria-live="polite" className="mt-2 min-h-[1.25rem] text-sm text-slate-600">
+        {notice}
+      </p>
     </div>
   );
 }
-
