@@ -63,9 +63,9 @@ fi
 echo -e "${GREEN}✅ Node.js version: $(node --version)${NC}"
 echo -e "${GREEN}✅ NPM version: $(npm --version)${NC}"
 
-# Clean install
+# Clean install (keep package-lock.json: npm ci installs the exact versions tested in CI)
 echo -e "${BLUE}🧹 Cleaning previous installation...${NC}"
-rm -rf node_modules package-lock.json
+rm -rf node_modules
 
 # Clean any generated config files that might conflict
 echo -e "${BLUE}🧹 Cleaning generated config files...${NC}"
@@ -76,9 +76,14 @@ rm -rf node_modules/.tmp
 # Clean any generated JavaScript files from TypeScript compilation
 echo -e "${BLUE}🧹 Cleaning generated JavaScript files...${NC}"
 find src -name "*.js" -type f -delete
-find . -name "*.js.map" -type f -delete
+find . -name "*.js.map" -type f -not -path "./node_modules/*" -delete
 
-npm install
+if ! npm ci --no-audit --no-fund; then
+  echo -e "${RED}❌ npm ci failed${NC}"
+  NPM_LOG=$(ls -t "$HOME"/.npm/_logs/*-debug-0.log 2>/dev/null | head -1)
+  [ -n "$NPM_LOG" ] && grep -E "^[0-9]+ (error|verbose stack)" "$NPM_LOG" | tail -40
+  exit 1
+fi
 
 # Create production environment file
 echo -e "${BLUE}📝 Creating production environment file...${NC}"
