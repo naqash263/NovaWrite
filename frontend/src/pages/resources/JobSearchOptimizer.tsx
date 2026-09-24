@@ -1,631 +1,525 @@
 import React, { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
-import ApiKeyManager from '../../components/ApiKeyManager';
-import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+import CareerToolLayout from '../../components/career/CareerToolLayout';
+import StepIndicator from '../../components/career/StepIndicator';
+import { asArray, asText, copyText, inputClass, labelClass, postCareerTool, splitList, toNumber } from '../../components/career/careerUtils';
 
 interface JobSearchData {
   jobTitle: string;
   location: string;
-  experience: string;
-  skills: string[];
+  experienceYears: string;
+  industry: string;
+  skills: string;
   preferences: string[];
-  salaryRange: string;
+  jobType: string;
+  currency: string;
+  salary: string;
   companySize: string;
 }
 
+interface JobRecommendation {
+  title: string;
+  company: string;
+  location: string;
+  salary: string;
+  match: string;
+  description: string;
+  whyMatch: string;
+  applicationTips: string[];
+}
+
+interface Strategy {
+  jobs: JobRecommendation[];
+  keywords: string[];
+  platforms: string[];
+  timing: string;
+  frequency: string;
+  resumeTips: string[];
+  coverLetterTips: string[];
+  portfolioTips: string[];
+  online: string[];
+  offline: string[];
+  informational: string[];
+  commonQuestions: string[];
+  technicalQuestions: string[];
+  salaryTips: { label: string; text: string }[];
+}
+
+const PREFERENCES = ['Remote Work', 'Flexible Hours', 'Startup Environment', 'Large Corporation', 'Team Leadership', 'Individual Contributor', 'Fast-Paced', 'Stable Environment'];
+const STEPS = ['Target Role', 'Skills & Preferences', 'Job Type & Salary', 'Your Strategy'];
+const TABS = [
+  { id: 'jobs', label: 'Jobs' },
+  { id: 'applications', label: 'Applications' },
+  { id: 'networking', label: 'Networking' },
+] as const;
+type TabId = (typeof TABS)[number]['id'];
+
+function normalizeStrategy(raw: Record<string, unknown>): Strategy {
+  const obj = (v: unknown) => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
+  const list = (v: unknown) => asArray(v).map(asText).filter(Boolean);
+  const search = obj(raw.searchStrategy);
+  const app = obj(raw.applicationOptimization);
+  const net = obj(raw.networkingStrategy);
+  const interview = obj(raw.interviewPreparation ?? raw.interviewPrep);
+  const salary = obj(raw.salaryNegotiation);
+  return {
+    jobs: asArray<Record<string, unknown>>(raw.jobRecommendations).map((j) => ({
+      title: asText(j?.title) || 'Suggested role',
+      company: asText(j?.company),
+      location: asText(j?.location),
+      salary: asText(j?.salary),
+      match: asText(j?.match),
+      description: asText(j?.description),
+      whyMatch: asText(j?.whyMatch),
+      applicationTips: list(j?.applicationTips),
+    })),
+    keywords: list(search.keywords),
+    platforms: list(search.platforms ?? search.jobBoards),
+    timing: asText(search.timing),
+    frequency: asText(search.frequency),
+    resumeTips: list(app.resumeTips),
+    coverLetterTips: list(app.coverLetterTips),
+    portfolioTips: list(app.portfolioTips),
+    online: list(net.online),
+    offline: list(net.offline),
+    informational: list(net.informationalInterviews),
+    commonQuestions: list(interview.commonQuestions),
+    technicalQuestions: list(interview.technicalQuestions ?? interview.technicalFocus),
+    salaryTips: Object.entries(salary)
+      .map(([k, v]) => ({ label: k.charAt(0).toUpperCase() + k.slice(1), text: asText(v) }))
+      .filter((t) => t.text),
+  };
+}
+
+const Card = ({ title, items, marker = '•' }: { title: string; items: string[]; marker?: string }) =>
+  items.length ? (
+    <div className="rounded-lg border bg-white p-4 sm:p-6">
+      <h3 className="mb-3 text-lg font-semibold text-gray-900">{title}</h3>
+      <ul className="space-y-2">
+        {items.map((item) => (
+          <li key={item} className="flex items-start gap-2 text-sm text-gray-700">
+            <span className="mt-0.5 text-blue-600" aria-hidden="true">
+              {marker}
+            </span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : null;
+
 const JobSearchOptimizer: React.FC = () => {
   const { addToast } = useToast();
-  const [jobSearchData, setJobSearchData] = useState<JobSearchData>({
+  const [data, setData] = useState<JobSearchData>({
     jobTitle: '',
     location: '',
-    experience: '',
-    skills: [],
+    experienceYears: '',
+    industry: '',
+    skills: '',
     preferences: [],
-    salaryRange: '',
-    companySize: ''
+    jobType: 'full_time',
+    currency: 'USD',
+    salary: '',
+    companySize: '',
   });
-  const [searchStrategy, setSearchStrategy] = useState<any>(null);
+  const [strategy, setStrategy] = useState<Strategy | null>(null);
+  const [tab, setTab] = useState<TabId>('jobs');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
 
-  useSEO({
-    title: 'Job Search Optimizer Free Online - AI-Powered Job Search | No Signup',
-    description: 'Job search optimizer free online - no signup required. Optimize your job search instantly with AI-powered strategies. Get personalized job recommendations, application tips, and networking strategies. Perfect for job seekers.',
-    url: '/resources/job-search-optimizer',
-    keywords: [
-      'job search optimizer free', 'job search', 'free job search optimizer', 'job search optimizer online', 'career tools',
-      'job recommendations', 'application tips', 'networking', 'AI guidance',
-      'free online job search optimizer', 'job search tool free'
-    ]
-  });
+  const set = (field: keyof JobSearchData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setData((d) => ({ ...d, [field]: e.target.value }));
 
-  const steps = [
-    { title: 'Job Preferences', description: 'Tell us what kind of job you\'re looking for' },
-    { title: 'Skills & Experience', description: 'Share your skills and work preferences' },
-    { title: 'Location & Salary', description: 'Set your location and salary expectations' },
-    { title: 'Action Plan', description: 'Receive your personalized job search strategy' }
-  ];
-
-  const getExperienceYears = (experienceLevel: string): number => {
-    switch (experienceLevel) {
-      case 'entry': return 1;
-      case 'mid': return 4;
-      case 'senior': return 8;
-      case 'lead': return 12;
-      default: return 5;
-    }
+  const goTo = (step: number) => {
+    setError('');
+    setCurrentStep(step);
   };
 
-  const getSalaryExpectation = (salaryRange: string): number => {
-    switch (salaryRange) {
-      case '$50,000 - $70,000': return 60000;
-      case '$70,000 - $90,000': return 80000;
-      case '$90,000 - $120,000': return 105000;
-      case '$120,000 - $150,000': return 135000;
-      case '$150,000+': return 175000;
-      default: return 100000;
+  const validate = (step: number) => {
+    const years = Number(data.experienceYears);
+    if (step === 0 && (!data.jobTitle.trim() || !data.location.trim() || !data.industry || data.experienceYears === '' || !Number.isInteger(years) || years < 0 || years > 50))
+      return 'Enter the job title, location, industry and your years of experience (0–50).';
+    if (step === 1 && splitList(data.skills).length === 0) return 'List at least one skill.';
+    if (step === 2) {
+      const salary = toNumber(data.salary);
+      if (!data.jobType || salary === null || salary < 0) return 'Choose a job type and enter your expected annual salary as a number.';
     }
+    return '';
+  };
+
+  const next = (step: number) => {
+    const message = validate(step);
+    if (message) setError(message);
+    else goTo(step + 1);
   };
 
   const generateSearchStrategy = async () => {
-    setIsGenerating(true);
-    try {
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetchWithTimeout(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/job-search/generate`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            job_title: jobSearchData.jobTitle,
-            location: jobSearchData.location,
-            experience_years: getExperienceYears(jobSearchData.experience),
-            skills: jobSearchData.skills,
-            salary_expectation: getSalaryExpectation(jobSearchData.salaryRange),
-            job_type: 'full_time', // Backend expects specific values
-            industry: 'Technology' // Default value since not in interface
-          })
-        },
-        120000 // 120 seconds timeout for N8N fallback
-      );
-
-      const result = await response.json();
-
-      if (result.success) {
-        setSearchStrategy(result.data);
-        setCurrentStep(3); // Go to results step (step 3)
-        addToast({
-          type: 'success',
-          title: 'Search Strategy Ready',
-          description: 'Your personalized job search strategy has been generated using AI.'
-        });
-      } else {
-        throw new Error(result.message || 'Generation failed');
-      }
-    } catch (error) {
-      addToast({
-        type: 'error',
-        title: 'Generation Failed',
-        description: 'Failed to generate search strategy. Please try again.'
-      });
-    } finally {
-      setIsGenerating(false);
+    const message = validate(2);
+    if (message) {
+      setError(message);
+      return;
     }
+    setError('');
+    setIsGenerating(true);
+    const result = await postCareerTool<Record<string, unknown>>('job-search/generate', {
+      job_title: data.jobTitle.trim(),
+      location: data.location.trim(),
+      experience_years: Number(data.experienceYears),
+      skills: splitList(data.skills),
+      salary_expectation: toNumber(data.salary),
+      currency: data.currency,
+      job_type: data.jobType,
+      industry: data.industry,
+      preferences: data.preferences,
+      company_size: data.companySize || undefined,
+    });
+    setIsGenerating(false);
+    if (!result.ok) {
+      setError(result.message);
+      addToast({ type: 'error', title: 'Generation failed', description: result.message });
+      return;
+    }
+    setStrategy(normalizeStrategy(result.data));
+    setTab('jobs');
+    goTo(3);
+    addToast({ type: 'success', title: 'Search strategy ready', description: 'Work through the Jobs, Applications and Networking tabs.' });
   };
+
+  const strategyToText = (s: Strategy) =>
+    [
+      `Job search strategy: ${data.jobTitle} (${data.location})`,
+      '',
+      `Keywords: ${s.keywords.join(', ')}`,
+      `Job boards: ${s.platforms.join(', ')}`,
+      s.timing ? `Timing: ${s.timing}` : '',
+      s.frequency ? `Frequency: ${s.frequency}` : '',
+      '',
+      'Example roles to search for:',
+      ...s.jobs.map((j) => `- ${j.title}${j.company ? ` at ${j.company}` : ''}${j.location ? ` (${j.location})` : ''}`),
+      '',
+      'CV tips:',
+      ...s.resumeTips.map((t) => `- ${t}`),
+      '',
+      'Cover letter tips:',
+      ...s.coverLetterTips.map((t) => `- ${t}`),
+      '',
+      'Networking:',
+      ...[...s.online, ...s.offline, ...s.informational].map((t) => `- ${t}`),
+      '',
+      'Interview questions to prepare:',
+      ...[...s.commonQuestions, ...s.technicalQuestions].map((t) => `- ${t}`),
+    ]
+      .filter((l, i, all) => l !== '' || (i > 0 && all[i - 1] !== ''))
+      .join('\n');
+
+  const errorBox = error ? (
+    <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+      {error}
+    </div>
+  ) : null;
+
+  const navButtons = (back: number | null, onNext: () => void, nextLabel: string, disabled = false) => (
+    <div className="flex flex-col gap-3 sm:flex-row">
+      {back !== null && (
+        <button type="button" onClick={() => goTo(back)} className="flex-1 rounded-md bg-gray-600 px-6 py-3 font-medium text-white hover:bg-gray-700">
+          Back
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={disabled}
+        className="flex-1 rounded-md bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {nextLabel}
+      </button>
+    </div>
+  );
+
+  const heading = (title: string, text: string) => (
+    <div className="text-center">
+      <h2 className="mb-2 text-2xl font-bold text-gray-900">{title}</h2>
+      <p className="text-gray-600">{text}</p>
+    </div>
+  );
+
+  const renderResults = (s: Strategy) => (
+    <div className="space-y-6">
+      {heading('Your Job Search Strategy', `A focused plan for ${data.jobTitle} roles in ${data.location}.`)}
+
+      <div role="tablist" aria-label="Strategy sections" className="flex flex-wrap gap-2 border-b border-gray-200">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            id={`js-tab-${t.id}`}
+            aria-selected={tab === t.id}
+            aria-controls={`js-panel-${t.id}`}
+            onClick={() => setTab(t.id)}
+            className={`-mb-px border-b-2 px-4 py-2 font-medium ${tab === t.id ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-600 hover:text-gray-900'}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div role="tabpanel" id={`js-panel-${tab}`} aria-labelledby={`js-tab-${tab}`} className="space-y-6">
+        {tab === 'jobs' && (
+          <>
+            <div className="rounded-lg bg-blue-50 p-4 sm:p-6">
+              <h3 className="mb-4 text-lg font-semibold text-gray-900">Search strategy</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <h4 className="mb-2 font-medium text-gray-900">Keywords to search</h4>
+                  <ul className="flex flex-wrap gap-2" data-testid="search-keywords">
+                    {s.keywords.map((k) => (
+                      <li key={k} className="rounded bg-blue-100 px-2 py-1 text-sm text-blue-800">
+                        {k}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="mb-2 font-medium text-gray-900">Job boards</h4>
+                  <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
+                    {s.platforms.map((p) => (
+                      <li key={p}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+                {s.timing && (
+                  <div>
+                    <h4 className="mb-1 font-medium text-gray-900">When to apply</h4>
+                    <p className="text-sm text-gray-700">{s.timing}</p>
+                  </div>
+                )}
+                {s.frequency && (
+                  <div>
+                    <h4 className="mb-1 font-medium text-gray-900">Application pace</h4>
+                    <p className="text-sm text-gray-700">{s.frequency}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="mb-1 text-lg font-semibold text-gray-900">Example roles to search for</h3>
+              <p className="mb-4 text-sm text-gray-600">These are AI-generated examples, not live vacancies. Use the keywords above on job boards to find open roles.</p>
+              {s.jobs.length ? (
+                <ul className="space-y-4">
+                  {s.jobs.map((job, i) => (
+                    <li key={i} className="rounded-lg border bg-white p-4 sm:p-6">
+                      <h4 className="text-lg font-semibold text-gray-900">{job.title}</h4>
+                      <p className="mb-2 text-gray-600">{[job.company, job.location].filter(Boolean).join(' • ')}</p>
+                      {job.description && <p className="mb-2 text-gray-700">{job.description}</p>}
+                      <p className="mb-2 flex flex-wrap gap-3 text-sm">
+                        {job.salary && <span className="font-semibold text-green-700">{job.salary}</span>}
+                        {job.match && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-800">{job.match} match</span>}
+                      </p>
+                      {job.whyMatch && <p className="text-sm text-gray-600">{job.whyMatch}</p>}
+                      {job.applicationTips.length > 0 && (
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
+                          {job.applicationTips.map((t) => (
+                            <li key={t}>{t}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="italic text-gray-500">No example roles were returned.</p>
+              )}
+            </div>
+          </>
+        )}
+
+        {tab === 'applications' && (
+          <div className="grid gap-6 md:grid-cols-3">
+            <Card title="CV tips" items={s.resumeTips} marker="✓" />
+            <Card title="Cover letter tips" items={s.coverLetterTips} marker="✓" />
+            <Card title="Portfolio tips" items={s.portfolioTips} marker="✓" />
+          </div>
+        )}
+
+        {tab === 'networking' && (
+          <>
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card title="Online networking" items={s.online} />
+              <Card title="Offline networking" items={s.offline} />
+              <Card title="Informational interviews" items={s.informational} />
+              <Card title="Interview questions to prepare" items={[...s.commonQuestions, ...s.technicalQuestions]} marker="?" />
+            </div>
+            {s.salaryTips.length > 0 && (
+              <div className="rounded-lg bg-green-50 p-4 sm:p-6">
+                <h3 className="mb-3 text-lg font-semibold text-gray-900">Salary negotiation tips</h3>
+                <dl className="grid gap-4 md:grid-cols-2">
+                  {s.salaryTips.map((t) => (
+                    <div key={t.label}>
+                      <dt className="font-medium text-gray-900">{t.label}</dt>
+                      <dd className="text-sm text-gray-700">{t.text}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {navButtons(
+        0,
+        async () => {
+          const ok = await copyText(strategyToText(s));
+          addToast(
+            ok
+              ? { type: 'success', title: 'Copied to clipboard', description: 'Your job search strategy has been copied as text.' }
+              : { type: 'error', title: 'Copy failed', description: 'Your browser blocked clipboard access.' },
+          );
+        },
+        'Copy Strategy',
+      )}
+    </div>
+  );
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
         return (
           <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Job Preferences</h2>
-              <p className="text-gray-600 mb-8">
-                Tell us what kind of job you're looking for to get personalized recommendations.
-              </p>
-            </div>
-
+            {heading('Target Role', 'Tell us what kind of job you are looking for.')}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Desired Job Title
+                <label htmlFor="js-title" className={labelClass}>
+                  Desired Job Title *
                 </label>
-                <input
-                  type="text"
-                  value={jobSearchData.jobTitle}
-                  onChange={(e) => setJobSearchData({...jobSearchData, jobTitle: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Senior Software Engineer"
-                />
+                <input id="js-title" type="text" value={data.jobTitle} onChange={set('jobTitle')} maxLength={255} className={inputClass} placeholder="e.g., Senior Software Engineer" />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preferred Location
-                </label>
-                <input
-                  type="text"
-                  value={jobSearchData.location}
-                  onChange={(e) => setJobSearchData({...jobSearchData, location: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., San Francisco, CA or Remote"
-                />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="js-location" className={labelClass}>
+                    Preferred Location *
+                  </label>
+                  <input id="js-location" type="text" value={data.location} onChange={set('location')} maxLength={100} className={inputClass} placeholder="e.g., Dubai or Remote" />
+                </div>
+                <div>
+                  <label htmlFor="js-years" className={labelClass}>
+                    Years of Experience *
+                  </label>
+                  <input id="js-years" type="number" inputMode="numeric" min={0} max={50} step={1} value={data.experienceYears} onChange={set('experienceYears')} className={inputClass} placeholder="e.g., 5" />
+                </div>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Years of Experience
+                <label htmlFor="js-industry" className={labelClass}>
+                  Industry *
                 </label>
-                <select
-                  value={jobSearchData.experience}
-                  onChange={(e) => setJobSearchData({...jobSearchData, experience: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select experience level</option>
-                  <option value="entry">Entry Level (0-2 years)</option>
-                  <option value="mid">Mid Level (3-5 years)</option>
-                  <option value="senior">Senior Level (6-10 years)</option>
-                  <option value="lead">Lead/Principal (10+ years)</option>
+                <select id="js-industry" value={data.industry} onChange={set('industry')} className={inputClass}>
+                  <option value="">Select industry</option>
+                  <option value="Technology">Technology</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Education">Education</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Consulting">Consulting</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
             </div>
-
-            <button
-              onClick={() => setCurrentStep(1)}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-            >
-              Continue
-            </button>
+            {errorBox}
+            {navButtons(null, () => next(0), 'Continue')}
           </div>
         );
 
       case 1:
         return (
           <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Skills & Experience</h2>
-              <p className="text-gray-600 mb-8">
-                What skills do you have that are relevant to your job search?
-              </p>
+            {heading('Skills & Preferences', 'What skills and working style should the search target?')}
+            <div>
+              <label htmlFor="js-skills" className={labelClass}>
+                Skills (comma-separated) *
+              </label>
+              <input id="js-skills" type="text" value={data.skills} onChange={set('skills')} className={inputClass} placeholder="e.g., JavaScript, React, Stakeholder Management" />
             </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Technical Skills (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={jobSearchData.skills.join(', ')}
-                  onChange={(e) => setJobSearchData({...jobSearchData, skills: e.target.value.split(',').map(s => s.trim())})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., JavaScript, React, Node.js, Python, AWS"
-                />
+            <fieldset>
+              <legend className={labelClass}>Work Preferences (select all that apply)</legend>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {PREFERENCES.map((pref) => (
+                  <label key={pref} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={data.preferences.includes(pref)}
+                      onChange={(e) =>
+                        setData((d) => ({ ...d, preferences: e.target.checked ? [...d.preferences, pref] : d.preferences.filter((p) => p !== pref) }))
+                      }
+                    />
+                    <span className="text-sm">{pref}</span>
+                  </label>
+                ))}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Work Preferences (select all that apply)
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    'Remote Work',
-                    'Flexible Hours',
-                    'Startup Environment',
-                    'Large Corporation',
-                    'Team Leadership',
-                    'Individual Contributor',
-                    'Fast-Paced',
-                    'Stable Environment'
-                  ].map((pref) => (
-                    <label key={pref} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="mr-2"
-                        checked={jobSearchData.preferences.includes(pref)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setJobSearchData({
-                              ...jobSearchData,
-                              preferences: [...jobSearchData.preferences, pref]
-                            });
-                          } else {
-                            setJobSearchData({
-                              ...jobSearchData,
-                              preferences: jobSearchData.preferences.filter(p => p !== pref)
-                            });
-                          }
-                        }}
-                      />
-                      <span className="text-sm">{pref}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(0)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Back
-              </button>
-              <button
-                onClick={() => setCurrentStep(2)}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                Next: Location & Salary
-              </button>
-            </div>
+            </fieldset>
+            {errorBox}
+            {navButtons(0, () => next(1), 'Next: Job Type & Salary')}
           </div>
         );
 
       case 2:
         return (
           <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Location & Salary</h2>
-              <p className="text-gray-600 mb-8">
-                Help us understand your location and salary expectations.
-              </p>
-            </div>
-
-            <div className="space-y-4">
+            {heading('Job Type & Salary', 'Set the contract type and the salary you are targeting.')}
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Salary Range
+                <label htmlFor="js-type" className={labelClass}>
+                  Job Type *
                 </label>
-                <select
-                  value={jobSearchData.salaryRange}
-                  onChange={(e) => setJobSearchData({...jobSearchData, salaryRange: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select salary range</option>
-                  <option value="50-70k">$50,000 - $70,000</option>
-                  <option value="70-90k">$70,000 - $90,000</option>
-                  <option value="90-120k">$90,000 - $120,000</option>
-                  <option value="120-150k">$120,000 - $150,000</option>
-                  <option value="150k+">$150,000+</option>
+                <select id="js-type" value={data.jobType} onChange={set('jobType')} className={inputClass}>
+                  <option value="full_time">Full-time</option>
+                  <option value="part_time">Part-time</option>
+                  <option value="contract">Contract</option>
+                  <option value="remote">Remote</option>
+                  <option value="hybrid">Hybrid</option>
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="js-size" className={labelClass}>
                   Company Size Preference
                 </label>
-                <select
-                  value={jobSearchData.companySize}
-                  onChange={(e) => setJobSearchData({...jobSearchData, companySize: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select company size</option>
+                <select id="js-size" value={data.companySize} onChange={set('companySize')} className={inputClass}>
+                  <option value="">Any size</option>
                   <option value="startup">Startup (1-50 employees)</option>
                   <option value="small">Small (51-200 employees)</option>
-                  <option value="medium">Medium (201-1000 employees)</option>
-                  <option value="large">Large (1000+ employees)</option>
-                  <option value="any">Any size</option>
+                  <option value="medium">Medium (201-1,000 employees)</option>
+                  <option value="large">Large (1,000+ employees)</option>
                 </select>
               </div>
+              <div>
+                <label htmlFor="js-currency" className={labelClass}>
+                  Currency
+                </label>
+                <select id="js-currency" value={data.currency} onChange={set('currency')} className={inputClass}>
+                  {['USD', 'EUR', 'GBP', 'AED', 'SAR', 'INR', 'PKR', 'CAD', 'AUD'].map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="js-salary" className={labelClass}>
+                  Expected Annual Salary *
+                </label>
+                <input id="js-salary" type="number" inputMode="numeric" min={0} value={data.salary} onChange={set('salary')} className={inputClass} placeholder="e.g., 90000" />
+              </div>
             </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Back
-              </button>
-              <button
-                onClick={generateSearchStrategy}
-                disabled={isGenerating}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                {isGenerating ? 'Generating Strategy...' : 'Generate Search Strategy'}
-              </button>
-            </div>
+            {errorBox}
+            {navButtons(1, generateSearchStrategy, isGenerating ? 'Generating Strategy…' : 'Generate Search Strategy', isGenerating)}
           </div>
         );
 
       case 3:
-        return (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Job Recommendations</h2>
-              <p className="text-gray-600">
-                Here are personalized job recommendations based on your profile.
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              {searchStrategy?.jobRecommendations && searchStrategy.jobRecommendations.length > 0 ? (
-                searchStrategy.jobRecommendations.map((job: any, index: number) => (
-                  <div key={index} className="bg-white border rounded-lg p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-1">{job?.title || 'Job Title Not Available'}</h3>
-                        <p className="text-gray-600 mb-2">{job?.company || 'Company'} • {job?.location || 'Location'}</p>
-                        <p className="text-gray-700 mb-3">{job?.description || 'Job description not available'}</p>
-                        <div className="flex items-center gap-4">
-                          <span className="text-green-600 font-semibold">{job?.salary || 'Salary not specified'}</span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            job?.match && parseFloat(job?.match) >= 90 ? 'bg-green-100 text-green-800' :
-                            job?.match && parseFloat(job?.match) >= 80 ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {job?.match || 'N/A'} Match
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <h4 className="font-medium text-gray-900 mb-2">Why This Job Matches</h4>
-                      <p className="text-gray-600 text-sm">{job?.whyMatch || 'Match details not available'}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Application Tips</h4>
-                      <ul className="space-y-1">
-                        {job?.applicationTips && job?.applicationTips.length > 0 ? (
-                          job?.applicationTips.map((tip: string, tipIndex: number) => (
-                            <li key={tipIndex} className="flex items-start gap-2 text-sm text-gray-600">
-                              <span className="text-blue-500 mt-1">•</span>
-                              <span>{tip}</span>
-                            </li>
-                          ))
-                        ) : (
-                          <li className="text-sm text-gray-500 italic">No application tips available</li>
-                        )}
-                      </ul>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="bg-gray-50 border rounded-lg p-6 text-center">
-                  <p className="text-gray-500 italic">No job recommendations available at the moment. Please try again later.</p>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-blue-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Search Strategy</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Keywords to Use</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {searchStrategy?.searchStrategy?.keywords && searchStrategy.searchStrategy.keywords.map((keyword: string, index: number) => (
-                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                        {keyword}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Best Platforms</h4>
-                  <ul className="space-y-1">
-                    {searchStrategy?.searchStrategy?.platforms && searchStrategy.searchStrategy.platforms.map((platform: string, index: number) => (
-                      <li key={index} className="text-sm text-gray-600">• {platform}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              <div className="mt-4 grid md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-1">Best Times to Apply</h4>
-                  <p className="text-sm text-gray-600">{searchStrategy?.searchStrategy.timing}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-1">Application Frequency</h4>
-                  <p className="text-sm text-gray-600">{searchStrategy?.searchStrategy.frequency}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(0)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Start Over
-              </button>
-              <button
-                onClick={() => setCurrentStep(4)}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                Application Tips
-              </button>
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Application Optimization</h2>
-              <p className="text-gray-600">
-                Learn how to optimize your applications for better success rates.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Resume Tips</h3>
-                <ul className="space-y-2">
-                  {searchStrategy?.applicationOptimization?.resumeTips && searchStrategy.applicationOptimization.resumeTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Cover Letter Tips</h3>
-                <ul className="space-y-2">
-                  {searchStrategy?.applicationOptimization?.coverLetterTips && searchStrategy.applicationOptimization.coverLetterTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Tips</h3>
-                <ul className="space-y-2">
-                  {searchStrategy?.applicationOptimization?.portfolioTips && searchStrategy.applicationOptimization.portfolioTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(3)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Back to Jobs
-              </button>
-              <button
-                onClick={() => setCurrentStep(5)}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                Networking Plan
-              </button>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Networking & Interview Strategy</h2>
-              <p className="text-gray-600">
-                Get comprehensive networking and interview preparation strategies.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Online Networking</h3>
-                <ul className="space-y-2">
-                  {searchStrategy?.networkingStrategy?.online && searchStrategy.networkingStrategy.online.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-blue-500 mt-1">•</span>
-                      <span>{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Offline Networking</h3>
-                <ul className="space-y-2">
-                  {searchStrategy?.networkingStrategy?.offline && searchStrategy.networkingStrategy.offline.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-blue-500 mt-1">•</span>
-                      <span>{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="bg-white border rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Informational Interviews</h3>
-              <ul className="space-y-2">
-                {searchStrategy?.networkingStrategy?.informationalInterviews && searchStrategy.networkingStrategy.informationalInterviews.map((tip: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                    <span className="text-green-500 mt-1">✓</span>
-                    <span>{tip}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Common Interview Questions</h3>
-                <ul className="space-y-2">
-                  {searchStrategy?.interviewPreparation?.commonQuestions && searchStrategy.interviewPreparation.commonQuestions.map((question: string, index: number) => (
-                    <li key={index} className="text-sm text-gray-600">• {question}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Technical Questions</h3>
-                <ul className="space-y-2">
-                  {searchStrategy?.interviewPreparation?.technicalQuestions && searchStrategy.interviewPreparation.technicalQuestions.map((question: string, index: number) => (
-                    <li key={index} className="text-sm text-gray-600">• {question}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="bg-green-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Salary Negotiation Tips</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Research</h4>
-                  <p className="text-sm text-gray-600">{searchStrategy?.salaryNegotiation.research}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Timing</h4>
-                  <p className="text-sm text-gray-600">{searchStrategy?.salaryNegotiation.timing}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Approach</h4>
-                  <p className="text-sm text-gray-600">{searchStrategy?.salaryNegotiation.approach}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Alternatives</h4>
-                  <p className="text-sm text-gray-600">{searchStrategy?.salaryNegotiation.alternatives}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(4)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Back to Applications
-              </button>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(JSON.stringify(searchStrategy, null, 2));
-                  addToast({
-                    type: 'success',
-                    title: 'Copied to Clipboard',
-                    description: 'Your job search strategy has been copied to your clipboard.'
-                  });
-                }}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                Copy Strategy
-              </button>
-            </div>
-          </div>
-        );
+        return strategy ? renderResults(strategy) : null;
 
       default:
         return null;
@@ -633,78 +527,12 @@ const JobSearchOptimizer: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Job Search Optimizer Free Online
-          </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Job search optimizer free online - no signup required. Optimize your job search instantly with AI-powered strategies. Get personalized job recommendations, application tips, and networking strategies. Perfect for job seekers. We only ask for essential job search information - no personal details required!
-          </p>
-          
-          {/* API Key Manager */}
-          <div className="max-w-2xl mx-auto px-4">
-            <ApiKeyManager />
-          </div>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between overflow-x-auto pb-2">
-            {steps && steps.map((_, index) => (
-              <div key={index} className="flex items-center flex-shrink-0">
-                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
-                  index <= currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
-                }`}>
-                  {index + 1}
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-8 sm:w-16 h-1 mx-1 sm:mx-2 ${
-                    index < currentStep ? 'bg-blue-600' : 'bg-gray-300'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 text-center px-4">
-            <h3 className="font-medium text-gray-900 text-sm sm:text-base">{steps[currentStep]?.title || 'Step'}</h3>
-            <p className="text-xs sm:text-sm text-gray-600">{steps[currentStep]?.description || 'Description'}</p>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
-          {renderStepContent()}
-        </div>
-
-        {/* Features */}
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🔍</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Job Matching</h3>
-            <p className="text-gray-600">Get personalized job recommendations based on your profile</p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">📝</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Application Tips</h3>
-            <p className="text-gray-600">Learn how to optimize your resume, cover letter, and portfolio</p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🤝</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Networking Strategy</h3>
-            <p className="text-gray-600">Build professional relationships and expand your network</p>
-          </div>
-        </div>
+    <CareerToolLayout slug="job-search-optimizer">
+      <div className="mx-auto max-w-4xl">
+        <StepIndicator steps={STEPS} current={currentStep} />
+        <div className="rounded-lg bg-white p-4 shadow-lg sm:p-6 lg:p-8">{renderStepContent()}</div>
       </div>
-    </div>
+    </CareerToolLayout>
   );
 };
 

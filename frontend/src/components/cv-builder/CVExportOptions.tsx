@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { CvPreview } from './cv-preview';
 import { type CVData } from './cv-form';
 import { type CVStyle } from './template-customizer';
+import type { CvTemplateLike } from './cv-render';
 
 interface CVExportOptionsProps {
   data: CVData;
   style: CVStyle;
-  template?: any;
-  onExport: (format: string, options?: any) => void;
+  template?: CvTemplateLike | null;
+  onExport: (format: string, options?: Record<string, unknown>) => void;
   isExporting?: boolean;
 }
 
@@ -22,7 +23,6 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
   const [exportOptions, setExportOptions] = useState({
     includePageNumbers: false,
     includeWatermark: false,
-    quality: 'high',
     pageSize: 'A4',
     margins: 'normal'
   });
@@ -62,12 +62,6 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
     }
   ];
 
-  const qualityOptions = [
-    { value: 'high', label: 'High Quality (300 DPI)', description: 'Best for printing' },
-    { value: 'medium', label: 'Medium Quality (150 DPI)', description: 'Good balance' },
-    { value: 'low', label: 'Low Quality (72 DPI)', description: 'Smaller file size' }
-  ];
-
   const pageSizeOptions = [
     { value: 'A4', label: 'A4 (210 × 297 mm)', description: 'Standard international' },
     { value: 'Letter', label: 'Letter (8.5 × 11 in)', description: 'US standard' },
@@ -87,9 +81,9 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
   const selectedFormatData = exportFormats.find(f => f.id === selectedFormat);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Export Your CV</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Export Your CV</h2>
         <p className="text-lg text-gray-600">Choose your preferred format and customize export options</p>
       </div>
 
@@ -97,12 +91,14 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
         {/* Export Options */}
         <div className="space-y-6">
           {/* Format Selection */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Choose Format</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {exportFormats.map((format) => (
                 <button
+                  type="button"
                   key={format.id}
+                  aria-pressed={selectedFormat === format.id}
                   onClick={() => setSelectedFormat(format.id)}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
                     selectedFormat === format.id
@@ -140,32 +136,15 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
           </div>
 
           {/* Export Settings */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Settings</h3>
             <div className="space-y-4">
-              {/* Quality Setting */}
-              {selectedFormat === 'pdf' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Quality</label>
-                  <select
-                    value={exportOptions.quality}
-                    onChange={(e) => setExportOptions({...exportOptions, quality: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {qualityOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label} - {option.description}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
               {/* Page Size */}
               {(selectedFormat === 'pdf' || selectedFormat === 'docx') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Page Size</label>
+                  <label htmlFor="cv-export-page-size" className="block text-sm font-medium text-gray-700 mb-2">Page Size</label>
                   <select
+                    id="cv-export-page-size"
                     value={exportOptions.pageSize}
                     onChange={(e) => setExportOptions({...exportOptions, pageSize: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -182,8 +161,9 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
               {/* Margins */}
               {(selectedFormat === 'pdf' || selectedFormat === 'docx') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Margins</label>
+                  <label htmlFor="cv-export-margins" className="block text-sm font-medium text-gray-700 mb-2">Margins</label>
                   <select
+                    id="cv-export-margins"
                     value={exportOptions.margins}
                     onChange={(e) => setExportOptions({...exportOptions, margins: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -197,7 +177,11 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
                 </div>
               )}
 
-              {/* Additional Options */}
+              {/* Additional Options (PDF only) */}
+              {selectedFormat !== 'pdf' && selectedFormat !== 'docx' && (
+                <p className="text-sm text-gray-600">No extra settings for this format.</p>
+              )}
+              {selectedFormat === 'pdf' && (
               <div className="space-y-3">
                 <div className="flex items-center">
                   <input
@@ -221,15 +205,16 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="includeWatermark" className="ml-2 block text-sm text-gray-900">
-                    Include "Created with Naqash Thaheem's CV Builder" watermark
+                    Include "Created with Naqash Thaheem's CV Builder" footer
                   </label>
                 </div>
               </div>
+              )}
             </div>
           </div>
 
           {/* Export Button */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="text-center">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 Export as {selectedFormatData?.name}
@@ -239,6 +224,7 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
               </p>
               
               <button
+                type="button"
                 onClick={handleExport}
                 disabled={isExporting}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-colors duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -262,7 +248,7 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
         </div>
 
         {/* Preview */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
           <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
             <div className="max-h-[600px] overflow-y-auto">

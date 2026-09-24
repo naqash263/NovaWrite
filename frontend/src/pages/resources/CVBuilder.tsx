@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSEO } from '../../utils/seo';
 import { defaultCVData, type CVData } from '../../components/cv-builder/cv-form';
 import { CvPreview } from '../../components/cv-builder/cv-preview';
+import { escapeHtml, renderTemplateHtml } from '../../components/cv-builder/cv-render';
 import { type CVStyle } from '../../components/cv-builder/template-customizer';
 import { useToast } from '../../hooks/use-toast';
 import CVExportOptions from '../../components/cv-builder/CVExportOptions';
 import { API_CONFIG } from '../../config/api';
 import apiClient from '../../api/axios';
 import jsPDF from 'jspdf';
-import ApiKeyManager from '../../components/ApiKeyManager';
+import CareerToolLayout from '../../components/career/CareerToolLayout';
+import { builtinTemplate } from '../../components/cv-builder/builtin-template';
+import { buildCvDocx } from '../../components/cv-builder/cv-docx';
 import AdPlacement from '../../components/AdPlacement';
 
 
@@ -71,10 +73,15 @@ const FileInput = ({ onFileSelect, isProcessing, buttonText, accept = ".pdf,.doc
 
 // CV Upload Step Component
 const CVUploadStep = ({ onExtractionComplete }: { onExtractionComplete: (extractedData: any) => void }) => {
+  const { addToast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractionResult, setExtractionResult] = useState<any>(null);
 
   const handleFileUpload = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      addToast({ type: 'error', title: 'File too large', description: 'Please upload a CV smaller than 10 MB.' });
+      return;
+    }
     setIsProcessing(true);
     
     try {
@@ -111,7 +118,7 @@ const CVUploadStep = ({ onExtractionComplete }: { onExtractionComplete: (extract
         professionalSummary: result.data.professionalSummary || '',
         workExperience: result.data.workExperience || [],
         education: result.data.education || [],
-        skills: result.data.skills || [],
+        skills: Array.isArray(result.data.skills) ? result.data.skills.join(', ') : result.data.skills || '',
         projects: result.data.projects || [],
         languages: result.data.languages || [],
         interests: result.data.interests || [],
@@ -126,7 +133,7 @@ const CVUploadStep = ({ onExtractionComplete }: { onExtractionComplete: (extract
       console.error('CV extraction failed:', error);
       // Show error message to user
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`CV extraction failed: ${errorMessage}`);
+      addToast({ type: 'error', title: 'CV extraction failed', description: errorMessage });
     } finally {
       setIsProcessing(false);
     }
@@ -183,7 +190,7 @@ const CVUploadStep = ({ onExtractionComplete }: { onExtractionComplete: (extract
                 <li>• Email: {extractionResult.email}</li>
                 <li>• Experience: {extractionResult.workExperience?.length || 0} positions</li>
                 <li>• Education: {extractionResult.education?.length || 0} entries</li>
-                <li>• Skills: {extractionResult.skills?.length || 0} skills</li>
+                <li>• Skills: {String(extractionResult.skills || '').split(',').filter((s: string) => s.trim()).length} skills</li>
             </ul>
           </div>
         </div>
@@ -195,6 +202,7 @@ const CVUploadStep = ({ onExtractionComplete }: { onExtractionComplete: (extract
 
 // Job Tailoring Step Component
 const JobTailoringStep = ({ onTailoringComplete }: { onTailoringComplete: (tailoredData: any) => void }) => {
+  const { addToast } = useToast();
   const [jobDescription, setJobDescription] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [tailoringResult, setTailoringResult] = useState<any>(null);
@@ -257,7 +265,7 @@ const JobTailoringStep = ({ onTailoringComplete }: { onTailoringComplete: (tailo
         professionalSummary: result.data.professionalSummary || '',
         workExperience: result.data.workExperience || [],
         education: result.data.education || [],
-        skills: result.data.skills || [],
+        skills: Array.isArray(result.data.skills) ? result.data.skills.join(', ') : result.data.skills || '',
         projects: result.data.projects || [],
         languages: result.data.languages || [],
         interests: result.data.interests || [],
@@ -272,7 +280,7 @@ const JobTailoringStep = ({ onTailoringComplete }: { onTailoringComplete: (tailo
       console.error('Job tailoring failed:', error);
       // Show error message to user
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`CV tailoring failed: ${errorMessage}`);
+      addToast({ type: 'error', title: 'CV tailoring failed', description: errorMessage });
     } finally {
       setIsProcessing(false);
     }
@@ -292,7 +300,7 @@ const JobTailoringStep = ({ onTailoringComplete }: { onTailoringComplete: (tailo
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Job Description *
               </label>
-              <textarea
+              <textarea aria-label="Job Description"
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
                 placeholder="Paste the complete job description here..."
@@ -356,62 +364,36 @@ const JobTailoringStep = ({ onTailoringComplete }: { onTailoringComplete: (tailo
 };
 
 // AI Features Selection Component
+const CREATION_MODES = [
+  { mode: 'manual', icon: '✏️', title: 'Create Manually', text: 'Start from scratch with the step-by-step guide and live preview.', badge: 'Full control', tone: 'bg-purple-50 text-purple-800' },
+  { mode: 'ai-upload', icon: '📄', title: 'Upload Existing CV', text: 'Upload your current CV (PDF, Word or TXT) and AI extracts the details.', badge: 'AI-powered', tone: 'bg-blue-50 text-blue-800' },
+  { mode: 'ai-tailor', icon: '🎯', title: 'Tailor to Job', text: 'Paste a job description and AI drafts a CV focused on that role.', badge: 'AI-optimized', tone: 'bg-green-50 text-green-800' },
+] as const;
+
 const AIFeaturesSelection = ({ onSelectMode }: { onSelectMode: (mode: 'ai-upload' | 'ai-tailor' | 'manual') => void }) => {
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+    <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-6 sm:mb-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">How would you like to create your CV?</h2>
         <p className="text-base sm:text-lg text-gray-600">Choose the option that works best for you</p>
-          </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        {/* AI Upload Option */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8 hover:shadow-md transition-shadow duration-200 cursor-pointer group"
-             onClick={() => onSelectMode('ai-upload')}>
-          <div className="text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-blue-200 transition-colors duration-200">
-              <span className="text-xl sm:text-2xl">📄</span>
-              </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-1 sm:mb-2">Upload Existing CV</h3>
-            <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Upload your current CV and we'll extract the information automatically</p>
-            <div className="bg-blue-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs sm:text-sm text-blue-800 font-medium">AI-Powered</p>
-              <p className="text-xs text-blue-600">Supports PDF and Word documents</p>
-            </div>
-          </div>
-        </div>
-
-        {/* AI Tailor Option */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8 hover:shadow-md transition-shadow duration-200 cursor-pointer group"
-             onClick={() => onSelectMode('ai-tailor')}>
-          <div className="text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-green-200 transition-colors duration-200">
-              <span className="text-xl sm:text-2xl">🎯</span>
-            </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-1 sm:mb-2">Tailor to Job</h3>
-            <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Paste a job description and we'll optimize your CV for that role</p>
-            <div className="bg-green-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs sm:text-sm text-green-800 font-medium">AI-Optimized</p>
-              <p className="text-xs text-green-600">Perfect match for job requirements</p>
-            </div>
-          </div>
-            </div>
-
-        {/* Manual Option */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8 hover:shadow-md transition-shadow duration-200 cursor-pointer group"
-             onClick={() => onSelectMode('manual')}>
-          <div className="text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-purple-200 transition-colors duration-200">
-              <span className="text-xl sm:text-2xl">✏️</span>
-            </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-1 sm:mb-2">Create Manually</h3>
-            <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Start from scratch with our step-by-step guide</p>
-            <div className="bg-purple-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs sm:text-sm text-purple-800 font-medium">Full Control</p>
-              <p className="text-xs text-purple-600">Complete customization</p>
-            </div>
-          </div>
-        </div>
+        {CREATION_MODES.map((option) => (
+          <button
+            key={option.mode}
+            type="button"
+            onClick={() => onSelectMode(option.mode)}
+            className="group rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm transition-shadow duration-200 hover:border-blue-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:p-8"
+          >
+            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-xl sm:mb-4 sm:h-16 sm:w-16 sm:text-2xl" aria-hidden="true">
+              {option.icon}
+            </span>
+            <span className="mb-1 block text-lg font-semibold text-gray-900 sm:mb-2 sm:text-xl">{option.title}</span>
+            <span className="mb-3 block text-sm text-gray-600 sm:mb-4 sm:text-base">{option.text}</span>
+            <span className={`inline-block rounded-lg px-3 py-1 text-xs font-medium sm:text-sm ${option.tone}`}>{option.badge}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -591,17 +573,17 @@ const StepNavigation = ({
 // Individual Step Components
 const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data: CVData, onDataChange: (data: CVData) => void, onProfilePictureUpload: (event: React.ChangeEvent<HTMLInputElement>) => void }) => {
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Let's start with your basic information</h2>
-        <p className="text-lg text-gray-600">This information will appear at the top of your CV</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Let's start with your basic information</h2>
+        <p className="text-base sm:text-lg text-gray-600">This information will appear at the top of your CV</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-700">Full Name *</label>
-            <input
+            <input aria-label="Full Name"
               type="text"
               value={data.fullName}
               onChange={(e) => onDataChange({ ...data, fullName: e.target.value })}
@@ -612,7 +594,7 @@ const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data
 
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-700">Job Title</label>
-            <input
+            <input aria-label="Job Title"
               type="text"
               value={data.jobTitle}
               onChange={(e) => onDataChange({ ...data, jobTitle: e.target.value })}
@@ -623,7 +605,7 @@ const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data
 
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-700">Email *</label>
-            <input
+            <input aria-label="Email"
               type="email"
               value={data.email}
               onChange={(e) => onDataChange({ ...data, email: e.target.value })}
@@ -634,7 +616,7 @@ const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data
 
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-700">Phone Number</label>
-            <input
+            <input aria-label="Phone Number"
               type="tel"
               value={data.phoneNumber}
               onChange={(e) => onDataChange({ ...data, phoneNumber: e.target.value })}
@@ -645,7 +627,7 @@ const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data
 
           <div className="md:col-span-2 space-y-2">
             <label className="block text-sm font-semibold text-gray-700">Address</label>
-            <input
+            <input aria-label="Address"
               type="text"
               value={data.address}
               onChange={(e) => onDataChange({ ...data, address: e.target.value })}
@@ -660,7 +642,7 @@ const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data
             {/* URL Input */}
             <div className="space-y-2">
               <label className="block text-sm text-gray-600">Or enter image URL:</label>
-            <input
+            <input aria-label="Or enter image URL"
               type="url"
               value={data.profilePictureUrl}
               onChange={(e) => onDataChange({ ...data, profilePictureUrl: e.target.value })}
@@ -724,16 +706,16 @@ const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data
 
 const SummaryStep = ({ data, onDataChange }: { data: CVData, onDataChange: (data: CVData) => void }) => {
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Tell us about yourself</h2>
-        <p className="text-lg text-gray-600">Write a compelling professional summary that highlights your key strengths</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Tell us about yourself</h2>
+        <p className="text-base sm:text-lg text-gray-600">Write a compelling professional summary that highlights your key strengths</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8">
         <div className="space-y-4">
           <label className="block text-sm font-semibold text-gray-700">Professional Summary</label>
-          <textarea
+          <textarea aria-label="Professional Summary"
             value={data.professionalSummary}
             onChange={(e) => onDataChange({ ...data, professionalSummary: e.target.value })}
             placeholder="Write a brief summary of your professional background and career objectives..."
@@ -776,15 +758,15 @@ const ExperienceStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Your work experience</h2>
-        <p className="text-lg text-gray-600">List your most relevant work experience, starting with the most recent</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Your work experience</h2>
+        <p className="text-base sm:text-lg text-gray-600">List your most relevant work experience, starting with the most recent</p>
       </div>
 
       <div className="space-y-6">
         {data.workExperience.map((exp, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Experience {index + 1}</h3>
               {data.workExperience.length > 1 && (
@@ -800,7 +782,7 @@ const ExperienceStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Job Title *</label>
-                <input
+                <input aria-label="Job Title"
                   type="text"
                   value={exp.jobTitle}
                   onChange={(e) => updateExperience(index, 'jobTitle', e.target.value)}
@@ -811,7 +793,7 @@ const ExperienceStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Company *</label>
-                <input
+                <input aria-label="Company"
                   type="text"
                   value={exp.company}
                   onChange={(e) => updateExperience(index, 'company', e.target.value)}
@@ -822,7 +804,7 @@ const ExperienceStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Start Date *</label>
-                <input
+                <input aria-label="Start Date"
                   type="month"
                   value={exp.startDate}
                   onChange={(e) => updateExperience(index, 'startDate', e.target.value)}
@@ -832,7 +814,7 @@ const ExperienceStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">End Date</label>
-                <input
+                <input aria-label="End Date"
                   type="month"
                   value={exp.endDate}
                   onChange={(e) => updateExperience(index, 'endDate', e.target.value)}
@@ -843,7 +825,7 @@ const ExperienceStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
 
               <div className="md:col-span-2 space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Description</label>
-                <textarea
+                <textarea aria-label="Description"
                   value={exp.description}
                   onChange={(e) => updateExperience(index, 'description', e.target.value)}
                   placeholder="Describe your responsibilities and achievements..."
@@ -892,15 +874,15 @@ const EducationStep = ({ data, onDataChange }: { data: CVData, onDataChange: (da
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Your education</h2>
-        <p className="text-lg text-gray-600">Include your academic qualifications and certifications</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Your education</h2>
+        <p className="text-base sm:text-lg text-gray-600">Include your academic qualifications and certifications</p>
       </div>
 
       <div className="space-y-6">
         {data.education.map((edu, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Education {index + 1}</h3>
               {data.education.length > 1 && (
@@ -916,7 +898,7 @@ const EducationStep = ({ data, onDataChange }: { data: CVData, onDataChange: (da
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Degree *</label>
-                <input
+                <input aria-label="Degree"
                   type="text"
                   value={edu.degree}
                   onChange={(e) => updateEducation(index, 'degree', e.target.value)}
@@ -927,7 +909,7 @@ const EducationStep = ({ data, onDataChange }: { data: CVData, onDataChange: (da
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Institution *</label>
-                <input
+                <input aria-label="Institution"
                   type="text"
                   value={edu.institution}
                   onChange={(e) => updateEducation(index, 'institution', e.target.value)}
@@ -938,7 +920,7 @@ const EducationStep = ({ data, onDataChange }: { data: CVData, onDataChange: (da
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Graduation Year *</label>
-                <input
+                <input aria-label="Graduation Year"
                   type="number"
                   value={edu.graduationYear}
                   onChange={(e) => updateEducation(index, 'graduationYear', e.target.value)}
@@ -999,9 +981,9 @@ const SkillsAndProjectsStep = ({ data, onDataChange }: { data: CVData, onDataCha
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Skills & Projects</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Skills & Projects</h2>
         <p className="text-gray-600">Showcase your technical skills and portfolio projects</p>
       </div>
 
@@ -1013,7 +995,7 @@ const SkillsAndProjectsStep = ({ data, onDataChange }: { data: CVData, onDataCha
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Skills
             </label>
-          <textarea
+          <textarea aria-label="Skills"
             value={data.skills}
             onChange={(e) => onDataChange({ ...data, skills: e.target.value })}
               placeholder="e.g., JavaScript, React, Node.js, Python, SQL, Git, Docker, AWS"
@@ -1050,7 +1032,7 @@ const SkillsAndProjectsStep = ({ data, onDataChange }: { data: CVData, onDataCha
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Project Name *
                     </label>
-                    <input
+                    <input aria-label="Project Name"
                       type="text"
                       value={project.name}
                       onChange={(e) => updateProject(index, "name", e.target.value)}
@@ -1063,7 +1045,7 @@ const SkillsAndProjectsStep = ({ data, onDataChange }: { data: CVData, onDataCha
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Technologies Used
                     </label>
-                    <input
+                    <input aria-label="Technologies Used"
                       type="text"
                       value={project.technologies}
                       onChange={(e) => updateProject(index, "technologies", e.target.value)}
@@ -1076,7 +1058,7 @@ const SkillsAndProjectsStep = ({ data, onDataChange }: { data: CVData, onDataCha
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Start Date
                     </label>
-                    <input
+                    <input aria-label="Start Date"
                       type="text"
                       value={project.startDate}
                       onChange={(e) => updateProject(index, "startDate", e.target.value)}
@@ -1089,7 +1071,7 @@ const SkillsAndProjectsStep = ({ data, onDataChange }: { data: CVData, onDataCha
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       End Date
                     </label>
-                    <input
+                    <input aria-label="End Date"
                       type="text"
                       value={project.endDate}
                       onChange={(e) => updateProject(index, "endDate", e.target.value)}
@@ -1102,7 +1084,7 @@ const SkillsAndProjectsStep = ({ data, onDataChange }: { data: CVData, onDataCha
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Project URL
                     </label>
-                    <input
+                    <input aria-label="Project URL"
                       type="url"
                       value={project.url}
                       onChange={(e) => updateProject(index, "url", e.target.value)}
@@ -1115,7 +1097,7 @@ const SkillsAndProjectsStep = ({ data, onDataChange }: { data: CVData, onDataCha
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Description *
                     </label>
-                    <textarea
+                    <textarea aria-label="Description"
                       value={project.description}
                       onChange={(e) => updateProject(index, "description", e.target.value)}
                       placeholder="Describe what the project does, your role, and key achievements"
@@ -1217,9 +1199,9 @@ const LanguagesAndInterestsStep = ({ data, onDataChange }: { data: CVData, onDat
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Languages & Interests</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Languages & Interests</h2>
         <p className="text-gray-600">Add your language skills and personal interests</p>
       </div>
 
@@ -1248,7 +1230,7 @@ const LanguagesAndInterestsStep = ({ data, onDataChange }: { data: CVData, onDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Language *
                     </label>
-                    <input
+                    <input aria-label="Language"
                       type="text"
                       value={language.language}
                       onChange={(e) => updateLanguage(index, "language", e.target.value)}
@@ -1261,7 +1243,7 @@ const LanguagesAndInterestsStep = ({ data, onDataChange }: { data: CVData, onDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Proficiency Level *
                     </label>
-                    <select
+                    <select aria-label="Proficiency Level"
                       value={language.proficiency}
                       onChange={(e) => updateLanguage(index, "proficiency", e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1311,7 +1293,7 @@ const LanguagesAndInterestsStep = ({ data, onDataChange }: { data: CVData, onDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Category *
                     </label>
-                    <input
+                    <input aria-label="Category"
                       type="text"
                       value={interest.category}
                       onChange={(e) => updateInterest(index, "category", e.target.value)}
@@ -1324,7 +1306,7 @@ const LanguagesAndInterestsStep = ({ data, onDataChange }: { data: CVData, onDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Items *
                     </label>
-                    <textarea
+                    <textarea aria-label="Items"
                       value={interest.items}
                       onChange={(e) => updateInterest(index, "items", e.target.value)}
                       placeholder="e.g., Football, Basketball, Guitar, Piano, Photography, Hiking"
@@ -1397,9 +1379,9 @@ const ReferencesStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">References</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">References</h2>
         <p className="text-gray-600">Add professional references who can vouch for your work</p>
       </div>
 
@@ -1424,7 +1406,7 @@ const ReferencesStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Full Name *
                 </label>
-                <input
+                <input aria-label="Full Name"
                   type="text"
                   value={reference.name}
                   onChange={(e) => updateReference(index, "name", e.target.value)}
@@ -1437,7 +1419,7 @@ const ReferencesStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Position *
                 </label>
-                <input
+                <input aria-label="Position"
                   type="text"
                   value={reference.position}
                   onChange={(e) => updateReference(index, "position", e.target.value)}
@@ -1450,7 +1432,7 @@ const ReferencesStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Company *
                 </label>
-                <input
+                <input aria-label="Company"
                   type="text"
                   value={reference.company}
                   onChange={(e) => updateReference(index, "company", e.target.value)}
@@ -1463,7 +1445,7 @@ const ReferencesStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email *
                 </label>
-                <input
+                <input aria-label="Email"
                   type="email"
                   value={reference.email}
                   onChange={(e) => updateReference(index, "email", e.target.value)}
@@ -1476,7 +1458,7 @@ const ReferencesStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone (Optional)
                 </label>
-                <input
+                <input aria-label="Phone (Optional)"
                   type="tel"
                   value={reference.phone}
                   onChange={(e) => updateReference(index, "phone", e.target.value)}
@@ -1565,9 +1547,9 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Certifications & Achievements</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Certifications & Achievements</h2>
         <p className="text-gray-600">Showcase your professional certifications and accomplishments</p>
       </div>
 
@@ -1596,7 +1578,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Certificate Name *
                     </label>
-                    <input
+                    <input aria-label="Certificate Name"
                       type="text"
                       value={certificate.name}
                       onChange={(e) => updateCertificate(index, "name", e.target.value)}
@@ -1609,7 +1591,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Issuing Organization *
                     </label>
-                    <input
+                    <input aria-label="Issuing Organization"
                       type="text"
                       value={certificate.issuer}
                       onChange={(e) => updateCertificate(index, "issuer", e.target.value)}
@@ -1622,7 +1604,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Date Obtained *
                     </label>
-                    <input
+                    <input aria-label="Date Obtained"
                       type="text"
                       value={certificate.date}
                       onChange={(e) => updateCertificate(index, "date", e.target.value)}
@@ -1635,7 +1617,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Credential ID
                     </label>
-                    <input
+                    <input aria-label="Credential ID"
                       type="text"
                       value={certificate.credentialId}
                       onChange={(e) => updateCertificate(index, "credentialId", e.target.value)}
@@ -1648,7 +1630,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Verification URL
                     </label>
-                    <input
+                    <input aria-label="Verification URL"
                       type="url"
                       value={certificate.url}
                       onChange={(e) => updateCertificate(index, "url", e.target.value)}
@@ -1694,7 +1676,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Achievement Title *
                     </label>
-                    <input
+                    <input aria-label="Achievement Title"
                       type="text"
                       value={achievement.title}
                       onChange={(e) => updateAchievement(index, "title", e.target.value)}
@@ -1707,7 +1689,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Description *
                     </label>
-                    <textarea
+                    <textarea aria-label="Description"
                       value={achievement.description}
                       onChange={(e) => updateAchievement(index, "description", e.target.value)}
                       placeholder="Describe what you achieved and why it's significant"
@@ -1720,7 +1702,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Date (Optional)
                     </label>
-                    <input
+                    <input aria-label="Date (Optional)"
                       type="text"
                       value={achievement.date}
                       onChange={(e) => updateAchievement(index, "date", e.target.value)}
@@ -1771,9 +1753,6 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
   const handleTemplateSelect = (templateId: string) => {
     const template = templates.find(t => t.id.toString() === templateId);
     if (template) {
-      console.log('Template selected:', template);
-      console.log('Selected template HTML content length:', template.html_content?.length || 0);
-      console.log('Selected template HTML preview:', template.html_content?.substring(0, 200) || 'No HTML content');
       onStyleChange({
         ...style,
         templateName: template.name || templateId,
@@ -1797,12 +1776,12 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Choose Your ATS-Friendly Template</h2>
-        <p className="text-lg text-gray-600">Select a proven template that passes Applicant Tracking Systems</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Choose Your ATS-Friendly Template</h2>
+        <p className="text-base sm:text-lg text-gray-600">Select a proven template that passes Applicant Tracking Systems</p>
         
-        <div className="flex justify-center space-x-4 mt-6">
+        <div className="flex flex-wrap justify-center gap-3 mt-6">
           <button
             onClick={() => setPreviewMode('grid')}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
@@ -1826,26 +1805,20 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
         </div>
         
         {/* ATS-Friendly Template Info */}
-        <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
-          <h4 className="font-semibold text-green-900 mb-2">✅ ATS-Friendly Templates</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-green-800">
-            <div>
-              <h5 className="font-semibold mb-1">Proven Effectiveness:</h5>
-              <p>Based on research from Jobscan, Microsoft, Novoresume, and other ATS experts</p>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-1">Maximum Compatibility:</h5>
-              <p>Designed to pass through Applicant Tracking Systems with high success rates</p>
-            </div>
-          </div>
+        <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4 text-left">
+          <h3 className="font-semibold text-green-900 mb-2">What makes a template ATS-friendly</h3>
+          <p className="text-sm text-green-800">
+            Applicant tracking systems read text, not design. A single column, standard section headings (Experience, Education, Skills)
+            and real text instead of images make your CV easiest to parse. The built-in Classic ATS template follows these rules.
+          </p>
         </div>
       </div>
 
       {previewMode === 'grid' ? (
         <div className="space-y-8">
           {/* ATS-Friendly Template Grid */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Choose Your ATS-Friendly Template</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">Template gallery</h3>
             
             {templates.length === 0 ? (
               <div className="text-center py-16">
@@ -1902,6 +1875,7 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
                     )}
                     
                     {/* ATS Score Badge */}
+                    {typeof template.ats_score === 'number' && (
                     <div className="absolute top-3 right-3">
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                         template.ats_score >= 8 ? 'bg-green-100 text-green-800' :
@@ -1911,6 +1885,7 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
                         ATS {template.ats_score}/10
                       </span>
                     </div>
+                    )}
                   </div>
                   
                   <div className="p-4 bg-white">
@@ -1943,11 +1918,17 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
                       </div>
                     </div>
                     
-                    <button 
-                      onClick={() => handleTemplateSelect(template.id.toString())}
+                    <button
+                      type="button"
+                      aria-pressed={selectedTemplate?.id === template.id}
+                      aria-label={`${selectedTemplate?.id === template.id ? 'Selected' : 'Select'} template: ${template.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTemplateSelect(template.id.toString());
+                      }}
                       className="mt-2 w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                     >
-                      Select Template
+                      {selectedTemplate?.id === template.id ? 'Selected' : 'Select Template'}
                     </button>
                   </div>
                 </div>
@@ -1956,65 +1937,14 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
             )}
           </div>
           
-          {/* Template Selection Guide */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Template Selection Guide</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-semibold text-blue-900 mb-2">Executive Level</h4>
-                <p className="text-sm text-blue-800 mb-2">Jobscan Executive, Microsoft Professional</p>
-                <ul className="text-xs text-blue-700 space-y-1">
-                  <li>• C-level positions</li>
-                  <li>• Senior executives</li>
-                  <li>• Corporate leadership</li>
-                </ul>
-              </div>
-              
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h4 className="font-semibold text-green-900 mb-2">Tech Professionals</h4>
-                <p className="text-sm text-green-800 mb-2">Novoresume Modern, Hirective Tech</p>
-                <ul className="text-xs text-green-700 space-y-1">
-                  <li>• Software developers</li>
-                  <li>• IT professionals</li>
-                  <li>• Tech startups</li>
-                </ul>
-              </div>
-              
-              <div className="p-4 bg-purple-50 rounded-lg">
-                <h4 className="font-semibold text-purple-900 mb-2">Career Changers</h4>
-                <p className="text-sm text-purple-800 mb-2">Wozber Functional, Teal Hybrid</p>
-                <ul className="text-xs text-purple-700 space-y-1">
-                  <li>• Recent graduates</li>
-                  <li>• Career transitions</li>
-                  <li>• Skills-based roles</li>
-                </ul>
-              </div>
-              
-              <div className="p-4 bg-orange-50 rounded-lg">
-                <h4 className="font-semibold text-orange-900 mb-2">Consultants</h4>
-                <p className="text-sm text-orange-800 mb-2">Cultivated Minimal, Freesumes Boost</p>
-                <ul className="text-xs text-orange-700 space-y-1">
-                  <li>• Freelancers</li>
-                  <li>• Consultants</li>
-                  <li>• Academic roles</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-             
-            </div>
-          </div>
-          
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-center mb-4">
+        <div className="grid grid-cols-1 gap-8">
+          <div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-6">
+              <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Live Preview</h3>
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="text-sm text-gray-500">
                     Template: <span className="font-medium">{selectedTemplate ? style.templateName : 'Select a template'}</span>
                   </div>
@@ -2064,34 +1994,57 @@ const PreviewStep = ({ data, style, onDownload, selectedTemplate }: { data: CVDa
   );
 };
 
-export default function CVBuilder() {
-  useSEO({
-    title: 'Free AI-Powered CV Builder - Create Professional Resumes Online | No Signup',
-    description: 'Free AI-powered CV builder - no signup required. Build professional CVs and resumes instantly. AI-powered parsing, multiple templates, ATS-friendly format, and instant PDF download. Free resume builder no signup. Perfect for job seekers.',
-    url: '/resources/cv-builder',
-    keywords: [
-      'free AI-powered CV builder', 'CV builder', 'free CV builder', 'AI-powered CV builder', 'ATS-friendly resume builder free',
-      'resume builder', 'free resume builder no signup', 'online CV builder free',
-      'free cv maker', 'professional resume', 'cv templates', 'ai cv builder',
-      'free professional CV builder', 'resume builder with AI suggestions', 'free CV template builder online'
-    ]
-  });
+type ExportOptions = { pageSize?: string; margins?: string; includePageNumbers?: boolean; includeWatermark?: boolean };
 
-  const [cvData, setCvData] = useState<CVData>(defaultCVData);
-  const [cvStyle, setCvStyle] = useState<CVStyle>({
-    templateName: 'jobscan-executive',
-    primaryColor: '#000000',
-    secondaryColor: '#FFFFFF',
-    fontFamily: 'Arial, sans-serif',
-    fontSize: 11,
+// Reads builder progress saved in localStorage (synchronously, so a reload resumes
+// exactly where the user left off, also under React StrictMode).
+const readSaved = <T,>(key: string): T | null => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+};
+const shouldLoadSaved = () => {
+  try {
+    return localStorage.getItem('cv-builder-load-saved') !== 'false';
+  } catch {
+    return false;
+  }
+};
+
+export default function CVBuilder() {
+  const [cvData, setCvData] = useState<CVData>(() => {
+    const saved = shouldLoadSaved() ? readSaved<Partial<CVData>>('cv-builder-data') : null;
+    return saved && typeof saved === 'object' ? { ...defaultCVData, ...saved } : defaultCVData;
   });
-  const [currentStep, setCurrentStep] = useState(0); // 0 = AI selection, 1-7 = manual steps
+  const [cvStyle, setCvStyle] = useState<CVStyle>(() => {
+    const fallback: CVStyle = {
+      templateName: 'jobscan-executive',
+      primaryColor: '#000000',
+      secondaryColor: '#FFFFFF',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: 11,
+    };
+    const saved = shouldLoadSaved() ? readSaved<Partial<CVStyle>>('cv-builder-style') : null;
+    return saved && typeof saved === 'object' ? { ...fallback, ...saved } : fallback;
+  });
+  // 0 = choose how to start, 1-8 = data entry, 9 = template, 10 = export
+  const [currentStep, setCurrentStep] = useState(() => {
+    const saved = Number(readSaved<number>('cv-builder-step'));
+    return Number.isInteger(saved) && saved >= 0 && saved <= 10 ? saved : 0;
+  });
   const [creationMode, setCreationMode] = useState<'ai-upload' | 'ai-tailor' | 'manual' | null>(null);
   const [hasProcessedData, setHasProcessedData] = useState(false);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(() => {
+    const saved = readSaved<number[]>('cv-builder-completed-steps');
+    return new Set(Array.isArray(saved) ? saved : []);
+  });
+  const [templates, setTemplates] = useState<any[]>([builtinTemplate]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(builtinTemplate);
+  const [livePreviewOpen, setLivePreviewOpen] = useState(() => typeof window === 'undefined' || !window.matchMedia || window.matchMedia('(min-width: 1024px)').matches);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const { addToast } = useToast();
 
@@ -2211,40 +2164,50 @@ export default function CVBuilder() {
   };
 
 
-  // Load templates from API
+  // Load admin-managed templates from the API; the built-in template is always available.
   useEffect(() => {
+    let cancelled = false;
     const loadTemplates = async () => {
       try {
         const response = await apiClient.get('/cv-templates');
         const data = response.data;
-        
-        if (data.success) {
-          console.log('Loaded templates:', data.data);
-          setTemplates(data.data);
-          // Set default template if available
-          const defaultTemplate = data.data.find((t: any) => t.is_default) || data.data[0];
-          if (defaultTemplate) {
-            console.log('Default template selected:', defaultTemplate);
-            console.log('Default template HTML content length:', defaultTemplate.html_content?.length || 0);
-            setSelectedTemplate(defaultTemplate);
-            setCvStyle({
-              templateName: defaultTemplate.name || defaultTemplate.id.toString(),
-              primaryColor: '#2563eb',
-              secondaryColor: '#64748b',
-              fontFamily: 'Arial, sans-serif',
-              fontSize: 11,
-            });
-          }
+        const apiTemplates: any[] = data?.success && Array.isArray(data.data) ? data.data.filter((t: any) => t?.html_content) : [];
+        if (cancelled || apiTemplates.length === 0) return;
+        setTemplates([builtinTemplate, ...apiTemplates]);
+        let savedId: string | null = null;
+        try {
+          savedId = localStorage.getItem('cv-builder-template-id');
+        } catch {
+          savedId = null;
+        }
+        const saved = savedId ? [builtinTemplate, ...apiTemplates].find((t: any) => String(t.id) === savedId) : null;
+        const initial = saved || apiTemplates.find((t: any) => t.is_default) || apiTemplates[0];
+        if (initial) {
+          setSelectedTemplate(initial);
+          setCvStyle((prev) => ({ ...prev, templateName: initial.name || String(initial.id) }));
         }
       } catch (error) {
-        console.error('Failed to load templates:', error);
+        console.warn('CV templates could not be loaded; using the built-in template.', error);
       } finally {
-        setTemplatesLoading(false);
+        if (!cancelled) setTemplatesLoading(false);
       }
     };
 
     loadTemplates();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  // Remember the template the user picks between visits.
+  const chooseTemplate = (template: any) => {
+    setSelectedTemplate(template);
+    try {
+      if (template?.id !== undefined) localStorage.setItem('cv-builder-template-id', String(template.id));
+    } catch {
+      /* storage unavailable */
+    }
+  };
 
   // Function to mark a step as completed
   const markStepCompleted = (step: number) => {
@@ -2264,7 +2227,6 @@ export default function CVBuilder() {
         try {
           const sanitizedData = sanitizeCvData(cvData);
           localStorage.setItem('cv-builder-data', JSON.stringify(sanitizedData));
-          console.log('Saved sanitized CV data to localStorage');
           
           // Update state with sanitized data
           setCvData(sanitizedData);
@@ -2285,49 +2247,13 @@ export default function CVBuilder() {
     return () => clearTimeout(timer);
   }, [cvData, cvStyle, completedSteps]);
 
-  // Load saved data from localStorage on mount
-  useEffect(() => {
-    const savedData = localStorage.getItem('cv-builder-data');
-    const savedStyle = localStorage.getItem('cv-builder-style');
-    const savedStep = localStorage.getItem('cv-builder-step');
-    const savedCompletedSteps = localStorage.getItem('cv-builder-completed-steps');
-    
-    // Only load saved data if user hasn't explicitly chosen to start fresh
-    const shouldLoadSaved = localStorage.getItem('cv-builder-load-saved') !== 'false';
-    
-    if (savedData && shouldLoadSaved) {
-      try {
-        setCvData(JSON.parse(savedData));
-      } catch (error) {
-        console.error('Failed to load saved CV data:', error);
-      }
-    }
-    
-    if (savedStyle && shouldLoadSaved) {
-      try {
-        setCvStyle(JSON.parse(savedStyle));
-      } catch (error) {
-        console.error('Failed to load saved CV style:', error);
-      }
-    }
-
-    if (savedStep) {
-      changeStep(parseInt(savedStep));
-    }
-
-    if (savedCompletedSteps) {
-      try {
-        setCompletedSteps(new Set(JSON.parse(savedCompletedSteps)));
-      } catch (error) {
-        console.error('Failed to load saved completed steps:', error);
-      }
-    }
-
-  }, []);
-
   // Save current step
   useEffect(() => {
-    localStorage.setItem('cv-builder-step', currentStep.toString());
+    try {
+      localStorage.setItem('cv-builder-step', currentStep.toString());
+    } catch {
+      /* storage unavailable */
+    }
   }, [currentStep]);
 
   // Auto-advance to step 1 when creation mode is selected
@@ -2521,168 +2447,65 @@ export default function CVBuilder() {
   };
 
 
-  const exportAsPDF = async (_options: any): Promise<void> => {
-    try {
-      console.log('Starting ATS-friendly PDF generation...');
-      console.log('CV Data:', cvData);
+  // Safe file name: keep letters, numbers, spaces, dots and dashes.
+  const exportFileBase = () =>
+    (cvData.fullName || 'CV')
+      .replace(/[^\p{L}\p{N} ._-]+/gu, ' ')
+      .trim()
+      .replace(/\s+/g, '_') || 'CV';
 
-      // Get the preview element that contains the rendered template
+  const exportAsPDF = async (options: ExportOptions = {}): Promise<void> => {
+    try {
       const previewElement = document.querySelector('[data-cv-preview]');
-      if (!previewElement) {
-        throw new Error('CV preview element not found');
-      }
-      
-      // Get the already-processed template HTML from the preview element
-      // This HTML is already fully processed with the selected template and CV data
-      let templateHTML = previewElement.innerHTML;
-      
-      console.log('Using already-processed template HTML from preview');
-      console.log('Template HTML length:', templateHTML.length);
-      console.log('Template HTML preview:', templateHTML.substring(0, 500));
-      console.log('Selected Template:', selectedTemplate);
-      
-      // Create PDF using jsPDF's HTML method with the template HTML directly
-      let pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        putOnlyUsedFonts: true,
-        compress: true
+      const templateHTML = previewElement ? previewElement.innerHTML : renderTemplateHtml(cvData, cvStyle, selectedTemplate);
+
+      const pageSize = (options.pageSize || 'A4').toLowerCase() as 'a4' | 'letter' | 'legal';
+      const marginMm = options.margins === 'narrow' ? 12.7 : options.margins === 'wide' ? 38.1 : 25.4;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: pageSize, putOnlyUsedFonts: true, compress: true });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const contentWidth = pageWidth - marginMm * 2;
+      // Lay the template out at the printable width in CSS pixels (96 dpi) so 1px = 1px on paper.
+      const renderWidthPx = Math.round((contentWidth / 25.4) * 96);
+
+      const container = document.createElement('div');
+      container.style.cssText = `width:${renderWidthPx}px;background:#fff;color:#1f2937;font-family:Arial, sans-serif;`;
+      container.innerHTML = templateHTML;
+
+      await pdf.html(container, {
+        x: 0,
+        y: 0,
+        margin: [marginMm, marginMm, marginMm, marginMm],
+        width: contentWidth,
+        windowWidth: renderWidthPx,
+        autoPaging: 'text',
+        html2canvas: { useCORS: true, backgroundColor: '#ffffff', logging: false },
       });
 
-      // Create HTML document with the template HTML and minimal styling for PDF
-      const htmlForPDF = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body {
-              margin: 0;
-              padding: 10mm;
-              background: white;
-              font-family: Arial, sans-serif;
-              font-size: 10px;
-              line-height: 1.3;
-              color: #333;
-            }
-            
-            /* Preserve template styling */
-            .cv-template {
-              width: 100%;
-              max-width: none;
-              margin: 0;
-              padding: 0;
-              background: white;
-            }
-            
-            /* Ensure all template styles are preserved */
-            * {
-              box-sizing: border-box;
-            }
-            
-            /* Make sure text is visible */
-            h1, h2, h3, h4, h5, h6, p, div, span {
-              color: inherit !important;
-            }
-            
-            /* Preserve template colors and styling */
-            .cv-template * {
-              color: inherit !important;
-              background-color: inherit !important;
-            }
-          </style>
-        </head>
-        <body>
-          ${templateHTML}
-        </body>
-        </html>
-      `;
+      // html2canvas can leave its overlay behind; remove it so the page stays clickable.
+      document.querySelectorAll('.html2pdf__overlay').forEach((overlay) => overlay.remove());
 
-      // Generate PDF using jsPDF's HTML method
-      console.log('Generating PDF with template...');
-      
-      try {
-        // Use jsPDF's HTML method with the template HTML
-        await pdf.html(htmlForPDF, {
-          callback: function (_doc) {
-            console.log('PDF generation completed');
-          },
-          x: -30,
-          y: 0,
-          width: 210, // A4 width in mm
-          
-          windowWidth: 1024,
-          html2canvas: {
-            scale: 0.264,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            logging: false,
-            letterRendering: true
-          }
-        });
-        
-        // Clean up html2canvas overlay that might be blocking interactions
-        const overlay = document.querySelector('.html2pdf__overlay');
-        if (overlay) {
-          overlay.remove();
-          console.log('Removed html2canvas overlay');
-        }
-        
-        // Clean up any other html2canvas related elements
-        const html2canvasElements = document.querySelectorAll('[class*="html2pdf"]');
-        html2canvasElements.forEach(element => {
-          if (element.classList.contains('html2pdf__overlay')) {
-            element.remove();
-          }
-        });
-        
-        // Save the PDF
-        const fileName = `${cvData.fullName || 'CV'}_Resume.pdf`;
-        pdf.save(fileName);
-        
-        console.log('PDF generated successfully with template');
-        
-      } catch (htmlError) {
-        console.error('Error in PDF HTML generation:', htmlError);
-        // Fallback to text-based PDF generation
-        const textContent = `
-          ${cvData.fullName || 'CV'}
-          ${cvData.jobTitle || ''}
-          ${cvData.email || ''}
-          ${cvData.phoneNumber || ''}
-          ${cvData.address || ''}
-          
-          ${cvData.professionalSummary || ''}
-          
-          Experience:
-          ${cvData.workExperience.map(exp => `${exp.jobTitle} at ${exp.company} (${exp.startDate} - ${exp.endDate})`).join('\n')}
-          
-          Education:
-          ${cvData.education.map(edu => `${edu.degree} from ${edu.institution} (${edu.graduationYear})`).join('\n')}
-        `;
-        
-        pdf.text(textContent, 10, 10);
-        pdf.save(`${cvData.fullName || 'CV'}_Resume.pdf`);
-        console.log('PDF generated with fallback text content');
+      const pages = pdf.getNumberOfPages();
+      for (let i = 1; i <= pages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(120);
+        if (options.includePageNumbers) pdf.text(`Page ${i} of ${pages}`, pageWidth - marginMm, pageHeight - 6, { align: 'right' });
+        if (options.includeWatermark) pdf.text("Created with Naqash Thaheem's CV Builder", marginMm, pageHeight - 6);
       }
 
+      pdf.save(`${exportFileBase()}_Resume.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
-      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       addToast({
         type: 'error',
         title: 'PDF Export Failed',
-        description: 'Failed to export as PDF. Please try again.',
+        description: 'Failed to export as PDF. Please try again or download the Word version.',
         duration: 5000
       });
       throw error; // Re-throw to ensure the Promise is rejected
     }
   };
-
-
 
   const exportAsTXT = async (_options: any): Promise<void> => {
     try {
@@ -2693,7 +2516,7 @@ export default function CVBuilder() {
       }
       
       // Get the rendered template HTML from the preview element
-      let templateHTML = previewElement.innerHTML;
+      const templateHTML = previewElement.innerHTML;
       
       // Convert HTML to plain text while preserving structure
       // Create a temporary div to parse the HTML
@@ -2754,13 +2577,12 @@ export default function CVBuilder() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${cvData.fullName || 'CV'}_Resume.txt`;
+      a.download = `${exportFileBase()}_Resume.txt`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      console.log('TXT export completed with template structure preserved');
     } catch (error) {
       console.error('Error generating TXT:', error);
       addToast({
@@ -2774,13 +2596,26 @@ export default function CVBuilder() {
   };
 
   const exportAsDOCX = async (_options: any): Promise<void> => {
-    // For now, show a message that DOCX export is coming soon
-    addToast({
-      type: 'info',
-      title: 'Coming Soon',
-      description: 'DOCX export is coming soon! For now, please use PDF export.',
-      duration: 5000
-    });
+    try {
+      const blob = await buildCvDocx(cvData, cvStyle.primaryColor, { pageSize: _options?.pageSize, margins: _options?.margins });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${exportFileBase()}_Resume.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error('Error generating DOCX:', error);
+      addToast({
+        type: 'error',
+        title: 'Export Failed',
+        description: 'Failed to export as Word. Please try again.',
+        duration: 5000
+      });
+      throw error;
+    }
   };
 
   const exportAsHTML = async (_options: any): Promise<void> => {
@@ -2792,7 +2627,7 @@ export default function CVBuilder() {
       }
       
       // Get the already-processed template HTML from the preview element
-      let templateHTML = previewElement.innerHTML;
+      const templateHTML = previewElement.innerHTML;
       
       // Create HTML document with the template HTML
       const htmlContent = `
@@ -2800,7 +2635,7 @@ export default function CVBuilder() {
         <html>
         <head>
           <meta charset="utf-8">
-          <title>${cvData.fullName || 'CV'} - Resume</title>
+          <title>${escapeHtml(cvData.fullName || 'CV')} - Resume</title>
           <style>
             body {
               margin: 0;
@@ -2826,13 +2661,12 @@ export default function CVBuilder() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${cvData.fullName || 'CV'}_Resume.html`;
+      a.download = `${exportFileBase()}_Resume.html`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      console.log('HTML export completed');
     } catch (error) {
       console.error('Error generating HTML:', error);
       addToast({
@@ -2876,6 +2710,10 @@ export default function CVBuilder() {
     }
   };
 
+  // Live preview beside the form for the data-entry steps (not while uploading/tailoring).
+  const showLivePreview =
+    currentStep >= 1 && currentStep <= 8 && !(currentStep === 1 && (creationMode === 'ai-upload' || creationMode === 'ai-tailor') && !hasProcessedData);
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
@@ -2910,7 +2748,7 @@ export default function CVBuilder() {
           data={cvData} 
           templates={templates} 
           templatesLoading={templatesLoading} 
-          onTemplateSelect={setSelectedTemplate} 
+          onTemplateSelect={chooseTemplate} 
           selectedTemplate={selectedTemplate} 
         />;
       case 10:
@@ -2926,24 +2764,10 @@ export default function CVBuilder() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
-        <div className="text-center mb-4 sm:mb-6 md:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4">
-            Free AI-Powered CV Builder
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-2">
-            Free AI-powered CV builder - no signup required. Create professional, ATS-optimized resumes instantly with our intelligent CV builder. Get AI-powered suggestions and templates tailored to your industry. Free resume builder no signup. Perfect for job seekers.
-          </p>
-      </div>
-
+    <CareerToolLayout slug="cv-builder">
+      <div>
         {/* Ad Placement - Top */}
         <AdPlacement position="content-top" className="mb-6" />
-
-        {/* API Key Manager */}
-        <div className="mb-6">
-          <ApiKeyManager />
-            </div>
 
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Clear Button - Top Right */}
@@ -2962,20 +2786,54 @@ export default function CVBuilder() {
       </div>
 
           <div className="p-3 sm:p-4 md:p-6 pt-2 sm:pt-3 md:pt-4">
-            <div className="mb-4 sm:mb-6 md:mb-8 step-content">
-              {renderStepContent()}
-      </div>
+            <div
+              className={`mb-4 sm:mb-6 md:mb-8 step-content ${
+                showLivePreview && livePreviewOpen ? 'grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,460px)]' : ''
+              }`}
+            >
+              <div className="min-w-0">{renderStepContent()}</div>
+              {showLivePreview && (
+                <aside aria-labelledby="cv-live-preview-heading" className="min-w-0 xl:sticky xl:top-4 xl:self-start">
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 sm:p-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <h2 id="cv-live-preview-heading" className="text-lg font-semibold text-gray-900">
+                        Live preview
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => setLivePreviewOpen((open) => !open)}
+                        aria-expanded={livePreviewOpen}
+                        aria-controls="cv-live-preview"
+                        className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        {livePreviewOpen ? 'Hide preview' : 'Show preview'}
+                      </button>
+                    </div>
+                    {livePreviewOpen && (
+                      <div id="cv-live-preview" data-testid="cv-live-preview" className="max-h-[75vh] overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+                        <CvPreview data={cvData} style={cvStyle} template={selectedTemplate} />
+                      </div>
+                    )}
+                    {livePreviewOpen && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        Template: {selectedTemplate?.name || 'Classic ATS'}. Change it in step 9. Empty sections are hidden automatically.
+                      </p>
+                    )}
+                  </div>
+                </aside>
+              )}
+            </div>
 
         {/* Ad Placement - Middle (between content and navigation) */}
         <AdPlacement position="content-middle" className="mb-6" />
 
-        <StepNavigation
+        {currentStep > 0 && <StepNavigation
           currentStep={currentStep}
           totalSteps={totalSteps}
           onNext={handleNext}
           onPrevious={handlePrevious}
           onFinish={handleFinish}
-            />
+            />}
           </div>
         </div>
 
@@ -3024,6 +2882,6 @@ export default function CVBuilder() {
           </div>
         )}
       </div>
-    </div>
+    </CareerToolLayout>
   );
 }
