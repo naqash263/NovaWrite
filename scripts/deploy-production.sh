@@ -54,6 +54,16 @@ npm cache clean --force
 echo -e "${BLUE}📦 Installing frontend dependencies...${NC}"
 cd frontend
 
+# deploy.yml builds the frontend on the GitHub runner (type check, Vite build,
+# prerender) and uploads dist/ here, so the shared host never runs npm.
+PREBUILT_DIR="$HOME/naqashthaheem.com/frontend-prebuilt"
+if [ -f "$PREBUILT_DIR/index.html" ]; then
+echo -e "${GREEN}📦 Using frontend build uploaded by GitHub Actions${NC}"
+rm -rf dist node_modules
+mv "$PREBUILT_DIR" dist
+else
+echo -e "${YELLOW}⚠️ No uploaded build found, building the frontend on the server${NC}"
+
 # Verify Node.js is working
 if ! command -v node &> /dev/null; then
   echo -e "${RED}❌ Node.js not found after installation${NC}"
@@ -81,7 +91,7 @@ find . -name "*.js.map" -type f -not -path "./node_modules/*" -delete
 if ! npm ci --no-audit --no-fund; then
   echo -e "${RED}❌ npm ci failed${NC}"
   NPM_LOG=$(ls -t "$HOME"/.npm/_logs/*-debug-0.log 2>/dev/null | head -1)
-  [ -n "$NPM_LOG" ] && grep -E "^[0-9]+ (error|verbose stack)" "$NPM_LOG" | tail -40
+  [ -n "$NPM_LOG" ] && tail -n 60 "$NPM_LOG" | grep -viE "auth|token|password"
   exit 1
 fi
 
@@ -139,6 +149,7 @@ else
   echo -e "${BLUE}📁 Checking if dist directory exists...${NC}"
   ls -la dist/ 2>/dev/null || echo "dist directory does not exist"
   exit 1
+fi
 fi
 
 # Verify build was successful
