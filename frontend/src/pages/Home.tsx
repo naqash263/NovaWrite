@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import apiClient from '../api/axios';
 import { PostCard } from '../components/PostCard';
 import { useSEO } from '../utils/seo';
+import { pageMeta } from '../data/pageMeta';
 import { useHomeSettings } from '../hooks/useHomeSettings';
 import { hero, profile, disciplines, experienceAreas, processSteps, automationQuestions, problemsSolved, industries, faqs } from '../data/profile';
 import { services } from '../data/services';
@@ -45,11 +46,10 @@ export default function Home() {
   const { getSettingValue, getBooleanSetting } = useHomeSettings();
 
   useSEO({
-    title: 'Naqash Thaheem | Technical Project Manager & AI Automation',
-    description:
-      'UAE-based Technical Project Manager helping businesses plan, automate, integrate, test and deliver digital systems: AI automation, n8n, CRM, SEO and QA.',
-    url: '/',
-    keywords: ['technical project manager UAE', 'AI automation consultant', 'n8n automation', 'CRM implementation', 'technical SEO', 'QA automation'],
+    title: pageMeta.home.title,
+    description: pageMeta.home.description,
+    url: pageMeta.home.path,
+    keywords: pageMeta.home.keywords,
     jsonLd: [personSchema(), websiteSchema(), businessSchema(services), faqSchema(faqs)],
   });
 

@@ -1,4 +1,5 @@
 import { useSEO } from '../utils/seo';
+import { pageMeta } from '../data/pageMeta';
 import { caseStudies, featuredCaseStudies } from '../data/caseStudies';
 import { breadcrumbSchema, itemListSchema } from '../utils/schema';
 import { Section, SectionHeading, PageHero, CaseStudyCard, CtaBand } from '../components/site/ui';
@@ -8,11 +9,10 @@ export default function CaseStudies() {
   const more = caseStudies.filter((c) => !c.featured);
 
   useSEO({
-    title: 'Case Studies: AI Automation, CRM, SaaS & QA Projects',
-    description:
-      'Portfolio case studies: restaurant POS SaaS QA automation, AI villa booking with WhatsApp, AI talent matching with Zoho CRM, proposal automation and more.',
-    url: '/case-studies',
-    keywords: ['AI automation case studies', 'CRM implementation case study', 'QA automation case study', 'technical project management portfolio'],
+    title: pageMeta.caseStudies.title,
+    description: pageMeta.caseStudies.description,
+    url: pageMeta.caseStudies.path,
+    keywords: pageMeta.caseStudies.keywords,
     jsonLd: [
       {
         '@context': 'https://schema.org',

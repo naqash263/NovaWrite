@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useSEO } from '../utils/seo';
+import { pageMeta } from '../data/pageMeta';
 import { breadcrumbSchema, faqSchema, itemListSchema } from '../utils/schema';
 import { allTools, hubs, toolPath, toolsInHub, type ToolHub } from '../data/tools';
 import { careerTools } from '../data/careerTools';
@@ -38,10 +39,10 @@ export default function Resources() {
   const total = allTools.length + careerTools.length;
 
   useSEO({
-    title: 'Free Online Tools & Career Resources | Naqash Thaheem',
-    description: `${total} free online tools: PDF and image utilities, developer formatters, unit converters, AI writing tools and career tools like a CV builder. No signup.`,
-    url: '/resources',
-    keywords: ['free online tools', 'pdf tools', 'unit converter', 'ai writing tools', 'cv builder', 'developer tools'],
+    title: pageMeta.resources.title,
+    description: pageMeta.resources.description,
+    url: pageMeta.resources.path,
+    keywords: pageMeta.resources.keywords,
     jsonLd: [
       itemListSchema('Free tools and resources', [
         ...hubOrder.map((h) => ({ name: hubs[h].name, path: `/resources/${h}` })),

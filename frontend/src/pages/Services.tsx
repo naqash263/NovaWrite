@@ -1,15 +1,15 @@
 import { useSEO } from '../utils/seo';
+import { pageMeta } from '../data/pageMeta';
 import { services } from '../data/services';
 import { businessSchema, breadcrumbSchema, itemListSchema } from '../utils/schema';
 import { Section, SectionHeading, PageHero, ServiceCard, CtaBand, FlowSteps } from '../components/site/ui';
 
 export default function Services() {
   useSEO({
-    title: 'Services: Project Management, AI Automation, SEO & QA',
-    description:
-      'Technical project management, AI and n8n automation, SEO and organic growth, CRM implementation, QA test automation and SaaS product consulting in the UAE.',
-    url: '/services',
-    keywords: ['technical project management services', 'AI automation services', 'SEO services UAE', 'CRM implementation', 'QA automation services'],
+    title: pageMeta.services.title,
+    description: pageMeta.services.description,
+    url: pageMeta.services.path,
+    keywords: pageMeta.services.keywords,
     jsonLd: [
       businessSchema(services),
       itemListSchema(

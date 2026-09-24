@@ -20,6 +20,7 @@ Disallow: /auth/
 Disallow: /my-courses
 Disallow: /email/unsubscribe
 Disallow: /search
+Disallow: /prerender/
 
 # Public files the API serves under /api must stay crawlable
 Allow: /api/storage/

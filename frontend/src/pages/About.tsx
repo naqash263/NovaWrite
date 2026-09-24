@@ -1,15 +1,15 @@
 import { useSEO } from '../utils/seo';
+import { pageMeta } from '../data/pageMeta';
 import { profile, backgroundPillars, processSteps, skillGroups, deliveryPrinciples, industries } from '../data/profile';
 import { personSchema, breadcrumbSchema } from '../utils/schema';
 import { Section, SectionHeading, PageHero, CheckList, Tags, CtaBand, Eyebrow } from '../components/site/ui';
 
 export default function About() {
   useSEO({
-    title: 'About Naqash Thaheem | Technical Project Manager, UAE',
-    description:
-      'Naqash Thaheem is a UAE-based Technical Project Manager combining project management, AI automation, CRM, technical SEO and QA to deliver business systems.',
-    url: '/about',
-    keywords: ['Naqash Thaheem', 'technical project manager UAE', 'AI automation specialist', 'business systems specialist'],
+    title: pageMeta.about.title,
+    description: pageMeta.about.description,
+    url: pageMeta.about.path,
+    keywords: pageMeta.about.keywords,
     jsonLd: [
       { ...personSchema(), mainEntityOfPage: 'https://naqashthaheem.com/about' },
       breadcrumbSchema([
