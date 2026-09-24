@@ -8,12 +8,12 @@ tests (desktop + Pixel 7) and 18 Laravel feature tests, all run locally against 
 
 | Priority | Action | Why |
 |---|---|---|
-| **Critical** | **Rotate `APP_KEY` on the production server**, then re-enter encrypted secrets (Gemini API keys, SMTP passwords) in the admin panel. | `GET /api/cv-ai/check-encryption` and `/api/cv-ai/debug-keys` returned `APP_KEY` to anyone, and the `database-management.yml` workflow printed that response into GitHub Actions logs. Treat the key as compromised. |
-| **Critical** | Delete old GitHub Actions run logs of `database-management.yml` (and `migrate-database.yml`) that called those endpoints. | They may contain the key and database table listings. |
+| **Critical** | **Rotate `APP_KEY`**: generate a new key (`php artisan key:generate --show`), save it as the `STABLE_APP_KEY` repository secret (every deploy writes that secret into the server `.env`, so changing only the server would be undone), redeploy, then re-enter encrypted secrets (Gemini API keys, SMTP passwords) in the admin panel. | `GET /api/cv-ai/check-encryption` and `/api/cv-ai/debug-keys` returned `APP_KEY` to anyone, and the `database-management.yml` workflow printed that response into GitHub Actions logs. Treat the key as compromised. |
+| Done | Deleted the GitHub Actions run logs of `database-management.yml` (16 runs) and `migrate-database.yml` (1 run). | They may have contained the key and database table listings. |
 | High | Remove plaintext keys from the `encryption_key_backups` table (or encrypt that table with a key outside the app). | Old `APP_KEY`s are stored in plain text in the database. |
 | High | Add an `ADMIN_API_TOKEN` repository secret (an admin API token). | `cv-ai/fix-keys` now requires admin auth; the workflow sends this secret. |
 | Medium | Submit the sitemap in Search Console; request indexing for `/resources/*/*` tool URLs. | Tools moved from `?tool=` to clean URLs (old URLs redirect). |
-| Medium | Upgrade `deploy.yml` to Node 20+ (Vite 7 requirement). | Production deploy script already uses Node 20. |
+| Done | `deploy.yml` now builds with Node 22 (Vite 7 needs 20.19+); the deploy script no longer prints `APP_KEY`. | |
 
 ## 2. Security fixes (backend)
 
