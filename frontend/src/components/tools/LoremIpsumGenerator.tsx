@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const LOREM_IPSUM_WORDS = [
   'lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit',
@@ -43,39 +42,6 @@ export default function LoremIpsumGenerator() {
   const [generatedText, setGeneratedText] = useState<string>('');
   const [startWithLorem, setStartWithLorem] = useState<boolean>(true);
 
-  useSEO({
-    title: 'Free Online Lorem Ipsum Generator - Generate Placeholder Text | No Download Required',
-    description: 'Free online lorem ipsum generator - no download required. Generate placeholder text in paragraphs, words, or sentences. Multiple text types: Lorem Ipsum, Bacon Ipsum, Cupcake Ipsum, Hipster Ipsum. Copy to clipboard instantly. No registration required.',
-    url: '/resources/utility-tools/lorem-ipsum-generator',
-    keywords: [
-      'free online lorem ipsum generator', 'lorem ipsum generator', 'free lorem ipsum generator', 'online lorem ipsum generator',
-      'lorem ipsum generator no download', 'placeholder text generator', 'dummy text generator',
-      'lorem ipsum text', 'generate lorem ipsum', 'bacon ipsum', 'cupcake ipsum', 'hipster ipsum',
-      'placeholder text', 'dummy text', 'text generator', 'online lorem ipsum', 'free placeholder text generator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Lorem Ipsum Generator',
-      'description': 'Free online Lorem Ipsum generator. Generate placeholder text in paragraphs, words, or sentences.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/lorem-ipsum-generator',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Generate paragraphs, words, or sentences',
-        'Multiple text types (Lorem, Bacon, Cupcake, Hipster)',
-        'Customizable count',
-        'Copy to clipboard',
-        'HTML format option'
-      ]
-    }
-  });
 
   const getRandomWord = (): string => {
     const words = PLACEHOLDER_TEXTS[textType].words;
@@ -164,7 +130,7 @@ export default function LoremIpsumGenerator() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Online Lorem Ipsum Generator</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Online Lorem Ipsum Generator</h2>
         <p className="text-gray-600 mb-6">
           Free online lorem ipsum generator - no download required. Generate placeholder text for your designs, mockups, and prototypes. Choose from multiple text types and formats. Perfect for web designers and developers.
         </p>
@@ -297,13 +263,13 @@ export default function LoremIpsumGenerator() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Lorem Ipsum Generator</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Lorem Ipsum Generator</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             Lorem Ipsum is placeholder text commonly used in the design and publishing industries. 
             It's used to demonstrate the visual form of a document or typeface without relying on meaningful content.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Generate paragraphs, words, or sentences</li>
             <li>Multiple text types: Lorem Ipsum, Bacon Ipsum, Cupcake Ipsum, Hipster Ipsum</li>
@@ -312,7 +278,7 @@ export default function LoremIpsumGenerator() {
             <li>Copy as HTML format for web development</li>
             <li>Word and character count</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Web design mockups and prototypes</li>
             <li>Print design layouts</li>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
-import { useSEO } from '../../utils/seo';
 
 export default function QRCodeGenerator() {
   const [text, setText] = useState<string>('');
@@ -12,47 +11,6 @@ export default function QRCodeGenerator() {
   const [lightColor, setLightColor] = useState<string>('#FFFFFF');
   const [errorCorrectionLevel, setErrorCorrectionLevel] = useState<'L' | 'M' | 'Q' | 'H'>('M');
 
-  useSEO({
-    title: 'Free QR Code Generator Online - Create QR Codes | No Signup',
-    description: 'Free QR code generator online - no signup required. Generate QR codes instantly for URLs, text, WiFi, contact info, and more. Customize colors, size, and error correction. Download as PNG or SVG. All processing in your browser.',
-    url: '/resources/utility-tools/qr-code-generator',
-    keywords: [
-      'free QR code generator online', 'QR code generator', 'free QR code generator', 'QR code generator online', 'QR code maker free online',
-      'QR code maker', 'QR code creator', 'generate QR code',
-      'QR code online', 'free QR code', 'QR code tool', 'QR code scanner',
-      'create QR code', 'free online QR code generator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'QR Code Generator',
-      'description': 'Free QR code generator for creating QR codes for URLs, text, WiFi, contact info, and more with customizable options.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/qr-code-generator',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Generate QR codes for URLs, text, WiFi, contact info',
-        'Customizable colors and size',
-        'Error correction levels (L, M, Q, H)',
-        'Download as PNG or SVG',
-        'Quick templates for common use cases',
-        'Real-time preview'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'ratingCount': '2800',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   useEffect(() => {
     generateQRCode();
@@ -131,9 +89,9 @@ export default function QRCodeGenerator() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           📱 Free QR Code Generator Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free QR code generator online - no signup required. Generate QR codes instantly for URLs, text, WiFi, contact info, and more. Customize colors, size, and error correction. Download as PNG or SVG. All processing in your browser.
         </p>
@@ -311,7 +269,7 @@ export default function QRCodeGenerator() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About QR Code Generator</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About QR Code Generator</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our QR Code Generator is a powerful, client-side tool that creates QR codes instantly 
               using advanced encoding algorithms. QR codes can store various types of data including 
@@ -327,7 +285,7 @@ export default function QRCodeGenerator() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -358,14 +316,14 @@ export default function QRCodeGenerator() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Formats</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Multiple Formats</h5>
                   <p className="text-sm text-gray-600">Generate QR codes for URLs, text, WiFi, email, phone, SMS, and more</p>
                 </div>
               </div>
@@ -374,7 +332,7 @@ export default function QRCodeGenerator() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Customizable Design</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Customizable Design</h5>
                   <p className="text-sm text-gray-600">Customize colors, size (100-1000px), and margin for branding</p>
                 </div>
               </div>
@@ -383,7 +341,7 @@ export default function QRCodeGenerator() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Error Correction</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Error Correction</h5>
                   <p className="text-sm text-gray-600">Four levels (L, M, Q, H) for different durability needs</p>
                 </div>
               </div>
@@ -392,7 +350,7 @@ export default function QRCodeGenerator() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Export Options</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Export Options</h5>
                   <p className="text-sm text-gray-600">Download as PNG (raster) or SVG (vector) formats</p>
                 </div>
               </div>
@@ -401,10 +359,10 @@ export default function QRCodeGenerator() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What is error correction level?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What is error correction level?</h5>
                 <p className="text-gray-700 text-sm">
                   Error correction allows QR codes to be scanned even if partially damaged. Levels: 
                   L (7% recovery), M (15%), Q (25%), H (30%). Higher levels create denser codes but 
@@ -412,21 +370,21 @@ export default function QRCodeGenerator() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What size should I use?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What size should I use?</h5>
                 <p className="text-gray-700 text-sm">
                   For digital use: 200-300px. For printing: 500-1000px. For distance viewing: 
                   larger sizes. Always test with your target scanning device.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I use custom colors?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I use custom colors?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, you can customize both dark and light colors. Ensure good contrast (dark 
                   on light) for reliable scanning.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my data stored?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my data stored?</h5>
                 <p className="text-gray-700 text-sm">
                   No, all QR code generation happens locally in your browser. We never store or 
                   transmit your data.
@@ -438,7 +396,7 @@ export default function QRCodeGenerator() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 QR Code Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 QR Code Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Higher error correction levels allow more damage before the code becomes unreadable</li>
             <li>Use larger sizes for printing or when the code will be viewed from a distance</li>

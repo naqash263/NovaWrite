@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
@@ -20,47 +19,6 @@ export default function GrammarChecker() {
     corrected_length: number;
   } | null>(null);
 
-  useSEO({
-    title: 'Free Grammar Checker Online - AI-Powered Grammar Check | No Signup',
-    description: 'Free grammar checker online - no signup required. AI-powered grammar checker and corrector. Check spelling, grammar, and style errors instantly. Get suggestions for improvements. AI grammar checker free. Perfect for writers, students, and professionals.',
-    url: '/resources/ai-tools/grammar-checker',
-    keywords: [
-      'free grammar checker online', 'grammar checker', 'free grammar checker', 'grammar checker online', 'AI grammar checker free',
-      'grammar corrector', 'spell checker', 'grammar check',
-      'AI grammar checker', 'online grammar checker', 'grammar tool',
-      'spelling checker', 'grammar correction', 'writing checker', 'text checker', 'grammar corrector free online', 'free online grammar checker'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Grammar Checker & Corrector',
-      'description': 'Free AI-powered grammar checker and corrector. Check spelling, grammar, and style errors with instant corrections and suggestions.',
-      'url': 'https://naqashthaheem.com/resources/ai-tools/grammar-checker',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Spelling error detection and correction',
-        'Grammar mistake identification and fixing',
-        'Style improvement suggestions',
-        'Real-time error checking',
-        'Detailed suggestions and improvements',
-        'Error count and statistics'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.9',
-        'ratingCount': '1850',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const handleCheck = async () => {
     if (!text.trim()) {
@@ -139,9 +97,9 @@ export default function GrammarChecker() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           ✅ Free Grammar Checker Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free grammar checker online - no signup required. Check spelling, grammar, and style errors instantly. Get AI-powered corrections and suggestions for better writing. AI grammar checker free. Perfect for writers, students, and professionals.
         </p>
@@ -285,7 +243,7 @@ export default function GrammarChecker() {
 
             {stats.suggestions.length > 0 && (
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">💡 Suggestions</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">💡 Suggestions</h5>
                 <ul className="space-y-1">
                   {stats.suggestions.map((suggestion, index) => (
                     <li key={index} className="text-sm text-gray-700 flex items-start">
@@ -299,7 +257,7 @@ export default function GrammarChecker() {
 
             {stats.improvements.length > 0 && (
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">✨ Improvements</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">✨ Improvements</h5>
                 <ul className="space-y-1">
                   {stats.improvements.map((improvement, index) => (
                     <li key={index} className="text-sm text-gray-700 flex items-start">
@@ -317,7 +275,7 @@ export default function GrammarChecker() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Grammar Checker</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Grammar Checker</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our AI-powered Grammar Checker is an advanced tool designed to help you write error-free 
               content. Using state-of-the-art natural language processing, the tool identifies spelling 
@@ -333,7 +291,7 @@ export default function GrammarChecker() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -364,14 +322,14 @@ export default function GrammarChecker() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Spelling Check</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Spelling Check</h5>
                   <p className="text-sm text-gray-600">Detect and correct spelling errors instantly</p>
                 </div>
               </div>
@@ -380,7 +338,7 @@ export default function GrammarChecker() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Grammar Correction</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Grammar Correction</h5>
                   <p className="text-sm text-gray-600">Fix grammar mistakes and improve sentence structure</p>
                 </div>
               </div>
@@ -389,7 +347,7 @@ export default function GrammarChecker() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Style Suggestions</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Style Suggestions</h5>
                   <p className="text-sm text-gray-600">Get suggestions for better word choices and phrasing</p>
                 </div>
               </div>
@@ -398,7 +356,7 @@ export default function GrammarChecker() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Detailed Feedback</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Detailed Feedback</h5>
                   <p className="text-sm text-gray-600">Receive specific suggestions and improvements</p>
                 </div>
               </div>
@@ -407,31 +365,31 @@ export default function GrammarChecker() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How accurate is the grammar checker?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How accurate is the grammar checker?</h5>
                 <p className="text-gray-700 text-sm">
                   Our AI uses advanced natural language processing to identify errors with high accuracy. 
                   However, we recommend reviewing the suggestions, especially for complex or technical content.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Does it check all types of errors?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Does it check all types of errors?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, the tool checks spelling, grammar, and style. You can enable or disable specific 
                   check types based on your needs.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I use it for different languages?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I use it for different languages?</h5>
                 <p className="text-gray-700 text-sm">
                   Currently, the tool works best with English text. Support for other languages may be 
                   added in the future.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my text stored or saved?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my text stored or saved?</h5>
                 <p className="text-gray-700 text-sm">
                   No, we do not store your text. All processing is done in real-time, and your content 
                   is not saved on our servers.
@@ -443,7 +401,7 @@ export default function GrammarChecker() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-900 mb-2">💡 Tips for Best Results</h3>
+          <h4 className="text-sm font-medium text-gray-900 mb-2">💡 Tips for Best Results</h4>
           <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
             <li>Enable all check types for comprehensive error detection</li>
             <li>Review suggestions carefully, especially for technical or specialized content</li>

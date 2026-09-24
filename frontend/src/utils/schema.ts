@@ -3,6 +3,8 @@
 import { SITE_URL, profile, skillGroups } from '../data/profile';
 import type { Service } from '../data/services';
 import type { CaseStudy } from '../data/caseStudies';
+import type { ToolContent } from '../data/tools/types';
+import type { HubInfo } from '../data/tools';
 
 export const PERSON_ID = `${SITE_URL}/#person`;
 export const WEBSITE_ID = `${SITE_URL}/#website`;
@@ -157,5 +159,81 @@ export function itemListSchema(name: string, items: { name: string; path: string
       name: item.name,
       url: abs(item.path),
     })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Free tools (src/data/tools)
+// ---------------------------------------------------------------------------
+
+const applicationCategory: Record<string, string> = {
+  developer: 'DeveloperApplication',
+  finance: 'FinanceApplication',
+  health: 'HealthApplication',
+  images: 'MultimediaApplication',
+  documents: 'BusinessApplication',
+  security: 'SecurityApplication',
+};
+
+export function toolAppSchema(tool: ToolContent, path: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    '@id': abs(`${path}#app`),
+    name: tool.name,
+    url: abs(path),
+    description: tool.seoDescription,
+    abstract: tool.answer || undefined,
+    applicationCategory: applicationCategory[tool.category] || 'UtilitiesApplication',
+    operatingSystem: 'Any (runs in a web browser)',
+    browserRequirements: 'Requires JavaScript',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    featureList: tool.features.length ? tool.features : undefined,
+    keywords: tool.keywords.join(', '),
+    dateModified: tool.reviewed,
+    author: { '@id': PERSON_ID, '@type': 'Person', name: profile.name, url: abs('/about') },
+    publisher: { '@id': PERSON_ID },
+    inLanguage: 'en',
+  };
+}
+
+export function howToSchema(tool: ToolContent, path: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: `How to use the ${tool.name}`,
+    description: tool.summary,
+    tool: { '@type': 'HowToTool', name: tool.name },
+    step: tool.howTo.map((text, i) => ({
+      '@type': 'HowToStep',
+      position: i + 1,
+      name: text.split(/[.:]/)[0].slice(0, 80),
+      text,
+      url: abs(`${path}#how-to-step-${i + 1}`),
+    })),
+  };
+}
+
+export function toolHubSchema(hub: HubInfo, tools: ToolContent[]) {
+  const path = `/resources/${hub.hub}`;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': abs(`${path}#collection`),
+    name: hub.h1,
+    description: hub.seoDescription,
+    url: abs(path),
+    isPartOf: { '@id': WEBSITE_ID },
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: tools.length,
+      itemListElement: tools.map((t, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: t.name,
+        url: abs(`/resources/${t.hub}/${t.slug}`),
+      })),
+    },
   };
 }

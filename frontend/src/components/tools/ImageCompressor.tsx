@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
@@ -20,40 +19,6 @@ export default function ImageCompressor() {
   const [compressionRatio, setCompressionRatio] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free Image Compressor Online - Reduce Image File Size | No Signup',
-    description: 'Free image compressor online - no signup required. Reduce image file size while maintaining quality instantly. Compress JPEG, PNG, WebP images. Adjust quality, resize dimensions. Download compressed images. All processing in your browser.',
-    url: '/resources/utility-tools/image-compressor',
-    keywords: [
-      'free image compressor online', 'image compressor', 'free image compressor', 'image compressor online', 'compress image online free',
-      'compress image', 'reduce image size', 'image file size reducer',
-      'online image compressor', 'compress JPEG', 'compress PNG',
-      'compress WebP', 'image optimizer', 'photo compressor', 'free online image compressor'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Image Compressor',
-      'description': 'Free online image compressor. Reduce image file size while maintaining quality.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/image-compressor',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Compress JPEG, PNG, WebP images',
-        'Adjust quality (0.1 to 1.0)',
-        'Resize while compressing',
-        'Maintain aspect ratio',
-        'Before/after comparison',
-        'Download compressed image'
-      ]
-    }
-  });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -229,7 +194,7 @@ export default function ImageCompressor() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Image Compressor Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Image Compressor Online</h2>
         <p className="text-gray-600 mb-6">
           Free image compressor online - no signup required. Reduce image file size while maintaining quality instantly. Compress JPEG, PNG, and WebP images. Adjust quality, resize dimensions. Download compressed images. All processing in your browser.
         </p>
@@ -392,9 +357,9 @@ export default function ImageCompressor() {
               {/* Original Image */}
               {originalImage && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
                     Original Image
-                  </h3>
+                  </h4>
                   <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
                     <img
                       src={originalImage}
@@ -411,9 +376,9 @@ export default function ImageCompressor() {
               {/* Compressed Image */}
               {compressedImage && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
                     Compressed Image
-                  </h3>
+                  </h4>
                   <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
                     <img
                       src={compressedImage}
@@ -446,13 +411,13 @@ export default function ImageCompressor() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Image Compressor</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Image Compressor</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             Image Compressor reduces image file size while maintaining visual quality. 
             Perfect for optimizing images for web, email, or storage without significant quality loss.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Compress JPEG, PNG, and WebP images</li>
             <li>Adjustable quality (10% to 100%)</li>
@@ -462,7 +427,7 @@ export default function ImageCompressor() {
             <li>Client-side and server-side compression options</li>
             <li>Download compressed images instantly</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Optimize images for websites and blogs</li>
             <li>Reduce email attachment sizes</li>

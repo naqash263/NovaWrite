@@ -1,50 +1,10 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function UUIDGenerator() {
   const [count, setCount] = useState<number>(1);
   const [uuids, setUuids] = useState<string[]>([]);
   const [uuidVersion, setUuidVersion] = useState<'v4' | 'v1'>('v4');
 
-  useSEO({
-    title: 'Free UUID Generator v4 - Generate UUIDs Online | No Signup Required',
-    description: 'Free UUID generator v4 - no signup required. Generate UUIDs (v1, v4), multiple UUIDs up to 100, validate UUIDs, and copy to clipboard instantly. Perfect for developers and database IDs. All processing in your browser.',
-    url: '/resources/utility-tools/uuid-generator',
-    keywords: [
-      'free UUID generator v4', 'UUID generator', 'free UUID generator', 'UUID generator v4', 'generate UUID v4',
-      'generate UUID', 'UUID v4', 'UUID v1', 'GUID generator',
-      'online UUID generator', 'random UUID', 'UUID tool', 'unique identifier generator', 'free UUID generator online'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'UUID Generator',
-      'description': 'Free online UUID generator for generating unique identifiers.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/uuid-generator',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Generate UUIDs (v1, v4)',
-        'Generate multiple UUIDs',
-        'Validate UUIDs',
-        'Copy to clipboard',
-        'Bulk generation'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.7',
-        'ratingCount': '1800',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const generateUUIDv4 = (): string => {
     // Use crypto.randomUUID() if available (modern browsers)
@@ -97,9 +57,9 @@ export default function UUIDGenerator() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           🆔 Free UUID Generator v4
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free UUID generator v4 - no signup required. Generate unique identifiers (UUIDs). Supports UUID v1 and v4. Generate up to 100 UUIDs at once. Perfect for database IDs and unique keys. All processing in your browser.
         </p>
@@ -146,9 +106,9 @@ export default function UUIDGenerator() {
         {uuids.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900">
                 Generated UUIDs ({uuids.length})
-              </h2>
+              </h3>
               <button
                 onClick={copyAll}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors"
@@ -183,7 +143,7 @@ export default function UUIDGenerator() {
 
         {/* UUID Validator */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-3">UUID Validator</h3>
+          <h4 className="font-semibold text-gray-900 mb-3">UUID Validator</h4>
           <UUIDValidator />
         </div>
 
@@ -191,7 +151,7 @@ export default function UUIDGenerator() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About UUID Generator</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About UUID Generator</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               UUID (Universally Unique Identifier) is a 128-bit identifier used to uniquely identify information. 
               UUIDs are commonly used in databases, distributed systems, and applications where unique identifiers are needed.
@@ -204,7 +164,7 @@ export default function UUIDGenerator() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -235,14 +195,14 @@ export default function UUIDGenerator() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">UUID v4 & v1</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">UUID v4 & v1</h5>
                   <p className="text-sm text-gray-600">Generate random (v4) or time-based (v1) UUIDs</p>
                 </div>
               </div>
@@ -251,7 +211,7 @@ export default function UUIDGenerator() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Bulk Generation</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Bulk Generation</h5>
                   <p className="text-sm text-gray-600">Generate up to 100 UUIDs at once</p>
                 </div>
               </div>
@@ -260,7 +220,7 @@ export default function UUIDGenerator() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">UUID Validator</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">UUID Validator</h5>
                   <p className="text-sm text-gray-600">Validate UUID format</p>
                 </div>
               </div>
@@ -269,7 +229,7 @@ export default function UUIDGenerator() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Copy to Clipboard</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Copy to Clipboard</h5>
                   <p className="text-sm text-gray-600">One-click copy for individual or all UUIDs</p>
                 </div>
               </div>
@@ -278,24 +238,24 @@ export default function UUIDGenerator() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the difference between UUID v1 and v4?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What's the difference between UUID v1 and v4?</h5>
                 <p className="text-gray-700 text-sm">
                   UUID v1 is time-based and includes MAC address information, making it somewhat predictable. 
                   UUID v4 is randomly generated and provides better privacy and security. UUID v4 is recommended for most use cases.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Are UUIDs guaranteed to be unique?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Are UUIDs guaranteed to be unique?</h5>
                 <p className="text-gray-700 text-sm">
                   While UUIDs are not guaranteed to be unique, the probability of collision is extremely low (about 1 in 2^122 for v4). 
                   For practical purposes, UUIDs can be considered unique.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I use UUIDs as database primary keys?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I use UUIDs as database primary keys?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, UUIDs are commonly used as primary keys in databases. They're especially useful in distributed systems 
                   where you need globally unique identifiers without coordination.
@@ -307,7 +267,7 @@ export default function UUIDGenerator() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>UUID v4 (random) is recommended for most use cases</li>
             <li>UUIDs are 128-bit identifiers in the format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</li>

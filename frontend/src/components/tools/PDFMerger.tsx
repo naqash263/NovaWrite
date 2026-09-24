@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { PDFDocument } from 'pdf-lib';
-import { useSEO } from '../../utils/seo';
 
 interface PDFFile {
   file: File;
@@ -16,46 +15,6 @@ export default function PDFMerger() {
   const [mergedPdfUrl, setMergedPdfUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free PDF Merger Online - Combine Multiple PDFs | No Signup',
-    description: 'Free PDF merger online - no signup required. Combine multiple PDF files into one document instantly. Drag and drop reordering, preview before merging. All processing happens in your browser. Perfect for document management.',
-    url: '/resources/utility-tools/pdf-merger',
-    keywords: [
-      'free PDF merger online', 'PDF merger', 'free PDF merger', 'PDF merger online', 'merge PDF files free online',
-      'merge PDF', 'combine PDF', 'PDF combiner', 'merge PDF files',
-      'online PDF merger', 'PDF joiner', 'combine PDF documents', 'free online PDF merger'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'PDF Merger',
-      'description': 'Free online tool to merge multiple PDF files into one document. All processing happens in your browser.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/pdf-merger',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Merge multiple PDF files',
-        'Drag and drop reordering',
-        'Preview before merging',
-        'Client-side processing',
-        'No file size limits',
-        'Instant download'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.9',
-        'ratingCount': '1800',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -164,9 +123,9 @@ export default function PDFMerger() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           🔗 Free PDF Merger Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free PDF merger online - no signup required. Combine multiple PDF files into one document instantly. Drag and drop reordering, preview before merging. All processing happens in your browser - your files never leave your device.
         </p>
@@ -308,7 +267,7 @@ export default function PDFMerger() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About PDF Merger</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About PDF Merger</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our PDF Merger is a powerful, client-side tool that combines multiple PDF files into a single document. 
               All processing happens locally in your browser using the pdf-lib library, ensuring your files never leave 
@@ -322,7 +281,7 @@ export default function PDFMerger() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -353,14 +312,14 @@ export default function PDFMerger() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Files</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Multiple Files</h5>
                   <p className="text-sm text-gray-600">Merge up to 50 PDF files at once</p>
                 </div>
               </div>
@@ -369,7 +328,7 @@ export default function PDFMerger() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Drag & Drop Reorder</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Drag & Drop Reorder</h5>
                   <p className="text-sm text-gray-600">Reorder files before merging</p>
                 </div>
               </div>
@@ -378,7 +337,7 @@ export default function PDFMerger() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Privacy-First</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Privacy-First</h5>
                   <p className="text-sm text-gray-600">All processing happens in your browser</p>
                 </div>
               </div>
@@ -387,7 +346,7 @@ export default function PDFMerger() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">No Limits</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">No Limits</h5>
                   <p className="text-sm text-gray-600">No file size or page count restrictions</p>
                 </div>
               </div>
@@ -396,31 +355,31 @@ export default function PDFMerger() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my PDF data stored or uploaded?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my PDF data stored or uploaded?</h5>
                 <p className="text-gray-700 text-sm">
                   No, all PDF merging happens locally in your browser. Your files are never uploaded to any server 
                   or stored anywhere. Your privacy is guaranteed.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the maximum file size?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What's the maximum file size?</h5>
                 <p className="text-gray-700 text-sm">
                   There's no hard limit, but browser memory may limit very large files. We recommend files under 
                   50MB each for best performance. You can merge up to 50 files at once.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I merge password-protected PDFs?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I merge password-protected PDFs?</h5>
                 <p className="text-gray-700 text-sm">
                   Password-protected PDFs cannot be merged. You'll need to remove the password first using a PDF 
                   password remover tool.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How do I reorder files?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How do I reorder files?</h5>
                 <p className="text-gray-700 text-sm">
                   Use the up/down arrow buttons next to each file to change the order. Files are merged in the 
                   order they appear in the list.
@@ -432,7 +391,7 @@ export default function PDFMerger() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>You can select multiple PDF files at once using Ctrl/Cmd + Click</li>
             <li>Use the up/down arrows to reorder files before merging</li>

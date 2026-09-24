@@ -24,7 +24,7 @@ class SitemapController extends Controller
         $lastWorkflowUpdate = Cache::get('workflows.last_updated', now()->subDays(1))->timestamp;
         $lastIssueUpdate = Cache::get('issues.last_updated', now()->subDays(1))->timestamp;
         // $lastCourseUpdate = Cache::get('courses.last_updated', now()->subDays(1))->timestamp; // Commented out: courses not included
-        $cacheKey = 'sitemap.xml.v2.' . max($lastPostUpdate, $lastWorkflowUpdate, $lastIssueUpdate);
+        $cacheKey = 'sitemap.xml.v3.' . max($lastPostUpdate, $lastWorkflowUpdate, $lastIssueUpdate);
         
         $sitemap = Cache::remember($cacheKey, 3600, function () {
             return $this->generateSitemap();
@@ -42,10 +42,10 @@ class SitemapController extends Controller
     {
         Cache::forget('sitemap.xml');
         // Also clear any timestamped cache keys
-        Cache::forget('sitemap.xml.v2.' . Cache::get('posts.last_updated', now())->timestamp);
-        Cache::forget('sitemap.xml.v2.' . Cache::get('workflows.last_updated', now())->timestamp);
-        Cache::forget('sitemap.xml.v2.' . Cache::get('issues.last_updated', now())->timestamp);
-        // Cache::forget('sitemap.xml.v2.' . Cache::get('courses.last_updated', now())->timestamp); // Commented out: courses not included
+        Cache::forget('sitemap.xml.v3.' . Cache::get('posts.last_updated', now())->timestamp);
+        Cache::forget('sitemap.xml.v3.' . Cache::get('workflows.last_updated', now())->timestamp);
+        Cache::forget('sitemap.xml.v3.' . Cache::get('issues.last_updated', now())->timestamp);
+        // Cache::forget('sitemap.xml.v3.' . Cache::get('courses.last_updated', now())->timestamp); // Commented out: courses not included
     }
 
     /**
@@ -110,39 +110,76 @@ class SitemapController extends Controller
         $xml .= $this->addUrl($baseUrl, '/resources/salary-negotiation', $today, 'weekly', '0.8');
         $xml .= $this->addUrl($baseUrl, '/resources/career-path-planner', $today, 'weekly', '0.8');
         
-        // Conversion Tools
-        $xml .= $this->addUrl($baseUrl, '/resources/conversion-tools', $today, 'weekly', '0.9');
-        // Individual Conversion Tools
-        $conversionTools = ['length', 'weight', 'volume', 'temperature', 'area', 'speed', 'currency', 'timezone', 'date', 'number', 'text', 'color', 'filesize', 'percentage', 'bmi'];
-        foreach ($conversionTools as $tool) {
-            $xml .= $this->addUrl($baseUrl, '/resources/conversion-tools?tool=' . $tool, $today, 'weekly', '0.8');
-        }
-        
-        // Utility Tools
-        $xml .= $this->addUrl($baseUrl, '/resources/utility-tools', $today, 'weekly', '0.9');
-        // Individual Utility Tools
-        $utilityTools = [
-            'password-generator', 'qr-code-generator', 'image-resizer', 'text-to-image', 'word-counter',
-            'loan-calculator', 'tip-calculator', 'compound-interest-calculator', 'json-formatter',
-            'base64-encoder', 'url-encoder', 'regex-tester', 'uuid-generator', 'jwt-decoder',
-            'pdf-merger', 'pdf-splitter', 'pdf-compressor', 'pdf-rotate', 'lorem-ipsum-generator',
-            'text-case-converter', 'hash-generator', 'image-compressor', 'sql-formatter',
-            'css-formatter', 'html-formatter', 'image-format-converter', 'color-picker',
-            'markdown-preview', 'file-converter', 'document-converter', 'excel-csv-converter',
-            'token-counter'
+        // Free tools: one URL per tool (keep in sync with frontend/src/data/tools;
+        // frontend/e2e/tools-registry.spec.ts fails if they drift).
+        $toolHubs = [
+            'utility-tools' => [
+                'password-generator',
+                'qr-code-generator',
+                'image-resizer',
+                'text-to-image',
+                'word-counter',
+                'lorem-ipsum-generator',
+                'text-case-converter',
+                'hash-generator',
+                'image-compressor',
+                'image-format-converter',
+                'webp-converter',
+                'color-picker',
+                'token-counter',
+                'json-formatter',
+                'base64-encoder',
+                'url-encoder',
+                'regex-tester',
+                'uuid-generator',
+                'jwt-decoder',
+                'sql-formatter',
+                'css-formatter',
+                'html-formatter',
+                'markdown-preview',
+                'loan-calculator',
+                'tip-calculator',
+                'compound-interest-calculator',
+                'pdf-merger',
+                'pdf-splitter',
+                'pdf-compressor',
+                'pdf-rotate',
+                'file-converter',
+                'document-converter',
+                'excel-csv-converter',
+            ],
+            'conversion-tools' => [
+                'length-converter',
+                'weight-converter',
+                'volume-converter',
+                'temperature-converter',
+                'area-converter',
+                'speed-converter',
+                'currency-converter',
+                'time-zone-converter',
+                'date-calculator',
+                'number-system-converter',
+                'text-converter',
+                'color-converter',
+                'file-size-converter',
+                'percentage-calculator',
+                'bmi-calculator',
+            ],
+            'ai-tools' => [
+                'text-summarizer',
+                'article-rewriter',
+                'grammar-checker',
+                'language-translator',
+                'keyword-extractor',
+            ],
         ];
-        foreach ($utilityTools as $tool) {
-            $xml .= $this->addUrl($baseUrl, '/resources/utility-tools?tool=' . $tool, $today, 'weekly', '0.8');
+        foreach ($toolHubs as $hub => $tools) {
+            $xml .= $this->addUrl($baseUrl, '/resources/' . $hub, $today, 'weekly', '0.9');
+            foreach ($tools as $tool) {
+                $xml .= $this->addUrl($baseUrl, '/resources/' . $hub . '/' . $tool, $today, 'monthly', '0.8');
+            }
         }
-        
-        // AI Tools
-        $xml .= $this->addUrl($baseUrl, '/resources/ai-tools', $today, 'weekly', '0.9');
-        // Individual AI Tools
-        $aiTools = ['text-summarizer', 'article-rewriter', 'grammar-checker', 'language-translator', 'keyword-extractor'];
-        foreach ($aiTools as $tool) {
-            $xml .= $this->addUrl($baseUrl, '/resources/ai-tools?tool=' . $tool, $today, 'weekly', '0.8');
-        }
-        
+
         // Courses
         // $xml .= $this->addUrl($baseUrl, '/courses', $today, 'weekly', '0.8');
         

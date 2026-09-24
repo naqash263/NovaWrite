@@ -23,9 +23,9 @@ export const mockPosts = [
 
 /** Answers every Laravel API call with deterministic fixture data. */
 export async function mockApi(page: Page) {
-  await page.route(/\/api\//, async (route) => {
+  await page.route((url) => url.pathname.startsWith('/api/'), async (route) => {
     const url = new URL(route.request().url());
-    const path = url.pathname.replace(/^.*\/api/, '');
+    const path = url.pathname.replace(/^\/api/, '');
     const json = (body: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 
     if (path.startsWith('/storage/')) return route.fulfill({ status: 404, body: '' });

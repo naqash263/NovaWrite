@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
@@ -51,47 +50,6 @@ export default function LanguageTranslator() {
     translated_length: number;
   } | null>(null);
 
-  useSEO({
-    title: 'Free Language Translator Online - AI-Powered Translation | No Signup',
-    description: 'Free language translator online - no signup required. AI-powered language translator. Translate text between 30+ languages instantly. Preserve formatting, accurate translations. AI translator free online. Perfect for students, travelers, and professionals.',
-    url: '/resources/ai-tools/language-translator',
-    keywords: [
-      'free language translator online', 'language translator', 'free language translator', 'language translator online', 'AI translator free online',
-      'text translator', 'online translator', 'translate text',
-      'AI translator', 'free translator', 'translate language', 'translation tool',
-      'multilingual translator', 'document translator', 'real-time translation'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Language Translator',
-      'description': 'Free AI-powered language translator supporting 30+ languages with accurate, natural translations.',
-      'url': 'https://naqashthaheem.com/resources/ai-tools/language-translator',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        '30+ languages supported',
-        'Auto-detect source language',
-        'Preserve formatting option',
-        'Natural, accurate translations',
-        'Real-time translation',
-        'Character and word count tracking'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'ratingCount': '3200',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const handleTranslate = async () => {
     if (!text.trim()) {
@@ -175,9 +133,9 @@ export default function LanguageTranslator() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           🌐 Free Language Translator Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free language translator online - no signup required. Translate text between 30+ languages instantly. Get accurate, natural translations with AI-powered technology. AI translator free online. Preserve formatting. Perfect for students, travelers, and professionals.
         </p>
@@ -355,7 +313,7 @@ export default function LanguageTranslator() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Language Translator</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Language Translator</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our AI-powered Language Translator is an advanced tool designed to help you communicate 
               across language barriers. Using state-of-the-art natural language processing, the tool 
@@ -371,7 +329,7 @@ export default function LanguageTranslator() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -402,7 +360,7 @@ export default function LanguageTranslator() {
 
           {/* Supported Languages */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Supported Languages</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Supported Languages</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {LANGUAGES.filter(lang => lang.code !== 'auto').map(lang => (
                 <div key={lang.code} className="p-2 bg-gray-50 rounded text-sm text-gray-700">
@@ -414,14 +372,14 @@ export default function LanguageTranslator() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">30+ Languages</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">30+ Languages</h5>
                   <p className="text-sm text-gray-600">Support for major world languages including European, Asian, and Middle Eastern languages</p>
                 </div>
               </div>
@@ -430,7 +388,7 @@ export default function LanguageTranslator() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Auto-Detect</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Auto-Detect</h5>
                   <p className="text-sm text-gray-600">Automatically detect the source language for convenience</p>
                 </div>
               </div>
@@ -439,7 +397,7 @@ export default function LanguageTranslator() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Preserve Formatting</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Preserve Formatting</h5>
                   <p className="text-sm text-gray-600">Maintain line breaks, paragraphs, and special characters</p>
                 </div>
               </div>
@@ -448,7 +406,7 @@ export default function LanguageTranslator() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Natural Translations</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Natural Translations</h5>
                   <p className="text-sm text-gray-600">AI-powered translations that read naturally in the target language</p>
                 </div>
               </div>
@@ -457,31 +415,31 @@ export default function LanguageTranslator() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How accurate are the translations?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How accurate are the translations?</h5>
                 <p className="text-gray-700 text-sm">
                   Our AI uses advanced natural language processing to provide accurate, context-aware translations. 
                   For professional or legal documents, we recommend having translations reviewed by a human translator.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I translate long documents?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I translate long documents?</h5>
                 <p className="text-gray-700 text-sm">
                   You can translate up to 50,000 characters at once. For longer documents, consider breaking 
                   them into sections.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Does it preserve formatting?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Does it preserve formatting?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, you can enable "Preserve Formatting" to maintain line breaks, paragraphs, and special 
                   characters in the translation.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my text stored or saved?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my text stored or saved?</h5>
                 <p className="text-gray-700 text-sm">
                   No, we do not store your text. All translations are processed in real-time, and your content 
                   is not saved on our servers.
@@ -493,7 +451,7 @@ export default function LanguageTranslator() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-900 mb-2">💡 Tips for Best Results</h3>
+          <h4 className="text-sm font-medium text-gray-900 mb-2">💡 Tips for Best Results</h4>
           <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
             <li>Use auto-detect for convenience, or specify source language for better accuracy</li>
             <li>Enable "Preserve Formatting" for documents with specific formatting needs</li>

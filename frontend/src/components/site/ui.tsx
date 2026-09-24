@@ -192,18 +192,22 @@ export function Tags({ items, label }: { items: string[]; label: string }) {
   );
 }
 
-export function Breadcrumbs({ items }: { items: { name: string; path?: string }[] }) {
+export function Breadcrumbs({ items, tone = 'dark' }: { items: { name: string; path?: string }[]; tone?: 'dark' | 'light' }) {
+  const styles =
+    tone === 'dark'
+      ? { list: 'text-slate-400', link: 'hover:text-white', current: 'text-slate-200' }
+      : { list: 'text-slate-500', link: 'hover:text-slate-900', current: 'text-slate-900' };
   return (
     <nav aria-label="Breadcrumb" className="mb-6">
-      <ol className="flex flex-wrap items-center gap-1.5 text-sm text-slate-400">
+      <ol className={`flex flex-wrap items-center gap-1.5 text-sm ${styles.list}`}>
         {items.map((item, i) => (
           <li key={item.name} className="flex items-center gap-1.5">
             {item.path ? (
-              <Link to={item.path} className="hover:text-white">
+              <Link to={item.path} className={styles.link}>
                 {item.name}
               </Link>
             ) : (
-              <span aria-current="page" className="text-slate-200">
+              <span aria-current="page" className={styles.current}>
                 {item.name}
               </span>
             )}

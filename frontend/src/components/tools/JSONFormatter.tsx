@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSEO } from '../../utils/seo';
 
 interface ErrorInfo {
   message: string;
@@ -18,47 +17,6 @@ export default function JSONFormatter() {
   const [isMinified, setIsMinified] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useSEO({
-    title: 'Free JSON Formatter Online - Beautify, Minify, Validate JSON | No Signup',
-    description: 'Free JSON formatter online - no signup required. Beautify, minify, validate, and format JSON data instantly. Includes syntax highlighting and error detection. JSON beautifier free online. Perfect for developers. All processing in your browser.',
-    url: '/resources/utility-tools/json-formatter',
-    keywords: [
-      'free JSON formatter online', 'JSON formatter', 'free JSON formatter', 'JSON formatter online', 'JSON beautifier free online',
-      'JSON validator', 'JSON beautifier', 'JSON minifier',
-      'format JSON', 'validate JSON', 'JSON tool', 'JSON parser',
-      'online JSON formatter', 'free JSON tool', 'JSON editor', 'JSON validator online free', 'free online JSON formatter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'JSON Formatter & Validator',
-      'description': 'Free online JSON formatter, validator, beautifier, and minifier with syntax validation.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/json-formatter',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Beautify JSON with customizable indentation',
-        'Minify JSON to reduce file size',
-        'Validate JSON syntax',
-        'Error detection and reporting',
-        'Copy to clipboard',
-        'Real-time formatting'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'ratingCount': '3500',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   // Parse error message to extract position and details
   const parseError = (err: Error, inputText: string): ErrorInfo => {
@@ -310,9 +268,9 @@ export default function JSONFormatter() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           📋 Free JSON Formatter Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free JSON formatter online - no signup required. Format, validate, beautify, and minify JSON data instantly. Includes syntax validation and error detection. JSON beautifier free online. Perfect for developers. All processing in your browser.
         </p>
@@ -522,7 +480,7 @@ export default function JSONFormatter() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About JSON Formatter</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About JSON Formatter</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our JSON Formatter is a powerful developer tool that helps you work with JSON data 
               efficiently. It can beautify (format) JSON for readability, minify (compress) JSON 
@@ -538,7 +496,7 @@ export default function JSONFormatter() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -569,14 +527,14 @@ export default function JSONFormatter() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Beautify JSON</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Beautify JSON</h5>
                   <p className="text-sm text-gray-600">Format JSON with customizable indentation for readability</p>
                 </div>
               </div>
@@ -585,7 +543,7 @@ export default function JSONFormatter() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Minify JSON</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Minify JSON</h5>
                   <p className="text-sm text-gray-600">Compress JSON by removing whitespace to reduce file size</p>
                 </div>
               </div>
@@ -594,7 +552,7 @@ export default function JSONFormatter() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Validate JSON</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Validate JSON</h5>
                   <p className="text-sm text-gray-600">Check JSON syntax and report errors with line numbers</p>
                 </div>
               </div>
@@ -603,7 +561,7 @@ export default function JSONFormatter() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Error Detection & Auto-Fix</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Error Detection & Auto-Fix</h5>
                   <p className="text-sm text-gray-600">Identify syntax errors with highlighting, suggestions, and auto-fix common issues</p>
                 </div>
               </div>
@@ -612,10 +570,10 @@ export default function JSONFormatter() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What is JSON?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What is JSON?</h5>
                 <p className="text-gray-700 text-sm">
                   JSON (JavaScript Object Notation) is a lightweight data-interchange format that's 
                   easy for humans to read and write, and easy for machines to parse and generate. 
@@ -623,7 +581,7 @@ export default function JSONFormatter() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Why minify JSON?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Why minify JSON?</h5>
                 <p className="text-gray-700 text-sm">
                   Minifying JSON removes unnecessary whitespace, reducing file size. This is useful 
                   for production environments where smaller files mean faster loading times and 
@@ -631,7 +589,7 @@ export default function JSONFormatter() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What are common JSON errors?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What are common JSON errors?</h5>
                 <p className="text-gray-700 text-sm">
                   Common errors include: missing quotes around keys, trailing commas, single quotes 
                   instead of double quotes, and invalid characters. The validator will identify 
@@ -639,7 +597,7 @@ export default function JSONFormatter() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How does auto-fix work?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How does auto-fix work?</h5>
                 <p className="text-gray-700 text-sm">
                   The auto-fix feature automatically corrects common JSON errors like trailing commas, 
                   single quotes, and missing quotes around keys. It attempts to fix the JSON and 
@@ -647,7 +605,7 @@ export default function JSONFormatter() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my JSON data stored?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my JSON data stored?</h5>
                 <p className="text-gray-700 text-sm">
                   No, all processing happens locally in your browser. Your JSON data is never sent 
                   to any server or stored anywhere.
@@ -659,7 +617,7 @@ export default function JSONFormatter() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 JSON Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 JSON Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>JSON keys must be in double quotes</li>
             <li>Trailing commas are not allowed in JSON</li>

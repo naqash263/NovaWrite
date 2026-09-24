@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function ColorPicker() {
   const [color, setColor] = useState<string>('#3b82f6');
@@ -7,39 +6,6 @@ export default function ColorPicker() {
   const [hsl, setHsl] = useState<{ h: number; s: number; l: number }>({ h: 217, s: 91, l: 60 });
   const [hex, setHex] = useState<string>('#3b82f6');
 
-  useSEO({
-    title: 'Free Color Picker Online - RGB, HEX, HSL Picker | No Signup',
-    description: 'Free color picker online - no signup required. Pick colors with visual color picker, get RGB, HEX, HSL values instantly. Generate color palettes, extract colors from images. Perfect for designers and developers. All processing in your browser.',
-    url: '/resources/utility-tools/color-picker',
-    keywords: [
-      'free color picker online', 'color picker', 'free color picker', 'color picker online', 'online color picker',
-      'RGB color picker', 'HEX color picker', 'HSL color picker',
-      'color palette generator', 'free color picker tool', 'web color picker', 'color selector',
-      'RGB HEX color picker', 'free online color picker'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Color Picker',
-      'description': 'Free online color picker with RGB, HEX, HSL support and color palette generation.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/color-picker',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Visual color picker',
-        'RGB, HEX, HSL color values',
-        'Color palette generator',
-        'Copy color values to clipboard',
-        'Color history'
-      ]
-    }
-  });
 
   const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -144,7 +110,7 @@ export default function ColorPicker() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Color Picker Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Color Picker Online</h2>
         <p className="text-gray-600 mb-6">
           Free color picker online - no signup required. Pick colors visually and get RGB, HEX, and HSL values instantly. Generate color palettes, extract colors from images, copy color codes. Perfect for designers and developers. All processing in your browser.
         </p>
@@ -259,7 +225,7 @@ export default function ColorPicker() {
 
         {/* Color Palette */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Color Palette</h3>
+          <h4 className="text-lg font-semibold text-gray-900 mb-3">Color Palette</h4>
           <div className="grid grid-cols-5 gap-2">
             {palette.map((paletteColor, index) => (
               <div key={index} className="text-center">
@@ -277,13 +243,13 @@ export default function ColorPicker() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Color Picker</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Color Picker</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             Color Picker is a free online tool that helps you pick colors visually and get their 
             RGB, HEX, and HSL values. Generate color palettes and copy color codes for use in your projects.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Visual color picker with live preview</li>
             <li>Get RGB, HEX, and HSL color values</li>
@@ -292,7 +258,7 @@ export default function ColorPicker() {
             <li>Manual RGB input for precise colors</li>
             <li>Real-time color conversion</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Pick colors for web design and development</li>
             <li>Generate color palettes for branding</li>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { format } from 'sql-formatter';
-import { useSEO } from '../../utils/seo';
 
 export default function SQLFormatter() {
   const [input, setInput] = useState<string>('');
@@ -10,40 +9,6 @@ export default function SQLFormatter() {
   const [language, setLanguage] = useState<string>('sql');
   const [isMinified, setIsMinified] = useState<boolean>(false);
 
-  useSEO({
-    title: 'Free SQL Formatter Online - Format SQL Queries | No Signup',
-    description: 'Free SQL formatter online - no signup required. Format SQL queries with proper indentation, syntax highlighting, and validation. Supports MySQL, PostgreSQL, SQL Server, and more. Minify SQL, copy to clipboard. All processing in your browser.',
-    url: '/resources/utility-tools/sql-formatter',
-    keywords: [
-      'free SQL formatter online', 'SQL formatter', 'free SQL formatter', 'SQL formatter online', 'format SQL online',
-      'SQL beautifier', 'format SQL', 'SQL query formatter',
-      'SQL prettifier', 'SQL validator', 'online SQL formatter', 'free SQL tool',
-      'beautify SQL', 'SQL code formatter', 'free online SQL formatter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'SQL Formatter & Beautifier',
-      'description': 'Free online SQL formatter and beautifier with syntax validation and multiple database support.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/sql-formatter',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Format SQL queries with proper indentation',
-        'Support for MySQL, PostgreSQL, SQL Server',
-        'Minify SQL queries',
-        'Syntax validation',
-        'Copy to clipboard',
-        'Real-time formatting'
-      ]
-    }
-  });
 
   const formatSQL = () => {
     setError('');
@@ -97,7 +62,7 @@ export default function SQLFormatter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free SQL Formatter Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free SQL Formatter Online</h2>
         <p className="text-gray-600 mb-6">
           Free SQL formatter online - no signup required. Format and beautify your SQL queries with proper indentation and syntax highlighting. Supports MySQL, PostgreSQL, SQL Server, and more. Minify SQL for production. All processing in your browser.
         </p>
@@ -209,13 +174,13 @@ export default function SQLFormatter() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About SQL Formatter</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About SQL Formatter</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             SQL Formatter is a free online tool that formats and beautifies SQL queries 
             with proper indentation, making them more readable and maintainable.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Format SQL queries with proper indentation</li>
             <li>Support for multiple database dialects (MySQL, PostgreSQL, SQL Server, etc.)</li>
@@ -224,7 +189,7 @@ export default function SQLFormatter() {
             <li>Customizable indentation (1-8 spaces)</li>
             <li>Copy formatted SQL to clipboard</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Format messy SQL queries for better readability</li>
             <li>Prepare SQL queries for documentation</li>

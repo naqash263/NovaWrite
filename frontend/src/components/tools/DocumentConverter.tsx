@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
@@ -15,40 +14,6 @@ export default function DocumentConverter() {
   const [error, setError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free Document Converter Word PDF - Convert Word to PDF Online | No Signup',
-    description: 'Free document converter word pdf - no signup required. Convert Word to PDF, PDF to Word, DOCX to PDF, PDF to DOCX instantly. Secure server-side processing, download converted files. Perfect for document management.',
-    url: '/resources/utility-tools/document-converter',
-    keywords: [
-      'free document converter word pdf', 'document converter', 'free document converter', 'document converter word pdf', 'word to pdf converter',
-      'word to pdf', 'pdf to word', 'docx to pdf', 'pdf to docx',
-      'word converter', 'pdf converter', 'document format converter', 'online document converter',
-      'docx converter', 'file converter', 'free online document converter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Document Converter',
-      'description': 'Free online document converter. Convert Word to PDF, PDF to Word, and more.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/document-converter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Convert Word to PDF',
-        'Convert PDF to Word',
-        'Convert DOCX to PDF',
-        'Convert PDF to DOCX',
-        'Convert to TXT',
-        'Download converted files'
-      ]
-    }
-  });
 
   const detectFormat = (filename: string): DocumentFormat | null => {
     const extension = filename.split('.').pop()?.toLowerCase();
@@ -169,7 +134,7 @@ export default function DocumentConverter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Document Converter Word PDF</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Document Converter Word PDF</h2>
         <p className="text-gray-600 mb-6">
           Free document converter word pdf - no signup required. Convert Word to PDF, PDF to Word, DOCX to PDF, PDF to DOCX instantly. Secure server-side processing, download converted files. Perfect for document management and sharing.
         </p>
@@ -276,7 +241,7 @@ export default function DocumentConverter() {
 
         {/* Supported Conversions */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Supported Conversions</h3>
+          <h4 className="text-sm font-semibold text-gray-900 mb-2">Supported Conversions</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
             <div>✅ PDF → Word (DOCX)</div>
             <div>✅ Word (DOCX) → PDF</div>
@@ -290,7 +255,7 @@ export default function DocumentConverter() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Document Converter</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Document Converter</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             Document Converter is a free, secure online tool that converts documents between PDF, Word (DOCX), 
@@ -298,7 +263,7 @@ export default function DocumentConverter() {
             Perfect for professionals, students, and anyone who needs to convert documents between different formats.
           </p>
           
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Formats</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Formats</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>PDF (Portable Document Format):</strong> Industry-standard format for document sharing and archiving. Supports text extraction and conversion to Word or TXT formats.</li>
             <li><strong>DOCX (Microsoft Word Document):</strong> Modern Word document format (2007+). Supports conversion to PDF, TXT, and other formats while preserving text content.</li>
@@ -306,7 +271,7 @@ export default function DocumentConverter() {
             <li><strong>TXT (Plain Text):</strong> Simple text files without formatting. Can be converted to Word documents or PDFs with proper formatting.</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Complete Conversion Matrix</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Complete Conversion Matrix</h4>
           <div className="overflow-x-auto mb-4">
             <table className="min-w-full border border-gray-300">
               <thead className="bg-gray-100">
@@ -351,7 +316,7 @@ export default function DocumentConverter() {
             </table>
           </div>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>Secure Server-Side Processing:</strong> All conversions happen on our secure servers. Files are automatically deleted after processing for your privacy.</li>
             <li><strong>High-Quality Conversions:</strong> Advanced algorithms ensure text extraction and formatting preservation where possible.</li>
@@ -363,7 +328,7 @@ export default function DocumentConverter() {
             <li><strong>Error Handling:</strong> Clear error messages help you understand and resolve any conversion issues.</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>Document Editing:</strong> Convert PDFs to Word documents for easy editing and formatting changes.</li>
             <li><strong>Document Sharing:</strong> Convert Word documents to PDF for universal compatibility and professional presentation.</li>
@@ -375,7 +340,7 @@ export default function DocumentConverter() {
             <li><strong>Data Processing:</strong> Extract text from documents for data analysis, text mining, or natural language processing.</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How It Works</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How It Works</h4>
           <ol className="list-decimal list-inside text-gray-700 space-y-2">
             <li><strong>Upload Your Document:</strong> Select a PDF, Word (DOCX/DOC), or TXT file from your device.</li>
             <li><strong>Select Target Format:</strong> Choose the format you want to convert your document to (PDF, DOCX, or TXT).</li>
@@ -383,36 +348,36 @@ export default function DocumentConverter() {
             <li><strong>Download Result:</strong> Download your converted document instantly. Files are automatically deleted from our servers after processing.</li>
           </ol>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Privacy & Security</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Privacy & Security</h4>
           <p className="text-gray-700 mb-2">
             Your privacy is our priority. All document conversions are processed securely on our servers, and files are automatically 
             deleted immediately after processing. We do not store, share, or access your documents beyond the conversion process.
           </p>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h4>
           <div className="space-y-4">
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Is the Document Converter free to use?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Is the Document Converter free to use?</h5>
               <p className="text-gray-700">Yes, our Document Converter is completely free to use. No registration, no hidden fees, no limits on the number of conversions.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What file sizes are supported?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">What file sizes are supported?</h5>
               <p className="text-gray-700">We support files up to 10MB in size. For larger files, consider splitting them into smaller parts or using specialized software.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Are my documents secure?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Are my documents secure?</h5>
               <p className="text-gray-700">Yes, all conversions happen on secure servers, and files are automatically deleted immediately after processing. We never store or access your documents.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Can I convert scanned PDFs?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Can I convert scanned PDFs?</h5>
               <p className="text-gray-700">Our converter works best with text-based PDFs. Scanned PDFs (image-based) may require OCR (Optical Character Recognition) for text extraction.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Will formatting be preserved?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Will formatting be preserved?</h5>
               <p className="text-gray-700">Text content is preserved, but complex formatting (images, tables, advanced layouts) may not be fully preserved in all conversions. Simple text formatting is generally maintained.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What if my conversion fails?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">What if my conversion fails?</h5>
               <p className="text-gray-700">If a conversion fails, you'll receive a clear error message. Common issues include corrupted files, unsupported formats, or files that are too large. Try a different file or format if needed.</p>
             </div>
           </div>

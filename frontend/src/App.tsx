@@ -74,9 +74,6 @@ const CareerPathPlanner = lazy(() => import('./pages/resources/CareerPathPlanner
 const JobSearchOptimizer = lazy(() => import('./pages/resources/JobSearchOptimizer'));
 const SkillsAssessment = lazy(() => import('./pages/resources/SkillsAssessment'));
 const CoverLetterGenerator = lazy(() => import('./pages/resources/CoverLetterGenerator'));
-const ConversionTools = lazy(() => import('./pages/resources/ConversionTools'));
-const UtilityTools = lazy(() => import('./pages/resources/UtilityTools'));
-const AITools = lazy(() => import('./pages/resources/AITools'));
 const N8nConfigurations = lazy(() => import('./pages/admin/N8nConfigurations'));
 const EmailQueue = lazy(() => import('./pages/admin/EmailQueue'));
 const EmailLogs = lazy(() => import('./pages/admin/EmailLogs'));
@@ -87,6 +84,8 @@ const AdminIssues = lazy(() => import('./pages/admin/Issues'));
 const IssueCategories = lazy(() => import('./pages/admin/IssueCategories'));
 const EmailUnsubscribe = lazy(() => import('./pages/EmailUnsubscribe'));
 const Search = lazy(() => import('./pages/Search'));
+const ToolHubPage = lazy(() => import('./pages/tools/ToolHubPage'));
+const ToolPage = lazy(() => import('./pages/tools/ToolPage'));
 
 // Enhanced loading with performance optimizations
 
@@ -175,9 +174,12 @@ function App() {
         <Route path="/resources/job-search-optimizer" element={<JobSearchOptimizer />} />
         <Route path="/resources/skills-assessment" element={<SkillsAssessment />} />
         <Route path="/resources/cover-letter-generator" element={<CoverLetterGenerator />} />
-        <Route path="/resources/conversion-tools" element={<ConversionTools />} />
-        <Route path="/resources/utility-tools" element={<UtilityTools />} />
-        <Route path="/resources/ai-tools" element={<AITools />} />
+        <Route path="/resources/utility-tools" element={<ToolHubPage hub="utility-tools" />} />
+        <Route path="/resources/utility-tools/:slug" element={<ToolPage hub="utility-tools" />} />
+        <Route path="/resources/conversion-tools" element={<ToolHubPage hub="conversion-tools" />} />
+        <Route path="/resources/conversion-tools/:slug" element={<ToolPage hub="conversion-tools" />} />
+        <Route path="/resources/ai-tools" element={<ToolHubPage hub="ai-tools" />} />
+        <Route path="/resources/ai-tools/:slug" element={<ToolPage hub="ai-tools" />} />
               <Route path="/search" element={<Search />} />
               <Route path="*" element={<NotFound />} />
               </Routes>

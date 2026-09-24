@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function HTMLFormatter() {
   const [input, setInput] = useState<string>('');
@@ -8,39 +7,6 @@ export default function HTMLFormatter() {
   const [indent, setIndent] = useState<number>(2);
   const [isMinified, setIsMinified] = useState<boolean>(false);
 
-  useSEO({
-    title: 'Free HTML Formatter Online - Format HTML Code | No Signup',
-    description: 'Free HTML formatter online - no signup required. Format HTML code with proper indentation, minify HTML, and validate syntax. Beautify or minify HTML instantly. Perfect for developers and web designers. All processing in your browser.',
-    url: '/resources/utility-tools/html-formatter',
-    keywords: [
-      'free HTML formatter online', 'HTML formatter', 'free HTML formatter', 'HTML formatter online', 'format HTML online',
-      'HTML beautifier', 'format HTML', 'HTML code formatter',
-      'HTML prettifier', 'HTML minifier', 'online HTML formatter', 'free HTML tool',
-      'beautify HTML', 'minify HTML', 'free online HTML formatter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'HTML Formatter & Beautifier',
-      'description': 'Free online HTML formatter, beautifier, and minifier with syntax validation.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/html-formatter',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Format HTML with proper indentation',
-        'Minify HTML to reduce file size',
-        'Preserve HTML comments',
-        'Copy to clipboard',
-        'Real-time formatting'
-      ]
-    }
-  });
 
   const formatHTML = () => {
     setError('');
@@ -126,7 +92,7 @@ export default function HTMLFormatter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free HTML Formatter Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free HTML Formatter Online</h2>
         <p className="text-gray-600 mb-6">
           Free HTML formatter online - no signup required. Format and beautify your HTML code with proper indentation, or minify it for production. Validate syntax, preserve comments, copy to clipboard. Perfect for developers and web designers. All processing in your browser.
         </p>
@@ -218,13 +184,13 @@ export default function HTMLFormatter() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About HTML Formatter</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About HTML Formatter</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             HTML Formatter is a free online tool that formats and beautifies HTML code 
             with proper indentation, making it more readable and maintainable.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Format HTML with proper indentation</li>
             <li>Minify HTML to reduce file size</li>
@@ -233,7 +199,7 @@ export default function HTMLFormatter() {
             <li>Copy formatted HTML to clipboard</li>
             <li>Real-time formatting</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Format messy HTML code for better readability</li>
             <li>Prepare HTML for documentation</li>

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 interface JWTParts {
   header: any;
@@ -14,45 +13,6 @@ export default function JWTDecoder() {
   const [decoded, setDecoded] = useState<JWTParts | null>(null);
   const [error, setError] = useState<string>('');
 
-  useSEO({
-    title: 'Free JWT Decoder Online - Decode JWT Tokens | No Signup Required',
-    description: 'Free JWT decoder online - no signup required. Decode JWT tokens to view header and payload instantly. Pretty print JSON, validate structure, view token claims. Perfect for debugging JWT tokens. All processing in your browser.',
-    url: '/resources/utility-tools/jwt-decoder',
-    keywords: [
-      'free JWT decoder online', 'JWT decoder', 'free JWT decoder', 'JWT decoder online', 'decode JWT online',
-      'decode JWT', 'JWT token decoder', 'JWT parser',
-      'online JWT decoder', 'JWT header payload', 'decode JWT token', 'JWT tool', 'free JWT token decoder'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'JWT Decoder',
-      'description': 'Free online JWT decoder for decoding and viewing JWT token contents.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/jwt-decoder',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Decode JWT tokens',
-        'View header and payload',
-        'Pretty print JSON',
-        'Validate structure',
-        'Copy decoded data'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.6',
-        'ratingCount': '1600',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const decodeBase64 = (str: string): string => {
     try {
@@ -122,9 +82,9 @@ export default function JWTDecoder() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           🔓 Free JWT Decoder Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free JWT decoder online - no signup required. Decode JWT tokens to view header and payload instantly. Pretty print JSON, view token claims, and validate structure. Perfect for debugging and understanding JWT structure. All processing in your browser.
         </p>
@@ -173,7 +133,7 @@ export default function JWTDecoder() {
             {/* Header */}
             <div className="border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-900">Header</h2>
+                <h3 className="text-lg font-semibold text-gray-900">Header</h3>
                 <button
                   onClick={() => copyToClipboard(JSON.stringify(decoded.header, null, 2))}
                   className="text-sm text-blue-600 hover:text-blue-700"
@@ -189,7 +149,7 @@ export default function JWTDecoder() {
             {/* Payload */}
             <div className="border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-900">Payload</h2>
+                <h3 className="text-lg font-semibold text-gray-900">Payload</h3>
                 <button
                   onClick={() => copyToClipboard(JSON.stringify(decoded.payload, null, 2))}
                   className="text-sm text-blue-600 hover:text-blue-700"
@@ -204,7 +164,7 @@ export default function JWTDecoder() {
               {/* Payload Info */}
               {decoded.payload && (
                 <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-2">Token Information</h3>
+                  <h4 className="font-semibold text-gray-900 mb-2">Token Information</h4>
                   <div className="space-y-2 text-sm">
                     {decoded.payload.iss && (
                       <div className="flex justify-between">
@@ -250,7 +210,7 @@ export default function JWTDecoder() {
             {/* Signature */}
             <div className="border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-900">Signature</h2>
+                <h3 className="text-lg font-semibold text-gray-900">Signature</h3>
                 <button
                   onClick={() => copyToClipboard(decoded.signature)}
                   className="text-sm text-blue-600 hover:text-blue-700"
@@ -272,7 +232,7 @@ export default function JWTDecoder() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About JWT Decoder</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About JWT Decoder</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               JWT (JSON Web Token) is a compact, URL-safe token format used for authentication and authorization. 
               JWTs consist of three parts: header, payload, and signature, separated by dots.
@@ -285,7 +245,7 @@ export default function JWTDecoder() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -316,14 +276,14 @@ export default function JWTDecoder() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Decode Header & Payload</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Decode Header & Payload</h5>
                   <p className="text-sm text-gray-600">View JWT header and payload as JSON</p>
                 </div>
               </div>
@@ -332,7 +292,7 @@ export default function JWTDecoder() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Pretty Print JSON</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Pretty Print JSON</h5>
                   <p className="text-sm text-gray-600">Formatted JSON for easy reading</p>
                 </div>
               </div>
@@ -341,7 +301,7 @@ export default function JWTDecoder() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Token Information</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Token Information</h5>
                   <p className="text-sm text-gray-600">View issuer, subject, expiration, and more</p>
                 </div>
               </div>
@@ -350,7 +310,7 @@ export default function JWTDecoder() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Copy to Clipboard</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Copy to Clipboard</h5>
                   <p className="text-sm text-gray-600">One-click copy for header, payload, or signature</p>
                 </div>
               </div>
@@ -359,24 +319,24 @@ export default function JWTDecoder() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What is a JWT token?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What is a JWT token?</h5>
                 <p className="text-gray-700 text-sm">
                   JWT (JSON Web Token) is a compact token format consisting of three Base64-encoded parts: header, 
                   payload, and signature. It's commonly used for authentication and authorization in web applications.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Does this tool verify the signature?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Does this tool verify the signature?</h5>
                 <p className="text-gray-700 text-sm">
                   No, this tool only decodes the token structure. Signature verification requires the secret key, 
                   which should never be shared. This tool is for viewing token contents, not for verification.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What are common JWT claims?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What are common JWT claims?</h5>
                 <p className="text-gray-700 text-sm">
                   Common claims include: <strong>iss</strong> (issuer), <strong>sub</strong> (subject), 
                   <strong>aud</strong> (audience), <strong>exp</strong> (expiration), <strong>iat</strong> (issued at), 
@@ -384,7 +344,7 @@ export default function JWTDecoder() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my token data secure?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my token data secure?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, all decoding happens locally in your browser. Your token is never sent to any server or stored 
                   anywhere. However, be cautious when sharing decoded tokens as they may contain sensitive information.
@@ -396,7 +356,7 @@ export default function JWTDecoder() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>JWT tokens have three parts separated by dots: header.payload.signature</li>
             <li>Check the 'exp' claim to see when the token expires</li>

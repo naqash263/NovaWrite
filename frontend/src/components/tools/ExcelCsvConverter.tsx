@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
@@ -15,45 +14,6 @@ export default function ExcelCsvConverter() {
   const [error, setError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free Excel CSV Converter Online - Convert XLSX to CSV | No Signup',
-    description: 'Free excel csv converter online - no signup required. Convert XLSX, XLS files to CSV format and vice versa instantly. Preserve data integrity, perfect for data import/export and database migration. Secure server-side processing.',
-    url: '/resources/utility-tools/excel-csv-converter',
-    keywords: [
-      'free excel csv converter online', 'excel csv converter', 'free excel csv converter', 'excel csv converter online', 'excel to csv converter',
-      'excel to csv', 'csv to excel', 'xlsx to csv', 'csv to xlsx', 'excel converter',
-      'csv converter', 'spreadsheet converter', 'online excel converter',
-      'free excel converter', 'xls to csv', 'convert excel to csv', 'free online excel converter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Excel CSV Converter',
-      'description': 'Free online Excel to CSV converter. Convert XLSX, XLS files to CSV and vice versa.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/excel-csv-converter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Convert Excel to CSV',
-        'Convert CSV to Excel',
-        'Support XLSX and XLS formats',
-        'Preserve data integrity',
-        'Download converted files',
-        'Secure server-side processing'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.9',
-        'reviewCount': '2850'
-      }
-    }
-  });
 
   const detectFormat = (filename: string): FileFormat | null => {
     const extension = filename.split('.').pop()?.toLowerCase();
@@ -174,7 +134,7 @@ export default function ExcelCsvConverter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Excel CSV Converter Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Excel CSV Converter Online</h2>
         <p className="text-gray-600 mb-6">
           Free excel csv converter online - no signup required. Convert Excel spreadsheets (XLSX, XLS) to CSV format and vice versa instantly. Preserve data integrity, perfect for data migration, spreadsheet compatibility, and database import/export. Secure server-side processing. 
           import/export, and compatibility with different applications.
@@ -281,7 +241,7 @@ export default function ExcelCsvConverter() {
 
         {/* Supported Conversions */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Supported Conversions</h3>
+          <h4 className="text-sm font-semibold text-gray-900 mb-2">Supported Conversions</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
             <div>✅ Excel (XLSX) → CSV</div>
             <div>✅ Excel (XLS) → CSV</div>
@@ -293,7 +253,7 @@ export default function ExcelCsvConverter() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Excel CSV Converter</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Excel CSV Converter</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             Excel CSV Converter is a free online tool that converts Excel spreadsheets (XLSX, XLS) to CSV format 
@@ -301,14 +261,14 @@ export default function ExcelCsvConverter() {
             between different spreadsheet applications and databases.
           </p>
           
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Formats</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Formats</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>Excel (XLSX):</strong> Modern Excel format (2007+). Supports multiple sheets, formulas, and formatting.</li>
             <li><strong>Excel (XLS):</strong> Legacy Excel format (97-2003). Automatically converted to XLSX when converting to Excel.</li>
             <li><strong>CSV (Comma Separated Values):</strong> Simple text format for tabular data. Compatible with all spreadsheet applications.</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>Bidirectional Conversion:</strong> Convert Excel to CSV and CSV to Excel seamlessly.</li>
             <li><strong>Data Preservation:</strong> All data is preserved during conversion, including text, numbers, and dates.</li>
@@ -318,7 +278,7 @@ export default function ExcelCsvConverter() {
             <li><strong>Multiple Sheet Support:</strong> Excel files with multiple sheets are converted (first sheet used for CSV).</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>Database Import:</strong> Convert Excel files to CSV for importing into databases (MySQL, PostgreSQL, etc.).</li>
             <li><strong>Data Export:</strong> Convert CSV data to Excel format for analysis and reporting.</li>
@@ -330,7 +290,7 @@ export default function ExcelCsvConverter() {
             <li><strong>Data Analysis:</strong> Convert CSV to Excel for advanced analysis using Excel features.</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How It Works</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How It Works</h4>
           <ol className="list-decimal list-inside text-gray-700 space-y-2">
             <li><strong>Upload File:</strong> Select an Excel (XLSX/XLS) or CSV file from your device.</li>
             <li><strong>Automatic Detection:</strong> Our system automatically detects the file format.</li>
@@ -339,7 +299,7 @@ export default function ExcelCsvConverter() {
             <li><strong>Download Result:</strong> Download your converted file immediately. Files are automatically deleted from our servers.</li>
           </ol>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Important Notes</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Important Notes</h4>
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <ul className="list-disc list-inside text-gray-700 space-y-2 text-sm">
               <li><strong>Formulas:</strong> Excel formulas are converted to their calculated values in CSV format.</li>
@@ -350,30 +310,30 @@ export default function ExcelCsvConverter() {
             </ul>
           </div>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h4>
           <div className="space-y-4">
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Is the Excel CSV Converter free to use?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Is the Excel CSV Converter free to use?</h5>
               <p className="text-gray-700">Yes, our Excel CSV Converter is completely free to use. No registration, no hidden fees, no limits on conversions.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Are my files secure?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Are my files secure?</h5>
               <p className="text-gray-700">Yes, all conversions happen on secure servers, and files are automatically deleted immediately after processing. We never store or access your files.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What file sizes are supported?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">What file sizes are supported?</h5>
               <p className="text-gray-700">We support files up to 10MB in size. For larger files, consider splitting them into smaller parts.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Will formulas be preserved?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Will formulas be preserved?</h5>
               <p className="text-gray-700">When converting Excel to CSV, formulas are converted to their calculated values. The formula itself is not preserved in CSV format.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Can I convert files with multiple sheets?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Can I convert files with multiple sheets?</h5>
               <p className="text-gray-700">When converting Excel to CSV, only the first sheet is converted. For multiple sheets, you'll need to convert each sheet separately.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What if my conversion fails?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">What if my conversion fails?</h5>
               <p className="text-gray-700">If a conversion fails, you'll receive a clear error message. Common issues include corrupted files, unsupported formats, or files that are too large. Try a different file or format if needed.</p>
             </div>
           </div>

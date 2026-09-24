@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function WordCounter() {
   const [text, setText] = useState<string>('');
@@ -13,47 +12,6 @@ export default function WordCounter() {
     speakingTime: 0,
   });
 
-  useSEO({
-    title: 'Free Word Counter Online - Character Count, Word Count Tool | No Signup',
-    description: 'Free word counter online - no signup required. Count characters, words, sentences, paragraphs instantly. Calculate reading time and speaking time. Text analyzer with comprehensive statistics. Perfect for writers, students, and content creators. All processing in your browser.',
-    url: '/resources/utility-tools/word-counter',
-    keywords: [
-      'free word counter online', 'word counter', 'free word counter', 'word counter online', 'character counter free online',
-      'character counter', 'text analyzer online free', 'word count',
-      'character count', 'text counter', 'reading time calculator', 'text statistics',
-      'online word counter', 'text analysis tool', 'free online word counter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Word Counter & Text Analyzer',
-      'description': 'Free online word counter and text analyzer with comprehensive statistics and time calculations.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/word-counter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Character count (with and without spaces)',
-        'Word, sentence, and paragraph counting',
-        'Reading time estimation',
-        'Speaking time calculation',
-        'Top words analysis',
-        'Real-time statistics'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'ratingCount': '2100',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   useEffect(() => {
     calculateStats();
@@ -121,9 +79,9 @@ export default function WordCounter() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           📊 Free Word Counter Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free word counter online - no signup required. Count characters, words, sentences, and paragraphs instantly. Analyze your text with detailed statistics, reading time, and speaking time. Perfect for writers, students, and content creators. All processing in your browser.
         </p>
@@ -203,7 +161,7 @@ export default function WordCounter() {
           {/* Word Frequency */}
           {text.trim().length > 0 && (
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Top Words</h3>
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Top Words</h4>
               <div className="space-y-2">
                 {getTopWords(10).map((item, index) => (
                   <div key={index} className="flex justify-between items-center">
@@ -220,7 +178,7 @@ export default function WordCounter() {
 
           {/* Text Analysis */}
           <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Text Analysis</h3>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Text Analysis</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Average Word Length:</span>
@@ -254,7 +212,7 @@ export default function WordCounter() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Word Counter</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Word Counter</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our Word Counter is a comprehensive text analysis tool that provides detailed statistics 
               about your text. It counts characters (with and without spaces), words, sentences, 
@@ -270,7 +228,7 @@ export default function WordCounter() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -301,14 +259,14 @@ export default function WordCounter() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Comprehensive Statistics</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Comprehensive Statistics</h5>
                   <p className="text-sm text-gray-600">Count characters, words, sentences, paragraphs, and more</p>
                 </div>
               </div>
@@ -317,7 +275,7 @@ export default function WordCounter() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Time Calculations</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Time Calculations</h5>
                   <p className="text-sm text-gray-600">Estimate reading time (200 WPM) and speaking time (150 WPM)</p>
                 </div>
               </div>
@@ -326,7 +284,7 @@ export default function WordCounter() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Word Analysis</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Word Analysis</h5>
                   <p className="text-sm text-gray-600">Identify top words and analyze text patterns</p>
                 </div>
               </div>
@@ -335,7 +293,7 @@ export default function WordCounter() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Real-Time Updates</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Real-Time Updates</h5>
                   <p className="text-sm text-gray-600">Statistics update instantly as you type</p>
                 </div>
               </div>
@@ -344,31 +302,31 @@ export default function WordCounter() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How is reading time calculated?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How is reading time calculated?</h5>
                 <p className="text-gray-700 text-sm">
                   Reading time is calculated at 200 words per minute, which is the average reading 
                   speed for adults. This is a standard used by most content platforms.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How is speaking time calculated?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How is speaking time calculated?</h5>
                 <p className="text-gray-700 text-sm">
                   Speaking time is calculated at 150 words per minute, which is the average speaking 
                   speed for presentations and speeches.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What counts as a word?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What counts as a word?</h5>
                 <p className="text-gray-700 text-sm">
                   A word is any sequence of characters separated by spaces. Punctuation is not 
                   included in word counts.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my text stored or analyzed?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my text stored or analyzed?</h5>
                 <p className="text-gray-700 text-sm">
                   No, all analysis happens locally in your browser. Your text is never sent to any 
                   server or stored anywhere.
@@ -380,7 +338,7 @@ export default function WordCounter() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Usage Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Usage Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Perfect for checking word limits in essays, articles, and social media posts</li>
             <li>Reading time is calculated at 200 words per minute (average reading speed)</li>

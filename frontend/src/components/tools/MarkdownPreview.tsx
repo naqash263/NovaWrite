@@ -1,46 +1,11 @@
 import { useState, useEffect } from 'react';
 import { marked } from 'marked';
-import { useSEO } from '../../utils/seo';
 
 export default function MarkdownPreview() {
   const [markdown, setMarkdown] = useState<string>('# Hello World\n\nThis is **bold** and this is *italic*.');
   const [html, setHtml] = useState<string>('');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  useSEO({
-    title: 'Free Markdown Preview Editor Online - Live Preview | No Signup',
-    description: 'Free markdown preview editor online - no signup required. Write markdown and see live preview instantly. Convert markdown to HTML, export HTML code. Dark and light themes. Perfect for developers and content creators. All processing in your browser.',
-    url: '/resources/utility-tools/markdown-preview',
-    keywords: [
-      'free markdown preview editor', 'markdown preview', 'free markdown preview editor online', 'markdown preview editor', 'markdown editor online',
-      'markdown editor', 'markdown to HTML', 'live markdown preview',
-      'markdown converter', 'markdown viewer', 'online markdown editor', 'free markdown tool',
-      'markdown HTML converter', 'free online markdown preview'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Markdown Preview & Editor',
-      'description': 'Free online markdown preview and editor with live preview and HTML export.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/markdown-preview',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Live markdown preview',
-        'Markdown to HTML conversion',
-        'Export HTML code',
-        'Dark and light themes',
-        'Copy to clipboard',
-        'Real-time rendering'
-      ]
-    }
-  });
 
   const updatePreview = (md: string) => {
     setMarkdown(md);
@@ -83,7 +48,7 @@ export default function MarkdownPreview() {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Markdown Preview Editor Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Markdown Preview Editor Online</h2>
         <p className="text-gray-600 mb-6">
           Free markdown preview editor online - no signup required. Write markdown and see live preview instantly. Convert markdown to HTML, export HTML code. Dark and light themes. Perfect for developers and content creators. All processing in your browser.
         </p>
@@ -202,7 +167,7 @@ export default function MarkdownPreview() {
 
         {/* Markdown Cheat Sheet */}
         <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Markdown Cheat Sheet</h3>
+          <h4 className="text-sm font-semibold text-gray-900 mb-2">Markdown Cheat Sheet</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-700">
             <div>
               <p><strong>Headers:</strong> # H1, ## H2, ### H3</p>
@@ -222,13 +187,13 @@ export default function MarkdownPreview() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Markdown Preview</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Markdown Preview</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             Markdown Preview is a free online tool that provides live preview of markdown content 
             and converts it to HTML. Perfect for developers, content creators, and writers.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Live markdown preview as you type</li>
             <li>Convert markdown to HTML</li>
@@ -237,7 +202,7 @@ export default function MarkdownPreview() {
             <li>Copy markdown and HTML to clipboard</li>
             <li>Markdown cheat sheet included</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Preview markdown before publishing</li>
             <li>Convert markdown to HTML for websites</li>

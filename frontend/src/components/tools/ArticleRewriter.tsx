@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
@@ -18,47 +17,6 @@ export default function ArticleRewriter() {
     word_count_rewritten: number;
   } | null>(null);
 
-  useSEO({
-    title: 'Free Article Rewriter Online - AI-Powered Paraphrase Tool | No Signup',
-    description: 'Free article rewriter online - no signup required. AI-powered article rewriter and paraphrase tool. Rewrite articles, essays, and text while maintaining meaning instantly. Multiple writing styles and tones. Paraphrase tool free online. Plagiarism-free rewriting.',
-    url: '/resources/ai-tools/article-rewriter',
-    keywords: [
-      'free article rewriter online', 'article rewriter', 'free article rewriter', 'article rewriter online', 'paraphrase tool free online',
-      'paraphrase tool', 'text rewriter', 'rewrite article',
-      'AI rewriter', 'online rewriter', 'paraphrasing tool',
-      'text paraphrasing', 'content rewriter', 'essay rewriter', 'plagiarism free rewriter', 'AI rewriter free', 'free online article rewriter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Article Rewriter & Paraphrase Tool',
-      'description': 'Free AI-powered article rewriter and paraphrase tool. Rewrite articles while maintaining meaning with multiple writing styles.',
-      'url': 'https://naqashthaheem.com/resources/ai-tools/article-rewriter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Multiple writing styles (formal, casual, creative, academic, professional)',
-        'Tone adjustment (neutral, positive, persuasive, informative)',
-        'Preserve meaning option',
-        'Plagiarism-free rewriting',
-        'Word count preservation',
-        'Real-time rewriting'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'ratingCount': '1250',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const handleRewrite = async () => {
     if (!text.trim()) {
@@ -134,9 +92,9 @@ export default function ArticleRewriter() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           ✍️ Free Article Rewriter Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free article rewriter online - no signup required. Rewrite articles, essays, and text while maintaining meaning instantly. Choose from multiple writing styles and tones. Paraphrase tool free online. Get plagiarism-free, unique content. Perfect for content creators.
         </p>
@@ -297,7 +255,7 @@ export default function ArticleRewriter() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Article Rewriter</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Article Rewriter</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our AI-powered Article Rewriter is a sophisticated tool designed to help you create unique, 
               plagiarism-free content while maintaining the original meaning. Whether you need to rewrite 
@@ -313,7 +271,7 @@ export default function ArticleRewriter() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -344,14 +302,14 @@ export default function ArticleRewriter() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Writing Styles</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Multiple Writing Styles</h5>
                   <p className="text-sm text-gray-600">Choose from formal, casual, creative, academic, or professional styles</p>
                 </div>
               </div>
@@ -360,7 +318,7 @@ export default function ArticleRewriter() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Tone Adjustment</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Tone Adjustment</h5>
                   <p className="text-sm text-gray-600">Control the tone: neutral, positive, persuasive, or informative</p>
                 </div>
               </div>
@@ -369,7 +327,7 @@ export default function ArticleRewriter() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Meaning Preservation</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Meaning Preservation</h5>
                   <p className="text-sm text-gray-600">Option to preserve exact meaning or allow creative adaptation</p>
                 </div>
               </div>
@@ -378,7 +336,7 @@ export default function ArticleRewriter() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Plagiarism-Free</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Plagiarism-Free</h5>
                   <p className="text-sm text-gray-600">Generate unique content that passes plagiarism checks</p>
                 </div>
               </div>
@@ -387,10 +345,10 @@ export default function ArticleRewriter() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is the rewritten content plagiarism-free?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is the rewritten content plagiarism-free?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, our AI rewriter creates unique content by using different words, sentence structures, 
                   and phrasing while maintaining the original meaning. However, we recommend running the 
@@ -398,14 +356,14 @@ export default function ArticleRewriter() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I rewrite text in different languages?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I rewrite text in different languages?</h5>
                 <p className="text-gray-700 text-sm">
                   Currently, the tool works best with English text. Support for other languages may be 
                   added in the future.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How accurate is the rewritten content?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How accurate is the rewritten content?</h5>
                 <p className="text-gray-700 text-sm">
                   The AI maintains high accuracy in preserving meaning and key information. The quality 
                   depends on the input text clarity and the selected options. Always review the output 
@@ -413,7 +371,7 @@ export default function ArticleRewriter() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the maximum text length?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What's the maximum text length?</h5>
                 <p className="text-gray-700 text-sm">
                   You can rewrite up to 50,000 characters at once. For longer texts, consider breaking 
                   them into smaller sections.
@@ -425,7 +383,7 @@ export default function ArticleRewriter() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-900 mb-2">💡 Tips for Best Results</h3>
+          <h4 className="text-sm font-medium text-gray-900 mb-2">💡 Tips for Best Results</h4>
           <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
             <li>Provide clear, well-structured input text for better rewriting quality</li>
             <li>Choose the writing style that matches your target audience</li>

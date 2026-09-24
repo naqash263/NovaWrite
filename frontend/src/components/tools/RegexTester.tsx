@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function RegexTester() {
   const [pattern, setPattern] = useState<string>('');
@@ -9,46 +8,6 @@ export default function RegexTester() {
   const [matchDetails, setMatchDetails] = useState<Array<{ match: string; index: number; groups?: string[] }>>([]);
   const [error, setError] = useState<string>('');
 
-  useSEO({
-    title: 'Free Regex Tester Online - Test Regular Expressions | No Signup',
-    description: 'Free regex tester online - no signup required. Test regular expressions with real-time matching, highlighting, and explanation. Supports all regex flags and common patterns. Perfect for developers. All processing in your browser.',
-    url: '/resources/utility-tools/regex-tester',
-    keywords: [
-      'free regex tester online', 'regex tester', 'free regex tester', 'regex tester online', 'test regex online',
-      'regular expression tester', 'regex test', 'regex pattern tester',
-      'online regex', 'regex validator', 'regex matcher', 'free online regex tester'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Regex Tester',
-      'description': 'Free online regex tester for testing regular expressions with real-time matching.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/regex-tester',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Test regex patterns',
-        'Real-time matching',
-        'Match highlighting',
-        'Multiple regex flags',
-        'Common regex patterns',
-        'Error detection'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'ratingCount': '2200',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const commonPatterns = [
     { name: 'Email', pattern: '^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$', description: 'Matches email addresses' },
@@ -235,9 +194,9 @@ export default function RegexTester() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           🔍 Free Regex Tester Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free regex tester online - no signup required. Test regular expressions with real-time matching and highlighting. Supports all regex flags and common patterns. Perfect for developers. All processing in your browser.
         </p>
@@ -314,9 +273,9 @@ export default function RegexTester() {
             {matches && matches.length > 0 && (
               <div className="space-y-4">
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h3 className="font-semibold text-green-800 mb-2">
+                  <h4 className="font-semibold text-green-800 mb-2">
                     ✅ Found {matches.length} match{matches.length !== 1 ? 'es' : ''}
-                  </h3>
+                  </h4>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {matchDetails.length > 0 ? (
                       matchDetails.map((detail, index) => (
@@ -367,7 +326,7 @@ export default function RegexTester() {
                 {/* Highlighted Text */}
                 {testString && (
                   <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-2">Highlighted Matches</h3>
+                    <h4 className="font-semibold text-gray-700 mb-2">Highlighted Matches</h4>
                     <div
                       className="font-mono text-sm whitespace-pre-wrap"
                       dangerouslySetInnerHTML={{
@@ -389,7 +348,7 @@ export default function RegexTester() {
           {/* Sidebar - Common Patterns */}
           <div className="lg:col-span-1">
             <div className="bg-gray-50 rounded-lg p-4 sticky top-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Common Patterns</h3>
+              <h4 className="font-semibold text-gray-900 mb-3">Common Patterns</h4>
               <div className="space-y-2">
                 {commonPatterns.map((item, index) => (
                   <button
@@ -411,7 +370,7 @@ export default function RegexTester() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Regex Tester</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Regex Tester</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our Regex Tester is a powerful tool for testing and debugging regular expressions. Regular expressions 
               (regex) are patterns used to match character combinations in strings. They're essential for form validation, 
@@ -425,7 +384,7 @@ export default function RegexTester() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -456,14 +415,14 @@ export default function RegexTester() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Real-Time Testing</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Real-Time Testing</h5>
                   <p className="text-sm text-gray-600">Test patterns as you type</p>
                 </div>
               </div>
@@ -472,7 +431,7 @@ export default function RegexTester() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Match Highlighting</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Match Highlighting</h5>
                   <p className="text-sm text-gray-600">Visual highlighting of matches</p>
                 </div>
               </div>
@@ -481,7 +440,7 @@ export default function RegexTester() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">All Regex Flags</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">All Regex Flags</h5>
                   <p className="text-sm text-gray-600">Support for g, i, m, s, u, y flags</p>
                 </div>
               </div>
@@ -490,7 +449,7 @@ export default function RegexTester() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Common Patterns</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Common Patterns</h5>
                   <p className="text-sm text-gray-600">Pre-built patterns for quick testing</p>
                 </div>
               </div>
@@ -499,10 +458,10 @@ export default function RegexTester() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What are regex flags?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What are regex flags?</h5>
                 <p className="text-gray-700 text-sm">
                   Regex flags modify how the pattern is matched: <strong>g</strong> (global - find all matches), 
                   <strong>i</strong> (ignore case), <strong>m</strong> (multiline), <strong>s</strong> (dotall), 
@@ -510,14 +469,14 @@ export default function RegexTester() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How do I escape special characters?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How do I escape special characters?</h5>
                 <p className="text-gray-700 text-sm">
                   Use a backslash (\) to escape special regex characters like . * + ? ^ $ { } [ ] | ( ). 
                   For example, to match a literal dot, use \.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What are common regex patterns?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What are common regex patterns?</h5>
                 <p className="text-gray-700 text-sm">
                   Common patterns include: <strong>.</strong> (any character), <strong>\d</strong> (digit), 
                   <strong>\w</strong> (word character), <strong>+</strong> (one or more), <strong>*</strong> (zero or more), 
@@ -530,7 +489,7 @@ export default function RegexTester() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Use the common patterns sidebar for quick testing</li>
             <li>Enable the 'g' flag to find all matches, not just the first</li>

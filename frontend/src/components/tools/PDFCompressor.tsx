@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { PDFDocument } from 'pdf-lib';
-import { useSEO } from '../../utils/seo';
 
 export default function PDFCompressor() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -12,46 +11,6 @@ export default function PDFCompressor() {
   const [compressedSize, setCompressedSize] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free PDF Compressor Online - Reduce PDF File Size | No Signup',
-    description: 'Free PDF compressor online - no signup required. Reduce PDF file size while maintaining quality instantly. Choose compression level (low, medium, high). All processing happens in your browser. Perfect for file sharing and storage.',
-    url: '/resources/utility-tools/pdf-compressor',
-    keywords: [
-      'free PDF compressor online', 'PDF compressor', 'free PDF compressor', 'PDF compressor online', 'compress PDF free online',
-      'compress PDF', 'reduce PDF size', 'PDF file size reducer',
-      'online PDF compressor', 'PDF optimizer', 'shrink PDF', 'free online PDF compressor'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'PDF Compressor',
-      'description': 'Free online tool to compress PDF files and reduce file size. All processing happens in your browser.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/pdf-compressor',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Compress PDF files',
-        'Multiple compression levels',
-        'Size reduction preview',
-        'Client-side processing',
-        'Quality preservation',
-        'Instant download'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.7',
-        'ratingCount': '1200',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -148,9 +107,9 @@ export default function PDFCompressor() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           📦 Free PDF Compressor Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free PDF compressor online - no signup required. Reduce PDF file size while maintaining quality instantly. Choose compression level (low, medium, high). All processing happens in your browser. Perfect for file sharing and storage.
         </p>
@@ -265,7 +224,7 @@ export default function PDFCompressor() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About PDF Compressor</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About PDF Compressor</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our PDF Compressor is a powerful, client-side tool that reduces PDF file size while maintaining document 
               quality. All processing happens locally in your browser using the pdf-lib library, ensuring your files 
@@ -279,7 +238,7 @@ export default function PDFCompressor() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -310,14 +269,14 @@ export default function PDFCompressor() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Compression Levels</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Multiple Compression Levels</h5>
                   <p className="text-sm text-gray-600">Choose low, medium, or high compression</p>
                 </div>
               </div>
@@ -326,7 +285,7 @@ export default function PDFCompressor() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Size Preview</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Size Preview</h5>
                   <p className="text-sm text-gray-600">See file size reduction before downloading</p>
                 </div>
               </div>
@@ -335,7 +294,7 @@ export default function PDFCompressor() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Privacy-First</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Privacy-First</h5>
                   <p className="text-sm text-gray-600">All processing happens in your browser</p>
                 </div>
               </div>
@@ -344,7 +303,7 @@ export default function PDFCompressor() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Quality Preservation</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Quality Preservation</h5>
                   <p className="text-sm text-gray-600">Maintains document quality while reducing size</p>
                 </div>
               </div>
@@ -353,31 +312,31 @@ export default function PDFCompressor() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my PDF data stored or uploaded?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my PDF data stored or uploaded?</h5>
                 <p className="text-gray-700 text-sm">
                   No, all PDF compression happens locally in your browser. Your files are never uploaded to any server 
                   or stored anywhere. Your privacy is guaranteed.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How much can I reduce the file size?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How much can I reduce the file size?</h5>
                 <p className="text-gray-700 text-sm">
                   Compression ratio depends on the PDF content. Text-based PDFs can be compressed significantly, while 
                   image-heavy PDFs may see less reduction. Typically, you can expect 10-50% size reduction.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Will compression affect PDF quality?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Will compression affect PDF quality?</h5>
                 <p className="text-gray-700 text-sm">
                   Low compression maintains best quality with minimal size reduction. Medium compression balances size 
                   and quality. High compression maximizes size reduction but may slightly affect quality for image-heavy PDFs.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I compress password-protected PDFs?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I compress password-protected PDFs?</h5>
                 <p className="text-gray-700 text-sm">
                   Password-protected PDFs cannot be compressed. You'll need to remove the password first using a PDF 
                   password remover tool.
@@ -389,7 +348,7 @@ export default function PDFCompressor() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Text-based PDFs compress better than image-heavy PDFs</li>
             <li>Use low compression for documents with important images</li>

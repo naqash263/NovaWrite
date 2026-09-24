@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function URLEncoder() {
   const [input, setInput] = useState<string>('');
@@ -7,46 +6,6 @@ export default function URLEncoder() {
   const [mode, setMode] = useState<'encode' | 'decode'>('encode');
   const [error, setError] = useState<string>('');
 
-  useSEO({
-    title: 'Free URL Encoder Decoder Online - Encode Decode URL | No Signup',
-    description: 'Free URL encoder decoder online - no signup required. Encode URLs for safe transmission or decode URL-encoded strings instantly. Percent encoding, instant conversion, copy to clipboard. Perfect for developers. All processing in your browser.',
-    url: '/resources/utility-tools/url-encoder',
-    keywords: [
-      'free URL encoder decoder', 'URL encoder', 'free URL encoder decoder', 'URL encoder decoder online', 'URL encode decode online',
-      'URL decoder', 'URL encode', 'URL decode', 'percent encoding',
-      'URL encoding', 'URL percent encoding', 'encode URL', 'decode URL', 'online URL encoder', 'free online URL encoder'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'URL Encoder & Decoder',
-      'description': 'Free online URL encoder and decoder for encoding and decoding URLs.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/url-encoder',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Encode URLs',
-        'Decode URL-encoded strings',
-        'Percent encoding',
-        'Instant conversion',
-        'Copy to clipboard',
-        'Error detection'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.6',
-        'ratingCount': '1500',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const handleEncode = () => {
     try {
@@ -112,9 +71,9 @@ export default function URLEncoder() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           🔗 Free URL Encoder Decoder Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free URL encoder decoder online - no signup required. Encode URLs for safe transmission or decode URL-encoded strings instantly. Percent encoding (URL encoding) support, instant conversion, copy to clipboard. Perfect for developers. All processing in your browser.
         </p>
@@ -230,7 +189,7 @@ export default function URLEncoder() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About URL Encoder & Decoder</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About URL Encoder & Decoder</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               URL encoding (also known as percent encoding) is a method to encode information in a URL by converting 
               special characters into a format that can be safely transmitted over the internet. Our URL encoder and 
@@ -244,7 +203,7 @@ export default function URLEncoder() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -275,14 +234,14 @@ export default function URLEncoder() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Encode & Decode</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Encode & Decode</h5>
                   <p className="text-sm text-gray-600">Switch between encoding and decoding modes</p>
                 </div>
               </div>
@@ -291,7 +250,7 @@ export default function URLEncoder() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Percent Encoding</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Percent Encoding</h5>
                   <p className="text-sm text-gray-600">Standard URL percent encoding (RFC 3986)</p>
                 </div>
               </div>
@@ -300,7 +259,7 @@ export default function URLEncoder() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Instant Conversion</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Instant Conversion</h5>
                   <p className="text-sm text-gray-600">Real-time encoding/decoding as you type</p>
                 </div>
               </div>
@@ -309,7 +268,7 @@ export default function URLEncoder() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Copy to Clipboard</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Copy to Clipboard</h5>
                   <p className="text-sm text-gray-600">One-click copy for easy use</p>
                 </div>
               </div>
@@ -318,10 +277,10 @@ export default function URLEncoder() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What is URL encoding?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What is URL encoding?</h5>
                 <p className="text-gray-700 text-sm">
                   URL encoding (percent encoding) converts special characters in URLs into a format that can be safely 
                   transmitted. For example, spaces become %20, and special characters are encoded as %XX where XX is 
@@ -329,21 +288,21 @@ export default function URLEncoder() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">When should I use URL encoding?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">When should I use URL encoding?</h5>
                 <p className="text-gray-700 text-sm">
                   Use URL encoding when you need to include special characters, spaces, or non-ASCII characters in URLs 
                   or URL parameters. This ensures the URL is valid and can be properly transmitted.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Why is my decode failing?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Why is my decode failing?</h5>
                 <p className="text-gray-700 text-sm">
                   Decoding fails if the input is not valid URL-encoded text. URL-encoded strings should contain percent 
                   signs (%) followed by two hexadecimal digits. Make sure the input is properly encoded.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my data secure?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my data secure?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, all encoding and decoding happens locally in your browser. Your data is never sent to any server 
                   or stored anywhere. Your privacy is guaranteed.
@@ -355,7 +314,7 @@ export default function URLEncoder() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>URL encoding converts spaces to %20 and special characters to %XX format</li>
             <li>Use this tool to encode query parameters in URLs</li>

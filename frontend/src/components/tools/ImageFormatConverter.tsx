@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function ImageFormatConverter() {
   const [originalFile, setOriginalFile] = useState<File | null>(null);
@@ -11,39 +10,6 @@ export default function ImageFormatConverter() {
   const [error, setError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free Image Format Converter Online - Convert JPEG, PNG, GIF, WebP | No Signup',
-    description: 'Free image format converter online - no signup required. Convert images between JPEG, PNG, GIF, WebP, and BMP formats instantly. Maintain quality, adjust compression, download converted images. All processing in your browser.',
-    url: '/resources/utility-tools/image-format-converter',
-    keywords: [
-      'free image format converter online', 'image format converter', 'free image format converter', 'image format converter online', 'convert image format online',
-      'convert image format', 'JPEG to PNG', 'PNG to JPEG',
-      'image converter', 'format converter', 'online image converter', 'free image converter',
-      'convert image', 'image format changer', 'free online image converter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Image Format Converter',
-      'description': 'Free online image format converter. Convert images between JPEG, PNG, GIF, WebP, and BMP formats.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/image-format-converter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Convert between JPEG, PNG, GIF, WebP, BMP',
-        'Maintain image quality',
-        'Adjust compression quality',
-        'Download converted images',
-        'All processing in browser'
-      ]
-    }
-  });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -174,7 +140,7 @@ export default function ImageFormatConverter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Image Format Converter Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Image Format Converter Online</h2>
         <p className="text-gray-600 mb-6">
           Free image format converter online - no signup required. Convert images between JPEG, PNG, GIF, WebP, and BMP formats instantly. Maintain quality, adjust compression, download converted images. All processing happens in your browser.
         </p>
@@ -244,14 +210,14 @@ export default function ImageFormatConverter() {
         {originalImage && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">
                 Original Image
                 {originalFile && (
                   <span className="text-sm font-normal text-gray-500 ml-2">
                     ({originalFile.name})
                   </span>
                 )}
-              </h3>
+              </h4>
               <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
                 <img
                   src={originalImage}
@@ -263,9 +229,9 @@ export default function ImageFormatConverter() {
 
             {convertedImage && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">
                   Converted Image ({targetFormat.toUpperCase()})
-                </h3>
+                </h4>
                 <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
                   <img
                     src={convertedImage}
@@ -306,13 +272,13 @@ export default function ImageFormatConverter() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Image Format Converter</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Image Format Converter</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             Image Format Converter is a free online tool that converts images between different formats 
             including JPEG, PNG, GIF, WebP, and BMP. All processing happens in your browser for privacy and speed.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Convert between JPEG, PNG, GIF, WebP, and BMP formats</li>
             <li>Maintain image quality during conversion</li>
@@ -321,7 +287,7 @@ export default function ImageFormatConverter() {
             <li>Download converted images instantly</li>
             <li>No file size limits</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Convert images for web use (JPEG to WebP for better compression)</li>
             <li>Convert PNG to JPEG for smaller file sizes</li>

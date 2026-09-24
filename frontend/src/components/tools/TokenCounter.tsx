@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
 
 // Simple token estimation based on common models
 // This is an approximation - actual token counts vary by model
@@ -71,45 +70,6 @@ export default function TokenCounter() {
   const [paragraphCount, setParagraphCount] = useState<number>(0);
   const [sentenceCount, setSentenceCount] = useState<number>(0);
 
-  useSEO({
-    title: 'Free Token Counter AI Models - Count GPT, Claude, Gemini Tokens | No Signup',
-    description: 'Free token counter AI models - no signup required. Count tokens for GPT-3.5, GPT-4, Claude, Gemini, and other AI models instantly. Estimate API costs and track token usage. Perfect for AI developers. All processing in your browser.',
-    url: '/resources/utility-tools/token-counter',
-    keywords: [
-      'free token counter AI models', 'token counter', 'free token counter', 'token counter AI models', 'AI token counter',
-      'token calculator', 'gpt token counter', 'claude token counter',
-      'openai token counter', 'token count', 'gpt-4 tokens',
-      'claude tokens', 'gemini tokens', 'llm token counter', 'api token calculator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Token Counter',
-      'description': 'Free online token counter for AI models. Count tokens for GPT, Claude, Gemini, and other AI models.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/token-counter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Count tokens for multiple AI models',
-        'Support for GPT-3.5, GPT-4, Claude, Gemini',
-        'Character and word count',
-        'Real-time token estimation',
-        'API cost estimation',
-        'No registration required'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'reviewCount': '1520'
-      }
-    }
-  });
 
   useEffect(() => {
     if (!text.trim()) {
@@ -176,7 +136,7 @@ export default function TokenCounter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Token Counter AI Models</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Token Counter AI Models</h2>
         <p className="text-gray-600 mb-6">
           Free token counter AI models - no signup required. Count tokens for GPT-3.5, GPT-4, Claude, Gemini, and other AI models instantly. Estimate API costs and track token usage. Perfect for AI developers. All processing in your browser.
         </p>
@@ -226,7 +186,7 @@ export default function TokenCounter() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <h3 className="text-sm font-medium text-blue-900">Tokens</h3>
+                <h4 className="text-sm font-medium text-blue-900">Tokens</h4>
                 <p className="text-2xl font-bold text-blue-600 mt-1">{tokenCount.toLocaleString()}</p>
               </div>
               <button
@@ -244,7 +204,7 @@ export default function TokenCounter() {
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <h3 className="text-sm font-medium text-green-900">Characters</h3>
+                <h4 className="text-sm font-medium text-green-900">Characters</h4>
                 <p className="text-2xl font-bold text-green-600 mt-1">{charCount.toLocaleString()}</p>
               </div>
               <button
@@ -262,7 +222,7 @@ export default function TokenCounter() {
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <h3 className="text-sm font-medium text-purple-900">Words</h3>
+                <h4 className="text-sm font-medium text-purple-900">Words</h4>
                 <p className="text-2xl font-bold text-purple-600 mt-1">{wordCount.toLocaleString()}</p>
               </div>
               <button
@@ -280,7 +240,7 @@ export default function TokenCounter() {
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <h3 className="text-sm font-medium text-yellow-900">Paragraphs</h3>
+                <h4 className="text-sm font-medium text-yellow-900">Paragraphs</h4>
                 <p className="text-2xl font-bold text-yellow-600 mt-1">{paragraphCount.toLocaleString()}</p>
               </div>
               <button
@@ -298,7 +258,7 @@ export default function TokenCounter() {
           <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <h3 className="text-sm font-medium text-pink-900">Sentences</h3>
+                <h4 className="text-sm font-medium text-pink-900">Sentences</h4>
                 <p className="text-2xl font-bold text-pink-600 mt-1">{sentenceCount.toLocaleString()}</p>
               </div>
               <button
@@ -316,7 +276,7 @@ export default function TokenCounter() {
           <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <h3 className="text-sm font-medium text-indigo-900">Est. Cost</h3>
+                <h4 className="text-sm font-medium text-indigo-900">Est. Cost</h4>
                 <p className="text-sm font-semibold text-indigo-600 mt-1">
                   {getEstimatedCost(tokenCount, selectedModel)}
                 </p>
@@ -329,7 +289,7 @@ export default function TokenCounter() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Token Counter</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Token Counter</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             Token Counter is a free online tool that counts tokens in text for various AI models including 
@@ -337,7 +297,7 @@ export default function TokenCounter() {
             API costs and ensuring your prompts fit within model limits.
           </p>
           
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported AI Models</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported AI Models</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>OpenAI Models:</strong> GPT-3.5 Turbo, GPT-4, GPT-4 Turbo</li>
             <li><strong>Anthropic Models:</strong> Claude 3, Claude 3 Opus, Claude 3 Sonnet</li>
@@ -346,7 +306,7 @@ export default function TokenCounter() {
             <li><strong>General Estimation:</strong> Universal token counting for any model</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>Multi-Model Support:</strong> Count tokens for different AI models with model-specific algorithms</li>
             <li><strong>Real-Time Counting:</strong> Instant token count updates as you type</li>
@@ -357,7 +317,7 @@ export default function TokenCounter() {
             <li><strong>Privacy-Focused:</strong> All counting happens in your browser - your text never leaves your device</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>API Cost Management:</strong> Estimate costs before making API calls to AI models</li>
             <li><strong>Prompt Optimization:</strong> Ensure prompts fit within token limits for different models</li>
@@ -369,7 +329,7 @@ export default function TokenCounter() {
             <li><strong>Education:</strong> Learn about tokenization and AI model limits</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How Token Counting Works</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How Token Counting Works</h4>
           <p className="text-gray-700 mb-2">
             Token counting varies by model, but generally follows these principles:
           </p>
@@ -380,7 +340,7 @@ export default function TokenCounter() {
             <li><strong>Accuracy:</strong> For exact counts, use the official tokenizer for each model (this tool provides estimates)</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Important Notes</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Important Notes</h4>
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <ul className="list-disc list-inside text-gray-700 space-y-2 text-sm">
               <li><strong>Estimation Only:</strong> Token counts are estimates. For exact counts, use official tokenizers from each provider.</li>
@@ -390,26 +350,26 @@ export default function TokenCounter() {
             </ul>
           </div>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h4>
           <div className="space-y-4">
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">How accurate is the token counter?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">How accurate is the token counter?</h5>
               <p className="text-gray-700">The token counter provides estimates based on common tokenization patterns. For exact counts, use the official tokenizer from each AI provider (e.g., OpenAI's tiktoken library).</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Why do token counts differ between models?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Why do token counts differ between models?</h5>
               <p className="text-gray-700">Different AI models use different tokenization algorithms. GPT models use Byte Pair Encoding (BPE), while Claude and Gemini use similar but distinct methods, resulting in different token counts for the same text.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">How do I reduce token count?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">How do I reduce token count?</h5>
               <p className="text-gray-700">To reduce token count: remove unnecessary words, use abbreviations, shorten sentences, remove redundant information, and use concise language. However, be careful not to lose important context.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What is a token limit?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">What is a token limit?</h5>
               <p className="text-gray-700">Token limits (context windows) define the maximum number of tokens a model can process in a single request. Exceeding limits will cause errors. Common limits: GPT-3.5 (4K-16K), GPT-4 (8K-128K), Claude 3 (200K).</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Is my text stored or sent anywhere?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Is my text stored or sent anywhere?</h5>
               <p className="text-gray-700">No, all token counting happens entirely in your browser. Your text never leaves your device and is never stored or transmitted to any server.</p>
             </div>
           </div>

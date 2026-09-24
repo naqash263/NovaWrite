@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function CompoundInterestCalculator() {
   const [principal, setPrincipal] = useState<number>(10000);
@@ -9,46 +8,6 @@ export default function CompoundInterestCalculator() {
   const [additionalContribution, setAdditionalContribution] = useState<number>(0);
   const [contributionFrequency, setContributionFrequency] = useState<'monthly' | 'yearly'>('monthly');
 
-  useSEO({
-    title: 'Free Compound Interest Calculator Online - Investment Growth | No Signup',
-    description: 'Free compound interest calculator online - no signup required. Calculate future value, investment growth, and returns instantly. Supports multiple compounding frequencies and additional contributions. Perfect for financial planning. All calculations in your browser.',
-    url: '/resources/utility-tools/compound-interest-calculator',
-    keywords: [
-      'free compound interest calculator', 'compound interest calculator', 'free compound interest calculator online', 'compound interest calculator online', 'investment calculator free',
-      'investment calculator', 'future value calculator',
-      'compound interest', 'investment growth calculator', 'savings calculator', 'interest calculator', 'free online compound interest calculator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Compound Interest Calculator',
-      'description': 'Free online compound interest calculator for calculating investment growth and future value.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/compound-interest-calculator',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Calculate compound interest',
-        'Future value calculator',
-        'Multiple compounding frequencies',
-        'Additional contributions',
-        'Investment growth projection',
-        'Visual results'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.9',
-        'ratingCount': '1500',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const calculateCompoundInterest = () => {
     const r = interestRate / 100;
@@ -106,9 +65,9 @@ export default function CompoundInterestCalculator() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           📈 Free Compound Interest Calculator Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free compound interest calculator online - no signup required. Calculate how your investments grow with compound interest instantly. See the power of compounding over time. Supports multiple compounding frequencies and additional contributions. Perfect for financial planning. All calculations in your browser.
         </p>
@@ -208,7 +167,7 @@ export default function CompoundInterestCalculator() {
           {/* Results Section */}
           <div className="space-y-4">
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg">
-              <h2 className="text-lg font-semibold text-gray-700 mb-4">Future Value</h2>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Future Value</h3>
               <div className="text-3xl font-bold text-green-600 mb-4">
                 {formatCurrency(results.futureValue)}
               </div>
@@ -231,7 +190,7 @@ export default function CompoundInterestCalculator() {
             </div>
 
             <div className="bg-blue-50 p-6 rounded-lg">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Summary</h3>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Summary</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Contributions:</span>
@@ -261,7 +220,7 @@ export default function CompoundInterestCalculator() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Compound Interest Calculator</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Compound Interest Calculator</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our Compound Interest Calculator helps you understand how your investments grow over time with compound interest. 
               Compound interest is the interest calculated on the initial principal and accumulated interest from previous periods, 
@@ -276,7 +235,7 @@ export default function CompoundInterestCalculator() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -307,14 +266,14 @@ export default function CompoundInterestCalculator() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Compounding Frequencies</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Multiple Compounding Frequencies</h5>
                   <p className="text-sm text-gray-600">Annually, quarterly, monthly, or daily compounding</p>
                 </div>
               </div>
@@ -323,7 +282,7 @@ export default function CompoundInterestCalculator() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Additional Contributions</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Additional Contributions</h5>
                   <p className="text-sm text-gray-600">Add monthly or yearly contributions to your investment</p>
                 </div>
               </div>
@@ -332,7 +291,7 @@ export default function CompoundInterestCalculator() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Detailed Breakdown</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Detailed Breakdown</h5>
                   <p className="text-sm text-gray-600">See principal, contributions, and interest earned</p>
                 </div>
               </div>
@@ -341,7 +300,7 @@ export default function CompoundInterestCalculator() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Instant Calculations</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Instant Calculations</h5>
                   <p className="text-sm text-gray-600">Real-time results as you change inputs</p>
                 </div>
               </div>
@@ -350,10 +309,10 @@ export default function CompoundInterestCalculator() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What is compound interest?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What is compound interest?</h5>
                 <p className="text-gray-700 text-sm">
                   Compound interest is interest calculated on the initial principal and accumulated interest from previous 
                   periods. This means your money grows faster over time because you earn interest on both your original 
@@ -361,21 +320,21 @@ export default function CompoundInterestCalculator() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How does compounding frequency affect returns?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How does compounding frequency affect returns?</h5>
                 <p className="text-gray-700 text-sm">
                   More frequent compounding (e.g., daily vs. annually) results in higher returns because interest is 
                   calculated and added more often. However, the difference becomes smaller as the frequency increases.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Should I include additional contributions?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Should I include additional contributions?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, if you plan to make regular contributions to your investment, include them to get a more accurate 
                   projection of your future value. This is especially important for retirement planning and savings goals.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Are the results guaranteed?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Are the results guaranteed?</h5>
                 <p className="text-gray-700 text-sm">
                   No, these are projections based on the interest rate you enter. Actual returns may vary based on market 
                   conditions, fees, and other factors. This calculator is for planning purposes only.
@@ -387,7 +346,7 @@ export default function CompoundInterestCalculator() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Start investing early to maximize compound interest benefits</li>
             <li>More frequent compounding (monthly/daily) yields higher returns</li>

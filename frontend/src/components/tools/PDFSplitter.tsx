@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { PDFDocument } from 'pdf-lib';
-import { useSEO } from '../../utils/seo';
 
 export default function PDFSplitter() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -12,46 +11,6 @@ export default function PDFSplitter() {
   const [splitPdfs, setSplitPdfs] = useState<{ name: string; url: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free PDF Splitter Online - Split PDF Pages | No Signup',
-    description: 'Free PDF splitter online - no signup required. Extract specific pages from PDF, split PDF into multiple files, or extract page ranges instantly. All processing happens in your browser. Perfect for document management.',
-    url: '/resources/utility-tools/pdf-splitter',
-    keywords: [
-      'free PDF splitter online', 'PDF splitter', 'free PDF splitter', 'PDF splitter online', 'split PDF pages free',
-      'split PDF', 'extract PDF pages', 'PDF page extractor',
-      'split PDF online', 'PDF page remover', 'extract pages from PDF', 'free online PDF splitter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'PDF Splitter',
-      'description': 'Free online tool to split PDF files and extract specific pages. All processing happens in your browser.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/pdf-splitter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Split PDF into individual pages',
-        'Extract page ranges',
-        'Extract specific pages',
-        'Client-side processing',
-        'No file size limits',
-        'Instant download'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'ratingCount': '1500',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -221,9 +180,9 @@ export default function PDFSplitter() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           ✂️ Free PDF Splitter Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free PDF splitter online - no signup required. Split PDF files into individual pages or extract specific pages instantly. Extract page ranges, split by pages. All processing happens in your browser. Perfect for document management.
         </p>
@@ -400,7 +359,7 @@ export default function PDFSplitter() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About PDF Splitter</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About PDF Splitter</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our PDF Splitter is a powerful, client-side tool that splits PDF files into individual pages or extracts 
               specific pages. All processing happens locally in your browser using the pdf-lib library, ensuring your 
@@ -414,7 +373,7 @@ export default function PDFSplitter() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -445,14 +404,14 @@ export default function PDFSplitter() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Split Modes</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Multiple Split Modes</h5>
                   <p className="text-sm text-gray-600">Split into pages, extract ranges, or select specific pages</p>
                 </div>
               </div>
@@ -461,7 +420,7 @@ export default function PDFSplitter() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Flexible Page Selection</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Flexible Page Selection</h5>
                   <p className="text-sm text-gray-600">Use ranges (1-5) or specific pages (1,3,5)</p>
                 </div>
               </div>
@@ -470,7 +429,7 @@ export default function PDFSplitter() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Privacy-First</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Privacy-First</h5>
                   <p className="text-sm text-gray-600">All processing happens in your browser</p>
                 </div>
               </div>
@@ -479,7 +438,7 @@ export default function PDFSplitter() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Batch Download</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Batch Download</h5>
                   <p className="text-sm text-gray-600">Download all split files at once</p>
                 </div>
               </div>
@@ -488,31 +447,31 @@ export default function PDFSplitter() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my PDF data stored or uploaded?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my PDF data stored or uploaded?</h5>
                 <p className="text-gray-700 text-sm">
                   No, all PDF splitting happens locally in your browser. Your files are never uploaded to any server 
                   or stored anywhere. Your privacy is guaranteed.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How do I specify page ranges?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How do I specify page ranges?</h5>
                 <p className="text-gray-700 text-sm">
                   Use dashes for ranges (e.g., 1-5 for pages 1 through 5) and commas for multiple pages or ranges 
                   (e.g., 1,3,5-10 for pages 1, 3, and 5 through 10).
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I split password-protected PDFs?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I split password-protected PDFs?</h5>
                 <p className="text-gray-700 text-sm">
                   Password-protected PDFs cannot be split. You'll need to remove the password first using a PDF 
                   password remover tool.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the maximum file size?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What's the maximum file size?</h5>
                 <p className="text-gray-700 text-sm">
                   There's no hard limit, but browser memory may limit very large files. We recommend files under 
                   50MB for best performance.
@@ -524,7 +483,7 @@ export default function PDFSplitter() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Use "Split into Individual Pages" to create separate PDFs for each page</li>
             <li>Use ranges like "1-5" to extract pages 1 through 5</li>

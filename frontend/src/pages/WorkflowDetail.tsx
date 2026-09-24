@@ -159,13 +159,6 @@ export default function WorkflowDetail() {
         'availability': 'https://schema.org/InStock',
         'url': `https://naqashthaheem.com/workflows/${slug}`
       },
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '5',
-        'ratingCount': '1',
-        'bestRating': '5',
-        'worstRating': '1'
-      },
       'author': {
         '@type': 'Person',
         'name': 'Naqash Thaheem',

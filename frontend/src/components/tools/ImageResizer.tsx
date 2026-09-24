@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
@@ -121,51 +120,6 @@ export default function ImageResizer() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useSEO({
-    title: 'Free Image Resizer Online - Resize Images | No Signup',
-    description: 'Free image resizer online - no signup required. Resize images online instantly with social media presets. Instagram, Facebook, Twitter, LinkedIn, YouTube, and Pinterest sizes. Adjust dimensions, maintain aspect ratio, change format, and adjust quality. All processing in your browser.',
-    url: '/resources/utility-tools/image-resizer',
-    keywords: [
-      'free image resizer online', 'image resizer', 'free image resizer', 'image resizer online', 'resize image online free',
-      'resize image', 'image size converter', 'resize photo',
-      'social media image resizer', 'instagram image size', 'facebook image size',
-      'twitter image size', 'linkedin image size', 'youtube thumbnail', 'pinterest image size',
-      'image compressor', 'photo resizer', 'image editor', 'resize picture',
-      'online image resizer', 'image tool', 'free online image resizer'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Image Resizer',
-      'description': 'Free online image resizer with social media presets. Resize images with adjustable dimensions, format conversion, and quality control.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/image-resizer',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Resize images to custom dimensions',
-        'Social media presets (Instagram, Facebook, Twitter, etc.)',
-        'Maintain aspect ratio option',
-        'Format conversion (JPEG, PNG, WebP, AVIF)',
-        'Quality adjustment',
-        'Before/after size comparison',
-        'API support',
-        'Instant download'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'ratingCount': '3200',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -423,9 +377,9 @@ export default function ImageResizer() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           🖼️ Free Image Resizer Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free image resizer online - no signup required. Resize images online instantly. Choose from social media presets or custom dimensions. Adjust format and quality. All processing in your browser.
         </p>
@@ -655,7 +609,7 @@ export default function ImageResizer() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Image Resizer</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Image Resizer</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our Image Resizer is a powerful tool that resizes images directly in your browser or via API. 
               It includes pre-configured sizes for all major social media platforms, making it easy to prepare 
@@ -670,11 +624,11 @@ export default function ImageResizer() {
 
           {/* Social Media Presets Info */}
           <div className="p-6 bg-purple-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Available Social Media Presets</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Available Social Media Presets</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {SOCIAL_MEDIA_PRESETS.map((preset) => (
                 <div key={preset.id} className="bg-white p-4 rounded-lg border border-gray-200">
-                  <h4 className="font-semibold text-gray-900 mb-1">{preset.name}</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">{preset.name}</h5>
                   <div className="text-sm text-gray-600 mb-2">
                     {preset.width} × {preset.height} px
                   </div>
@@ -686,7 +640,7 @@ export default function ImageResizer() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -717,14 +671,14 @@ export default function ImageResizer() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Social Media Presets</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Social Media Presets</h5>
                   <p className="text-sm text-gray-600">11 pre-configured sizes for major platforms</p>
                 </div>
               </div>
@@ -733,7 +687,7 @@ export default function ImageResizer() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">API Support</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">API Support</h5>
                   <p className="text-sm text-gray-600">Client-side or API processing options</p>
                 </div>
               </div>
@@ -742,7 +696,7 @@ export default function ImageResizer() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Format Support</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Format Support</h5>
                   <p className="text-sm text-gray-600">Convert between JPEG, PNG, and WebP</p>
                 </div>
               </div>
@@ -751,7 +705,7 @@ export default function ImageResizer() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Quality Control</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Quality Control</h5>
                   <p className="text-sm text-gray-600">Adjust quality to balance size and appearance</p>
                 </div>
               </div>
@@ -760,10 +714,10 @@ export default function ImageResizer() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What social media presets are available?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What social media presets are available?</h5>
                 <p className="text-gray-700 text-sm">
                   We provide presets for Instagram (post, story, reel), Facebook (post, cover), Twitter (post, header), 
                   LinkedIn (post, cover), YouTube (thumbnail), and Pinterest (pin). All presets use recommended dimensions 
@@ -771,21 +725,21 @@ export default function ImageResizer() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Should I use client-side or API processing?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Should I use client-side or API processing?</h5>
                 <p className="text-gray-700 text-sm">
                   Client-side processing is faster and more private (images never leave your browser). Use API processing 
                   for very large images or when you need server-side optimization. Both methods produce the same results.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I use custom dimensions?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I use custom dimensions?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, select "Custom" from the presets and enter your desired width and height. You can resize to any 
                   dimensions up to 10,000 × 10,000 pixels.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my image uploaded to a server?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my image uploaded to a server?</h5>
                 <p className="text-gray-700 text-sm">
                   Only if you enable "Use API for processing". With client-side processing (default), all image processing 
                   happens locally in your browser. Your images never leave your device.
@@ -797,7 +751,7 @@ export default function ImageResizer() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Use social media presets for optimal display on each platform</li>
             <li>Instagram posts work best at 1080×1080 (square format)</li>

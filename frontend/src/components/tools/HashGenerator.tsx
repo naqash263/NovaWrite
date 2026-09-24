@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
 
 type HashAlgorithm = 'MD5' | 'SHA-1' | 'SHA-256' | 'SHA-512';
 
@@ -11,39 +10,6 @@ export default function HashGenerator() {
   const [fileHash, setFileHash] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
 
-  useSEO({
-    title: 'Free Hash Generator Online - MD5, SHA-256, SHA-512 Generator | No Signup',
-    description: 'Free hash generator online - no signup required. Generate SHA-1, SHA-256, and SHA-512 hashes from text or files. Compare hashes, copy to clipboard instantly. Perfect for developers and security professionals. All processing happens in your browser.',
-    url: '/resources/utility-tools/hash-generator',
-    keywords: [
-      'free hash generator online', 'hash generator', 'free hash generator', 'hash generator online',
-      'MD5 generator', 'SHA-256 generator', 'SHA-1 generator', 'SHA-512 generator',
-      'hash calculator', 'online hash tool', 'text hash', 'file hash', 'hash converter',
-      'cryptographic hash', 'hash function', 'checksum generator', 'free online hash tool'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Hash Generator',
-      'description': 'Free online hash generator. Generate MD5, SHA-1, SHA-256, and SHA-512 hashes.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/hash-generator',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'MD5, SHA-1, SHA-256, SHA-512 hash generation',
-        'Text and file hashing',
-        'Hash comparison',
-        'Copy to clipboard',
-        'Real-time hash generation'
-      ]
-    }
-  });
 
   const generateHash = async (text: string, algorithm: HashAlgorithm): Promise<string> => {
     const encoder = new TextEncoder();
@@ -159,7 +125,7 @@ export default function HashGenerator() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Hash Generator Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Hash Generator Online</h2>
         <p className="text-gray-600 mb-6">
           Free hash generator online - no signup required. Generate cryptographic hashes from text or files. Supports SHA-1, SHA-256, and SHA-512 algorithms. All processing happens in your browser for maximum security.
         </p>
@@ -293,19 +259,19 @@ export default function HashGenerator() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Hash Generator</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Hash Generator</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             A hash generator creates a fixed-size string (hash) from input data using cryptographic hash functions. 
             Hashes are commonly used for data integrity verification, password storage, and digital signatures.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Algorithms</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Algorithms</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>SHA-256</strong> - Secure Hash Algorithm 256-bit (recommended)</li>
             <li><strong>SHA-512</strong> - Secure Hash Algorithm 512-bit (most secure)</li>
             <li><strong>SHA-1</strong> - Secure Hash Algorithm 1 (deprecated, use SHA-256)</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Verify file integrity and detect corruption</li>
             <li>Generate checksums for downloads</li>
@@ -314,7 +280,7 @@ export default function HashGenerator() {
             <li>Digital signatures and authentication</li>
             <li>Blockchain and cryptocurrency applications</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Security Notes</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Security Notes</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>SHA-256 and SHA-512 are cryptographically secure</li>
             <li>MD5 and SHA-1 are deprecated for security purposes</li>

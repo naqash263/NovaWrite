@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function CSSFormatter() {
   const [input, setInput] = useState<string>('');
@@ -8,39 +7,6 @@ export default function CSSFormatter() {
   const [indent, setIndent] = useState<number>(2);
   const [isMinified, setIsMinified] = useState<boolean>(false);
 
-  useSEO({
-    title: 'Free CSS Formatter Beautifier Online - Format CSS | No Signup',
-    description: 'Free CSS formatter beautifier online - no signup required. Format CSS code with proper indentation, minify CSS, and validate syntax. Beautify or minify CSS instantly. Perfect for developers and web designers. All processing in your browser.',
-    url: '/resources/utility-tools/css-formatter',
-    keywords: [
-      'free CSS formatter beautifier', 'CSS formatter', 'free CSS formatter', 'CSS formatter beautifier', 'CSS formatter online',
-      'CSS beautifier', 'format CSS', 'CSS code formatter',
-      'CSS prettifier', 'CSS minifier', 'online CSS formatter', 'free CSS tool',
-      'beautify CSS', 'minify CSS', 'free online CSS formatter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'CSS Formatter & Beautifier',
-      'description': 'Free online CSS formatter, beautifier, and minifier with syntax validation.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/css-formatter',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Format CSS with proper indentation',
-        'Minify CSS to reduce file size',
-        'Syntax validation',
-        'Copy to clipboard',
-        'Real-time formatting'
-      ]
-    }
-  });
 
   const formatCSS = () => {
     setError('');
@@ -128,7 +94,7 @@ export default function CSSFormatter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free CSS Formatter Beautifier Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free CSS Formatter Beautifier Online</h2>
         <p className="text-gray-600 mb-6">
           Free CSS formatter beautifier online - no signup required. Format and beautify your CSS code with proper indentation, or minify it for production. Validate syntax, copy to clipboard. Perfect for developers and web designers. All processing in your browser.
         </p>
@@ -220,13 +186,13 @@ export default function CSSFormatter() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About CSS Formatter</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About CSS Formatter</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             CSS Formatter is a free online tool that formats and beautifies CSS code 
             with proper indentation, making it more readable and maintainable.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Format CSS with proper indentation</li>
             <li>Minify CSS to reduce file size</li>
@@ -235,7 +201,7 @@ export default function CSSFormatter() {
             <li>Copy formatted CSS to clipboard</li>
             <li>Real-time formatting</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Format messy CSS code for better readability</li>
             <li>Prepare CSS for documentation</li>

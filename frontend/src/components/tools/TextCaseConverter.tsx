@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
 
 type CaseType = 
   | 'lowercase' 
@@ -19,39 +18,6 @@ export default function TextCaseConverter() {
   const [outputText, setOutputText] = useState<string>('');
   const [selectedCase, setSelectedCase] = useState<CaseType>('lowercase');
 
-  useSEO({
-    title: 'Free Text Case Converter Online - Uppercase, Lowercase, camelCase Converter | No Signup',
-    description: 'Free text case converter online - no signup required. Convert text to uppercase, lowercase, title case, camelCase, PascalCase, snake_case, kebab-case, and more. Instant conversion with copy to clipboard. Perfect for developers and writers.',
-    url: '/resources/utility-tools/text-case-converter',
-    keywords: [
-      'free text case converter online', 'text case converter', 'free text case converter', 'text case converter online',
-      'case converter online', 'uppercase lowercase converter', 'camelCase converter',
-      'snake_case converter', 'kebab-case converter', 'text case tool', 'case changer',
-      'text transformer', 'string case converter', 'online case converter', 'free case converter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Text Case Converter',
-      'description': 'Free online text case converter. Convert text to various case formats.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/text-case-converter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Uppercase, lowercase, title case',
-        'camelCase, PascalCase',
-        'snake_case, kebab-case, SCREAMING_SNAKE_CASE',
-        'Sentence case, alternating case',
-        'Copy to clipboard'
-      ]
-    }
-  });
 
   const convertCase = (text: string, caseType: CaseType): string => {
     if (!text) return '';
@@ -167,7 +133,7 @@ export default function TextCaseConverter() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Text Case Converter Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Text Case Converter Online</h2>
         <p className="text-gray-600 mb-6">
           Free text case converter online - no signup required. Convert text between different case formats instantly. Perfect for developers, writers, and content creators. Supports 11+ case formats including camelCase, snake_case, and kebab-case.
         </p>
@@ -267,13 +233,13 @@ export default function TextCaseConverter() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Text Case Converter</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Text Case Converter</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             Text case converter helps you transform text between different case formats instantly. 
             Whether you're coding, writing, or formatting content, this tool makes case conversion quick and easy.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Case Formats</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Case Formats</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>lowercase</strong> - All letters in lowercase</li>
             <li><strong>UPPERCASE</strong> - All letters in uppercase</li>
@@ -287,7 +253,7 @@ export default function TextCaseConverter() {
             <li><strong>AlTeRnAtInG cAsE</strong> - Alternating upper and lower case</li>
             <li><strong>iNVERSE cASE</strong> - Invert the current case</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Convert variable names for programming (camelCase, snake_case)</li>
             <li>Format titles and headings (Title Case)</li>

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function TipCalculator() {
   const [billAmount, setBillAmount] = useState<number>(100);
@@ -8,46 +7,6 @@ export default function TipCalculator() {
   const [numberOfPeople, setNumberOfPeople] = useState<number>(1);
   const [roundUp, setRoundUp] = useState<boolean>(false);
 
-  useSEO({
-    title: 'Free Tip Calculator Online - Calculate Tip & Split Bill | No Signup',
-    description: 'Free tip calculator online - no signup required. Calculate tip amount, split bill, and total per person instantly. Multiple tip percentages, round up option. Perfect for restaurants and services. All calculations in your browser.',
-    url: '/resources/utility-tools/tip-calculator',
-    keywords: [
-      'free tip calculator online', 'tip calculator', 'free tip calculator', 'tip calculator online', 'tip calculator free',
-      'calculate tip', 'split bill calculator', 'restaurant tip calculator',
-      'tip percentage calculator', 'bill splitter', 'gratuity calculator', 'tip amount calculator', 'free online tip calculator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Tip Calculator',
-      'description': 'Free online tip calculator for calculating tip amounts and splitting bills.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/tip-calculator',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Calculate tip amount',
-        'Split bill among people',
-        'Multiple tip percentages',
-        'Custom tip percentage',
-        'Round up option',
-        'Total per person'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'ratingCount': '1200',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const tipAmount = customTip ? parseFloat(customTip) || 0 : (billAmount * tipPercentage) / 100;
   const totalAmount = billAmount + tipAmount;
@@ -67,9 +26,9 @@ export default function TipCalculator() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           💵 Free Tip Calculator Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free tip calculator online - no signup required. Calculate tip amount and split the bill among multiple people instantly. Multiple tip percentages, round up option. Perfect for restaurants and services. All calculations in your browser.
         </p>
@@ -162,7 +121,7 @@ export default function TipCalculator() {
           {/* Results Section */}
           <div className="space-y-4">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
-              <h2 className="text-lg font-semibold text-gray-700 mb-4">Summary</h2>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Summary</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Bill Amount:</span>
@@ -183,7 +142,7 @@ export default function TipCalculator() {
 
             {numberOfPeople > 1 && (
               <div className="bg-green-50 p-6 rounded-lg">
-                <h2 className="text-lg font-semibold text-gray-700 mb-4">Per Person</h2>
+                <h3 className="text-lg font-semibold text-gray-700 mb-4">Per Person</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Tip per person:</span>
@@ -207,7 +166,7 @@ export default function TipCalculator() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Tip Calculator</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Tip Calculator</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our Tip Calculator is a simple, free tool that helps you calculate tip amounts and split bills 
               among multiple people. Perfect for restaurants, cafes, bars, and any service where tipping is customary.
@@ -220,7 +179,7 @@ export default function TipCalculator() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -251,14 +210,14 @@ export default function TipCalculator() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Quick Tip Percentages</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Quick Tip Percentages</h5>
                   <p className="text-sm text-gray-600">Pre-set buttons for 10%, 15%, 18%, 20%</p>
                 </div>
               </div>
@@ -267,7 +226,7 @@ export default function TipCalculator() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Custom Tip Percentage</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Custom Tip Percentage</h5>
                   <p className="text-sm text-gray-600">Enter any tip percentage you want</p>
                 </div>
               </div>
@@ -276,7 +235,7 @@ export default function TipCalculator() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Bill Splitting</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Bill Splitting</h5>
                   <p className="text-sm text-gray-600">Split bill and tip among multiple people</p>
                 </div>
               </div>
@@ -285,7 +244,7 @@ export default function TipCalculator() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Round Up Option</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Round Up Option</h5>
                   <p className="text-sm text-gray-600">Round up to nearest dollar for convenience</p>
                 </div>
               </div>
@@ -294,31 +253,31 @@ export default function TipCalculator() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What is a standard tip percentage?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What is a standard tip percentage?</h5>
                 <p className="text-gray-700 text-sm">
                   Standard tip percentages vary by location and service. In the US, 15-20% is common for restaurants, 
                   10-15% for delivery, and 15-20% for personal services. Use the calculator to find what works for you.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How do I split the bill?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How do I split the bill?</h5>
                 <p className="text-gray-700 text-sm">
                   Enter the number of people in the "Number of People" field. The calculator will automatically 
                   show the tip and total amount per person.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I use a custom tip percentage?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I use a custom tip percentage?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, you can enter any tip percentage from 0% to 100% in the custom tip field. The calculator 
                   will use your custom percentage instead of the preset buttons.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What does "Round up" do?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What does "Round up" do?</h5>
                 <p className="text-gray-700 text-sm">
                   The round up option rounds the total per person to the nearest dollar, making it easier to pay 
                   with cash or split evenly.
@@ -330,7 +289,7 @@ export default function TipCalculator() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Standard restaurant tip is 15-20% of the bill</li>
             <li>Tip on the pre-tax amount, not the total with tax</li>

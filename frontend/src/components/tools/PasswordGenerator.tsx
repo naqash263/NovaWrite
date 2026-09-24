@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function PasswordGenerator() {
   const [length, setLength] = useState<number>(16);
@@ -16,47 +15,6 @@ export default function PasswordGenerator() {
     color: 'gray'
   });
 
-  useSEO({
-    title: 'Free Password Generator Online - Strong Random Password Creator | No Signup',
-    description: 'Free password generator online - no signup required. Generate strong, secure, random passwords instantly. Customize length, character types, and complexity. Includes password strength meter. All processing in your browser for maximum security.',
-    url: '/resources/utility-tools/password-generator',
-    keywords: [
-      'free password generator online', 'password generator', 'free password generator', 'password generator online', 'random password generator free',
-      'random password', 'strong password', 'secure password generator online',
-      'password creator', 'password tool', 'password maker', 'random password generator',
-      'secure password generator', 'password strength', 'password checker', 'strong password generator free'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Password Generator',
-      'description': 'Free password generator for creating strong, secure, random passwords with customizable options and strength meter.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/password-generator',
-      'applicationCategory': 'SecurityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Customizable password length (4-128 characters)',
-        'Include/exclude uppercase, lowercase, numbers, symbols',
-        'Exclude similar and ambiguous characters',
-        'Password strength meter',
-        'One-click copy to clipboard',
-        'Client-side generation (no data sent to servers)'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.9',
-        'ratingCount': '3200',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const generatePassword = useCallback(() => {
     let charset = '';
@@ -139,9 +97,9 @@ export default function PasswordGenerator() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           🔐 Free Password Generator Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free password generator online - no signup required. Generate strong, secure, random passwords instantly with customizable options. Includes password strength meter. All processing in your browser for maximum security.
         </p>
@@ -287,7 +245,7 @@ export default function PasswordGenerator() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Password Generator</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Password Generator</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our Password Generator is a secure, client-side tool that creates strong, random passwords 
               using cryptographically secure random number generation. All password generation happens 
@@ -303,7 +261,7 @@ export default function PasswordGenerator() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -334,14 +292,14 @@ export default function PasswordGenerator() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Customizable Length</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Customizable Length</h5>
                   <p className="text-sm text-gray-600">Generate passwords from 4 to 128 characters long</p>
                 </div>
               </div>
@@ -350,7 +308,7 @@ export default function PasswordGenerator() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Character Options</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Character Options</h5>
                   <p className="text-sm text-gray-600">Include/exclude uppercase, lowercase, numbers, and symbols</p>
                 </div>
               </div>
@@ -359,7 +317,7 @@ export default function PasswordGenerator() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Strength Meter</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Strength Meter</h5>
                   <p className="text-sm text-gray-600">Real-time password strength assessment</p>
                 </div>
               </div>
@@ -368,7 +326,7 @@ export default function PasswordGenerator() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Privacy-First</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Privacy-First</h5>
                   <p className="text-sm text-gray-600">All generation happens locally - no data sent to servers</p>
                 </div>
               </div>
@@ -377,24 +335,24 @@ export default function PasswordGenerator() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How secure are the generated passwords?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How secure are the generated passwords?</h5>
                 <p className="text-gray-700 text-sm">
                   Passwords are generated using cryptographically secure random number generation, making 
                   them highly secure and unpredictable. The randomness ensures each password is unique.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my password stored or transmitted?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my password stored or transmitted?</h5>
                 <p className="text-gray-700 text-sm">
                   No, all password generation happens locally in your browser. We never store, transmit, 
                   or have access to your generated passwords.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What makes a strong password?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What makes a strong password?</h5>
                 <p className="text-gray-700 text-sm">
                   A strong password is at least 12 characters long, includes a mix of character types 
                   (uppercase, lowercase, numbers, symbols), and doesn't use dictionary words or personal 
@@ -402,7 +360,7 @@ export default function PasswordGenerator() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I generate multiple passwords?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I generate multiple passwords?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, simply click "Generate Password" multiple times to create different passwords. 
                   Each generation creates a unique, random password.
@@ -414,7 +372,7 @@ export default function PasswordGenerator() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Password Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Password Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Use passwords with at least 12 characters for better security</li>
             <li>Include a mix of uppercase, lowercase, numbers, and symbols</li>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
 
 interface PaymentSchedule {
   month: number;
@@ -21,47 +20,6 @@ export default function LoanCalculator() {
     schedule: PaymentSchedule[];
   } | null>(null);
 
-  useSEO({
-    title: 'Free Loan Calculator Online - Mortgage, Auto, Personal Loan | No Signup',
-    description: 'Free loan calculator online - no signup required. Calculate monthly payments, total interest, and amortization schedule for mortgages, auto loans, and personal loans instantly. Multiple payment frequencies. Perfect for financial planning.',
-    url: '/resources/utility-tools/loan-calculator',
-    keywords: [
-      'free loan calculator online', 'loan calculator', 'free loan calculator', 'loan calculator online', 'mortgage calculator free online',
-      'mortgage calculator', 'auto loan calculator', 'personal loan calculator',
-      'amortization calculator', 'loan payment calculator', 'interest calculator', 'loan amortization',
-      'mortgage payment calculator', 'loan tool', 'financial calculator', 'free online loan calculator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Loan Calculator',
-      'description': 'Free online loan calculator for calculating monthly payments, total interest, and amortization schedules.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/loan-calculator',
-      'applicationCategory': 'FinanceApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Calculate monthly payments',
-        'Total interest calculation',
-        'Amortization schedule',
-        'Multiple payment frequencies (monthly, biweekly, weekly)',
-        'Loan term flexibility',
-        'Real-time calculations'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.9',
-        'ratingCount': '1800',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   useEffect(() => {
     calculateLoan();
@@ -124,9 +82,9 @@ export default function LoanCalculator() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           💰 Free Loan Calculator Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free loan calculator online - no signup required. Calculate monthly payments, total interest, and view the complete amortization schedule for mortgages, auto loans, and personal loans instantly. Multiple payment frequencies. Perfect for financial planning.
         </p>
@@ -235,7 +193,7 @@ export default function LoanCalculator() {
 
                 {/* Amortization Schedule */}
                 <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Amortization Schedule</h3>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Amortization Schedule</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
@@ -277,7 +235,7 @@ export default function LoanCalculator() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Loan Calculator</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Loan Calculator</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our Loan Calculator is a comprehensive financial tool that helps you understand the 
               true cost of borrowing money. It calculates monthly payments, total interest, and 
@@ -294,7 +252,7 @@ export default function LoanCalculator() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -325,14 +283,14 @@ export default function LoanCalculator() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Payment Calculation</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Payment Calculation</h5>
                   <p className="text-sm text-gray-600">Calculate monthly payments using standard amortization formula</p>
                 </div>
               </div>
@@ -341,7 +299,7 @@ export default function LoanCalculator() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Interest Analysis</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Interest Analysis</h5>
                   <p className="text-sm text-gray-600">See total interest paid over the life of the loan</p>
                 </div>
               </div>
@@ -350,7 +308,7 @@ export default function LoanCalculator() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Amortization Schedule</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Amortization Schedule</h5>
                   <p className="text-sm text-gray-600">View detailed payment breakdown month by month</p>
                 </div>
               </div>
@@ -359,7 +317,7 @@ export default function LoanCalculator() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Payment Frequencies</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Payment Frequencies</h5>
                   <p className="text-sm text-gray-600">Compare monthly, bi-weekly, and weekly payment options</p>
                 </div>
               </div>
@@ -368,10 +326,10 @@ export default function LoanCalculator() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How accurate are the calculations?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How accurate are the calculations?</h5>
                 <p className="text-gray-700 text-sm">
                   The calculator uses standard loan amortization formulas. Results are estimates 
                   and may vary slightly from actual loan terms due to rounding, fees, and other 
@@ -379,14 +337,14 @@ export default function LoanCalculator() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the difference between payment frequencies?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What's the difference between payment frequencies?</h5>
                 <p className="text-gray-700 text-sm">
                   Bi-weekly and weekly payments can reduce total interest paid and shorten loan 
                   term because you make more payments per year, effectively paying down principal faster.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Does this include fees and insurance?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Does this include fees and insurance?</h5>
                 <p className="text-gray-700 text-sm">
                   No, this calculator shows principal and interest only. Actual loan payments may 
                   include property taxes, insurance, PMI, and other fees. Always check with your 
@@ -394,7 +352,7 @@ export default function LoanCalculator() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I use this for any type of loan?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I use this for any type of loan?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, this calculator works for mortgages, auto loans, personal loans, and any 
                   fixed-rate installment loan. It may not be accurate for variable-rate loans or 
@@ -407,7 +365,7 @@ export default function LoanCalculator() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Loan Calculator Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Loan Calculator Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>This calculator uses the standard loan amortization formula</li>
             <li>Results are estimates and may vary from actual loan terms</li>

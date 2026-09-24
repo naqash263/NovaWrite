@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
 
 type FileFormat = 'txt' | 'csv' | 'json' | 'xml' | 'yaml' | 'html';
 
@@ -13,47 +12,6 @@ export default function FileConverter() {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free File Converter Online - Convert TXT, CSV, JSON, XML, YAML, HTML | No Signup',
-    description: 'Free file converter online - no signup required. Convert files between TXT, CSV, JSON, XML, YAML, and HTML formats instantly. Automatic format detection, bidirectional conversions. All processing happens in your browser.',
-    url: '/resources/utility-tools/file-converter',
-    keywords: [
-      'free file converter online', 'file converter', 'free file converter', 'file converter online', 'convert file format online',
-      'convert file format', 'TXT to JSON', 'CSV to JSON',
-      'JSON to XML', 'XML to YAML', 'file format converter', 'online file converter',
-      'text file converter', 'data converter', 'free online file converter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'File Converter',
-      'description': 'Free online file converter. Convert files between TXT, CSV, JSON, XML, YAML, and HTML formats.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/file-converter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Convert between TXT, CSV, JSON, XML, YAML, HTML',
-        'Automatic format detection',
-        'Download converted files',
-        'All processing in browser',
-        'No file size limits',
-        'Bidirectional conversions',
-        'Real-time preview',
-        'Error validation'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'reviewCount': '1250'
-      }
-    }
-  });
 
   const detectFileFormat = (filename: string, content: string): FileFormat => {
     const extension = filename.split('.').pop()?.toLowerCase();
@@ -388,7 +346,7 @@ export default function FileConverter() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free File Converter Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free File Converter Online</h2>
         <p className="text-gray-600 mb-6">
           Free file converter online - no signup required. Convert files between TXT, CSV, JSON, XML, YAML, and HTML formats instantly. Automatic format detection, bidirectional conversions, real-time preview. All processing happens in your browser.
         </p>
@@ -515,7 +473,7 @@ export default function FileConverter() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About File Converter</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About File Converter</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             File Converter is a powerful, free online tool that converts files between TXT, CSV, JSON, XML, YAML, and HTML formats. 
@@ -523,7 +481,7 @@ export default function FileConverter() {
             data analysts, and anyone who needs to transform data between different formats.
           </p>
           
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Formats</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Formats</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>TXT (Plain Text):</strong> Simple text files without formatting. Ideal for basic data storage and text processing.</li>
             <li><strong>CSV (Comma-Separated Values):</strong> Spreadsheet data format used by Excel, Google Sheets, and database systems. Perfect for tabular data.</li>
@@ -533,7 +491,7 @@ export default function FileConverter() {
             <li><strong>HTML (HyperText Markup Language):</strong> Web page markup language. Can be converted to structured data formats for processing.</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Complete Conversion Matrix</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Complete Conversion Matrix</h4>
           <div className="overflow-x-auto mb-4">
             <table className="min-w-full border border-gray-300">
               <thead className="bg-gray-100">
@@ -554,7 +512,7 @@ export default function FileConverter() {
             </table>
           </div>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>100% Client-Side Processing:</strong> All conversions happen in your browser. Your files never leave your device, ensuring complete privacy and security.</li>
             <li><strong>Automatic Format Detection:</strong> Our intelligent system automatically detects the input file format based on content and extension.</li>
@@ -567,7 +525,7 @@ export default function FileConverter() {
             <li><strong>Free Forever:</strong> All features are completely free with no hidden costs or premium tiers.</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li><strong>API Development:</strong> Convert CSV data to JSON format for REST APIs or convert JSON responses to CSV for spreadsheet analysis.</li>
             <li><strong>Data Migration:</strong> Migrate data between systems that use different formats (e.g., XML to JSON for modern APIs).</li>
@@ -581,7 +539,7 @@ export default function FileConverter() {
             <li><strong>Testing & Development:</strong> Quickly convert test data between formats for different testing scenarios.</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How It Works</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How It Works</h4>
           <ol className="list-decimal list-inside text-gray-700 space-y-2">
             <li><strong>Upload or Paste File:</strong> Select a file from your device or paste content directly into the tool.</li>
             <li><strong>Automatic Detection:</strong> Our system automatically detects the file format based on content and file extension.</li>
@@ -590,69 +548,69 @@ export default function FileConverter() {
             <li><strong>Preview & Download:</strong> Review the converted content and download it as a new file.</li>
           </ol>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Privacy & Security</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Privacy & Security</h4>
           <p className="text-gray-700 mb-2">
             Your privacy is guaranteed. All file conversions happen entirely in your browser using JavaScript. 
             Your files are never uploaded to any server, never stored, and never accessed by third parties. 
             This ensures complete privacy and security for sensitive data.
           </p>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Format-Specific Details</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Format-Specific Details</h4>
           <div className="space-y-4">
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">CSV Conversions</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">CSV Conversions</h5>
               <p className="text-gray-700 text-sm">CSV files are automatically parsed with proper handling of commas, quotes, and newlines. Headers are preserved when converting to structured formats.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">JSON Conversions</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">JSON Conversions</h5>
               <p className="text-gray-700 text-sm">JSON files are validated before conversion. Invalid JSON will show clear error messages. Nested objects and arrays are properly handled.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">XML Conversions</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">XML Conversions</h5>
               <p className="text-gray-700 text-sm">XML files are parsed with proper handling of attributes, namespaces, and nested elements. Well-formed XML is required for successful conversion.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">YAML Conversions</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">YAML Conversions</h5>
               <p className="text-gray-700 text-sm">YAML files support multi-line strings, lists, and nested structures. Indentation and formatting are preserved where possible.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">HTML Conversions</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">HTML Conversions</h5>
               <p className="text-gray-700 text-sm">HTML content is parsed to extract text and structure. Tags are converted to appropriate elements in target formats.</p>
             </div>
           </div>
 
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h4>
           <div className="space-y-4">
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Is the File Converter free to use?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Is the File Converter free to use?</h5>
               <p className="text-gray-700">Yes, our File Converter is completely free to use. No registration, no hidden fees, no limits on conversions.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Are my files secure?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Are my files secure?</h5>
               <p className="text-gray-700">Absolutely! All conversions happen in your browser. Your files never leave your device and are never uploaded to any server.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What file sizes are supported?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">What file sizes are supported?</h5>
               <p className="text-gray-700">There are no strict file size limits. The only limitation is your browser's available memory. Most modern browsers can handle files up to several hundred megabytes.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Can I convert multiple files at once?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Can I convert multiple files at once?</h5>
               <p className="text-gray-700">Currently, the tool processes one file at a time. For batch conversions, you can process files sequentially.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What if my file format is not detected correctly?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">What if my file format is not detected correctly?</h5>
               <p className="text-gray-700">You can manually select the target format even if auto-detection fails. The tool will attempt to parse the content based on your selection.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Will data be lost during conversion?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Will data be lost during conversion?</h5>
               <p className="text-gray-700">Simple data conversions preserve all content. Complex structures (nested objects, arrays) are preserved where possible, but some formatting may be simplified.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Can I convert binary files?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Can I convert binary files?</h5>
               <p className="text-gray-700">No, this tool only works with text-based formats. Binary files (images, videos, executables) cannot be converted.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Does the tool work offline?</h4>
+              <h5 className="font-semibold text-gray-900 mb-1">Does the tool work offline?</h5>
               <p className="text-gray-700">Yes! Once the page is loaded, all conversions happen in your browser without requiring an internet connection.</p>
             </div>
           </div>

@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
@@ -35,48 +34,6 @@ export default function TextToImage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free Text to Image Generator Online - Create Images from Text | No Signup',
-    description: 'Free text to image generator online - no signup required. Create beautiful images from text instantly with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics. All processing in your browser.',
-    url: '/resources/utility-tools/text-to-image',
-    keywords: [
-      'free text to image generator', 'text to image', 'free text to image generator online', 'text image generator', 'create image from text free',
-      'text image generator', 'create image from text', 'text image maker',
-      'quote image generator', 'social media image maker', 'text graphics', 'image from text',
-      'online text to image', 'free text image generator', 'text design tool', 'free online text to image generator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Text to Image Generator',
-      'description': 'Free online tool to create images from text with customizable colors, fonts, and layouts.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/text-to-image',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Create images from text',
-        'Customizable colors',
-        'Multiple font options',
-        'Heading and summary text',
-        'Custom dimensions',
-        'Text alignment options',
-        'Instant download'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.6',
-        'ratingCount': '1800',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const fontOptions = [
     'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana',
@@ -693,9 +650,9 @@ export default function TextToImage() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           ✨ Free Text to Image Generator Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free text to image generator online - no signup required. Create beautiful images from text instantly with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics. All processing in your browser.
         </p>
@@ -826,7 +783,7 @@ export default function TextToImage() {
 
             {/* Background Image */}
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">🖼️ Background Image</h3>
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">🖼️ Background Image</h4>
               
               <div className="space-y-4">
                 <div>
@@ -1078,7 +1035,7 @@ export default function TextToImage() {
 
             {/* Visual Enhancements */}
             <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">✨ Visual Enhancements</h3>
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">✨ Visual Enhancements</h4>
               
               <div className="space-y-4">
                 {/* Gradient Background */}
@@ -1238,7 +1195,7 @@ export default function TextToImage() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Text to Image Generator</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Text to Image Generator</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our Text to Image Generator is a powerful tool that creates beautiful images from text. Perfect for 
               creating social media graphics, quote images, announcements, and promotional content. All processing 
@@ -1252,7 +1209,7 @@ export default function TextToImage() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -1283,14 +1240,14 @@ export default function TextToImage() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Heading & Summary</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Heading & Summary</h5>
                   <p className="text-sm text-gray-600">Separate heading and summary text with different styling</p>
                 </div>
               </div>
@@ -1299,7 +1256,7 @@ export default function TextToImage() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Color Customization</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Color Customization</h5>
                   <p className="text-sm text-gray-600">Customize background, heading, and summary colors</p>
                 </div>
               </div>
@@ -1308,7 +1265,7 @@ export default function TextToImage() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Size Presets</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Size Presets</h5>
                   <p className="text-sm text-gray-600">Pre-configured sizes for social media platforms</p>
                 </div>
               </div>
@@ -1317,7 +1274,7 @@ export default function TextToImage() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Typography Control</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Typography Control</h5>
                   <p className="text-sm text-gray-600">Adjust font size, family, and alignment</p>
                 </div>
               </div>
@@ -1326,31 +1283,31 @@ export default function TextToImage() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What image format is generated?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What image format is generated?</h5>
                 <p className="text-gray-700 text-sm">
                   Images are generated in PNG format, which supports transparency and high quality. You can use 
                   these images anywhere - social media, websites, presentations, etc.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I use custom colors?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I use custom colors?</h5>
                 <p className="text-gray-700 text-sm">
                   Yes, you can use any color by entering a hex code (e.g., #FF5733) or using the color picker. 
                   We also provide color presets for quick selection.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the maximum image size?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What's the maximum image size?</h5>
                 <p className="text-gray-700 text-sm">
                   You can create images up to 5,000 × 5,000 pixels. For best results, use the preset sizes 
                   optimized for each social media platform.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my text stored or uploaded?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my text stored or uploaded?</h5>
                 <p className="text-gray-700 text-sm">
                   No, all image generation happens locally in your browser. Your text is never uploaded to any 
                   server or stored anywhere. Your privacy is guaranteed.
@@ -1362,7 +1319,7 @@ export default function TextToImage() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Use heading for main text and summary for supporting text</li>
             <li>Choose contrasting colors for better readability</li>

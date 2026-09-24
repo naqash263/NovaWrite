@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
@@ -16,47 +15,6 @@ export default function TextSummarizer() {
     compression_ratio: number;
   } | null>(null);
 
-  useSEO({
-    title: 'Free Text Summarizer Online - AI-Powered Text Summary | No Signup',
-    description: 'Free text summarizer online - no signup required. AI-powered text summarizer. Summarize long articles, documents, and text instantly. Choose from short, medium, or long summaries. AI text summarizer free. Perfect for students and professionals.',
-    url: '/resources/ai-tools/text-summarizer',
-    keywords: [
-      'free text summarizer online', 'text summarizer', 'free text summarizer', 'text summarizer online', 'AI text summarizer free',
-      'article summarizer', 'text summary', 'summarize text',
-      'AI summarizer', 'online summarizer', 'text summarization',
-      'document summarizer', 'article summary tool', 'article summarizer free online', 'free online text summarizer'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Text Summarizer',
-      'description': 'Free AI-powered text summarizer. Summarize long articles, documents, and text instantly with multiple length options.',
-      'url': 'https://naqashthaheem.com/resources/ai-tools/text-summarizer',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Short, medium, and long summary options',
-        'General, key points, and detailed focus modes',
-        'Real-time summarization',
-        'Compression ratio statistics',
-        'Character and word count tracking',
-        'Copy to clipboard functionality'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.9',
-        'ratingCount': '2100',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const handleSummarize = async () => {
     if (!text.trim()) {
@@ -130,9 +88,9 @@ export default function TextSummarizer() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           📝 Free Text Summarizer Online
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Free text summarizer online - no signup required. Summarize long articles, documents, and text instantly using AI. Choose your preferred summary length and focus. AI text summarizer free. Perfect for students and professionals.
         </p>
@@ -270,7 +228,7 @@ export default function TextSummarizer() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Text Summarizer</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Text Summarizer</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our AI-powered Text Summarizer is an advanced tool designed to help you quickly extract 
               key information from long articles, documents, and text. Using state-of-the-art natural 
@@ -286,7 +244,7 @@ export default function TextSummarizer() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -317,14 +275,14 @@ export default function TextSummarizer() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Length Options</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Multiple Length Options</h5>
                   <p className="text-sm text-gray-600">Choose from short (2-3 sentences), medium (1-2 paragraphs), or long (3-5 paragraphs) summaries</p>
                 </div>
               </div>
@@ -333,7 +291,7 @@ export default function TextSummarizer() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Focus Modes</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Focus Modes</h5>
                   <p className="text-sm text-gray-600">General summary, key points extraction, or detailed summary with context</p>
                 </div>
               </div>
@@ -342,7 +300,7 @@ export default function TextSummarizer() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Compression Statistics</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Compression Statistics</h5>
                   <p className="text-sm text-gray-600">See original length, summary length, and compression ratio</p>
                 </div>
               </div>
@@ -351,7 +309,7 @@ export default function TextSummarizer() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">AI-Powered Accuracy</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">AI-Powered Accuracy</h5>
                   <p className="text-sm text-gray-600">Advanced AI ensures important information is preserved</p>
                 </div>
               </div>
@@ -360,10 +318,10 @@ export default function TextSummarizer() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How accurate are the summaries?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How accurate are the summaries?</h5>
                 <p className="text-gray-700 text-sm">
                   Our AI uses advanced natural language processing to identify and preserve the most important 
                   information. The accuracy is high, but we recommend reviewing summaries for critical documents 
@@ -371,7 +329,7 @@ export default function TextSummarizer() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the difference between the focus modes?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What's the difference between the focus modes?</h5>
                 <p className="text-gray-700 text-sm">
                   <strong>General:</strong> Balanced summary covering all main points. <strong>Key Points:</strong> 
                   Extracts and lists the most important ideas. <strong>Detailed:</strong> Comprehensive summary 
@@ -379,14 +337,14 @@ export default function TextSummarizer() {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I summarize text in different languages?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I summarize text in different languages?</h5>
                 <p className="text-gray-700 text-sm">
                   Currently, the tool works best with English text. Support for other languages may be 
                   added in the future.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the maximum text length?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What's the maximum text length?</h5>
                 <p className="text-gray-700 text-sm">
                   You can summarize up to 50,000 characters at once. For longer texts, consider breaking 
                   them into smaller sections.
@@ -398,7 +356,7 @@ export default function TextSummarizer() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 How to Use</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 How to Use</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Paste or type your text (minimum 50 characters, maximum 50,000 characters)</li>
             <li>Choose your preferred summary length: Short, Medium, or Long</li>

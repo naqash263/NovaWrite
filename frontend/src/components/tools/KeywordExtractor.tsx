@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
@@ -11,39 +10,6 @@ export default function KeywordExtractor() {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
-  useSEO({
-    title: 'Free Keyword Extractor Online - AI-Powered Keyword Extraction | No Signup',
-    description: 'Free keyword extractor online - no signup required. AI-powered keyword extractor. Extract keywords from text, articles, and documents instantly. Generate SEO keywords, find related keywords, analyze keyword density. Perfect for content creators and SEO professionals.',
-    url: '/resources/ai-tools/keyword-extractor',
-    keywords: [
-      'free keyword extractor online', 'keyword extractor', 'free keyword extractor', 'keyword extractor online', 'extract keywords online',
-      'extract keywords', 'keyword generator', 'SEO keywords',
-      'keyword finder', 'keyword analysis', 'AI keyword extractor', 'online keyword extractor',
-      'keyword density', 'related keywords', 'long-tail keywords', 'free online keyword extractor'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Keyword Extractor',
-      'description': 'Free AI-powered keyword extractor. Extract keywords from text and generate SEO keywords.',
-      'url': 'https://naqashthaheem.com/resources/ai-tools/keyword-extractor',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Extract keywords from text',
-        'Generate SEO keywords',
-        'Find related keywords',
-        'Keyword density analysis',
-        'Long-tail keyword suggestions'
-      ]
-    }
-  });
 
   const extractKeywords = async () => {
     if (!text.trim() || text.length < 10) {
@@ -114,7 +80,7 @@ export default function KeywordExtractor() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Keyword Extractor Online</h1>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Keyword Extractor Online</h2>
         <p className="text-gray-600 mb-6">
           Free keyword extractor online - no signup required. Extract keywords from your text using AI instantly. Generate SEO keywords, find related keywords, analyze keyword density. Perfect for SEO, content analysis, and keyword research.
         </p>
@@ -196,9 +162,9 @@ export default function KeywordExtractor() {
           {keywords.length > 0 && (
             <div>
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h4 className="text-lg font-semibold text-gray-900">
                   Extracted Keywords ({keywords.length})
-                </h3>
+                </h4>
                 <div className="flex gap-2">
                   <button
                     onClick={copyKeywords}
@@ -238,13 +204,13 @@ export default function KeywordExtractor() {
 
       {/* SEO Content */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Keyword Extractor</h2>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Keyword Extractor</h3>
         <div className="prose max-w-none">
           <p className="text-gray-700 mb-4">
             Keyword Extractor uses AI to automatically identify and extract the most important keywords 
             from your text. Perfect for SEO optimization, content analysis, and keyword research.
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Extract keywords from any text or article</li>
             <li>Generate SEO-friendly keywords</li>
@@ -253,7 +219,7 @@ export default function KeywordExtractor() {
             <li>Copy keywords in multiple formats</li>
             <li>AI-powered keyword extraction</li>
           </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
+          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>SEO keyword research and optimization</li>
             <li>Content analysis and topic identification</li>
