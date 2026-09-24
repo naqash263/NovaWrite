@@ -1,101 +1,95 @@
-import { useState, useRef } from 'react';
-import { useSEO } from '../../utils/seo';
+import { useRef, useState } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+const MAX_BYTES = 10 * 1024 * 1024;
 
-type DocumentFormat = 'pdf' | 'docx' | 'txt';
+type SourceFormat = 'pdf' | 'docx' | 'doc' | 'txt';
+type TargetFormat = 'pdf' | 'docx' | 'txt';
+
+const targetsFor: Record<SourceFormat, TargetFormat[]> = {
+  pdf: ['docx', 'txt'],
+  docx: ['pdf', 'txt'],
+  doc: ['pdf', 'txt'],
+  txt: ['pdf', 'docx'],
+};
+
+const formatLabels: Record<SourceFormat | TargetFormat, string> = {
+  pdf: 'PDF',
+  docx: 'Word (DOCX)',
+  doc: 'Word 97-2003 (DOC)',
+  txt: 'Plain text (TXT)',
+};
+
+const conversionNotes: Record<string, string> = {
+  'pdf-docx': 'Extracts the text of the PDF into an editable Word document.',
+  'pdf-txt': 'Extracts the text of the PDF into a plain-text file.',
+  'docx-pdf': 'Creates a PDF from the text of the Word document.',
+  'doc-pdf': 'Creates a PDF from the text of the Word document.',
+  'docx-txt': 'Extracts the text of the Word document into a plain-text file.',
+  'doc-txt': 'Extracts the text of the Word document into a plain-text file.',
+  'txt-pdf': 'Creates an A4 PDF from your text, keeping line breaks.',
+  'txt-docx': 'Creates a Word document with one paragraph per line.',
+};
+
+const detectFormat = (name: string): SourceFormat | null => {
+  const ext = name.split('.').pop()?.toLowerCase();
+  return ext === 'pdf' || ext === 'docx' || ext === 'doc' || ext === 'txt' ? ext : null;
+};
+
+const formatSize = (bytes: number) =>
+  bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(2)} MB` : `${(bytes / 1024).toFixed(1)} KB`;
+
+interface ApiResponse {
+  success?: boolean;
+  message?: string;
+  errors?: Record<string, string[]>;
+  data?: { url: string; filename: string };
+}
 
 export default function DocumentConverter() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [sourceFormat, setSourceFormat] = useState<DocumentFormat | null>(null);
-  const [targetFormat, setTargetFormat] = useState<DocumentFormat>('pdf');
-  const [downloadUrl, setDownloadUrl] = useState<string>('');
-  const [filename, setFilename] = useState<string>('');
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
+  const [sourceFormat, setSourceFormat] = useState<SourceFormat | null>(null);
+  const [targetFormat, setTargetFormat] = useState<TargetFormat>('pdf');
+  const [downloadUrl, setDownloadUrl] = useState('');
+  const [filename, setFilename] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free Document Converter Word PDF - Convert Word to PDF Online | No Signup',
-    description: 'Free document converter word pdf - no signup required. Convert Word to PDF, PDF to Word, DOCX to PDF, PDF to DOCX instantly. Secure server-side processing, download converted files. Perfect for document management.',
-    url: '/resources/utility-tools/document-converter',
-    keywords: [
-      'free document converter word pdf', 'document converter', 'free document converter', 'document converter word pdf', 'word to pdf converter',
-      'word to pdf', 'pdf to word', 'docx to pdf', 'pdf to docx',
-      'word converter', 'pdf converter', 'document format converter', 'online document converter',
-      'docx converter', 'file converter', 'free online document converter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Document Converter',
-      'description': 'Free online document converter. Convert Word to PDF, PDF to Word, and more.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/document-converter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Convert Word to PDF',
-        'Convert PDF to Word',
-        'Convert DOCX to PDF',
-        'Convert PDF to DOCX',
-        'Convert to TXT',
-        'Download converted files'
-      ]
-    }
-  });
-
-  const detectFormat = (filename: string): DocumentFormat | null => {
-    const extension = filename.split('.').pop()?.toLowerCase();
-    
-    if (extension === 'pdf') return 'pdf';
-    if (extension === 'docx') return 'docx';
-    if (extension === 'doc') return 'docx'; // Treat DOC as DOCX
-    if (extension === 'txt') return 'txt';
-    
-    return null;
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const loadFile = (file: File | undefined) => {
     if (!file) return;
-
     setError('');
-    setSelectedFile(file);
     setDownloadUrl('');
     setFilename('');
 
     const format = detectFormat(file.name);
     if (!format) {
-      setError('Unsupported file format. Please upload PDF, DOCX, DOC, or TXT files.');
+      setSelectedFile(null);
+      setSourceFormat(null);
+      setError('Unsupported file type. Please choose a PDF, DOCX, DOC or TXT file.');
       return;
     }
-
-    setSourceFormat(format);
-    
-    // Set default target format
-    if (format === 'pdf') {
-      setTargetFormat('docx');
-    } else if (format === 'docx') {
-      setTargetFormat('pdf');
-    } else {
-      setTargetFormat('docx');
+    if (file.size > MAX_BYTES) {
+      setSelectedFile(null);
+      setSourceFormat(null);
+      setError(`${file.name} is ${formatSize(file.size)}. The maximum file size is 10 MB.`);
+      return;
     }
+    if (file.size === 0) {
+      setSelectedFile(null);
+      setSourceFormat(null);
+      setError(`${file.name} is empty.`);
+      return;
+    }
+    setSelectedFile(file);
+    setSourceFormat(format);
+    setTargetFormat(targetsFor[format][0]);
   };
 
   const convertDocument = async () => {
     if (!selectedFile || !sourceFormat) {
-      setError('Please select a file first');
-      return;
-    }
-
-    if (sourceFormat === targetFormat) {
-      setError('Source and target formats are the same. Please select a different target format.');
+      setError('Please select a file first.');
       return;
     }
 
@@ -112,32 +106,35 @@ export default function DocumentConverter() {
       const response = await fetch(`${API_URL}/utility-tools/document-converter/convert`, {
         method: 'POST',
         body: formData,
+        headers: { Accept: 'application/json' },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to convert document');
+      let data: ApiResponse = {};
+      try {
+        data = (await response.json()) as ApiResponse;
+      } catch {
+        // Non-JSON response (e.g. proxy error page)
       }
 
-      if (data.success && data.data) {
-        setDownloadUrl(data.data.url);
-        setFilename(data.data.filename);
-      } else {
-        throw new Error(data.message || 'Failed to convert document');
+      if (!response.ok || !data.success || !data.data?.url) {
+        const firstFieldError = data.errors ? Object.values(data.errors).flat()[0] : '';
+        const fallback =
+          response.status === 413 ? 'The file is too large for the server. Please use a file under 10 MB.' : 'The conversion failed. Please try again later.';
+        throw new Error(firstFieldError || data.message || fallback);
       }
+
+      setDownloadUrl(data.data.url);
+      setFilename(data.data.filename);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred while converting the document');
-      setDownloadUrl('');
-      setFilename('');
+      const message = err instanceof Error ? err.message : '';
+      setError(
+        err instanceof TypeError
+          ? 'Could not reach the conversion service. Check your connection and try again.'
+          : message || 'An error occurred while converting the document.',
+      );
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const downloadConverted = () => {
-    if (!downloadUrl) return;
-    window.open(downloadUrl, '_blank');
   };
 
   const reset = () => {
@@ -146,279 +143,128 @@ export default function DocumentConverter() {
     setDownloadUrl('');
     setFilename('');
     setError('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const getConversionDescription = () => {
-    if (!sourceFormat || !targetFormat) return '';
-    
-    const conversions: Record<string, string> = {
-      'pdf-docx': 'Convert PDF to Word document (DOCX)',
-      'docx-pdf': 'Convert Word document (DOCX) to PDF',
-      'pdf-txt': 'Extract text from PDF to TXT file',
-      'docx-txt': 'Extract text from Word document to TXT file',
-      'txt-docx': 'Convert TXT file to Word document (DOCX)',
-      'txt-pdf': 'Convert TXT file to PDF',
-    };
-    
-    return conversions[`${sourceFormat}-${targetFormat}`] || 'Convert document';
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Document Converter Word PDF</h1>
-        <p className="text-gray-600 mb-6">
-          Free document converter word pdf - no signup required. Convert Word to PDF, PDF to Word, DOCX to PDF, PDF to DOCX instantly. Secure server-side processing, download converted files. Perfect for document management and sharing.
-        </p>
-
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
         {/* File Upload */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Document to Convert
+        <div
+          className={`mb-6 rounded-lg border-2 border-dashed p-4 transition-colors ${isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragOver(false);
+            loadFile(e.dataTransfer.files?.[0]);
+          }}
+        >
+          <label htmlFor="document-converter-input" className="block text-sm font-medium text-gray-700 mb-2">
+            Select a document to convert (or drop it here)
           </label>
           <input
+            id="document-converter-input"
             ref={fileInputRef}
             type="file"
             accept=".pdf,.doc,.docx,.txt"
-            onChange={handleFileSelect}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            onChange={(e) => loadFile(e.target.files?.[0])}
+            aria-describedby="document-converter-hint"
+            className="block w-full min-w-0 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           />
-          {sourceFormat && (
-            <p className="text-sm text-gray-600 mt-2">
-              Detected format: <span className="font-semibold">{sourceFormat.toUpperCase()}</span>
-            </p>
-          )}
+          <p id="document-converter-hint" className="text-sm text-gray-500 mt-2">
+            PDF, DOCX, DOC or TXT up to 10 MB.
+          </p>
         </div>
 
         {/* Format Selection */}
         {selectedFile && sourceFormat && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Source Format
-              </label>
-              <input
-                type="text"
-                value={sourceFormat.toUpperCase()}
-                readOnly
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono"
-              />
+              <span className="block text-sm font-medium text-gray-700 mb-2">From</span>
+              <p className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 truncate" data-testid="source-format">
+                {formatLabels[sourceFormat]} · {selectedFile.name}
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Target Format
+              <label htmlFor="document-converter-target" className="block text-sm font-medium text-gray-700 mb-2">
+                Convert to
               </label>
               <select
+                id="document-converter-target"
                 value={targetFormat}
-                onChange={(e) => setTargetFormat(e.target.value as DocumentFormat)}
+                onChange={(e) => {
+                  setTargetFormat(e.target.value as TargetFormat);
+                  setDownloadUrl('');
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                {sourceFormat !== 'pdf' && <option value="pdf">PDF (Portable Document Format)</option>}
-                {sourceFormat !== 'docx' && <option value="docx">DOCX (Word Document)</option>}
-                {sourceFormat !== 'txt' && <option value="txt">TXT (Plain Text)</option>}
+                {targetsFor[sourceFormat].map((t) => (
+                  <option key={t} value={t}>
+                    {formatLabels[t]}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
         )}
 
-        {/* Conversion Description */}
-        {selectedFile && sourceFormat && targetFormat && sourceFormat !== targetFormat && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Conversion:</strong> {getConversionDescription()}
-            </p>
-          </div>
+        {selectedFile && sourceFormat && (
+          <p className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900">
+            {conversionNotes[`${sourceFormat}-${targetFormat}`]} Text is converted; layout, images and tables are not preserved.
+          </p>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-800 text-sm">{error}</p>
           </div>
         )}
 
         {/* Success Message */}
         {downloadUrl && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 text-sm mb-3">
-              ✅ Document converted successfully!
-            </p>
-            <button
-              onClick={downloadConverted}
-              className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+          <div role="status" className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 text-sm mb-3">Document converted successfully.</p>
+            <a
+              href={downloadUrl}
+              download={filename}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-center bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors break-all"
             >
-              Download Converted File ({filename})
-            </button>
+              Download {filename}
+            </a>
           </div>
         )}
 
         {/* Action Buttons */}
-        {selectedFile && sourceFormat && (
-          <div className="flex gap-4">
-            <button
-              onClick={convertDocument}
-              disabled={isProcessing || sourceFormat === targetFormat}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? 'Converting...' : 'Convert Document'}
-            </button>
-            <button
-              onClick={reset}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-            >
-              Reset
-            </button>
-          </div>
-        )}
-
-        {/* Supported Conversions */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Supported Conversions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>✅ PDF → Word (DOCX)</div>
-            <div>✅ Word (DOCX) → PDF</div>
-            <div>✅ PDF → TXT</div>
-            <div>✅ Word (DOCX) → TXT</div>
-            <div>✅ TXT → Word (DOCX)</div>
-            <div>✅ TXT → PDF</div>
-          </div>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={convertDocument}
+            disabled={isProcessing || !selectedFile}
+            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {isProcessing ? 'Converting…' : 'Convert document'}
+          </button>
+          <button
+            type="button"
+            onClick={reset}
+            className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+          >
+            Reset
+          </button>
         </div>
-      </div>
 
-      {/* SEO Content */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Document Converter</h2>
-        <div className="prose max-w-none">
-          <p className="text-gray-700 mb-4">
-            Document Converter is a free, secure online tool that converts documents between PDF, Word (DOCX), 
-            and TXT formats. All conversions happen securely on our server with no file size limits for most conversions. 
-            Perfect for professionals, students, and anyone who needs to convert documents between different formats.
-          </p>
-          
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Formats</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>PDF (Portable Document Format):</strong> Industry-standard format for document sharing and archiving. Supports text extraction and conversion to Word or TXT formats.</li>
-            <li><strong>DOCX (Microsoft Word Document):</strong> Modern Word document format (2007+). Supports conversion to PDF, TXT, and other formats while preserving text content.</li>
-            <li><strong>DOC (Legacy Word Document):</strong> Older Word document format. Automatically converted to DOCX for processing.</li>
-            <li><strong>TXT (Plain Text):</strong> Simple text files without formatting. Can be converted to Word documents or PDFs with proper formatting.</li>
-          </ul>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Complete Conversion Matrix</h3>
-          <div className="overflow-x-auto mb-4">
-            <table className="min-w-full border border-gray-300">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="border border-gray-300 px-4 py-2 text-left">From</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">To</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">PDF</td>
-                  <td className="border border-gray-300 px-4 py-2">Word (DOCX)</td>
-                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
-                </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">PDF</td>
-                  <td className="border border-gray-300 px-4 py-2">TXT</td>
-                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
-                </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Word (DOCX)</td>
-                  <td className="border border-gray-300 px-4 py-2">PDF</td>
-                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
-                </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Word (DOCX)</td>
-                  <td className="border border-gray-300 px-4 py-2">TXT</td>
-                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
-                </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">TXT</td>
-                  <td className="border border-gray-300 px-4 py-2">Word (DOCX)</td>
-                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
-                </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">TXT</td>
-                  <td className="border border-gray-300 px-4 py-2">PDF</td>
-                  <td className="border border-gray-300 px-4 py-2 text-green-600">✅ Supported</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>Secure Server-Side Processing:</strong> All conversions happen on our secure servers. Files are automatically deleted after processing for your privacy.</li>
-            <li><strong>High-Quality Conversions:</strong> Advanced algorithms ensure text extraction and formatting preservation where possible.</li>
-            <li><strong>Fast Processing:</strong> Most conversions complete in seconds, even for large documents.</li>
-            <li><strong>No Registration Required:</strong> Start converting documents immediately without creating an account.</li>
-            <li><strong>Multiple Format Support:</strong> Convert between PDF, Word, and TXT formats seamlessly.</li>
-            <li><strong>Instant Downloads:</strong> Download converted files immediately after processing.</li>
-            <li><strong>Automatic Format Detection:</strong> Our system automatically detects the input file format.</li>
-            <li><strong>Error Handling:</strong> Clear error messages help you understand and resolve any conversion issues.</li>
-          </ul>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>Document Editing:</strong> Convert PDFs to Word documents for easy editing and formatting changes.</li>
-            <li><strong>Document Sharing:</strong> Convert Word documents to PDF for universal compatibility and professional presentation.</li>
-            <li><strong>Text Extraction:</strong> Extract text from PDFs and Word documents for use in other applications or analysis.</li>
-            <li><strong>Format Migration:</strong> Migrate documents between different formats for compatibility with various software.</li>
-            <li><strong>Content Repurposing:</strong> Convert documents to different formats for use in presentations, websites, or other media.</li>
-            <li><strong>Archival:</strong> Convert documents to PDF for long-term archival and preservation.</li>
-            <li><strong>Accessibility:</strong> Convert documents to TXT format for screen readers and accessibility tools.</li>
-            <li><strong>Data Processing:</strong> Extract text from documents for data analysis, text mining, or natural language processing.</li>
-          </ul>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How It Works</h3>
-          <ol className="list-decimal list-inside text-gray-700 space-y-2">
-            <li><strong>Upload Your Document:</strong> Select a PDF, Word (DOCX/DOC), or TXT file from your device.</li>
-            <li><strong>Select Target Format:</strong> Choose the format you want to convert your document to (PDF, DOCX, or TXT).</li>
-            <li><strong>Automatic Processing:</strong> Our server processes your document using advanced conversion algorithms.</li>
-            <li><strong>Download Result:</strong> Download your converted document instantly. Files are automatically deleted from our servers after processing.</li>
-          </ol>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Privacy & Security</h3>
-          <p className="text-gray-700 mb-2">
-            Your privacy is our priority. All document conversions are processed securely on our servers, and files are automatically 
-            deleted immediately after processing. We do not store, share, or access your documents beyond the conversion process.
-          </p>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h3>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Is the Document Converter free to use?</h4>
-              <p className="text-gray-700">Yes, our Document Converter is completely free to use. No registration, no hidden fees, no limits on the number of conversions.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What file sizes are supported?</h4>
-              <p className="text-gray-700">We support files up to 10MB in size. For larger files, consider splitting them into smaller parts or using specialized software.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Are my documents secure?</h4>
-              <p className="text-gray-700">Yes, all conversions happen on secure servers, and files are automatically deleted immediately after processing. We never store or access your documents.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Can I convert scanned PDFs?</h4>
-              <p className="text-gray-700">Our converter works best with text-based PDFs. Scanned PDFs (image-based) may require OCR (Optical Character Recognition) for text extraction.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Will formatting be preserved?</h4>
-              <p className="text-gray-700">Text content is preserved, but complex formatting (images, tables, advanced layouts) may not be fully preserved in all conversions. Simple text formatting is generally maintained.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What if my conversion fails?</h4>
-              <p className="text-gray-700">If a conversion fails, you'll receive a clear error message. Common issues include corrupted files, unsupported formats, or files that are too large. Try a different file or format if needed.</p>
-            </div>
-          </div>
-        </div>
+        <p className="mt-6 text-xs text-gray-500">
+          Your file is uploaded to our server for conversion, and the converted file is saved there so you can download it. Please
+          do not upload confidential documents.
+        </p>
       </div>
     </div>
   );
 }
-

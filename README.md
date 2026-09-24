@@ -115,6 +115,21 @@ novawrite/
 └── docs/                   # Documentation
 ```
 
+## 🧪 QA & SEO Testing (Playwright)
+
+End-to-end and SEO regression tests live in `frontend/e2e` and run against the production build with the API mocked:
+
+```bash
+cd frontend
+npm run test:e2e:build   # build + run all Playwright tests (desktop + mobile Chromium)
+npm run test:e2e         # run tests against an existing build
+npm run og:image         # regenerate public/images/og-default.png
+```
+
+The suite checks navigation, services, case studies, responsive layout, and on-page SEO (titles, descriptions, canonicals, Open Graph, JSON-LD, headings, robots.txt, llm.txt). It runs automatically on pull requests via `.github/workflows/e2e.yml`. See [SEO_ANALYSIS_2026.md](SEO_ANALYSIS_2026.md) for the audit and keyword map.
+
+Portfolio copy (services, case studies, profile) is kept in `frontend/src/data/`.
+
 ## 🔧 Configuration
 
 ### Environment Variables

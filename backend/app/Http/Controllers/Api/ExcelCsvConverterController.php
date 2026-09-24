@@ -118,12 +118,16 @@ class ExcelCsvConverterController extends Controller
             // Get highest row and column
             $highestRow = $worksheet->getHighestRow();
             $highestColumn = $worksheet->getHighestColumn();
+            $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
             
             // Create CSV content
             $csvData = [];
             for ($row = 1; $row <= $highestRow; $row++) {
                 $rowData = [];
-                for ($col = 'A'; $col <= $highestColumn; $col++) {
+                // Iterate by numeric index: comparing letters as strings ('B' <= 'AB' is false)
+                // exported only column A for sheets wider than Z.
+                for ($colIndex = 1; $colIndex <= $highestColumnIndex; $colIndex++) {
+                    $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
                     $cellValue = $worksheet->getCell($col . $row)->getFormattedValue();
                     // Escape quotes and wrap in quotes if contains comma, quote, or newline
                     if (strpos($cellValue, ',') !== false || strpos($cellValue, '"') !== false || strpos($cellValue, "\n") !== false) {

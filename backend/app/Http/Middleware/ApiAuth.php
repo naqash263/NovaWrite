@@ -44,28 +44,17 @@ class ApiAuth
             // Update last used timestamp
             $apiToken->update(['last_used_at' => now()]);
             
-            // Set the authenticated user
+            // Set the authenticated user and make 'api' the default guard for this request,
+            // so auth()->id(), Auth::user() and $request->user() resolve regardless of AUTH_GUARD.
             Auth::guard('api')->setUser($apiToken->user);
+            Auth::shouldUse('api');
             
             return $next($request);
         }
 
         // If not an API token, try JWT authentication
         try {
-            \Log::info('Attempting JWT authentication', [
-                'token_prefix' => substr($token, 0, 20),
-                'token_length' => strlen($token)
-            ]);
-            
             $user = Auth::guard('api')->setToken($token)->user();
-            
-            \Log::info('JWT authentication result', [
-                'user_found' => $user ? true : false,
-                'user_id' => $user ? $user->id : null,
-                'user_email' => $user ? $user->email : null,
-                'user_class' => $user ? get_class($user) : null,
-                'user_exists' => $user ? $user->exists : null
-            ]);
             
             if (!$user) {
                 \Log::warning('JWT authentication failed: User not found');
@@ -75,16 +64,12 @@ class ApiAuth
                 ], 401);
             }
 
-            // Set the authenticated user
+            // Set the authenticated user and make 'api' the default guard for this request
             Auth::guard('api')->setUser($user);
-            
-            \Log::info('JWT authentication successful', ['user_id' => $user->id]);
+            Auth::shouldUse('api');
             
         } catch (JWTException $e) {
-            \Log::error('JWT authentication failed', [
-                'error' => $e->getMessage(),
-                'token_prefix' => substr($token, 0, 20)
-            ]);
+            \Log::warning('JWT authentication failed', ['error' => $e->getMessage()]);
             return response()->json([
                 'message' => 'Token is invalid.',
                 'error' => 'Authentication required'

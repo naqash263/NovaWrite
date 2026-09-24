@@ -116,7 +116,7 @@ jobs:
               
             "fix-encryption-keys")
               echo -e "${BLUE}🔧 Fixing encryption keys...${NC}"
-              curl -s "https://naqashthaheem.com/api/cv-ai/fix-keys" | jq '.' || echo -e "${YELLOW}⚠️ Could not parse JSON response${NC}"
+              curl -s -H "Authorization: Bearer ${{ secrets.ADMIN_API_TOKEN }}" "https://naqashthaheem.com/api/cv-ai/fix-keys" | jq '.' || echo -e "${YELLOW}⚠️ Could not parse JSON response${NC}"
               ;;
               
             "run-migrations-only")

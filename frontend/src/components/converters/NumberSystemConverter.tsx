@@ -1,176 +1,175 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { CopyButton } from './UnitConverter';
 
-type NumberSystem = 'decimal' | 'binary' | 'hexadecimal' | 'octal';
+// Arbitrary-precision base conversion with BigInt, so large values (e.g. 2^64) stay exact.
+
+const DIGITS = '0123456789abcdefghijklmnopqrstuvwxyz';
+const NAMED: Record<number, string> = { 2: 'Binary', 8: 'Octal', 10: 'Decimal', 16: 'Hexadecimal' };
+const PREFIX: Record<number, RegExp> = { 2: /^0b/i, 8: /^0o/i, 16: /^0x/i };
+const baseOptions = [2, 8, 10, 16, ...Array.from({ length: 35 }, (_, i) => i + 2).filter((b) => !NAMED[b])];
+const baseLabel = (b: number) => (NAMED[b] ? `${NAMED[b]} (base ${b})` : `Base ${b}`);
+
+type Parsed = { value: bigint } | { error: string } | null;
+
+function parseInBase(raw: string, base: number): Parsed {
+  let text = raw.trim().replace(/[\s_]/g, '');
+  if (!text) return null;
+  let negative = false;
+  if (text[0] === '-' || text[0] === '+') {
+    negative = text[0] === '-';
+    text = text.slice(1);
+  }
+  if (PREFIX[base]) text = text.replace(PREFIX[base], '');
+  if (!text) return { error: 'Enter at least one digit.' };
+  if (text.includes('.')) return { error: 'Only whole numbers are supported (no fractional part).' };
+  const bigBase = BigInt(base);
+  let value = 0n;
+  for (const ch of text.toLowerCase()) {
+    const digit = DIGITS.indexOf(ch);
+    if (digit < 0 || digit >= base) {
+      const allowed = base <= 10 ? `0–${base - 1}` : `0–9 and A–${DIGITS[base - 1].toUpperCase()}`;
+      return { error: `“${ch}” is not a valid ${baseLabel(base).toLowerCase()} digit. Allowed digits: ${allowed}.` };
+    }
+    value = value * bigBase + BigInt(digit);
+  }
+  return { value: negative ? -value : value };
+}
+
+function toBase(value: bigint, base: number): string {
+  const s = value.toString(base);
+  return base > 10 ? s.toUpperCase() : s;
+}
+
+function group(text: string, size: number, sep: string) {
+  const negative = text.startsWith('-');
+  const digits = negative ? text.slice(1) : text;
+  const padded = digits.padStart(Math.ceil(digits.length / size) * size, '0');
+  const groups = padded.match(new RegExp(`.{1,${size}}`, 'g')) ?? [];
+  return (negative ? '-' : '') + groups.join(sep);
+}
+
+const inputClass =
+  'w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-3 text-base focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500';
 
 export default function NumberSystemConverter() {
-  const [fromSystem, setFromSystem] = useState<NumberSystem>('decimal');
-  const [toSystem, setToSystem] = useState<NumberSystem>('binary');
-  const [fromValue, setFromValue] = useState<string>('10');
-  const [result, setResult] = useState<string>('');
+  const id = useId();
+  const [raw, setRaw] = useState('255');
+  const [fromBase, setFromBase] = useState(10);
+  const [toBaseValue, setToBaseValue] = useState(2);
 
-  const convert = (value: string, from: NumberSystem, to: NumberSystem): string => {
-    if (!value) return '';
+  const parsed = parseInBase(raw, fromBase);
+  const value = parsed && 'value' in parsed ? parsed.value : null;
+  const result = value === null ? '' : toBase(value, toBaseValue);
 
-    try {
-      let decimal: number;
-
-      // Convert to decimal first
-      switch (from) {
-        case 'decimal':
-          decimal = parseInt(value, 10);
-          break;
-        case 'binary':
-          decimal = parseInt(value, 2);
-          break;
-        case 'hexadecimal':
-          decimal = parseInt(value, 16);
-          break;
-        case 'octal':
-          decimal = parseInt(value, 8);
-          break;
-        default:
-          return '';
-      }
-
-      if (isNaN(decimal)) {
-        return 'Invalid input';
-      }
-
-      // Convert from decimal to target system
-      switch (to) {
-        case 'decimal':
-          return decimal.toString(10);
-        case 'binary':
-          return decimal.toString(2);
-        case 'hexadecimal':
-          return decimal.toString(16).toUpperCase();
-        case 'octal':
-          return decimal.toString(8);
-        default:
-          return '';
-      }
-    } catch (error) {
-      return 'Invalid input';
-    }
+  const swap = () => {
+    if (value !== null) setRaw(result);
+    setFromBase(toBaseValue);
+    setToBaseValue(fromBase);
   };
 
-  const handleInputChange = (value: string) => {
-    setFromValue(value);
-    const converted = convert(value, fromSystem, toSystem);
-    setResult(converted);
-  };
-
-  const swapSystems = () => {
-    const tempSystem = fromSystem;
-    setFromSystem(toSystem);
-    setToSystem(tempSystem);
-    const converted = convert(fromValue, toSystem, tempSystem);
-    setResult(converted);
-  };
-
-  const getPlaceholder = (system: NumberSystem): string => {
-    switch (system) {
-      case 'decimal':
-        return 'Enter decimal number (0-9)';
-      case 'binary':
-        return 'Enter binary number (0-1)';
-      case 'hexadecimal':
-        return 'Enter hex number (0-9, A-F)';
-      case 'octal':
-        return 'Enter octal number (0-7)';
-    }
-  };
+  const rows = value === null ? [] : [2, 8, 10, 16].map((b) => ({ base: b, text: toBase(value, b) }));
 
   return (
-    <div className="space-y-6">
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
-          <select
-            value={fromSystem}
-            onChange={(e) => {
-              setFromSystem(e.target.value as NumberSystem);
-              handleInputChange(fromValue);
-            }}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white mb-3"
-          >
-            <option value="decimal">Decimal (Base 10)</option>
-            <option value="binary">Binary (Base 2)</option>
-            <option value="hexadecimal">Hexadecimal (Base 16)</option>
-            <option value="octal">Octal (Base 8)</option>
-          </select>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto_minmax(0,1fr)] md:items-end">
+        <div className="min-w-0">
+          <label htmlFor={`${id}-value`} className="mb-1.5 block text-sm font-medium text-gray-700">
+            Number
+          </label>
           <input
+            id={`${id}-value`}
             type="text"
-            value={fromValue}
-            onChange={(e) => handleInputChange(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-mono"
-            placeholder={getPlaceholder(fromSystem)}
+            autoComplete="off"
+            spellCheck={false}
+            value={raw}
+            onChange={(e) => setRaw(e.target.value)}
+            aria-invalid={Boolean(parsed && 'error' in parsed)}
+            aria-describedby={`${id}-result`}
+            className={`${inputClass} font-mono text-lg`}
+            placeholder={fromBase === 16 ? 'e.g. FF or 0xFF' : fromBase === 2 ? 'e.g. 1010 or 0b1010' : 'Enter a number'}
           />
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
-          <select
-            value={toSystem}
-            onChange={(e) => {
-              setToSystem(e.target.value as NumberSystem);
-              handleInputChange(fromValue);
-            }}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white mb-3"
-          >
-            <option value="decimal">Decimal (Base 10)</option>
-            <option value="binary">Binary (Base 2)</option>
-            <option value="hexadecimal">Hexadecimal (Base 16)</option>
-            <option value="octal">Octal (Base 8)</option>
+        <div className="min-w-0">
+          <label htmlFor={`${id}-from`} className="mb-1.5 block text-sm font-medium text-gray-700">
+            From
+          </label>
+          <select id={`${id}-from`} value={fromBase} onChange={(e) => setFromBase(Number(e.target.value))} className={inputClass}>
+            {baseOptions.map((b) => (
+              <option key={b} value={b}>
+                {baseLabel(b)}
+              </option>
+            ))}
           </select>
-          <input
-            type="text"
-            value={result}
-            readOnly
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-lg font-mono font-semibold"
-          />
         </div>
-      </div>
-
-      <div className="flex justify-center">
         <button
-          onClick={swapSystems}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          type="button"
+          onClick={swap}
+          aria-label="Swap bases"
+          title="Swap bases (uses the result as the new input)"
+          className="h-12 rounded-lg border border-gray-300 bg-white px-4 text-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          ↕ Swap Systems
+          <span aria-hidden="true">⇄</span>
         </button>
+        <div className="min-w-0">
+          <label htmlFor={`${id}-to`} className="mb-1.5 block text-sm font-medium text-gray-700">
+            To
+          </label>
+          <select id={`${id}-to`} value={toBaseValue} onChange={(e) => setToBaseValue(Number(e.target.value))} className={inputClass}>
+            {baseOptions.map((b) => (
+              <option key={b} value={b}>
+                {baseLabel(b)}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {result && result !== 'Invalid input' && (
-        <div className="bg-blue-50 rounded-lg p-4">
-          <p className="text-sm text-blue-800">
-            <strong>Conversion:</strong> {fromValue}<sub>{fromSystem === 'decimal' ? '10' : fromSystem === 'binary' ? '2' : fromSystem === 'hexadecimal' ? '16' : '8'}</sub> = {result}<sub>{toSystem === 'decimal' ? '10' : toSystem === 'binary' ? '2' : toSystem === 'hexadecimal' ? '16' : '8'}</sub>
+      <div id={`${id}-result`} aria-live="polite" className="rounded-xl border border-blue-100 bg-blue-50 p-4 sm:p-5">
+        {parsed === null && <p className="text-sm text-gray-700">Enter a number to convert.</p>}
+        {parsed && 'error' in parsed && (
+          <p className="text-sm font-medium text-red-700" data-testid="number-error">
+            {parsed.error}
           </p>
+        )}
+        {value !== null && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wide text-blue-700">{baseLabel(toBaseValue)}</p>
+              <p className="break-all font-mono text-2xl font-semibold text-blue-950" data-testid="number-result">
+                {result}
+              </p>
+            </div>
+            <CopyButton text={result} label="Copy result" />
+          </div>
+        )}
+      </div>
+
+      {value !== null && (
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <table className="w-full text-left text-sm" data-testid="number-table">
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.base} className="border-t border-gray-100 first:border-t-0">
+                  <th scope="row" className="whitespace-nowrap px-4 py-2 font-normal text-gray-600">
+                    {baseLabel(row.base)}
+                  </th>
+                  <td className="break-all px-4 py-2 font-mono text-gray-900" data-base={row.base}>
+                    {row.base === 2 && row.text.replace('-', '').length > 4 ? group(row.text, 4, ' ') : row.text}
+                  </td>
+                  <td className="px-2 py-2 text-right">
+                    <CopyButton text={row.text} label="Copy" className="px-2 py-1" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-semibold text-gray-900 mb-2">Number System Reference</h3>
-        <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
-          <div>
-            <p className="font-medium mb-1">Decimal (Base 10)</p>
-            <p>Uses digits 0-9. Standard number system.</p>
-          </div>
-          <div>
-            <p className="font-medium mb-1">Binary (Base 2)</p>
-            <p>Uses digits 0-1. Used in computing.</p>
-          </div>
-          <div>
-            <p className="font-medium mb-1">Hexadecimal (Base 16)</p>
-            <p>Uses digits 0-9 and A-F. Common in programming.</p>
-          </div>
-          <div>
-            <p className="font-medium mb-1">Octal (Base 8)</p>
-            <p>Uses digits 0-7. Less common but useful.</p>
-          </div>
-        </div>
-      </div>
+      <p className="rounded-xl bg-gray-50 p-4 text-sm text-gray-600">
+        Supports whole numbers of any size in bases 2 to 36, including negative numbers (shown with a minus sign, not two’s complement). Prefixes 0b, 0o
+        and 0x, spaces and underscores are ignored. Binary output is grouped in 4-bit nibbles for readability.
+      </p>
     </div>
   );
 }
-

@@ -1,108 +1,198 @@
 import React, { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
-import ApiKeyManager from '../../components/ApiKeyManager';
-import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+import CareerToolLayout from '../../components/career/CareerToolLayout';
+import StepIndicator from '../../components/career/StepIndicator';
+import { asArray, asText, copyText, inputClass, labelClass, postCareerTool, splitList, toNumber } from '../../components/career/careerUtils';
 
 interface SalaryData {
+  currency: string;
   currentSalary: string;
   desiredSalary: string;
   jobTitle: string;
   location: string;
-  experience: string;
+  experienceYears: string;
+  educationLevel: string;
+  skills: string;
   companySize: string;
   industry: string;
+}
+
+interface Plan {
+  market: { min: number | null; max: number | null; median: number | null; source: string };
+  range: { walkAway: number | null; target: number | null; anchor: number | null };
+  approach: string;
+  timing: string;
+  talkingPoints: string[];
+  scripts: { situation: string; script: string }[];
+  benefits: string[];
+  redFlags: string[];
+}
+
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'AED', 'SAR', 'INR', 'PKR', 'CAD', 'AUD'];
+const STEPS = ['Salary', 'Job Details', 'Company', 'Your Plan'];
+
+const humanize = (key: string) => key.replace(/([A-Z])/g, ' $1').replace(/[_-]/g, ' ').trim().replace(/^./, (c) => c.toUpperCase());
+
+function normalizePlan(raw: Record<string, unknown>): Plan {
+  const obj = (v: unknown) => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
+  const market = obj(raw.marketSalary);
+  const range = obj(raw.negotiationRange);
+  const legacy = obj(raw.negotiationStrategy);
+  const strategy = obj(raw.strategy);
+  const scriptsRaw = raw.scripts;
+  const scripts = Array.isArray(scriptsRaw)
+    ? scriptsRaw.map((s) => (typeof s === 'string' ? { situation: 'Script', script: s } : { situation: asText(obj(s).situation) || 'Script', script: asText(obj(s).script ?? obj(s).text) }))
+    : Object.entries(obj(scriptsRaw)).map(([k, v]) => ({ situation: humanize(k), script: asText(v) }));
+  const list = (v: unknown) => asArray(v).map(asText).filter(Boolean);
+  return {
+    market: { min: toNumber(market.min), max: toNumber(market.max), median: toNumber(market.median), source: asText(market.source) },
+    range: {
+      walkAway: toNumber(range.minimum ?? legacy.walkAwayPoint),
+      target: toNumber(range.target ?? legacy.targetSalary),
+      anchor: toNumber(range.maximum ?? legacy.anchorPoint),
+    },
+    approach: asText(strategy.approach),
+    timing: asText(strategy.timing),
+    talkingPoints: list(strategy.keyPoints ?? raw.talkingPoints),
+    scripts: scripts.filter((s) => s.script),
+    benefits: [...list(raw.benefits), ...list(raw.fallbackOptions), ...list(raw.alternatives)],
+    redFlags: list(raw.redFlags),
+  };
 }
 
 const SalaryNegotiation: React.FC = () => {
   const { addToast } = useToast();
   const [salaryData, setSalaryData] = useState<SalaryData>({
+    currency: 'USD',
     currentSalary: '',
     desiredSalary: '',
     jobTitle: '',
     location: '',
-    experience: '',
+    experienceYears: '',
+    educationLevel: 'bachelor',
+    skills: '',
     companySize: '',
-    industry: ''
+    industry: '',
   });
-  const [negotiationPlan, setNegotiationPlan] = useState<any>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
 
-  useSEO({
-    title: 'Free Salary Negotiation Calculator Online - AI-Powered Guidance | No Signup',
-    description: 'Free salary negotiation calculator online - no signup required. Master salary negotiations instantly with AI-powered guidance. Get market research, negotiation scripts, and industry-specific strategies to maximize your earning potential. Perfect for job seekers.',
-    url: '/resources/salary-negotiation',
-    keywords: [
-      'free salary negotiation calculator', 'salary negotiation', 'free salary negotiation calculator online', 'salary negotiation tool', 'career tools',
-      'AI guidance', 'negotiation scripts', 'market research', 'career advancement',
-      'free online salary negotiation', 'salary calculator free'
-    ]
-  });
+  const set = (field: keyof SalaryData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setSalaryData((d) => ({ ...d, [field]: e.target.value }));
 
-  const steps = [
-    { title: 'Salary Information', description: 'Enter your current and desired salary details' },
-    { title: 'Job Details', description: 'Provide job title, location, and experience level' },
-    { title: 'Company Information', description: 'Share company size and industry details' },
-    { title: 'Market Research', description: 'Get salary benchmarks and market data' },
-    { title: 'Negotiation Strategy', description: 'Receive personalized negotiation plan' },
-    { title: 'Scripts & Tips', description: 'Get ready-to-use negotiation scripts' }
-  ];
-
-  const generateNegotiationPlan = async () => {
-    setIsGenerating(true);
+  const money = (n: number | null) => {
+    if (n === null) return '–';
     try {
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetchWithTimeout(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/salary-negotiation/generate`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            current_salary: salaryData.currentSalary,
-            desired_salary: salaryData.desiredSalary,
-            job_title: salaryData.jobTitle,
-            location: salaryData.location,
-            experience_years: salaryData.experience,
-            education_level: 'Bachelor', // Default value since not in interface
-            skills: [], // Default empty array since not in interface
-            company_size: salaryData.companySize
-          })
-        },
-        120000 // 120 seconds timeout for N8N fallback
-      );
-
-      const result = await response.json();
-
-      if (result.success) {
-        setNegotiationPlan(result.data);
-        setCurrentStep(5);
-        addToast({
-          type: 'success',
-          title: 'Negotiation Plan Ready',
-          description: 'Your personalized salary negotiation strategy has been generated using AI.'
-        });
-      } else {
-        throw new Error(result.message || 'Generation failed');
-      }
-    } catch (error) {
-      addToast({
-        type: 'error',
-        title: 'Generation Failed',
-        description: 'Failed to generate negotiation plan. Please try again.'
-      });
-    } finally {
-      setIsGenerating(false);
+      return new Intl.NumberFormat('en', { style: 'currency', currency: salaryData.currency, maximumFractionDigits: 0 }).format(n);
+    } catch {
+      return `${salaryData.currency} ${Math.round(n).toLocaleString('en')}`;
     }
   };
+
+  const current = toNumber(salaryData.currentSalary);
+  const desired = toNumber(salaryData.desiredSalary);
+  const raise = current !== null && desired !== null && current > 0 ? { amount: desired - current, percent: ((desired - current) / current) * 100 } : null;
+
+  const goTo = (step: number) => {
+    setError('');
+    setCurrentStep(step);
+  };
+
+  const validate = (step: number): string => {
+    if (step === 0) {
+      if (current === null || current < 0 || desired === null || desired <= 0) return 'Enter your current and desired annual salary as numbers.';
+    }
+    if (step === 1) {
+      const years = Number(salaryData.experienceYears);
+      if (!salaryData.jobTitle.trim() || !salaryData.location.trim()) return 'Enter the job title and location.';
+      if (salaryData.experienceYears === '' || !Number.isInteger(years) || years < 0 || years > 50) return 'Enter your years of experience as a whole number from 0 to 50.';
+      if (splitList(salaryData.skills).length === 0) return 'List at least one key skill.';
+    }
+    if (step === 2 && !salaryData.companySize) return 'Select the company size.';
+    return '';
+  };
+
+  const next = (step: number) => {
+    const message = validate(step);
+    if (message) {
+      setError(message);
+      return;
+    }
+    goTo(step + 1);
+  };
+
+  const generateNegotiationPlan = async () => {
+    const message = validate(2);
+    if (message) {
+      setError(message);
+      return;
+    }
+    setError('');
+    setIsGenerating(true);
+    const result = await postCareerTool<Record<string, unknown>>('salary-negotiation/generate', {
+      current_salary: current,
+      desired_salary: desired,
+      currency: salaryData.currency,
+      job_title: salaryData.jobTitle.trim(),
+      location: salaryData.location.trim(),
+      experience_years: Number(salaryData.experienceYears),
+      education_level: salaryData.educationLevel,
+      skills: splitList(salaryData.skills),
+      company_size: salaryData.companySize,
+      industry: salaryData.industry || undefined,
+    });
+    setIsGenerating(false);
+    if (!result.ok) {
+      setError(result.message);
+      addToast({ type: 'error', title: 'Generation failed', description: result.message });
+      return;
+    }
+    setPlan(normalizePlan(result.data));
+    goTo(3);
+    addToast({ type: 'success', title: 'Negotiation plan ready', description: 'Check the numbers against a salary survey before you negotiate.' });
+  };
+
+  const planToText = (p: Plan) =>
+    [
+      `Salary negotiation plan: ${salaryData.jobTitle} (${salaryData.location})`,
+      `Current: ${money(current)} | Desired: ${money(desired)}${raise ? ` (${raise.percent.toFixed(1)}% raise)` : ''}`,
+      `Market range: ${money(p.market.min)} - ${money(p.market.max)} (median ${money(p.market.median)})`,
+      `Anchor: ${money(p.range.anchor)} | Target: ${money(p.range.target)} | Walk-away: ${money(p.range.walkAway)}`,
+      '',
+      'Talking points:',
+      ...p.talkingPoints.map((t) => `- ${t}`),
+      '',
+      'Scripts:',
+      ...p.scripts.map((s) => `- ${s.situation}: "${s.script}"`),
+      '',
+      'Benefits to negotiate:',
+      ...p.benefits.map((b) => `- ${b}`),
+    ].join('\n');
+
+  const errorBox = error ? (
+    <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+      {error}
+    </div>
+  ) : null;
+
+  const navButtons = (back: number | null, onNext: () => void, nextLabel: string, disabled = false) => (
+    <div className="flex flex-col gap-3 sm:flex-row">
+      {back !== null && (
+        <button type="button" onClick={() => goTo(back)} className="flex-1 rounded-md bg-gray-600 px-6 py-3 font-medium text-white hover:bg-gray-700">
+          Back
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={disabled}
+        className="flex-1 rounded-md bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {nextLabel}
+      </button>
+    </div>
+  );
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -110,46 +200,48 @@ const SalaryNegotiation: React.FC = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Salary Information</h2>
-              <p className="text-gray-600 mb-8">
-                Let's start with your current and desired salary information.
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">Salary Information</h2>
+              <p className="text-gray-600">Start with your current pay and what you want to ask for.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <label htmlFor="sn-currency" className={labelClass}>
+                  Currency
+                </label>
+                <select id="sn-currency" value={salaryData.currency} onChange={set('currency')} className={inputClass}>
+                  {CURRENCIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="sn-current" className={labelClass}>
+                  Current Salary (annual) *
+                </label>
+                <input id="sn-current" type="number" inputMode="numeric" min={0} value={salaryData.currentSalary} onChange={set('currentSalary')} className={inputClass} placeholder="e.g., 75000" />
+              </div>
+              <div>
+                <label htmlFor="sn-desired" className={labelClass}>
+                  Desired Salary (annual) *
+                </label>
+                <input id="sn-desired" type="number" inputMode="numeric" min={0} value={salaryData.desiredSalary} onChange={set('desiredSalary')} className={inputClass} placeholder="e.g., 90000" />
+              </div>
+            </div>
+            {raise && (
+              <p
+                data-testid="raise-summary"
+                className={`rounded-md p-3 text-sm ${raise.amount < 0 ? 'bg-orange-50 text-orange-800' : 'bg-blue-50 text-blue-900'}`}
+                aria-live="polite"
+              >
+                {raise.amount >= 0
+                  ? `You are asking for a raise of ${money(raise.amount)} (${raise.percent.toFixed(1)}%).`
+                  : `Your desired salary is ${money(-raise.amount)} (${Math.abs(raise.percent).toFixed(1)}%) below your current salary. Double-check the figures.`}
               </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Salary (Annual)
-                </label>
-                <input
-                  type="number"
-                  value={salaryData.currentSalary}
-                  onChange={(e) => setSalaryData({...salaryData, currentSalary: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 75000"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Desired Salary (Annual)
-                </label>
-                <input
-                  type="number"
-                  value={salaryData.desiredSalary}
-                  onChange={(e) => setSalaryData({...salaryData, desiredSalary: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 90000"
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={() => setCurrentStep(1)}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-            >
-              Continue
-            </button>
+            )}
+            {errorBox}
+            {navButtons(null, () => next(0), 'Continue')}
           </div>
         );
 
@@ -157,74 +249,52 @@ const SalaryNegotiation: React.FC = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Job Details</h2>
-              <p className="text-gray-600 mb-8">
-                Tell us about the position you're negotiating for.
-              </p>
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">Job Details</h2>
+              <p className="text-gray-600">Tell us about the position you're negotiating for.</p>
             </div>
-
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Title
+                <label htmlFor="sn-jobTitle" className={labelClass}>
+                  Job Title *
                 </label>
-                <input
-                  type="text"
-                  value={salaryData.jobTitle}
-                  onChange={(e) => setSalaryData({...salaryData, jobTitle: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Senior Software Engineer"
-                />
+                <input id="sn-jobTitle" type="text" value={salaryData.jobTitle} onChange={set('jobTitle')} maxLength={255} className={inputClass} placeholder="e.g., Senior Software Engineer" />
               </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Location
+                  <label htmlFor="sn-location" className={labelClass}>
+                    Location *
                   </label>
-                  <input
-                    type="text"
-                    value={salaryData.location}
-                    onChange={(e) => setSalaryData({...salaryData, location: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., San Francisco, CA"
-                  />
+                  <input id="sn-location" type="text" value={salaryData.location} onChange={set('location')} maxLength={100} className={inputClass} placeholder="e.g., Dubai, UAE" />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Years of Experience
+                  <label htmlFor="sn-years" className={labelClass}>
+                    Years of Experience *
                   </label>
-                  <select
-                    value={salaryData.experience}
-                    onChange={(e) => setSalaryData({...salaryData, experience: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select experience</option>
-                    <option value="0-1">0-1 years</option>
-                    <option value="2-3">2-3 years</option>
-                    <option value="4-6">4-6 years</option>
-                    <option value="7-10">7-10 years</option>
-                    <option value="10+">10+ years</option>
+                  <input id="sn-years" type="number" inputMode="numeric" min={0} max={50} step={1} value={salaryData.experienceYears} onChange={set('experienceYears')} className={inputClass} placeholder="e.g., 6" />
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="sn-education" className={labelClass}>
+                    Education Level
+                  </label>
+                  <select id="sn-education" value={salaryData.educationLevel} onChange={set('educationLevel')} className={inputClass}>
+                    <option value="high_school">High school</option>
+                    <option value="bachelor">Bachelor's degree</option>
+                    <option value="master">Master's degree</option>
+                    <option value="phd">PhD</option>
                   </select>
                 </div>
+                <div>
+                  <label htmlFor="sn-skills" className={labelClass}>
+                    Key Skills (comma-separated) *
+                  </label>
+                  <input id="sn-skills" type="text" value={salaryData.skills} onChange={set('skills')} className={inputClass} placeholder="e.g., Python, Team Leadership" />
+                </div>
               </div>
             </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(0)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Back
-              </button>
-              <button
-                onClick={() => setCurrentStep(2)}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                Continue
-              </button>
-            </div>
+            {errorBox}
+            {navButtons(0, () => next(1), 'Continue')}
           </div>
         );
 
@@ -232,39 +302,28 @@ const SalaryNegotiation: React.FC = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Company Information</h2>
-              <p className="text-gray-600 mb-8">
-                Help us understand the company context for better recommendations.
-              </p>
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">Company Information</h2>
+              <p className="text-gray-600">Company size and industry change typical pay bands and flexibility.</p>
             </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Size
+                <label htmlFor="sn-size" className={labelClass}>
+                  Company Size *
                 </label>
-                <select
-                  value={salaryData.companySize}
-                  onChange={(e) => setSalaryData({...salaryData, companySize: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
+                <select id="sn-size" value={salaryData.companySize} onChange={set('companySize')} className={inputClass}>
                   <option value="">Select company size</option>
                   <option value="startup">Startup (1-50 employees)</option>
                   <option value="small">Small (51-200 employees)</option>
-                  <option value="medium">Medium (201-1000 employees)</option>
-                  <option value="large">Large (1000+ employees)</option>
+                  <option value="medium">Medium (201-1,000 employees)</option>
+                  <option value="large">Large (1,001-10,000 employees)</option>
+                  <option value="enterprise">Enterprise (10,000+ employees)</option>
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="sn-industry" className={labelClass}>
                   Industry
                 </label>
-                <select
-                  value={salaryData.industry}
-                  onChange={(e) => setSalaryData({...salaryData, industry: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
+                <select id="sn-industry" value={salaryData.industry} onChange={set('industry')} className={inputClass}>
                   <option value="">Select industry</option>
                   <option value="technology">Technology</option>
                   <option value="finance">Finance</option>
@@ -275,155 +334,133 @@ const SalaryNegotiation: React.FC = () => {
                 </select>
               </div>
             </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Back
-              </button>
-              <button
-                onClick={generateNegotiationPlan}
-                disabled={isGenerating}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                {isGenerating ? 'Generating Plan...' : 'Generate Negotiation Plan'}
-              </button>
-            </div>
+            {errorBox}
+            {navButtons(1, generateNegotiationPlan, isGenerating ? 'Generating Plan…' : 'Generate Negotiation Plan', isGenerating)}
           </div>
         );
 
-      case 5:
-        return (
+      case 3:
+        return plan ? (
           <div className="space-y-8">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Negotiation Strategy</h2>
-              <p className="text-gray-600">
-                Here's your personalized salary negotiation plan based on market data and best practices.
-              </p>
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">Your Negotiation Strategy</h2>
+              <p className="text-gray-600">AI estimates based on your inputs. Confirm the market range with a salary survey before you negotiate.</p>
             </div>
 
-            {/* Market Research */}
-            <div className="bg-blue-50 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Market Research</h3>
-              <div className="grid md:grid-cols-2 gap-4">
+            <div className="rounded-lg bg-blue-50 p-4 sm:p-6">
+              <h3 className="mb-4 text-xl font-semibold text-gray-900">Market research</h3>
+              <dl className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Market Range</p>
-                  <p className="text-lg font-semibold">
-                    ${negotiationPlan?.marketSalary.min.toLocaleString()} - ${negotiationPlan?.marketSalary.max.toLocaleString()}
-                  </p>
+                  <dt className="mb-1 text-sm text-gray-600">Market range</dt>
+                  <dd className="text-lg font-semibold" data-testid="market-range">
+                    {money(plan.market.min)} – {money(plan.market.max)}
+                  </dd>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Median Salary</p>
-                  <p className="text-lg font-semibold">
-                    ${negotiationPlan?.marketSalary.median.toLocaleString()}
-                  </p>
+                  <dt className="mb-1 text-sm text-gray-600">Median salary</dt>
+                  <dd className="text-lg font-semibold">{money(plan.market.median)}</dd>
+                </div>
+              </dl>
+              {plan.market.source && <p className="mt-3 text-sm text-gray-600">Source note: {plan.market.source}</p>}
+            </div>
+
+            <div className="rounded-lg bg-green-50 p-4 sm:p-6">
+              <h3 className="mb-4 text-xl font-semibold text-gray-900">Your numbers</h3>
+              <dl className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <dt className="mb-1 text-sm text-gray-600">Anchor (first ask)</dt>
+                  <dd className="text-lg font-semibold text-green-700">{money(plan.range.anchor)}</dd>
+                </div>
+                <div>
+                  <dt className="mb-1 text-sm text-gray-600">Target</dt>
+                  <dd className="text-lg font-semibold text-green-700" data-testid="target-salary">
+                    {money(plan.range.target)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="mb-1 text-sm text-gray-600">Walk-away point</dt>
+                  <dd className="text-lg font-semibold text-red-700">{money(plan.range.walkAway)}</dd>
+                </div>
+              </dl>
+              {(plan.approach || plan.timing) && (
+                <p className="mt-4 text-sm text-gray-700">
+                  {plan.approach && (
+                    <>
+                      <strong>Approach:</strong> {plan.approach}.{' '}
+                    </>
+                  )}
+                  {plan.timing && (
+                    <>
+                      <strong>Timing:</strong> {plan.timing}.
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
+
+            {plan.talkingPoints.length > 0 && (
+              <div>
+                <h3 className="mb-3 text-xl font-semibold text-gray-900">Key talking points</h3>
+                <ul className="list-disc space-y-2 pl-5 text-gray-700">
+                  {plan.talkingPoints.map((p) => (
+                    <li key={p}>{p}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {plan.scripts.length > 0 && (
+              <div>
+                <h3 className="mb-3 text-xl font-semibold text-gray-900">Negotiation scripts</h3>
+                <div className="space-y-4">
+                  {plan.scripts.map((s, i) => (
+                    <div key={i} className="rounded-lg border bg-white p-4">
+                      <h4 className="mb-2 font-medium text-gray-900">{s.situation}</h4>
+                      <p className="italic text-gray-700">“{s.script}”</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Negotiation Strategy */}
-            <div className="bg-green-50 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Your Strategy</h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Target Salary</p>
-                  <p className="text-lg font-semibold text-green-600">
-                    ${negotiationPlan?.negotiationStrategy.targetSalary.toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Anchor Point</p>
-                  <p className="text-lg font-semibold text-green-600">
-                    ${negotiationPlan?.negotiationStrategy.anchorPoint.toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Walk Away Point</p>
-                  <p className="text-lg font-semibold text-red-600">
-                    ${negotiationPlan?.negotiationStrategy.walkAwayPoint.toLocaleString()}
-                  </p>
-                </div>
+            {plan.redFlags.length > 0 && (
+              <div className="rounded-lg bg-red-50 p-4 sm:p-6">
+                <h3 className="mb-3 text-xl font-semibold text-gray-900">What to avoid</h3>
+                <ul className="list-disc space-y-2 pl-5 text-gray-700">
+                  {plan.redFlags.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            )}
 
-            {/* Talking Points */}
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Key Talking Points</h3>
-              <ul className="space-y-2">
-                {negotiationPlan?.talkingPoints.map((point: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-green-500 mt-1">✓</span>
-                    <span className="text-gray-700">{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Scripts */}
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Negotiation Scripts</h3>
-              <div className="space-y-4">
-                {Object.entries(negotiationPlan?.scripts || {}).map(([key, value]) => (
-                  <div key={key} className="bg-white border rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 mb-2 capitalize">
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                    </h4>
-                    <p className="text-gray-700 italic">"{value as string}"</p>
-                  </div>
-                ))}
+            {plan.benefits.length > 0 && (
+              <div>
+                <h3 className="mb-3 text-xl font-semibold text-gray-900">Benefits and alternatives to negotiate</h3>
+                <ul className="grid gap-2 md:grid-cols-2">
+                  {plan.benefits.map((b) => (
+                    <li key={b} className="rounded-lg bg-gray-50 p-3 text-gray-700">
+                      {b}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            )}
 
-            {/* Red Flags */}
-            <div className="bg-red-50 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">What to Avoid</h3>
-              <ul className="space-y-2">
-                {negotiationPlan?.redFlags.map((flag: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-red-500 mt-1">✗</span>
-                    <span className="text-gray-700">{flag}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Alternatives */}
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Alternative Benefits to Consider</h3>
-              <div className="grid md:grid-cols-2 gap-2">
-                {negotiationPlan?.alternatives.map((alt: string, index: number) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-3 text-center">
-                    <span className="text-gray-700">{alt}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(0)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Start Over
-              </button>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(JSON.stringify(negotiationPlan, null, 2));
-                  addToast({
-                    type: 'success',
-                    title: 'Copied to Clipboard',
-                    description: 'Your negotiation plan has been copied to your clipboard.'
-                  });
-                }}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                Copy Plan
-              </button>
-            </div>
+            {navButtons(
+              0,
+              async () => {
+                const ok = await copyText(planToText(plan));
+                addToast(
+                  ok
+                    ? { type: 'success', title: 'Copied to clipboard', description: 'Your negotiation plan has been copied as text.' }
+                    : { type: 'error', title: 'Copy failed', description: 'Your browser blocked clipboard access.' },
+                );
+              },
+              'Copy Plan',
+            )}
           </div>
-        );
+        ) : null;
 
       default:
         return null;
@@ -431,95 +468,12 @@ const SalaryNegotiation: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Free Salary Negotiation Calculator Online
-          </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Free salary negotiation calculator online - no signup required. Master salary negotiations instantly with AI-powered guidance. Get market research, 
-            negotiation scripts, and industry-specific strategies to maximize your earning potential.
-          </p>
-          
-          {/* Under Progress Banner */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8 max-w-4xl mx-auto">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
-                <span className="text-2xl">🚧</span>
-              </div>
-              <h2 className="text-2xl font-bold text-yellow-800">Under Progress</h2>
-            </div>
-            <p className="text-yellow-700 text-lg mb-4 text-center">
-              We're currently enhancing this tool with more advanced features and better AI integration.
-            </p>
-            <p className="text-yellow-600 text-center">
-              Check back soon for the complete salary negotiation experience!
-            </p>
-          </div>
-          
-          {/* API Key Manager */}
-          <div className="max-w-2xl mx-auto px-4">
-            <ApiKeyManager />
-          </div>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            {steps.map((_, index) => (
-              <div key={index} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  index <= currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
-                }`}>
-                  {index + 1}
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-16 h-1 mx-2 ${
-                    index < currentStep ? 'bg-blue-600' : 'bg-gray-300'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 text-center">
-            <h3 className="font-medium text-gray-900">{steps[currentStep].title}</h3>
-            <p className="text-sm text-gray-600">{steps[currentStep].description}</p>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          {renderStepContent()}
-        </div>
-
-        {/* Features */}
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">📊</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Market Research</h3>
-            <p className="text-gray-600">Get real-time salary data and market benchmarks</p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">💬</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Negotiation Scripts</h3>
-            <p className="text-gray-600">Ready-to-use scripts for every negotiation scenario</p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🎯</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Strategic Planning</h3>
-            <p className="text-gray-600">Personalized strategies based on your specific situation</p>
-          </div>
-        </div>
+    <CareerToolLayout slug="salary-negotiation">
+      <div className="mx-auto max-w-4xl">
+        <StepIndicator steps={STEPS} current={currentStep} />
+        <div className="rounded-lg bg-white p-4 shadow-lg sm:p-6 lg:p-8">{renderStepContent()}</div>
       </div>
-    </div>
+    </CareerToolLayout>
   );
 };
 

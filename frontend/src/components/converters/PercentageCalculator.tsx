@@ -1,181 +1,182 @@
-import { useState, useEffect } from 'react';
+import { useId, useState } from 'react';
+import { CopyButton, formatNumber, parseNumberInput } from './UnitConverter';
 
-type CalculationType = 'percentage' | 'increase' | 'decrease' | 'discount';
+type Mode = 'of' | 'what' | 'change' | 'increase' | 'decrease' | 'reverse' | 'difference';
+
+interface ModeDef {
+  label: string;
+  a: string;
+  b: string;
+  defaults: [string, string];
+  compute: (a: number, b: number) => { value: number; text: string; formula: string; extra?: string } | { error: string };
+}
+
+const f = (n: number) => formatNumber(n, 'auto');
+
+const modes: Record<Mode, ModeDef> = {
+  of: {
+    label: 'What is X% of Y?',
+    a: 'Percentage (%)',
+    b: 'Of value',
+    defaults: ['20', '150'],
+    compute: (p, y) => {
+      const value = (p / 100) * y;
+      return { value, text: `${f(p)}% of ${f(y)} = ${f(value)}`, formula: `${f(p)} ÷ 100 × ${f(y)}` };
+    },
+  },
+  what: {
+    label: 'X is what percent of Y?',
+    a: 'Value (X)',
+    b: 'Total (Y)',
+    defaults: ['30', '120'],
+    compute: (x, y) => {
+      if (y === 0) return { error: 'The total (Y) cannot be zero.' };
+      const value = (x / y) * 100;
+      return { value, text: `${f(x)} is ${f(value)}% of ${f(y)}`, formula: `${f(x)} ÷ ${f(y)} × 100` };
+    },
+  },
+  change: {
+    label: 'Percentage change from X to Y',
+    a: 'From (old value)',
+    b: 'To (new value)',
+    defaults: ['80', '100'],
+    compute: (x, y) => {
+      if (x === 0) return { error: 'Percentage change from 0 is undefined. Enter a non-zero starting value.' };
+      const value = ((y - x) / Math.abs(x)) * 100;
+      const word = value > 0 ? 'increase' : value < 0 ? 'decrease' : 'no change';
+      return {
+        value,
+        text: `From ${f(x)} to ${f(y)} is a ${f(Math.abs(value))}% ${word}`,
+        formula: `(${f(y)} − ${f(x)}) ÷ |${f(x)}| × 100`,
+        extra: `Difference: ${f(y - x)}`,
+      };
+    },
+  },
+  increase: {
+    label: 'Increase X by P%',
+    a: 'Value',
+    b: 'Increase (%)',
+    defaults: ['200', '15'],
+    compute: (x, p) => {
+      const value = x * (1 + p / 100);
+      return { value, text: `${f(x)} increased by ${f(p)}% = ${f(value)}`, formula: `${f(x)} × (1 + ${f(p)} ÷ 100)`, extra: `Amount added: ${f(value - x)}` };
+    },
+  },
+  decrease: {
+    label: 'Decrease X by P% (discount)',
+    a: 'Value or original price',
+    b: 'Decrease or discount (%)',
+    defaults: ['80', '25'],
+    compute: (x, p) => {
+      const value = x * (1 - p / 100);
+      return { value, text: `${f(x)} decreased by ${f(p)}% = ${f(value)}`, formula: `${f(x)} × (1 − ${f(p)} ÷ 100)`, extra: `You save: ${f(x - value)}` };
+    },
+  },
+  reverse: {
+    label: 'X is P% of what number?',
+    a: 'Value (X)',
+    b: 'Percentage (%)',
+    defaults: ['45', '30'],
+    compute: (x, p) => {
+      if (p === 0) return { error: 'The percentage cannot be zero.' };
+      const value = x / (p / 100);
+      return { value, text: `${f(x)} is ${f(p)}% of ${f(value)}`, formula: `${f(x)} ÷ (${f(p)} ÷ 100)` };
+    },
+  },
+  difference: {
+    label: 'Percentage difference between X and Y',
+    a: 'Value X',
+    b: 'Value Y',
+    defaults: ['40', '60'],
+    compute: (x, y) => {
+      const mean = (Math.abs(x) + Math.abs(y)) / 2;
+      if (mean === 0) return { error: 'Both values are zero, so there is no difference to compare.' };
+      const value = (Math.abs(x - y) / mean) * 100;
+      return { value, text: `The percentage difference between ${f(x)} and ${f(y)} is ${f(value)}%`, formula: `|${f(x)} − ${f(y)}| ÷ ((|${f(x)}| + |${f(y)}|) ÷ 2) × 100` };
+    },
+  },
+};
+
+const inputClass =
+  'w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-3 text-base focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500';
 
 export default function PercentageCalculator() {
-  const [calculationType, setCalculationType] = useState<CalculationType>('percentage');
-  const [value1, setValue1] = useState<string>('');
-  const [value2, setValue2] = useState<string>('');
-  const [result, setResult] = useState<string>('');
+  const id = useId();
+  const [mode, setMode] = useState<Mode>('of');
+  const [values, setValues] = useState<Record<Mode, [string, string]>>(
+    () => Object.fromEntries(Object.entries(modes).map(([k, m]) => [k, m.defaults])) as Record<Mode, [string, string]>,
+  );
+  const def = modes[mode];
+  const [rawA, rawB] = values[mode];
+  const a = parseNumberInput(rawA);
+  const b = parseNumberInput(rawB);
 
-  const calculate = () => {
-    const num1 = parseFloat(value1) || 0;
-    const num2 = parseFloat(value2) || 0;
+  let message: string | null = null;
+  let result: ReturnType<ModeDef['compute']> | null = null;
+  if (a === null || b === null) message = 'Enter both values to calculate.';
+  else if (Number.isNaN(a) || Number.isNaN(b) || !Number.isFinite(a) || !Number.isFinite(b)) message = 'Enter valid numbers, for example 12.5 or 1,250.';
+  else result = def.compute(a, b);
 
-    if (!value1 || !value2) {
-      setResult('');
-      return;
-    }
-
-    switch (calculationType) {
-      case 'percentage':
-        if (num2 === 0) {
-          setResult('Cannot divide by zero');
-          return;
-        }
-        const percentage = (num1 / num2) * 100;
-        setResult(`${num1} is ${percentage.toFixed(2)}% of ${num2}`);
-        break;
-
-      case 'increase':
-        const increased = num1 + (num1 * num2 / 100);
-        setResult(`${num1} increased by ${num2}% = ${increased.toFixed(2)}`);
-        break;
-
-      case 'decrease':
-        const decreased = num1 - (num1 * num2 / 100);
-        setResult(`${num1} decreased by ${num2}% = ${decreased.toFixed(2)}`);
-        break;
-
-      case 'discount':
-        const discountAmount = num1 * (num2 / 100);
-        const finalPrice = num1 - discountAmount;
-        setResult(`Original: ${num1}, Discount: ${num2}%, Final Price: ${finalPrice.toFixed(2)}`);
-        break;
-    }
-  };
-
-  useEffect(() => {
-    if (value1 && value2) {
-      calculate();
-    } else {
-      setResult('');
-    }
-  }, [value1, value2, calculationType]);
+  const setValue = (index: 0 | 1, value: string) =>
+    setValues((prev) => ({ ...prev, [mode]: (index === 0 ? [value, prev[mode][1]] : [prev[mode][0], value]) as [string, string] }));
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Calculation Type</label>
-        <select
-          value={calculationType}
-          onChange={(e) => {
-            setCalculationType(e.target.value as CalculationType);
-            setResult('');
-          }}
-          className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base touch-manipulation"
-        >
-          <option value="percentage">What percentage is X of Y?</option>
-          <option value="increase">Increase X by Y%</option>
-          <option value="decrease">Decrease X by Y%</option>
-          <option value="discount">Calculate Discount</option>
+        <label htmlFor={`${id}-mode`} className="mb-1.5 block text-sm font-medium text-gray-700">
+          Calculation
+        </label>
+        <select id={`${id}-mode`} value={mode} onChange={(e) => setMode(e.target.value as Mode)} className={inputClass}>
+          {(Object.keys(modes) as Mode[]).map((m) => (
+            <option key={m} value={m}>
+              {modes[m].label}
+            </option>
+          ))}
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            {calculationType === 'percentage' ? 'Value (X)' : 
-             calculationType === 'discount' ? 'Original Price' : 'Value'}
-          </label>
-          <input
-            type="number"
-            value={value1}
-            onChange={(e) => setValue1(e.target.value)}
-            className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg"
-            placeholder="Enter value"
-            inputMode="decimal"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            {calculationType === 'percentage' ? 'Total (Y)' : 'Percentage (%)'}
-          </label>
-          <input
-            type="number"
-            value={value2}
-            onChange={(e) => setValue2(e.target.value)}
-            className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg"
-            placeholder="Enter value"
-            inputMode="decimal"
-          />
-        </div>
-      </div>
-
-      <button
-        onClick={calculate}
-        className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-medium text-base sm:text-lg touch-manipulation shadow-sm"
-      >
-        Calculate
-      </button>
-
-      {result && (
-        <div className="bg-blue-50 rounded-lg p-4">
-          <p className="text-sm text-blue-800">
-            <strong>Result:</strong> {result}
-          </p>
-        </div>
-      )}
-
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-semibold text-gray-900 mb-2">Calculation Types</h3>
-        <ul className="text-sm text-gray-600 space-y-1">
-          <li>• <strong>What percentage is X of Y?</strong> Calculate what percentage one number is of another</li>
-          <li>• <strong>Increase X by Y%</strong> Calculate the result after increasing a number by a percentage</li>
-          <li>• <strong>Decrease X by Y%</strong> Calculate the result after decreasing a number by a percentage</li>
-          <li>• <strong>Calculate Discount</strong> Calculate the final price after applying a discount percentage</li>
-        </ul>
-      </div>
-
-      {/* SEO & AI-Friendly Content */}
-      <div className="mt-8 space-y-6">
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">About Percentage Calculations</h3>
-          <p className="text-gray-700 mb-4">
-            Percentage calculations are fundamental in mathematics, finance, shopping, statistics, and everyday life. 
-            Our percentage calculator handles various calculation types including finding percentages, calculating increases/decreases, 
-            and computing discounts.
-          </p>
-          <p className="text-gray-700 mb-4">
-            <strong>Common Uses:</strong> Calculating discounts during sales, determining tax amounts, analyzing growth rates, 
-            computing tips, understanding statistics, and solving math problems. Percentages represent parts per hundred, making 
-            comparisons and calculations easier.
-          </p>
-          <p className="text-gray-700">
-            <strong>Formulas:</strong> Percentage = (Part / Whole) × 100, Increase = Original × (1 + Percentage/100), 
-            Decrease = Original × (1 - Percentage/100), Discount Price = Original × (1 - Discount%/100).
-          </p>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Frequently Asked Questions</h3>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium text-gray-900 mb-1">How do I calculate what percentage one number is of another?</h4>
-              <p className="text-sm text-gray-600">
-                Divide the first number by the second number, then multiply by 100. For example, if 25 is what percentage of 100: 
-                (25/100) × 100 = 25%. Use our calculator by selecting "What percentage is X of Y?" and entering your values.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-medium text-gray-900 mb-1">How do I calculate a percentage increase?</h4>
-              <p className="text-sm text-gray-600">
-                Multiply the original value by (1 + percentage/100). For example, increasing 100 by 20%: 100 × (1 + 20/100) = 120. 
-                Our calculator handles this automatically when you select "Increase X by Y%".
-              </p>
-            </div>
-            <div>
-              <h4 className="font-medium text-gray-900 mb-1">How do I calculate a discount?</h4>
-              <p className="text-sm text-gray-600">
-                Multiply the original price by (1 - discount%/100). For example, a $100 item with 15% off: $100 × (1 - 15/100) = $85. 
-                Select "Calculate Discount" in our calculator for instant results.
-              </p>
-            </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {[def.a, def.b].map((label, i) => (
+          <div key={label} className="min-w-0">
+            <label htmlFor={`${id}-v${i}`} className="mb-1.5 block text-sm font-medium text-gray-700">
+              {label}
+            </label>
+            <input
+              id={`${id}-v${i}`}
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={values[mode][i]}
+              onChange={(e) => setValue(i as 0 | 1, e.target.value)}
+              className={`${inputClass} text-lg`}
+            />
           </div>
-        </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 sm:p-5" aria-live="polite">
+        {message && <p className="text-sm text-gray-700">{message}</p>}
+        {result && 'error' in result && (
+          <p className="text-sm font-medium text-red-700" data-testid="percent-error">
+            {result.error}
+          </p>
+        )}
+        {result && 'value' in result && (
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Result</p>
+              <p className="break-words text-2xl font-semibold text-blue-950" data-testid="percent-result">
+                {result.text}
+              </p>
+              {result.extra && <p className="mt-1 text-sm text-blue-900">{result.extra}</p>}
+              <p className="mt-1 break-words text-sm text-blue-800" data-testid="percent-formula">
+                Formula: {result.formula}
+              </p>
+            </div>
+            <CopyButton text={result.text} label="Copy" />
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

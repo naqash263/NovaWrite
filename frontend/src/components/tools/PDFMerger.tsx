@@ -1,115 +1,109 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
-import { useSEO } from '../../utils/seo';
 
 interface PDFFile {
+  id: string;
   file: File;
   name: string;
   size: number;
-  pages?: number;
+  pages: number;
 }
+
+const MAX_FILES = 50;
+
+const isPdf = (file: File) => file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+
+const formatSize = (bytes: number) =>
+  bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(2)} MB` : `${(bytes / 1024).toFixed(1)} KB`;
 
 export default function PDFMerger() {
   const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [mergedPdfUrl, setMergedPdfUrl] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [mergedPdfUrl, setMergedPdfUrl] = useState('');
+  const [mergedPages, setMergedPages] = useState(0);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free PDF Merger Online - Combine Multiple PDFs | No Signup',
-    description: 'Free PDF merger online - no signup required. Combine multiple PDF files into one document instantly. Drag and drop reordering, preview before merging. All processing happens in your browser. Perfect for document management.',
-    url: '/resources/utility-tools/pdf-merger',
-    keywords: [
-      'free PDF merger online', 'PDF merger', 'free PDF merger', 'PDF merger online', 'merge PDF files free online',
-      'merge PDF', 'combine PDF', 'PDF combiner', 'merge PDF files',
-      'online PDF merger', 'PDF joiner', 'combine PDF documents', 'free online PDF merger'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'PDF Merger',
-      'description': 'Free online tool to merge multiple PDF files into one document. All processing happens in your browser.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/pdf-merger',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Merge multiple PDF files',
-        'Drag and drop reordering',
-        'Preview before merging',
-        'Client-side processing',
-        'No file size limits',
-        'Instant download'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.9',
-        'ratingCount': '1800',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
+  // Revoke the previous object URL whenever it changes or the tool unmounts.
+  useEffect(() => {
+    return () => {
+      if (mergedPdfUrl) URL.revokeObjectURL(mergedPdfUrl);
+    };
+  }, [mergedPdfUrl]);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const pdfFiles = files.filter(f => f.type === 'application/pdf');
-    
-    if (pdfFiles.length === 0) {
-      setError('Please select PDF files only');
-      return;
+  const addFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+    const problems: string[] = [];
+    const pdfs = files.filter((f) => {
+      if (isPdf(f)) return true;
+      problems.push(`${f.name} is not a PDF file.`);
+      return false;
+    });
+
+    const room = MAX_FILES - pdfFiles.length;
+    if (pdfs.length > room) {
+      problems.push(`You can merge up to ${MAX_FILES} files. ${pdfs.length - room} file(s) were not added.`);
+      pdfs.splice(Math.max(0, room));
     }
 
+    setIsLoading(true);
     const newFiles: PDFFile[] = [];
-    for (const file of pdfFiles) {
+    for (const file of pdfs) {
       try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdfDoc = await PDFDocument.load(arrayBuffer);
-        const pageCount = pdfDoc.getPageCount();
+        const pdfDoc = await PDFDocument.load(await file.arrayBuffer());
         newFiles.push({
+          id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
           file,
           name: file.name,
           size: file.size,
-          pages: pageCount
+          pages: pdfDoc.getPageCount(),
         });
-      } catch (err) {
-        console.error(`Error reading ${file.name}:`, err);
-        setError(`Failed to read ${file.name}. It may be corrupted or password-protected.`);
+      } catch {
+        problems.push(`Could not read ${file.name}. It may be corrupted or password-protected.`);
       }
     }
+    setIsLoading(false);
 
-    setPdfFiles(prev => [...prev, ...newFiles]);
-    setError('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (newFiles.length) {
+      setPdfFiles((prev) => [...prev, ...newFiles]);
+      setMergedPdfUrl('');
     }
+    setError(problems.join(' '));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    void addFiles(Array.from(e.target.files || []));
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files?.length) void addFiles(Array.from(e.dataTransfer.files));
   };
 
   const removeFile = (index: number) => {
-    setPdfFiles(prev => prev.filter((_, i) => i !== index));
+    setPdfFiles((prev) => prev.filter((_, i) => i !== index));
     setMergedPdfUrl('');
   };
 
-  const moveFile = (index: number, direction: 'up' | 'down') => {
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === pdfFiles.length - 1) return;
-
-    const newFiles = [...pdfFiles];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    [newFiles[index], newFiles[targetIndex]] = [newFiles[targetIndex], newFiles[index]];
-    setPdfFiles(newFiles);
+  const moveFile = (from: number, to: number) => {
+    if (to < 0 || to >= pdfFiles.length || from === to) return;
+    setPdfFiles((prev) => {
+      const next = [...prev];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return next;
+    });
     setMergedPdfUrl('');
   };
 
   const handleMerge = async () => {
     if (pdfFiles.length < 2) {
-      setError('Please add at least 2 PDF files to merge');
+      setError('Please add at least 2 PDF files to merge.');
       return;
     }
 
@@ -119,21 +113,18 @@ export default function PDFMerger() {
 
     try {
       const mergedPdf = await PDFDocument.create();
-
       for (const pdfFile of pdfFiles) {
-        const arrayBuffer = await pdfFile.file.arrayBuffer();
-        const pdf = await PDFDocument.load(arrayBuffer);
+        const pdf = await PDFDocument.load(await pdfFile.file.arrayBuffer());
         const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        pages.forEach(page => mergedPdf.addPage(page));
+        pages.forEach((page) => mergedPdf.addPage(page));
       }
-
       const pdfBytes = await mergedPdf.save();
       const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      setMergedPdfUrl(url);
+      setMergedPages(mergedPdf.getPageCount());
+      setMergedPdfUrl(URL.createObjectURL(blob));
     } catch (err) {
       console.error('Merge error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to merge PDFs. Some files may be corrupted or password-protected.');
+      setError('Failed to merge PDFs. One of the files may be corrupted or password-protected.');
     } finally {
       setIsProcessing(false);
     }
@@ -153,69 +144,71 @@ export default function PDFMerger() {
     setPdfFiles([]);
     setMergedPdfUrl('');
     setError('');
-    if (mergedPdfUrl) {
-      URL.revokeObjectURL(mergedPdfUrl);
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const totalPages = pdfFiles.reduce((sum, f) => sum + (f.pages || 0), 0);
+  const totalPages = pdfFiles.reduce((sum, f) => sum + f.pages, 0);
   const totalSize = pdfFiles.reduce((sum, f) => sum + f.size, 0);
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔗 Free PDF Merger Online
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Free PDF merger online - no signup required. Combine multiple PDF files into one document instantly. Drag and drop reordering, preview before merging. All processing happens in your browser - your files never leave your device.
-        </p>
-
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
         {/* Stats */}
         {pdfFiles.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-3 gap-3 mb-6" data-testid="merge-stats">
             <div className="bg-blue-50 p-3 rounded-lg">
               <div className="text-sm text-gray-600">Files</div>
               <div className="text-2xl font-bold text-blue-600">{pdfFiles.length}</div>
             </div>
             <div className="bg-green-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-600">Total Pages</div>
+              <div className="text-sm text-gray-600">Total pages</div>
               <div className="text-2xl font-bold text-green-600">{totalPages}</div>
             </div>
             <div className="bg-purple-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-600">Total Size</div>
-              <div className="text-2xl font-bold text-purple-600">
-                {(totalSize / 1024 / 1024).toFixed(2)} MB
-              </div>
-            </div>
-            <div className="bg-orange-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-600">Max Files</div>
-              <div className="text-2xl font-bold text-orange-600">50</div>
+              <div className="text-sm text-gray-600">Total size</div>
+              <div className="text-lg sm:text-2xl font-bold text-purple-600">{formatSize(totalSize)}</div>
             </div>
           </div>
         )}
 
         {/* File Upload */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select PDF Files
+        <div
+          className={`mb-6 rounded-lg border-2 border-dashed p-4 transition-colors ${
+            isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={handleDrop}
+        >
+          <label htmlFor="pdf-merger-input" className="block text-sm font-medium text-gray-700 mb-2">
+            Select PDF files (or drop them here)
           </label>
           <input
+            id="pdf-merger-input"
             ref={fileInputRef}
             type="file"
-            accept=".pdf"
+            accept=".pdf,application/pdf"
             multiple
             onChange={handleFileSelect}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            aria-describedby="pdf-merger-hint"
+            className="w-full min-w-0 p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          <p className="text-sm text-gray-500 mt-2">
-            You can select multiple PDF files at once. Maximum 50 files, 50MB per file.
+          <p id="pdf-merger-hint" className="text-sm text-gray-500 mt-2">
+            Add up to {MAX_FILES} PDFs. You can add more files at any time; password-protected PDFs are not supported.
           </p>
+          {isLoading && (
+            <p className="text-sm text-blue-700 mt-2" role="status">
+              Reading files…
+            </p>
+          )}
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-800 text-sm">{error}</p>
           </div>
         )}
@@ -223,226 +216,114 @@ export default function PDFMerger() {
         {/* File List */}
         {pdfFiles.length > 0 && (
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Files to Merge (drag to reorder)
-            </label>
-            <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4">
+            <h2 className="block text-sm font-medium text-gray-700 mb-2">
+              Merge order (drag a file or use the arrows to reorder)
+            </h2>
+            <ol className="space-y-2 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-2 sm:p-4" data-testid="merge-list">
               {pdfFiles.map((pdfFile, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                <li
+                  key={pdfFile.id}
+                  draggable
+                  onDragStart={() => setDragIndex(index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (dragIndex !== null) moveFile(dragIndex, index);
+                    setDragIndex(null);
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                  className={`flex items-center justify-between gap-2 p-3 rounded-lg transition-colors cursor-move ${
+                    dragIndex === index ? 'bg-blue-100' : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="text-2xl">📄</span>
+                    <span className="font-mono text-xs text-gray-500 w-5 text-right" aria-hidden="true">
+                      {index + 1}
+                    </span>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate">{pdfFile.name}</p>
                       <p className="text-xs text-gray-500">
-                        {(pdfFile.size / 1024).toFixed(2)} KB
-                        {pdfFile.pages && ` • ${pdfFile.pages} page${pdfFile.pages !== 1 ? 's' : ''}`}
+                        {formatSize(pdfFile.size)} • {pdfFile.pages} page{pdfFile.pages !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 flex-none">
                     <button
-                      onClick={() => moveFile(index, 'up')}
+                      type="button"
+                      onClick={() => moveFile(index, index - 1)}
                       disabled={index === 0}
-                      className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Move up"
+                      className="p-2 text-gray-500 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      aria-label={`Move ${pdfFile.name} up`}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                       </svg>
                     </button>
                     <button
-                      onClick={() => moveFile(index, 'down')}
+                      type="button"
+                      onClick={() => moveFile(index, index + 1)}
                       disabled={index === pdfFiles.length - 1}
-                      className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Move down"
+                      className="p-2 text-gray-500 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      aria-label={`Move ${pdfFile.name} down`}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
                     <button
+                      type="button"
                       onClick={() => removeFile(index)}
-                      className="p-1 text-red-400 hover:text-red-600"
-                      title="Remove"
+                      className="p-2 text-red-500 hover:text-red-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      aria-label={`Remove ${pdfFile.name}`}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="flex flex-wrap gap-3">
           <button
+            type="button"
             onClick={handleMerge}
             disabled={pdfFiles.length < 2 || isProcessing}
             className="flex-1 sm:flex-none px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
           >
-            {isProcessing ? 'Merging...' : '🔗 Merge PDFs'}
+            {isProcessing ? 'Merging…' : 'Merge PDFs'}
           </button>
           {mergedPdfUrl && (
             <button
+              type="button"
               onClick={handleDownload}
               className="flex-1 sm:flex-none px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
             >
-              📥 Download Merged PDF
+              Download merged PDF
             </button>
           )}
           <button
+            type="button"
             onClick={handleClear}
-            className="flex-1 sm:flex-none px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors"
+            disabled={pdfFiles.length === 0 && !error}
+            className="flex-1 sm:flex-none px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
           >
-            🗑️ Clear All
+            Clear all
           </button>
         </div>
+        {pdfFiles.length === 1 && <p className="mt-3 text-sm text-gray-600">Add at least one more PDF to merge.</p>}
 
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About PDF Merger</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our PDF Merger is a powerful, client-side tool that combines multiple PDF files into a single document. 
-              All processing happens locally in your browser using the pdf-lib library, ensuring your files never leave 
-              your device. This provides maximum privacy and security for your documents.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Perfect for combining reports, merging invoices, combining multiple documents, or organizing your PDF files. 
-              The tool supports drag-and-drop reordering, so you can control exactly how your documents are merged.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Combining multiple reports into one document</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Merging invoices and receipts</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Combining scanned documents</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Organizing multiple PDFs into one file</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Combining chapters or sections</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Merging forms and applications</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Files</h4>
-                  <p className="text-sm text-gray-600">Merge up to 50 PDF files at once</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Drag & Drop Reorder</h4>
-                  <p className="text-sm text-gray-600">Reorder files before merging</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Privacy-First</h4>
-                  <p className="text-sm text-gray-600">All processing happens in your browser</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">No Limits</h4>
-                  <p className="text-sm text-gray-600">No file size or page count restrictions</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my PDF data stored or uploaded?</h4>
-                <p className="text-gray-700 text-sm">
-                  No, all PDF merging happens locally in your browser. Your files are never uploaded to any server 
-                  or stored anywhere. Your privacy is guaranteed.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the maximum file size?</h4>
-                <p className="text-gray-700 text-sm">
-                  There's no hard limit, but browser memory may limit very large files. We recommend files under 
-                  50MB each for best performance. You can merge up to 50 files at once.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I merge password-protected PDFs?</h4>
-                <p className="text-gray-700 text-sm">
-                  Password-protected PDFs cannot be merged. You'll need to remove the password first using a PDF 
-                  password remover tool.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How do I reorder files?</h4>
-                <p className="text-gray-700 text-sm">
-                  Use the up/down arrow buttons next to each file to change the order. Files are merged in the 
-                  order they appear in the list.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>You can select multiple PDF files at once using Ctrl/Cmd + Click</li>
-            <li>Use the up/down arrows to reorder files before merging</li>
-            <li>All processing happens in your browser - no uploads required</li>
-            <li>Password-protected PDFs cannot be merged</li>
-            <li>Large files may take longer to process</li>
-          </ul>
-        </div>
+        {mergedPdfUrl && (
+          <p role="status" className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800" data-testid="merge-result">
+            Merged {pdfFiles.length} files into one PDF with {mergedPages} page{mergedPages !== 1 ? 's' : ''}.
+          </p>
+        )}
       </div>
     </div>
   );
 }
-

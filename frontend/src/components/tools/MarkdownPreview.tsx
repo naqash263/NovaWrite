@@ -1,254 +1,303 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, type ChangeEvent } from 'react';
 import { marked } from 'marked';
-import { useSEO } from '../../utils/seo';
+
+const SAMPLE = `# Hello World
+
+This is **bold**, this is *italic* and this is \`inline code\`.
+
+## A list
+
+- [x] Write markdown
+- [ ] Preview it live
+- Copy the HTML
+
+| Tool | Runs in |
+| ---- | ------- |
+| Markdown Preview | Your browser |
+
+> Tip: raw HTML is allowed, but scripts and event handlers are removed.
+
+\`\`\`js
+console.log('Hello');
+\`\`\`
+
+[Visit the example site](https://example.com)
+`;
+
+/* ---------- Sanitiser: rebuilds the document from an allow-list of tags and attributes ---------- */
+
+const ALLOWED_TAGS = new Set([
+  'a', 'abbr', 'b', 'blockquote', 'br', 'caption', 'code', 'dd', 'del', 'details', 'div', 'dl', 'dt', 'em', 'figcaption', 'figure',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i', 'img', 'input', 'ins', 'kbd', 'li', 'mark', 'ol', 'p', 'pre', 's', 'small', 'span',
+  'strong', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'u', 'ul',
+]);
+/** Removed together with their content. */
+const DROP_TAGS = new Set(['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'form', 'svg', 'math', 'template', 'noscript', 'link', 'meta', 'base', 'title', 'head', 'textarea', 'select', 'button', 'audio', 'video']);
+const ALLOWED_ATTRS: Record<string, string[]> = {
+  '*': ['title', 'lang', 'dir'],
+  a: ['href'],
+  img: ['src', 'alt', 'width', 'height'],
+  ol: ['start'],
+  td: ['align', 'colspan', 'rowspan'],
+  th: ['align', 'colspan', 'rowspan', 'scope'],
+  code: ['class'],
+  input: ['type', 'checked', 'disabled'],
+  details: ['open'],
+};
+
+function safeUrl(value: string, forImage: boolean) {
+  // Strip control characters and whitespace that browsers ignore inside schemes ("java\tscript:").
+  // eslint-disable-next-line no-control-regex
+  const v = value.replace(/[\u0000- \u007f-\u009f]/g, '');
+  if (/^(https?:|mailto:|tel:|#|\/|\.\/|\.\.\/)/i.test(v)) return true;
+  if (forImage && /^data:image\/(png|gif|jpe?g|webp|avif);/i.test(v)) return true;
+  return !/^[a-z][a-z0-9+.-]*:/i.test(v); // relative URL without a scheme
+}
+
+function cleanNode(node: Node, doc: Document, shiftHeadings: boolean): Node | null {
+  if (node.nodeType === Node.TEXT_NODE) return doc.createTextNode(node.textContent ?? '');
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+  const el = node as Element;
+  const tag = el.tagName.toLowerCase();
+  if (DROP_TAGS.has(tag)) return null;
+  const children = () => {
+    const frag = doc.createDocumentFragment();
+    el.childNodes.forEach((child) => {
+      const c = cleanNode(child, doc, shiftHeadings);
+      if (c) frag.appendChild(c);
+    });
+    return frag;
+  };
+  if (!ALLOWED_TAGS.has(tag)) return children(); // unwrap unknown elements, keep their text
+  if (tag === 'input' && el.getAttribute('type') !== 'checkbox') return null;
+
+  let outTag = tag;
+  const level = /^h([1-6])$/.exec(tag);
+  if (level && shiftHeadings) outTag = `h${Math.min(6, Number(level[1]) + 1)}`;
+  const out = doc.createElement(outTag);
+  if (level && shiftHeadings) out.setAttribute('data-md-level', level[1]);
+
+  const allowed = [...ALLOWED_ATTRS['*'], ...(ALLOWED_ATTRS[tag] ?? [])];
+  for (const { name, value } of Array.from(el.attributes)) {
+    if (!allowed.includes(name)) continue;
+    if ((name === 'href' || name === 'src') && !safeUrl(value, name === 'src')) continue;
+    if (name === 'class' && !/^language-[\w-]+$/.test(value)) continue;
+    out.setAttribute(name, value);
+  }
+  if (tag === 'input') out.setAttribute('disabled', '');
+  if (tag === 'a' && shiftHeadings && out.hasAttribute('href') && !out.getAttribute('href')!.startsWith('#')) {
+    out.setAttribute('target', '_blank');
+    out.setAttribute('rel', 'noopener noreferrer nofollow');
+  }
+  out.appendChild(children());
+  return out;
+}
+
+/** Parses untrusted HTML in an inert document (no scripts run, no images load) and returns safe HTML. */
+function sanitize(html: string, shiftHeadings: boolean): string {
+  const parsed = new DOMParser().parseFromString(`<!doctype html><body>${html}</body>`, 'text/html');
+  const target = document.implementation.createHTMLDocument('');
+  const container = target.createElement('div');
+  parsed.body.childNodes.forEach((n) => {
+    const c = cleanNode(n, target, shiftHeadings);
+    if (c) container.appendChild(c);
+  });
+  return container.innerHTML;
+}
+
+function downloadText(text: string, filename: string, type: string) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const btn = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
 export default function MarkdownPreview() {
-  const [markdown, setMarkdown] = useState<string>('# Hello World\n\nThis is **bold** and this is *italic*.');
-  const [html, setHtml] = useState<string>('');
+  const [markdown, setMarkdown] = useState(SAMPLE);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [view, setView] = useState<'preview' | 'html'>('preview');
+  const [notice, setNotice] = useState('');
 
-  useSEO({
-    title: 'Free Markdown Preview Editor Online - Live Preview | No Signup',
-    description: 'Free markdown preview editor online - no signup required. Write markdown and see live preview instantly. Convert markdown to HTML, export HTML code. Dark and light themes. Perfect for developers and content creators. All processing in your browser.',
-    url: '/resources/utility-tools/markdown-preview',
-    keywords: [
-      'free markdown preview editor', 'markdown preview', 'free markdown preview editor online', 'markdown preview editor', 'markdown editor online',
-      'markdown editor', 'markdown to HTML', 'live markdown preview',
-      'markdown converter', 'markdown viewer', 'online markdown editor', 'free markdown tool',
-      'markdown HTML converter', 'free online markdown preview'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Markdown Preview & Editor',
-      'description': 'Free online markdown preview and editor with live preview and HTML export.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/markdown-preview',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Live markdown preview',
-        'Markdown to HTML conversion',
-        'Export HTML code',
-        'Dark and light themes',
-        'Copy to clipboard',
-        'Real-time rendering'
-      ]
-    }
-  });
-
-  const updatePreview = (md: string) => {
-    setMarkdown(md);
+  const { exportHtml, previewHtml, error } = useMemo(() => {
+    if (!markdown.trim()) return { exportHtml: '', previewHtml: '', error: '' };
     try {
-      const htmlContent = marked(md);
-      setHtml(htmlContent as string);
-    } catch (err) {
-      setHtml('<p class="text-red-600">Error parsing markdown</p>');
-    }
-  };
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      alert('Copied to clipboard!');
-    } catch (err) {
-      alert('Failed to copy. Please select and copy manually.');
-    }
-  };
-
-  const clearAll = () => {
-    setMarkdown('');
-    setHtml('');
-  };
-
-  // Initialize preview on mount and when markdown changes
-  useEffect(() => {
-    if (markdown) {
-      try {
-        const htmlContent = marked(markdown);
-        setHtml(htmlContent as string);
-      } catch (err) {
-        setHtml('<p class="text-red-600">Error parsing markdown</p>');
-      }
-    } else {
-      setHtml('');
+      const raw = marked.parse(markdown, { async: false, gfm: true, breaks: false }) as string;
+      return { exportHtml: sanitize(raw, false), previewHtml: sanitize(raw, true), error: '' };
+    } catch (e) {
+      return { exportHtml: '', previewHtml: '', error: e instanceof Error ? e.message : 'Could not parse this Markdown.' };
     }
   }, [markdown]);
 
-  return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Markdown Preview Editor Online</h1>
-        <p className="text-gray-600 mb-6">
-          Free markdown preview editor online - no signup required. Write markdown and see live preview instantly. Convert markdown to HTML, export HTML code. Dark and light themes. Perfect for developers and content creators. All processing in your browser.
-        </p>
+  const words = markdown.trim() ? markdown.trim().split(/\s+/).length : 0;
 
-        {/* Options */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="theme"
-                value="light"
-                checked={theme === 'light'}
-                onChange={(e) => setTheme(e.target.value as 'light' | 'dark')}
-                className="mr-1"
-              />
-              Light Theme
+  const flash = (msg: string) => {
+    setNotice(msg);
+    window.setTimeout(() => setNotice((n) => (n === msg ? '' : n)), 2500);
+  };
+
+  const copy = async (text: string, what: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      flash(`${what} copied to clipboard.`);
+    } catch {
+      flash('Copy failed. Select the text and press Ctrl+C.');
+    }
+  };
+
+  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      flash('Files up to 2 MB are supported.');
+      return;
+    }
+    setMarkdown(await file.text());
+  };
+
+  const standalone = `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>Document</title>\n</head>\n<body>\n${exportHtml}\n</body>\n</html>\n`;
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <fieldset className="flex items-center gap-3 text-sm text-slate-700">
+          <legend className="sr-only">Preview theme</legend>
+          {(['light', 'dark'] as const).map((t) => (
+            <label key={t} className="flex items-center gap-1.5">
+              <input type="radio" name="md-theme" value={t} checked={theme === t} onChange={() => setTheme(t)} className="h-4 w-4" />
+              {t === 'light' ? 'Light' : 'Dark'} theme
             </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="theme"
-                value="dark"
-                checked={theme === 'dark'}
-                onChange={(e) => setTheme(e.target.value as 'light' | 'dark')}
-                className="mr-1"
-              />
-              Dark Theme
-            </label>
-          </div>
-          <button
-            onClick={clearAll}
-            className="text-sm text-blue-600 hover:text-blue-700"
-          >
-            Clear All
+          ))}
+        </fieldset>
+        <div className="flex flex-wrap gap-2 sm:ml-auto">
+          <label className={`${btn} cursor-pointer bg-slate-100 text-slate-800 hover:bg-slate-200 focus-within:ring-2 focus-within:ring-blue-500`}>
+            Open .md file
+            <input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" onChange={onFile} className="sr-only" />
+          </label>
+          <button type="button" onClick={() => setMarkdown(SAMPLE)} className={`${btn} bg-slate-100 text-slate-800 hover:bg-slate-200`}>
+            Load sample
+          </button>
+          <button type="button" onClick={() => setMarkdown('')} disabled={!markdown} className={`${btn} bg-slate-100 text-slate-800 hover:bg-slate-200`}>
+            Clear
           </button>
         </div>
+      </div>
 
-        {/* Editor and Preview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Markdown Editor */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Markdown Editor
-              </label>
-              <button
-                onClick={() => copyToClipboard(markdown)}
-                className="text-sm text-blue-600 hover:text-blue-700"
-              >
-                Copy Markdown
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="min-w-0">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <label htmlFor="md-input" className="block text-sm font-medium text-slate-700">
+              Markdown
+            </label>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => copy(markdown, 'Markdown')} disabled={!markdown} className={`${btn} bg-slate-100 px-2.5 py-1 text-xs text-slate-800 hover:bg-slate-200`}>
+                Copy
+              </button>
+              <button type="button" onClick={() => downloadText(markdown, 'document.md', 'text/markdown')} disabled={!markdown} className={`${btn} bg-slate-100 px-2.5 py-1 text-xs text-slate-800 hover:bg-slate-200`}>
+                Download .md
               </button>
             </div>
-            <textarea
-              value={markdown}
-              onChange={(e) => updatePreview(e.target.value)}
-              placeholder="Write your markdown here..."
-              className="w-full h-96 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-            />
-            <div className="text-xs text-gray-500 mt-1">
-              {markdown.length} characters
-            </div>
           </div>
-
-          {/* HTML Preview */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Live Preview
-              </label>
-              {html && (
-                <button
-                  onClick={() => copyToClipboard(html)}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  Copy HTML
-                </button>
-              )}
-            </div>
-            <div
-              className={`w-full h-96 p-4 border border-gray-300 rounded-lg overflow-y-auto ${
-                theme === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-white'
-              }`}
-            >
-              <div
-                className={`prose max-w-none ${
-                  theme === 'dark' ? 'prose-invert' : ''
-                }`}
-                dangerouslySetInnerHTML={{ __html: html }}
-              />
-            </div>
-          </div>
+          <textarea
+            id="md-input"
+            value={markdown}
+            onChange={(e) => setMarkdown(e.target.value)}
+            spellCheck
+            placeholder="Write Markdown here…"
+            className="h-96 w-full resize-y rounded-lg border border-slate-300 p-3 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            {words.toLocaleString()} words · {markdown.length.toLocaleString()} characters
+          </p>
         </div>
 
-        {/* HTML Code Output */}
-        {html && (
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                HTML Output
-              </label>
-              <button
-                onClick={() => copyToClipboard(html)}
-                className="text-sm text-blue-600 hover:text-blue-700"
-              >
+        <div className="min-w-0">
+          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+            <div role="group" aria-label="Output view" className="inline-flex rounded-lg border border-slate-300 p-0.5">
+              {(['preview', 'html'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={view === v}
+                  onClick={() => setView(v)}
+                  className={`${btn} px-2.5 py-1 text-xs ${view === v ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+                >
+                  {v === 'preview' ? 'Preview' : 'HTML code'}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => copy(exportHtml, 'HTML')} disabled={!exportHtml} className={`${btn} bg-blue-600 px-2.5 py-1 text-xs text-white hover:bg-blue-700`}>
                 Copy HTML
               </button>
+              <button type="button" onClick={() => downloadText(standalone, 'document.html', 'text/html')} disabled={!exportHtml} className={`${btn} bg-slate-100 px-2.5 py-1 text-xs text-slate-800 hover:bg-slate-200`}>
+                Download .html
+              </button>
             </div>
-            <textarea
-              value={html}
-              readOnly
-              className="w-full h-48 p-4 border border-gray-300 rounded-lg resize-none bg-gray-50 font-mono text-sm"
+          </div>
+          {view === 'preview' ? (
+            <div
+              role="document"
+              aria-label="Rendered Markdown preview"
+              tabIndex={0}
+              data-testid="md-preview"
+              className={`prose h-96 max-w-none prose-code:before:content-none prose-code:after:content-none [&>:first-child]:mt-0 overflow-auto break-words rounded-lg border border-slate-300 p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 [&_[data-md-level='1']]:text-[2.25em] [&_[data-md-level='1']]:font-extrabold [&_[data-md-level='2']]:text-[1.5em] [&_[data-md-level='3']]:text-[1.25em] [&_table]:block [&_table]:overflow-x-auto ${
+                theme === 'dark' ? 'prose-invert bg-slate-900' : 'bg-white'
+              }`}
+              dangerouslySetInnerHTML={{ __html: previewHtml || '<p><em>Nothing to preview yet.</em></p>' }}
             />
-          </div>
-        )}
-
-        {/* Markdown Cheat Sheet */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Markdown Cheat Sheet</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-700">
-            <div>
-              <p><strong>Headers:</strong> # H1, ## H2, ### H3</p>
-              <p><strong>Bold:</strong> **bold** or __bold__</p>
-              <p><strong>Italic:</strong> *italic* or _italic_</p>
-              <p><strong>Link:</strong> [text](url)</p>
-            </div>
-            <div>
-              <p><strong>Image:</strong> ![alt](url)</p>
-              <p><strong>Code:</strong> `code` or ```code block```</p>
-              <p><strong>List:</strong> - item or 1. item</p>
-              <p><strong>Quote:</strong> &gt; quote</p>
-            </div>
-          </div>
+          ) : (
+            <>
+              <label htmlFor="md-html" className="sr-only">
+                Generated HTML
+              </label>
+              <textarea
+                id="md-html"
+                value={exportHtml}
+                readOnly
+                spellCheck={false}
+                className="h-96 w-full resize-y rounded-lg border border-slate-300 bg-slate-50 p-3 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </>
+          )}
+          <p className="mt-1 text-xs text-slate-500">GitHub Flavored Markdown. Scripts, event handlers and unsafe links are removed.</p>
         </div>
       </div>
 
-      {/* SEO Content */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Markdown Preview</h2>
-        <div className="prose max-w-none">
-          <p className="text-gray-700 mb-4">
-            Markdown Preview is a free online tool that provides live preview of markdown content 
-            and converts it to HTML. Perfect for developers, content creators, and writers.
-          </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Live markdown preview as you type</li>
-            <li>Convert markdown to HTML</li>
-            <li>Export HTML code</li>
-            <li>Dark and light themes</li>
-            <li>Copy markdown and HTML to clipboard</li>
-            <li>Markdown cheat sheet included</li>
-          </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Preview markdown before publishing</li>
-            <li>Convert markdown to HTML for websites</li>
-            <li>Test markdown syntax and formatting</li>
-            <li>Create HTML from markdown content</li>
-            <li>Learn markdown syntax with live preview</li>
-            <li>Write documentation and blog posts</li>
-          </ul>
+      {error && (
+        <div role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+          {error}
         </div>
-      </div>
+      )}
+
+      <details className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+        <summary className="cursor-pointer font-medium text-slate-900">Markdown cheat sheet</summary>
+        <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 font-mono text-xs sm:grid-cols-2">
+          {[
+            ['Heading', '# H1  ## H2  ### H3'],
+            ['Bold / italic', '**bold**  *italic*'],
+            ['Link', '[text](https://…)'],
+            ['Image', '![alt](image.png)'],
+            ['Code', '`code`  or  ```lang fences'],
+            ['List', '- item   1. item   - [ ] task'],
+            ['Quote', '> quoted text'],
+            ['Table', '| a | b |  then  |---|---|'],
+          ].map(([k, v]) => (
+            <div key={k} className="flex gap-2">
+              <dt className="w-28 flex-none font-sans font-semibold">{k}</dt>
+              <dd className="min-w-0 break-all">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </details>
+
+      <p aria-live="polite" className="mt-2 min-h-[1.25rem] text-sm text-slate-600">
+        {notice}
+      </p>
     </div>
   );
 }
-

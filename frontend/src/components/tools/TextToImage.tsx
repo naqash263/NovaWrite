@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useSEO } from '../../utils/seo';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+const clampSize = (n: number) => Math.min(5000, Math.max(100, Math.round(n) || 100));
 
 export default function TextToImage() {
   const [heading, setHeading] = useState<string>('Create Beautiful Images');
@@ -9,8 +8,10 @@ export default function TextToImage() {
   const [backgroundColor, setBackgroundColor] = useState<string>('#3B82F6');
   const [headingColor, setHeadingColor] = useState<string>('#FFFFFF');
   const [summaryColor, setSummaryColor] = useState<string>('#F3F4F6');
-  const [width, setWidth] = useState<number>(1200);
-  const [height, setHeight] = useState<number>(630);
+  const [rawWidth, setWidth] = useState<number>(1200);
+  const [rawHeight, setHeight] = useState<number>(630);
+  const width = clampSize(rawWidth);
+  const height = clampSize(rawHeight);
   const [headingSize, setHeadingSize] = useState<number>(56);
   const [summarySize, setSummarySize] = useState<number>(28);
   const [fontFamily, setFontFamily] = useState<string>('Arial');
@@ -22,61 +23,17 @@ export default function TextToImage() {
   const [textShadowBlur, setTextShadowBlur] = useState<number>(8);
   const [lineSpacing, setLineSpacing] = useState<number>(1.5);
   const [headingSpacing, setHeadingSpacing] = useState<number>(50);
-  const [useApi, setUseApi] = useState<boolean>(false);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
-  const [backgroundImageFile, setBackgroundImageFile] = useState<File | null>(null);
   const [useBackgroundImage, setUseBackgroundImage] = useState<boolean>(false);
   const [backgroundOverlay, setBackgroundOverlay] = useState<boolean>(true);
   const [backgroundOverlayOpacity, setBackgroundOverlayOpacity] = useState<number>(0.3);
   const [useHtmlMode, setUseHtmlMode] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [draggingBg, setDraggingBg] = useState<boolean>(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free Text to Image Generator Online - Create Images from Text | No Signup',
-    description: 'Free text to image generator online - no signup required. Create beautiful images from text instantly with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics. All processing in your browser.',
-    url: '/resources/utility-tools/text-to-image',
-    keywords: [
-      'free text to image generator', 'text to image', 'free text to image generator online', 'text image generator', 'create image from text free',
-      'text image generator', 'create image from text', 'text image maker',
-      'quote image generator', 'social media image maker', 'text graphics', 'image from text',
-      'online text to image', 'free text image generator', 'text design tool', 'free online text to image generator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Text to Image Generator',
-      'description': 'Free online tool to create images from text with customizable colors, fonts, and layouts.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/text-to-image',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Create images from text',
-        'Customizable colors',
-        'Multiple font options',
-        'Heading and summary text',
-        'Custom dimensions',
-        'Text alignment options',
-        'Instant download'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.6',
-        'ratingCount': '1800',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   const fontOptions = [
     'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana',
@@ -105,8 +62,7 @@ export default function TextToImage() {
     { name: 'Light', bg: '#F9FAFB', heading: '#111827', summary: '#6B7280' },
   ];
 
-  const handleBackgroundImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleBackgroundImageSelect = (file: File | undefined) => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
@@ -114,7 +70,6 @@ export default function TextToImage() {
       return;
     }
 
-    setBackgroundImageFile(file);
     setError('');
 
     const reader = new FileReader();
@@ -128,7 +83,6 @@ export default function TextToImage() {
 
   const removeBackgroundImage = () => {
     setBackgroundImage(null);
-    setBackgroundImageFile(null);
     setUseBackgroundImage(false);
     if (backgroundImageInputRef.current) {
       backgroundImageInputRef.current.value = '';
@@ -153,8 +107,11 @@ export default function TextToImage() {
         // Clear canvas
         ctx.clearRect(0, 0, width, height);
         
-        // Draw background image (cover the entire canvas)
-        ctx.drawImage(img, 0, 0, width, height);
+        // Draw background image cropped to cover the canvas (keeps its aspect ratio)
+        const scale = Math.max(width / img.naturalWidth, height / img.naturalHeight);
+        const sw = width / scale;
+        const sh = height / scale;
+        ctx.drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, 0, 0, width, height);
 
         // Add overlay for better text readability if enabled
         if (backgroundOverlay) {
@@ -184,15 +141,14 @@ export default function TextToImage() {
       const dataUrl = canvas.toDataURL('image/png');
       setGeneratedImage(dataUrl);
     }
-  }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing, useBackgroundImage, backgroundImage, backgroundOverlay, backgroundOverlayOpacity]);
+  }, [heading, summary, useHtmlMode, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing, useBackgroundImage, backgroundImage, backgroundOverlay, backgroundOverlayOpacity]);
 
   // Parse HTML to extract text with formatting
   const parseHtmlText = (html: string): Array<{ text: string; bold?: boolean; italic?: boolean }> => {
     if (!html) return [];
     
-    // Create a temporary DOM element to parse HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
+    // DOMParser builds an inert document: scripts and event handlers in the input never run.
+    const tempDiv = new DOMParser().parseFromString(html, 'text/html').body;
     
     const result: Array<{ text: string; bold?: boolean; italic?: boolean }> = [];
     
@@ -305,7 +261,7 @@ export default function TextToImage() {
     // Measure heading text
     ctx.font = `bold ${headingSize}px ${fontFamily}`;
     ctx.textAlign = textAlign;
-    const headingWords = heading.trim() ? heading.split(' ') : [];
+    const headingWords = heading.trim() ? heading.trim().split(/\s+/) : [];
     const headingLines: string[] = [];
     let headingCurrentLine = '';
     
@@ -323,7 +279,7 @@ export default function TextToImage() {
 
     // Measure summary text - handle HTML mode
     type SummaryLine = { text: string; bold?: boolean; italic?: boolean } | string;
-    let summaryLines: SummaryLine[] = [];
+    const summaryLines: SummaryLine[] = [];
     
     if (useHtmlMode && summary.trim()) {
       // Parse HTML and create formatted segments
@@ -388,20 +344,23 @@ export default function TextToImage() {
     } else {
       // Plain text mode
       ctx.font = `${summarySize}px ${fontFamily}`;
-      const summaryWords = summary.trim() ? summary.split(' ') : [];
-      let summaryCurrentLine = '';
-      
-      summaryWords.forEach((word) => {
-        const testLine = summaryCurrentLine + (summaryCurrentLine ? ' ' : '') + word;
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > textAreaWidth && summaryCurrentLine) {
-          summaryLines.push(summaryCurrentLine);
-          summaryCurrentLine = word;
-        } else {
-          summaryCurrentLine = testLine;
-        }
+      // Respect line breaks typed by the user, then word-wrap each line.
+      const paragraphs = summary.trim() ? summary.trim().split('\n') : [];
+      paragraphs.forEach((para) => {
+        const summaryWords = para.split(' ').filter((w) => w.length > 0);
+        let summaryCurrentLine = '';
+        summaryWords.forEach((word) => {
+          const testLine = summaryCurrentLine + (summaryCurrentLine ? ' ' : '') + word;
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > textAreaWidth && summaryCurrentLine) {
+            summaryLines.push(summaryCurrentLine);
+            summaryCurrentLine = word;
+          } else {
+            summaryCurrentLine = testLine;
+          }
+        });
+        summaryLines.push(summaryCurrentLine);
       });
-      if (summaryCurrentLine) summaryLines.push(summaryCurrentLine);
     }
 
     // Check if heading-only mode (no summary)
@@ -435,7 +394,7 @@ export default function TextToImage() {
     const totalTextHeight = headingHeight + (headingLines.length > 0 && summaryLines.length > 0 ? headingSpacing : 0) + summaryHeight;
     
     // Start Y position (centered vertically)
-    let startY = (height - totalTextHeight) / 2;
+    const startY = (height - totalTextHeight) / 2;
     let textY = startY;
 
     // Draw heading with enhanced effects
@@ -601,13 +560,15 @@ export default function TextToImage() {
     ctx.shadowOffsetY = 0;
   };
 
-  const downloadImage = () => {
+  const downloadImage = (format: 'png' | 'jpeg' = 'png') => {
     if (!generatedImage) return;
-
+    const canvas = canvasRef.current;
     const link = document.createElement('a');
-    link.href = generatedImage;
-    link.download = `text-image-${Date.now()}.png`;
+    link.href = format === 'jpeg' && canvas ? canvas.toDataURL('image/jpeg', 0.92) : generatedImage;
+    link.download = `text-image-${width}x${height}.${format === 'jpeg' ? 'jpg' : 'png'}`;
+    document.body.appendChild(link);
     link.click();
+    link.remove();
   };
 
   const applyPresetSize = (preset: typeof presetSizes[0]) => {
@@ -621,107 +582,32 @@ export default function TextToImage() {
     setSummaryColor(preset.summary);
   };
 
-  const generateImageViaApi = async () => {
-    setIsProcessing(true);
-    setError('');
-    
-    try {
-      const formData = new FormData();
-      formData.append('heading', heading);
-      formData.append('summary', summary);
-      formData.append('width', width.toString());
-      formData.append('height', height.toString());
-      formData.append('backgroundColor', backgroundColor);
-      formData.append('headingColor', headingColor);
-      formData.append('summaryColor', summaryColor);
-      formData.append('headingSize', headingSize.toString());
-      formData.append('summarySize', summarySize.toString());
-      formData.append('fontFamily', fontFamily);
-      formData.append('textAlign', textAlign);
-      formData.append('padding', padding.toString());
-      formData.append('useGradient', useGradient.toString());
-      formData.append('gradientColor', gradientColor);
-      formData.append('textShadow', textShadow.toString());
-      formData.append('textShadowBlur', textShadowBlur.toString());
-      formData.append('lineSpacing', lineSpacing.toString());
-      formData.append('headingSpacing', headingSpacing.toString());
-      formData.append('useBackgroundImage', useBackgroundImage.toString());
-      formData.append('backgroundOverlay', backgroundOverlay.toString());
-      formData.append('backgroundOverlayOpacity', backgroundOverlayOpacity.toString());
-      formData.append('useHtmlMode', useHtmlMode.toString());
-      
-      if (useBackgroundImage && backgroundImageFile) {
-        formData.append('backgroundImage', backgroundImageFile);
-      }
-
-      const response = await fetch(`${API_URL}/utility-tools/text-to-image/generate`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to generate image');
-      }
-
-      if (data.success) {
-        setGeneratedImage(data.data.url);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate image via API');
-      setGeneratedImage(null);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   useEffect(() => {
-    if (heading || summary) {
-      if (useApi) {
-        // For API, we'll generate on button click instead of auto
-        return;
-      }
-      // Use setTimeout to debounce and prevent excessive re-renders
-      const timer = setTimeout(() => {
-        generateImage();
-      }, 100);
-      return () => clearTimeout(timer);
+    if (!heading.trim() && !summary.trim()) {
+      setGeneratedImage(null);
+      return;
     }
-  }, [heading, summary, backgroundColor, headingColor, summaryColor, width, height, headingSize, summarySize, fontFamily, textAlign, padding, useGradient, gradientColor, textShadow, textShadowBlur, lineSpacing, headingSpacing, useApi, useBackgroundImage, backgroundImage, backgroundOverlay, backgroundOverlayOpacity, useHtmlMode, generateImage]);
+    // Debounce so dragging sliders stays smooth.
+    const timer = setTimeout(() => {
+      generateImage();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [heading, summary, useHtmlMode, generateImage]);
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          ✨ Free Text to Image Generator Online
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Free text to image generator online - no signup required. Create beautiful images from text instantly with customizable colors, fonts, and layouts. Perfect for social media posts, quotes, and graphics. All processing in your browser.
-        </p>
+    <div>
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Controls */}
           <div className="space-y-6">
-            {/* Processing Mode */}
-            <div className="mb-4">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={useApi}
-                  onChange={(e) => setUseApi(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-                />
-                <span className="text-gray-700">Use API for processing (better for large images)</span>
-              </label>
-            </div>
-
             {/* Text Inputs */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="tti-heading" className="block text-sm font-medium text-gray-700 mb-2">
                 Heading Text
               </label>
               <input
+                id="tti-heading"
                 type="text"
                 value={heading}
                 onChange={(e) => setHeading(e.target.value)}
@@ -732,7 +618,7 @@ export default function TextToImage() {
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="tti-summary" className="block text-sm font-medium text-gray-700">
                   Summary/Description Text
                 </label>
                 <label className="flex items-center space-x-2 cursor-pointer">
@@ -748,6 +634,7 @@ export default function TextToImage() {
               {useHtmlMode ? (
                 <div>
                   <textarea
+                    id="tti-summary"
                     value={summary}
                     onChange={(e) => setSummary(e.target.value)}
                     placeholder="Enter HTML text (supports &lt;b&gt;, &lt;i&gt;, &lt;br&gt;, &lt;p&gt;, &lt;div&gt;)..."
@@ -767,9 +654,10 @@ export default function TextToImage() {
                 </div>
               ) : (
                 <textarea
+                  id="tti-summary"
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
-                  placeholder="Enter your summary or description..."
+                  placeholder="Enter your summary or description (press Enter for a new line)..."
                   rows={4}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
@@ -784,6 +672,7 @@ export default function TextToImage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {presetSizes.map((preset) => (
                   <button
+                    type="button"
                     key={preset.name}
                     onClick={() => applyPresetSize(preset)}
                     className="p-2 text-xs border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
@@ -797,26 +686,30 @@ export default function TextToImage() {
             {/* Custom Dimensions */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="tti-width" className="block text-sm font-medium text-gray-700 mb-2">
                   Width (px)
                 </label>
                 <input
+                  id="tti-width"
                   type="number"
-                  value={width}
-                  onChange={(e) => setWidth(parseInt(e.target.value) || 100)}
+                  value={Number.isNaN(rawWidth) ? '' : rawWidth}
+                  onChange={(e) => setWidth(e.target.valueAsNumber)}
+                  onBlur={() => setWidth(width)}
                   min="100"
                   max="5000"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="tti-height" className="block text-sm font-medium text-gray-700 mb-2">
                   Height (px)
                 </label>
                 <input
+                  id="tti-height"
                   type="number"
-                  value={height}
-                  onChange={(e) => setHeight(parseInt(e.target.value) || 100)}
+                  value={Number.isNaN(rawHeight) ? '' : rawHeight}
+                  onChange={(e) => setHeight(e.target.valueAsNumber)}
+                  onBlur={() => setHeight(height)}
                   min="100"
                   max="5000"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -838,7 +731,6 @@ export default function TextToImage() {
                         setUseBackgroundImage(e.target.checked);
                         if (!e.target.checked) {
                           setBackgroundImage(null);
-                          setBackgroundImageFile(null);
                         }
                       }}
                       className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
@@ -848,14 +740,40 @@ export default function TextToImage() {
                   
                   {useBackgroundImage && (
                     <div className="mt-3 space-y-3">
-                      <div>
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setDraggingBg(true);
+                        }}
+                        onDragLeave={() => setDraggingBg(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDraggingBg(false);
+                          handleBackgroundImageSelect(e.dataTransfer.files?.[0]);
+                        }}
+                        className={`rounded-lg border-2 border-dashed p-3 text-center ${draggingBg ? 'border-blue-500 bg-white' : 'border-blue-200'}`}
+                      >
                         <input
                           ref={backgroundImageInputRef}
                           type="file"
                           accept="image/*"
-                          onChange={handleBackgroundImageSelect}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          className="sr-only"
+                          tabIndex={-1}
+                          aria-label="Background image"
+                          data-testid="image-file-input"
+                          onChange={(e) => {
+                            handleBackgroundImageSelect(e.target.files?.[0]);
+                            e.target.value = '';
+                          }}
                         />
+                        <button
+                          type="button"
+                          onClick={() => backgroundImageInputRef.current?.click()}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                        >
+                          {backgroundImage ? 'Change image' : 'Choose image'}
+                        </button>
+                        <p className="mt-1 text-xs text-gray-600">or drag and drop. It stays on your device and is cropped to fill the canvas.</p>
                       </div>
                       
                       {backgroundImage && (
@@ -866,9 +784,11 @@ export default function TextToImage() {
                             className="w-full h-32 object-cover rounded-lg border border-gray-300"
                           />
                           <button
+                            type="button"
                             onClick={removeBackgroundImage}
                             className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                             title="Remove background image"
+                            aria-label="Remove background image"
                           >
                             ✕
                           </button>
@@ -916,6 +836,7 @@ export default function TextToImage() {
               <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                 {colorPresets.map((preset) => (
                   <button
+                    type="button"
                     key={preset.name}
                     onClick={() => {
                       if (!useBackgroundImage) {
@@ -937,10 +858,10 @@ export default function TextToImage() {
             </div>
 
             {/* Custom Colors */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Background Color {useBackgroundImage && '(disabled when using background image)'}
+                  Background {useBackgroundImage && '(image in use)'}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -961,7 +882,7 @@ export default function TextToImage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Heading Color
+                  Heading
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -980,7 +901,7 @@ export default function TextToImage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Summary Color
+                  Summary
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -1185,23 +1106,23 @@ export default function TextToImage() {
               </div>
             )}
 
-            {useApi && (
-              <button
-                onClick={generateImageViaApi}
-                disabled={(!heading && !summary) || isProcessing}
-                className="w-full mb-3 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
-              >
-                {isProcessing ? '🔄 Generating...' : '✨ Generate via API'}
-              </button>
-            )}
-
             {generatedImage && (
-              <button
-                onClick={downloadImage}
-                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
-              >
-                📥 Download Image
-              </button>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => downloadImage('png')}
+                  className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
+                >
+                  Download PNG
+                </button>
+                <button
+                  type="button"
+                  onClick={() => downloadImage('jpeg')}
+                  className="w-full px-6 py-3 bg-white border border-green-600 text-green-700 rounded-lg hover:bg-green-50 font-medium transition-colors"
+                >
+                  Download JPG
+                </button>
+              </div>
             )}
           </div>
 
@@ -1215,7 +1136,7 @@ export default function TextToImage() {
                 <div className="text-center">
                   <img
                     src={generatedImage}
-                    alt="Generated"
+                    alt="Generated text image preview" data-testid="tti-preview"
                     className="max-w-full max-h-[600px] mx-auto rounded-lg shadow-lg"
                   />
                   <div className="text-sm text-gray-600 mt-2">
@@ -1234,144 +1155,6 @@ export default function TextToImage() {
 
         <canvas ref={canvasRef} className="hidden" />
 
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Text to Image Generator</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our Text to Image Generator is a powerful tool that creates beautiful images from text. Perfect for 
-              creating social media graphics, quote images, announcements, and promotional content. All processing 
-              happens locally in your browser using HTML5 Canvas.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Customize colors, fonts, sizes, alignment, and dimensions to create professional-looking images. 
-              Choose from preset sizes for social media platforms or create custom dimensions.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Create quote images for social media</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Design announcement graphics</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Create promotional banners</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Design social media posts</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Create text-based graphics</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Design headers and covers</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Heading & Summary</h4>
-                  <p className="text-sm text-gray-600">Separate heading and summary text with different styling</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Color Customization</h4>
-                  <p className="text-sm text-gray-600">Customize background, heading, and summary colors</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Size Presets</h4>
-                  <p className="text-sm text-gray-600">Pre-configured sizes for social media platforms</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Typography Control</h4>
-                  <p className="text-sm text-gray-600">Adjust font size, family, and alignment</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What image format is generated?</h4>
-                <p className="text-gray-700 text-sm">
-                  Images are generated in PNG format, which supports transparency and high quality. You can use 
-                  these images anywhere - social media, websites, presentations, etc.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I use custom colors?</h4>
-                <p className="text-gray-700 text-sm">
-                  Yes, you can use any color by entering a hex code (e.g., #FF5733) or using the color picker. 
-                  We also provide color presets for quick selection.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What's the maximum image size?</h4>
-                <p className="text-gray-700 text-sm">
-                  You can create images up to 5,000 × 5,000 pixels. For best results, use the preset sizes 
-                  optimized for each social media platform.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my text stored or uploaded?</h4>
-                <p className="text-gray-700 text-sm">
-                  No, all image generation happens locally in your browser. Your text is never uploaded to any 
-                  server or stored anywhere. Your privacy is guaranteed.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>Use heading for main text and summary for supporting text</li>
-            <li>Choose contrasting colors for better readability</li>
-            <li>Use preset sizes for optimal social media display</li>
-            <li>Center alignment works best for quote images</li>
-            <li>Adjust padding to control text spacing from edges</li>
-            <li>All processing happens in your browser - no uploads required</li>
-          </ul>
-        </div>
       </div>
     </div>
   );

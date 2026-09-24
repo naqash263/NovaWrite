@@ -71,7 +71,7 @@ export default function Contact() {
       "mainEntity": {
         "@type": "Person",
         "name": "Naqash Thaheem",
-        "jobTitle": "Systems Analyst & Automation Specialist",
+        "jobTitle": "Technical Project Manager & AI Automation Specialist",
         "email": "contact@naqashthaheem.com",
         "telephone": "+971-XX-XXX-XXXX",
         "address": {

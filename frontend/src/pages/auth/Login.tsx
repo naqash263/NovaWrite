@@ -105,13 +105,8 @@ export default function Login() {
       
       // Show success popup briefly, then redirect
       setShowSuccess(true);
-      setTimeout(() => {
-        navigate(from, { replace: true });
-        // Small delay to ensure navigation completes before reload
-        setTimeout(() => {
-          window.location.reload(); // Refresh to show user name
-        }, 100);
-      }, 1500);
+      // Auth state is shared app-wide, so the header updates without a reload.
+      setTimeout(() => navigate(from, { replace: true }), 1500);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Login failed. Please try again.';
       const isEmailNotVerified = err.response?.data?.email_verification_required;

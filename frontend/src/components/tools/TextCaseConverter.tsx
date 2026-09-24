@@ -1,304 +1,206 @@
-import { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
+import { useMemo, useState } from 'react';
 
-type CaseType = 
-  | 'lowercase' 
-  | 'uppercase' 
-  | 'title' 
-  | 'sentence' 
-  | 'camel' 
-  | 'pascal' 
-  | 'snake' 
-  | 'kebab' 
-  | 'screaming-snake' 
-  | 'alternating' 
+type CaseType =
+  | 'sentence'
+  | 'lower'
+  | 'upper'
+  | 'capitalized'
+  | 'title'
+  | 'camel'
+  | 'pascal'
+  | 'snake'
+  | 'kebab'
+  | 'constant'
+  | 'dot'
+  | 'alternating'
   | 'inverse';
 
+const SMALL_WORDS = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'nor', 'for', 'so', 'yet', 'as', 'at', 'by', 'in', 'of', 'off', 'on', 'per', 'to', 'up', 'via', 'vs']);
+
+const cap = (w: string) => (w ? w.charAt(0).toLocaleUpperCase() + w.slice(1) : w);
+
+/** Splits an identifier or phrase into words, including camelCase / PascalCase boundaries. */
+function splitWords(line: string): string[] {
+  return line
+    .replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, '$1 $2')
+    .replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, '$1 $2')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+}
+
+const perLine = (text: string, fn: (line: string) => string) => text.split('\n').map(fn).join('\n');
+
+function convert(text: string, type: CaseType): string {
+  switch (type) {
+    case 'lower':
+      return text.toLocaleLowerCase();
+    case 'upper':
+      return text.toLocaleUpperCase();
+    case 'sentence':
+      return text
+        .toLocaleLowerCase()
+        .replace(/(^\s*|[.!?]\s+|\n\s*)(\p{L})/gu, (_, pre: string, ch: string) => pre + ch.toLocaleUpperCase())
+        .replace(/\bi\b/g, 'I');
+    case 'capitalized':
+      return text.toLocaleLowerCase().replace(/[\p{L}\p{N}]+(?:['’][\p{L}]+)?/gu, cap);
+    case 'title':
+      return perLine(text, (line) => {
+        const re = /[\p{L}\p{N}]+(?:['’][\p{L}]+)?/gu;
+        const lower = line.toLocaleLowerCase();
+        const total = (lower.match(re) ?? []).length;
+        let i = -1;
+        return lower.replace(re, (word) => {
+          i++;
+          return SMALL_WORDS.has(word) && i !== 0 && i !== total - 1 ? word : cap(word);
+        });
+      });
+    case 'camel':
+      return perLine(text, (l) => splitWords(l).map((w, i) => (i ? cap(w.toLocaleLowerCase()) : w.toLocaleLowerCase())).join(''));
+    case 'pascal':
+      return perLine(text, (l) => splitWords(l).map((w) => cap(w.toLocaleLowerCase())).join(''));
+    case 'snake':
+      return perLine(text, (l) => splitWords(l).map((w) => w.toLocaleLowerCase()).join('_'));
+    case 'kebab':
+      return perLine(text, (l) => splitWords(l).map((w) => w.toLocaleLowerCase()).join('-'));
+    case 'constant':
+      return perLine(text, (l) => splitWords(l).map((w) => w.toLocaleUpperCase()).join('_'));
+    case 'dot':
+      return perLine(text, (l) => splitWords(l).map((w) => w.toLocaleLowerCase()).join('.'));
+    case 'alternating': {
+      let i = 0;
+      return Array.from(text)
+        .map((ch) => (/\p{L}/u.test(ch) ? (i++ % 2 ? ch.toLocaleUpperCase() : ch.toLocaleLowerCase()) : ch))
+        .join('');
+    }
+    case 'inverse':
+      return Array.from(text)
+        .map((ch) => (ch === ch.toLocaleUpperCase() ? ch.toLocaleLowerCase() : ch.toLocaleUpperCase()))
+        .join('');
+  }
+}
+
+const OPTIONS: { value: CaseType; label: string; example: string }[] = [
+  { value: 'sentence', label: 'Sentence case', example: 'The quick brown fox.' },
+  { value: 'lower', label: 'lower case', example: 'the quick brown fox' },
+  { value: 'upper', label: 'UPPER CASE', example: 'THE QUICK BROWN FOX' },
+  { value: 'capitalized', label: 'Capitalized Case', example: 'The Quick Brown Fox' },
+  { value: 'title', label: 'Title Case', example: 'The Fox and the Hound' },
+  { value: 'camel', label: 'camelCase', example: 'quickBrownFox' },
+  { value: 'pascal', label: 'PascalCase', example: 'QuickBrownFox' },
+  { value: 'snake', label: 'snake_case', example: 'quick_brown_fox' },
+  { value: 'kebab', label: 'kebab-case', example: 'quick-brown-fox' },
+  { value: 'constant', label: 'CONSTANT_CASE', example: 'QUICK_BROWN_FOX' },
+  { value: 'dot', label: 'dot.case', example: 'quick.brown.fox' },
+  { value: 'alternating', label: 'aLtErNaTiNg', example: 'tHe QuIcK' },
+  { value: 'inverse', label: 'iNVERSE cASE', example: 'swap upper/lower' },
+];
+
 export default function TextCaseConverter() {
-  const [inputText, setInputText] = useState<string>('');
-  const [outputText, setOutputText] = useState<string>('');
-  const [selectedCase, setSelectedCase] = useState<CaseType>('lowercase');
+  const [input, setInput] = useState('');
+  const [type, setType] = useState<CaseType>('sentence');
+  const [status, setStatus] = useState('');
+  const output = useMemo(() => (input ? convert(input, type) : ''), [input, type]);
+  const label = OPTIONS.find((o) => o.value === type)!.label;
 
-  useSEO({
-    title: 'Free Text Case Converter Online - Uppercase, Lowercase, camelCase Converter | No Signup',
-    description: 'Free text case converter online - no signup required. Convert text to uppercase, lowercase, title case, camelCase, PascalCase, snake_case, kebab-case, and more. Instant conversion with copy to clipboard. Perfect for developers and writers.',
-    url: '/resources/utility-tools/text-case-converter',
-    keywords: [
-      'free text case converter online', 'text case converter', 'free text case converter', 'text case converter online',
-      'case converter online', 'uppercase lowercase converter', 'camelCase converter',
-      'snake_case converter', 'kebab-case converter', 'text case tool', 'case changer',
-      'text transformer', 'string case converter', 'online case converter', 'free case converter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Text Case Converter',
-      'description': 'Free online text case converter. Convert text to various case formats.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/text-case-converter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Uppercase, lowercase, title case',
-        'camelCase, PascalCase',
-        'snake_case, kebab-case, SCREAMING_SNAKE_CASE',
-        'Sentence case, alternating case',
-        'Copy to clipboard'
-      ]
-    }
-  });
-
-  const convertCase = (text: string, caseType: CaseType): string => {
-    if (!text) return '';
-
-    switch (caseType) {
-      case 'lowercase':
-        return text.toLowerCase();
-      
-      case 'uppercase':
-        return text.toUpperCase();
-      
-      case 'title':
-        return text
-          .toLowerCase()
-          .split(' ')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-      
-      case 'sentence':
-        return text
-          .toLowerCase()
-          .split('. ')
-          .map(sentence => sentence.charAt(0).toUpperCase() + sentence.slice(1))
-          .join('. ');
-      
-      case 'camel':
-        return text
-          .toLowerCase()
-          .replace(/[^a-z0-9]+(.)/g, (_, char) => char.toUpperCase())
-          .replace(/^[A-Z]/, char => char.toLowerCase());
-      
-      case 'pascal':
-        return text
-          .toLowerCase()
-          .replace(/[^a-z0-9]+(.)/g, (_, char) => char.toUpperCase())
-          .replace(/^[a-z]/, char => char.toUpperCase());
-      
-      case 'snake':
-        return text
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '_')
-          .replace(/^_+|_+$/g, '');
-      
-      case 'kebab':
-        return text
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '');
-      
-      case 'screaming-snake':
-        return text
-          .toUpperCase()
-          .replace(/[^A-Z0-9]+/g, '_')
-          .replace(/^_+|_+$/g, '');
-      
-      case 'alternating':
-        return text
-          .split('')
-          .map((char, index) => 
-            index % 2 === 0 ? char.toLowerCase() : char.toUpperCase()
-          )
-          .join('');
-      
-      case 'inverse':
-        return text
-          .split('')
-          .map(char => {
-            if (char === char.toUpperCase()) {
-              return char.toLowerCase();
-            } else if (char === char.toLowerCase()) {
-              return char.toUpperCase();
-            }
-            return char;
-          })
-          .join('');
-      
-      default:
-        return text;
-    }
-  };
-
-  useEffect(() => {
-    if (inputText) {
-      setOutputText(convertCase(inputText, selectedCase));
-    } else {
-      setOutputText('');
-    }
-  }, [inputText, selectedCase]);
-
-  const copyToClipboard = async (text: string) => {
+  const copy = async () => {
     try {
-      await navigator.clipboard.writeText(text);
-      alert('Text copied to clipboard!');
-    } catch (err) {
-      alert('Failed to copy text. Please select and copy manually.');
+      await navigator.clipboard.writeText(output);
+      setStatus('Converted text copied to clipboard.');
+    } catch {
+      setStatus('Copy failed. Select the text and copy it manually.');
     }
   };
 
-  const caseOptions: { value: CaseType; label: string; description: string }[] = [
-    { value: 'lowercase', label: 'lowercase', description: 'all lowercase letters' },
-    { value: 'uppercase', label: 'UPPERCASE', description: 'ALL UPPERCASE LETTERS' },
-    { value: 'title', label: 'Title Case', description: 'First Letter Of Each Word' },
-    { value: 'sentence', label: 'Sentence case', description: 'First letter of sentence' },
-    { value: 'camel', label: 'camelCase', description: 'firstWordLowercase' },
-    { value: 'pascal', label: 'PascalCase', description: 'FirstWordUppercase' },
-    { value: 'snake', label: 'snake_case', description: 'words_separated_by_underscores' },
-    { value: 'kebab', label: 'kebab-case', description: 'words-separated-by-hyphens' },
-    { value: 'screaming-snake', label: 'SCREAMING_SNAKE_CASE', description: 'WORDS_IN_UPPERCASE_WITH_UNDERSCORES' },
-    { value: 'alternating', label: 'AlTeRnAtInG cAsE', description: 'alternating upper and lower' },
-    { value: 'inverse', label: 'iNVERSE cASE', description: 'invert current case' },
-  ];
+  const download = () => {
+    const url = URL.createObjectURL(new Blob([output], { type: 'text/plain;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `converted-${type}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Text Case Converter Online</h1>
-        <p className="text-gray-600 mb-6">
-          Free text case converter online - no signup required. Convert text between different case formats instantly. Perfect for developers, writers, and content creators. Supports 11+ case formats including camelCase, snake_case, and kebab-case.
-        </p>
-
-        <div className="space-y-6">
-          {/* Case Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Select Case Format
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {caseOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setSelectedCase(option.value)}
-                  className={`p-3 rounded-lg border-2 text-left transition-colors ${
-                    selectedCase === option.value
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-semibold text-gray-900">{option.label}</div>
-                  <div className="text-xs text-gray-500 mt-1">{option.description}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Input Text */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Input Text
-            </label>
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Enter text to convert..."
-              className="w-full h-32 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>{inputText.length} characters</span>
-              <button
-                onClick={() => setInputText('')}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-
-          {/* Output Text */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Converted Text ({caseOptions.find(o => o.value === selectedCase)?.label})
-              </label>
-              <button
-                onClick={() => copyToClipboard(outputText)}
-                disabled={!outputText}
-                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
-                Copy
-              </button>
-            </div>
-            <textarea
-              value={outputText}
-              readOnly
-              placeholder="Converted text will appear here..."
-              className="w-full h-32 p-4 border border-gray-300 rounded-lg resize-none bg-gray-50 font-mono"
-            />
-            <div className="text-xs text-gray-500 mt-1">
-              {outputText.length} characters
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setInputText('Hello World Example Text')}
-              className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-            >
-              Load Example
-            </button>
-            <button
-              onClick={() => {
-                setInputText(outputText);
-                setOutputText('');
-              }}
-              disabled={!outputText}
-              className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
-            >
-              Use Output as Input
+    <div className="rounded-lg bg-white p-4 shadow-lg sm:p-6">
+      <div className="space-y-6">
+        <div>
+          <label htmlFor="case-input" className="mb-2 block text-sm font-medium text-gray-700">
+            Text to convert
+          </label>
+          <textarea
+            id="case-input"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type or paste your text…"
+            className="h-32 w-full resize-y rounded-lg border border-gray-300 p-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="mt-1 flex justify-between text-xs text-gray-500">
+            <span>
+              {input.length.toLocaleString()} characters · {input ? input.split('\n').length : 0} lines
+            </span>
+            <button type="button" onClick={() => setInput('')} className="text-blue-700 hover:underline">
+              Clear
             </button>
           </div>
         </div>
-      </div>
 
-      {/* SEO Content */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Text Case Converter</h2>
-        <div className="prose max-w-none">
-          <p className="text-gray-700 mb-4">
-            Text case converter helps you transform text between different case formats instantly. 
-            Whether you're coding, writing, or formatting content, this tool makes case conversion quick and easy.
+        <fieldset>
+          <legend className="mb-3 text-sm font-medium text-gray-700">Convert to</legend>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {OPTIONS.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                aria-pressed={type === o.value}
+                onClick={() => setType(o.value)}
+                className={`min-w-0 rounded-lg border-2 p-2 text-left transition-colors ${
+                  type === o.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <span className="block truncate font-semibold text-gray-900">{o.label}</span>
+                <span className="block truncate text-xs text-gray-500">{o.example}</span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        <div>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <label htmlFor="case-output" className="block text-sm font-medium text-gray-700">
+              Result ({label})
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={copy}
+                disabled={!output}
+                className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                onClick={download}
+                disabled={!output}
+                className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Download .txt
+              </button>
+            </div>
+          </div>
+          <textarea
+            id="case-output"
+            data-testid="case-output"
+            value={output}
+            readOnly
+            placeholder="The converted text appears here as you type."
+            className="h-32 w-full resize-y rounded-lg border border-gray-300 bg-gray-50 p-3 font-mono text-sm"
+          />
+          <p aria-live="polite" className="mt-1 min-h-[1.25rem] text-sm text-green-700">
+            {status}
           </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported Case Formats</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>lowercase</strong> - All letters in lowercase</li>
-            <li><strong>UPPERCASE</strong> - All letters in uppercase</li>
-            <li><strong>Title Case</strong> - First letter of each word capitalized</li>
-            <li><strong>Sentence case</strong> - First letter of sentence capitalized</li>
-            <li><strong>camelCase</strong> - First word lowercase, subsequent words capitalized</li>
-            <li><strong>PascalCase</strong> - First letter of each word capitalized</li>
-            <li><strong>snake_case</strong> - Words separated by underscores</li>
-            <li><strong>kebab-case</strong> - Words separated by hyphens</li>
-            <li><strong>SCREAMING_SNAKE_CASE</strong> - Uppercase with underscores</li>
-            <li><strong>AlTeRnAtInG cAsE</strong> - Alternating upper and lower case</li>
-            <li><strong>iNVERSE cASE</strong> - Invert the current case</li>
-          </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Convert variable names for programming (camelCase, snake_case)</li>
-            <li>Format titles and headings (Title Case)</li>
-            <li>Normalize text data (lowercase, uppercase)</li>
-            <li>Create CSS class names (kebab-case)</li>
-            <li>Format API endpoints and URLs</li>
-            <li>Prepare text for different coding conventions</li>
-          </ul>
         </div>
       </div>
     </div>
   );
 }
-

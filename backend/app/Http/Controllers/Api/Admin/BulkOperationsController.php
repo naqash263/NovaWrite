@@ -92,7 +92,13 @@ class BulkOperationsController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $updatedCount = User::whereIn('id', $request->ids)
+        // Never change the requesting admin's own role in a bulk action
+        $ids = array_values(array_filter($request->ids, fn ($id) => (int) $id !== (int) auth()->id()));
+        if (empty($ids)) {
+            return response()->json(['message' => 'You cannot change your own role'], 422);
+        }
+
+        $updatedCount = User::whereIn('id', $ids)
             ->update(['role' => $request->role]);
 
         return response()->json([

@@ -61,8 +61,10 @@ class EmailTemplate extends Model
 
         // Replace variables in subject and body
         foreach ($variables as $key => $value) {
-            $subject = str_replace("{{$key}}", $value, $subject);
-            $body = str_replace("{{$key}}", $value, $body);
+            // Single quotes: "{{$key}}" would interpolate to "{name}" and leave stray braces.
+            $placeholder = '{{' . $key . '}}';
+            $subject = str_replace($placeholder, (string) $value, $subject);
+            $body = str_replace($placeholder, (string) $value, $body);
         }
 
         return [

@@ -1,30 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Check, FileText, ImageOff, Pencil, Plus, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import apiClient from '../../api/axios';
 import Pagination from '../../components/Pagination';
 import EnhancedImageUpload from '../../components/EnhancedImageUpload';
-import AdvancedFilters from '../../components/AdvancedFilters';
 import RichTextEditor from '../../components/RichTextEditor';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useSEO } from '../../utils/seo';
+import { useToast } from '../../hooks/use-toast';
+import { useConfirm } from '../../hooks/use-confirm';
+import { AdminCard, AdminPageHeader, Badge, EmptyState, ErrorState, Field, IconButton, LoadingState, Modal, SearchInput, TableShell, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage, asList } from '../../components/admin/utils';
 
-interface Post {
+type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'draft';
+
+interface Tag {
   id: number;
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string;
-  featured_image?: string;
-  is_published: boolean;
-  category_id: number;
-  tags?: Tag[];
-  created_at: string;
-  updated_at: string;
-  approval_status: 'pending' | 'approved' | 'rejected' | 'draft';
-  rejection_reason?: string;
-  approved_by?: number;
-  approved_at?: string;
-  meta_description?: string;
-  meta_keywords?: string;
+  name: string;
+  slug?: string;
+  description?: string | null;
+  color?: string | null;
 }
 
 interface Category {
@@ -32,878 +27,618 @@ interface Category {
   name: string;
 }
 
-interface Tag {
+interface Post {
   id: number;
-  name: string;
+  title: string;
   slug: string;
-  description?: string;
-  color: string;
+  content?: string | null;
+  excerpt?: string | null;
+  featured_image?: string | null;
+  is_published: boolean;
+  category_id: number | null;
+  category?: Category | null;
+  tags?: Tag[] | null;
+  created_at?: string;
+  updated_at?: string;
+  approval_status?: ApprovalStatus | null;
+  rejection_reason?: string | null;
+  approved_by?: number | null;
+  approved_at?: string | null;
+  meta_description?: string | null;
+  meta_keywords?: string | null;
 }
 
-export default function Posts() {
-  const { user } = useAuthContext();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    search: '',
-    category: '',
-    status: '',
-    approval_status: '',
-    tags: [] as string[],
-    dateFrom: '',
-    dateTo: ''
-  });
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    lastPage: 1,
-    total: 0,
-    perPage: 10
-  });
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    excerpt: '',
-    featured_image: '',
-    category_id: '',
-    is_published: false,
-    meta_description: '',
-    meta_keywords: '',
-    tags: [] as number[],
-  });
+interface PostsPage {
+  posts: Post[];
+  currentPage: number;
+  lastPage: number;
+  total: number;
+  perPage: number;
+}
 
-  // Helper function to process content for better HTML and line break handling
-  const processContent = (content: string) => {
-    if (!content) return '';
-    
-    // Check content size to prevent 414 errors
-    const maxContentLength = 1000000; // 1MB limit
-    if (content.length > maxContentLength) {
-      console.warn('Content is very large:', content.length, 'characters');
-      // Truncate if too large, but this shouldn't happen in normal usage
-      content = content.substring(0, maxContentLength) + '... [Content truncated due to size]';
-    }
-    
-    // Convert line breaks to proper HTML breaks
-    let processedContent = content
-      .replace(/\n\n/g, '\n\n') // Preserve double line breaks for paragraphs
-      .replace(/\n/g, '<br>'); // Convert single line breaks to <br> tags
-    
-    // Ensure proper HTML structure
-    if (!processedContent.includes('<p>') && !processedContent.includes('<div>')) {
-      // Wrap in paragraph tags if no block elements exist
-      processedContent = `<p>${processedContent}</p>`;
-    }
-    
-    return processedContent;
+const PER_PAGE = 10;
+const MAX_CONTENT_LENGTH = 1000000;
+
+const emptyForm = {
+  title: '',
+  content: '',
+  excerpt: '',
+  featured_image: '',
+  category_id: '',
+  is_published: false,
+  meta_description: '',
+  meta_keywords: '',
+  tags: [] as number[],
+};
+
+const emptyFilters = { search: '', category: '', status: '', approval_status: '', tags: [] as string[], dateFrom: '', dateTo: '' };
+
+type FormState = typeof emptyForm;
+type FormErrors = Partial<Record<keyof FormState, string>>;
+
+const primaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const secondaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-60';
+const dangerBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+
+const approvalTone: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = { approved: 'success', pending: 'warning', rejected: 'danger', draft: 'neutral' };
+
+/** Converts editor line breaks to HTML (the public blog renders post content as HTML). */
+function processContent(input: string) {
+  if (!input) return '';
+  let content = input;
+  if (content.length > MAX_CONTENT_LENGTH) {
+    content = `${content.substring(0, MAX_CONTENT_LENGTH)}... [Content truncated due to size]`;
+  }
+  let processed = content.replace(/\n/g, '<br>');
+  if (!processed.includes('<p>') && !processed.includes('<div>')) processed = `<p>${processed}</p>`;
+  return processed;
+}
+
+function serverErrors(error: unknown): FormErrors {
+  const errors = (error as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors ?? {};
+  const result: FormErrors = {};
+  for (const [key, messages] of Object.entries(errors)) {
+    const field = key.split('.')[0] as keyof FormState;
+    if (!result[field]) result[field] = messages?.[0];
+  }
+  return result;
+}
+
+function saveErrorMessage(error: unknown) {
+  const status = (error as { response?: { status?: number } })?.response?.status;
+  if (status === 413 || status === 414) return 'The post is too large. Please reduce the content size and try again.';
+  return apiErrorMessage(error, 'An error occurred while saving the post. Please try again.');
+}
+
+async function fetchPosts(page: number): Promise<PostsPage> {
+  const { data } = await apiClient.get(`/admin/posts?page=${page}&per_page=${PER_PAGE}`);
+  const meta = (data?.meta ?? data ?? {}) as { current_page?: number; last_page?: number; total?: number; per_page?: number };
+  const posts = asList<Post>(data);
+  return {
+    posts,
+    currentPage: Number(meta.current_page) || page,
+    lastPage: Number(meta.last_page) || 1,
+    total: Number(meta.total) || posts.length,
+    perPage: Number(meta.per_page) || PER_PAGE,
   };
+}
 
-  useSEO({ title: 'Manage Posts | Admin' });
+const formatDate = (value?: string) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+};
 
-  useEffect(() => {
-    fetchPosts();
-    fetchCategories();
-    fetchTags();
-  }, []);
+export default function Posts() {
+  useSEO({ title: 'Manage Posts | Admin', robots: 'noindex, nofollow' });
+  const { user } = useAuthContext();
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
+  const { confirm } = useConfirm();
 
-  // Filter configuration
-  const filterConfigs = [
-    {
-      name: 'category',
-      label: 'Category',
-      type: 'select' as const,
-      options: (categories || []).map(cat => ({ value: cat.id.toString(), label: cat.name }))
-    },
-    {
-      name: 'status',
-      label: 'Status',
-      type: 'select' as const,
-      options: [
-        { value: 'published', label: 'Published' },
-        { value: 'draft', label: 'Draft' }
-      ]
-    },
-    {
-      name: 'approval_status',
-      label: 'Approval Status',
-      type: 'select' as const,
-      options: [
-        { value: 'pending', label: 'Pending' },
-        { value: 'approved', label: 'Approved' },
-        { value: 'rejected', label: 'Rejected' },
-        { value: 'draft', label: 'Draft' }
-      ]
-    },
-    {
-      name: 'tags',
-      label: 'Tags',
-      type: 'multiselect' as const,
-      options: (tags || []).map(tag => ({ value: tag.id.toString(), label: tag.name }))
-    },
-    {
-      name: 'dateFrom',
-      label: 'From Date',
-      type: 'date' as const
-    },
-    {
-      name: 'dateTo',
-      label: 'To Date',
-      type: 'date' as const
-    }
-  ];
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState(emptyFilters);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<FormState>(emptyForm);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [rejecting, setRejecting] = useState<Post | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
-  // Apply filters
-  useEffect(() => {
-    let filtered = [...posts];
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => setFormData((prev) => ({ ...prev, [key]: value }));
 
-    // Search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(post =>
-        post.title.toLowerCase().includes(searchLower) ||
-        post.content.toLowerCase().includes(searchLower) ||
-        post.excerpt.toLowerCase().includes(searchLower)
-      );
-    }
+  const postsQuery = useQuery({ queryKey: ['admin-posts', page], queryFn: () => fetchPosts(page), placeholderData: (prev) => prev });
+  const { data: categories = [] } = useQuery({
+    queryKey: ['admin-categories'],
+    queryFn: async () => asList<Category>((await apiClient.get('/categories')).data),
+  });
+  const { data: tags = [] } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => asList<Tag>((await apiClient.get('/tags')).data),
+  });
 
-    // Category filter
-    if (filters.category) {
-      filtered = filtered.filter(post => post.category_id.toString() === filters.category);
-    }
+  const posts = useMemo(() => postsQuery.data?.posts ?? [], [postsQuery.data]);
+  const categoryName = (post: Post) => post.category?.name ?? categories.find((c) => c.id === post.category_id)?.name;
 
-    // Status filter
-    if (filters.status) {
-      filtered = filtered.filter(post => 
-        filters.status === 'published' ? post.is_published : !post.is_published
-      );
-    }
+  const filtersActive = Boolean(filters.search || filters.category || filters.status || filters.approval_status || filters.tags.length || filters.dateFrom || filters.dateTo);
 
-    // Approval status filter
-    if (filters.approval_status) {
-      filtered = filtered.filter(post => post.approval_status === filters.approval_status);
-    }
-
-    // Tags filter
-    if (filters.tags.length > 0) {
-      filtered = filtered.filter(post =>
-        post.tags?.some(tag => filters.tags.includes(tag.id.toString()))
-      );
-    }
-
-    // Date filters
-    if (filters.dateFrom) {
-      filtered = filtered.filter(post => {
-        const postDate = new Date(post.created_at || post.updated_at);
-        const fromDate = new Date(filters.dateFrom);
-        return postDate >= fromDate;
-      });
-    }
-
-    if (filters.dateTo) {
-      filtered = filtered.filter(post => {
-        const postDate = new Date(post.created_at || post.updated_at);
-        const toDate = new Date(filters.dateTo);
-        return postDate <= toDate;
-      });
-    }
-
-    setFilteredPosts(filtered);
+  const filteredPosts = useMemo(() => {
+    const term = filters.search.trim().toLowerCase();
+    return posts.filter((post) => {
+      if (term && ![post.title, post.content, post.excerpt].some((v) => typeof v === 'string' && v.toLowerCase().includes(term))) return false;
+      if (filters.category && String(post.category_id ?? '') !== filters.category) return false;
+      if (filters.status && (filters.status === 'published') !== Boolean(post.is_published)) return false;
+      if (filters.approval_status && post.approval_status !== filters.approval_status) return false;
+      if (filters.tags.length && !asList<Tag>(post.tags).some((tag) => filters.tags.includes(String(tag.id)))) return false;
+      const date = new Date(post.created_at || post.updated_at || '');
+      if (filters.dateFrom && !(date >= new Date(filters.dateFrom))) return false;
+      if (filters.dateTo && !(date <= new Date(`${filters.dateTo}T23:59:59`))) return false;
+      return true;
+    });
   }, [posts, filters]);
 
-  const fetchPosts = async (page: number = 1) => {
-    setLoading(true);
-    try {
-      const response = await apiClient.get(`/admin/posts?page=${page}&per_page=${pagination.perPage}`);
-      setPosts(response.data.data || []);
-      setPagination({
-        currentPage: response.data.current_page || 1,
-        lastPage: response.data.last_page || 1,
-        total: response.data.total || 0,
-        perPage: response.data.per_page || 10
-      });
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-    } finally {
-      setLoading(false);
-    }
+  const invalidatePosts = () => {
+    queryClient.invalidateQueries({ queryKey: ['admin-posts'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
   };
 
-  const fetchCategories = async () => {
-    try {
-      const response = await apiClient.get('/categories');
-      // Handle both old format (array) and new format (object with data property)
-      const categoriesData = Array.isArray(response.data) ? response.data : response.data.data || [];
-      setCategories(categoriesData);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      setCategories([]); // Ensure categories is always an array
-    }
-  };
+  const saveMutation = useMutation({
+    mutationFn: async (data: Record<string, unknown>) =>
+      (editingId ? await apiClient.put(`/admin/posts/${editingId}`, data) : await apiClient.post('/admin/posts', data)).data,
+    onSuccess: () => {
+      addToast({ type: 'success', title: editingId ? 'Post updated' : 'Post created' });
+      invalidatePosts();
+      closeModal();
+    },
+    onError: (err) => {
+      setErrors(serverErrors(err));
+      addToast({ type: 'error', title: 'Could not save post', description: saveErrorMessage(err) });
+    },
+  });
 
-  const fetchTags = async () => {
-    try {
-      const response = await apiClient.get('/tags');
-      // Handle both old format (array) and new format (object with data property)
-      const tagsData = Array.isArray(response.data) ? response.data : response.data.data || [];
-      setTags(tagsData);
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-      // Fallback to default tags if API fails
-      setTags([
-        { id: 1, name: 'AI', color: '#3B82F6', slug: 'ai', description: 'Artificial Intelligence' },
-        { id: 2, name: 'Automation', color: '#10B981', slug: 'automation', description: 'Process Automation' },
-        { id: 3, name: 'Technology', color: '#8B5CF6', slug: 'technology', description: 'General Technology' },
-        { id: 4, name: 'Programming', color: '#F59E0B', slug: 'programming', description: 'Programming and Development' },
-        { id: 5, name: 'Machine Learning', color: '#EF4444', slug: 'machine-learning', description: 'Machine Learning' },
-        { id: 6, name: 'Data Science', color: '#06B6D4', slug: 'data-science', description: 'Data Science and Analytics' },
-        { id: 7, name: 'Web Development', color: '#84CC16', slug: 'web-development', description: 'Web Development' },
-        { id: 8, name: 'Mobile', color: '#F97316', slug: 'mobile', description: 'Mobile Development' },
-        { id: 9, name: 'Cloud', color: '#6366F1', slug: 'cloud', description: 'Cloud Computing' },
-        { id: 10, name: 'Security', color: '#DC2626', slug: 'security', description: 'Cybersecurity' },
-      ]);
-    }
-  };
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiClient.delete(`/admin/posts/${id}`),
+    onSuccess: () => {
+      addToast({ type: 'success', title: 'Post deleted' });
+      invalidatePosts();
+    },
+    onError: (err) => addToast({ type: 'error', title: 'Could not delete post', description: apiErrorMessage(err) }),
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const data = { 
-        ...formData, 
-        category_id: Number(formData.category_id),
-        content: processContent(formData.content) // Process content for better HTML handling
-      };
-      
-      // Log data size for debugging
-      const dataSize = JSON.stringify(data).length;
-      console.log('Submitting post data, size:', dataSize, 'characters');
-      
-      if (editingId) {
-        await apiClient.put(`/admin/posts/${editingId}`, data);
-      } else {
-        await apiClient.post('/admin/posts', data);
-      }
-      resetForm();
-      fetchPosts(pagination.currentPage);
-    } catch (error: any) {
-      console.error('Error saving post:', error);
-      
-      // Provide specific error messages
-      if (error.response?.status === 414) {
-        alert('Content is too large. Please reduce the content size and try again.');
-      } else if (error.response?.status === 413) {
-        alert('Request is too large. Please reduce the content size and try again.');
-      } else if (error.message) {
-        alert(`Error: ${error.message}`);
-      } else {
-        alert('An error occurred while saving the post. Please try again.');
-      }
-    }
-  };
+  const reviewMutation = useMutation({
+    mutationFn: ({ post, approve, reason }: { post: Post; approve: boolean; reason?: string }) =>
+      apiClient.put(`/posts/${post.id}`, {
+        title: post.title,
+        content: post.content,
+        excerpt: post.excerpt,
+        featured_image: post.featured_image,
+        category_id: post.category_id,
+        is_published: post.is_published,
+        ...(approve
+          ? { approval_status: 'approved', approved_by: user?.id || 1, approved_at: new Date().toISOString() }
+          : { approval_status: 'rejected', rejection_reason: reason ?? '' }),
+        meta_description: post.meta_description || '',
+        meta_keywords: post.meta_keywords || '',
+      }),
+    onSuccess: (_data, { approve }) => {
+      addToast({ type: 'success', title: approve ? 'Post approved' : 'Post rejected' });
+      setRejecting(null);
+      setRejectReason('');
+      invalidatePosts();
+    },
+    onError: (err) => addToast({ type: 'error', title: 'Could not update approval', description: apiErrorMessage(err) }),
+  });
 
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      content: '',
-      excerpt: '',
-      featured_image: '',
-      category_id: '',
-      is_published: false,
-      meta_description: '',
-      meta_keywords: '',
-      tags: [],
-    });
+  const openCreate = () => {
     setEditingId(null);
-    setShowForm(false);
+    setFormData(emptyForm);
+    setErrors({});
+    setModalOpen(true);
   };
 
-  const handleEdit = (post: any) => {
+  const openEdit = (post: Post) => {
     setFormData({
-      title: post.title,
-      content: post.content,
-      excerpt: post.excerpt,
-      featured_image: post.featured_image || '',
-      category_id: String(post.category_id),
-      is_published: post.is_published,
-      meta_description: post.meta_description || '',
-      meta_keywords: post.meta_keywords || '',
-      tags: post.tags ? post.tags.map((tag: Tag) => tag.id) : [],
+      title: post.title ?? '',
+      content: post.content ?? '',
+      excerpt: post.excerpt ?? '',
+      featured_image: post.featured_image ?? '',
+      category_id: post.category_id ? String(post.category_id) : '',
+      is_published: Boolean(post.is_published),
+      meta_description: post.meta_description ?? '',
+      meta_keywords: post.meta_keywords ?? '',
+      tags: asList<Tag>(post.tags).map((tag) => tag.id),
     });
     setEditingId(post.id);
-    setShowForm(true);
+    setErrors({});
+    setModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this post?')) {
-      try {
-        await apiClient.delete(`/admin/posts/${id}`);
-        fetchPosts(pagination.currentPage);
-      } catch (error) {
-        console.error('Error deleting post:', error);
-      }
-    }
+  function closeModal() {
+    setModalOpen(false);
+    setEditingId(null);
+    setErrors({});
+  }
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const next: FormErrors = {};
+    if (!formData.title.trim()) next.title = 'Title is required.';
+    if (!formData.category_id) next.category_id = 'Select a category.';
+    if (!formData.content.trim()) next.content = 'Content is required.';
+    if (formData.meta_keywords.length > 255) next.meta_keywords = 'Meta keywords must be 255 characters or fewer.';
+    setErrors(next);
+    if (Object.keys(next).length) return;
+    saveMutation.mutate({
+      ...formData,
+      title: formData.title.trim(),
+      category_id: Number(formData.category_id),
+      content: processContent(formData.content),
+    });
   };
 
-  const handleApprove = async (id: number) => {
-    if (confirm('Are you sure you want to approve this post?')) {
-      try {
-        // Find the post in the current posts array
-        const post = posts.find(p => p.id === id);
-        if (!post) {
-          console.error('Post not found');
-          return;
-        }
-
-        // Update the post with approval status
-        await apiClient.put(`/posts/${id}`, {
-          title: post.title,
-          content: post.content,
-          excerpt: post.excerpt,
-          featured_image: post.featured_image,
-          category_id: post.category_id,
-          is_published: post.is_published,
-          approval_status: 'approved',
-          approved_by: user?.id || 1,
-          approved_at: new Date().toISOString(),
-          meta_description: post.meta_description || '',
-          meta_keywords: post.meta_keywords || ''
-        });
-        fetchPosts(pagination.currentPage);
-      } catch (error) {
-        console.error('Error approving post:', error);
-      }
-    }
+  const handleDelete = async (post: Post) => {
+    const ok = await confirm({ title: 'Delete post', message: `Delete "${post.title}"? This cannot be undone.`, confirmText: 'Delete', type: 'danger' });
+    if (ok) deleteMutation.mutate(post.id);
   };
 
-  const handleReject = async (id: number) => {
-    const reason = prompt('Please provide a reason for rejection:');
-    if (reason !== null) {
-      try {
-        // Find the post in the current posts array
-        const post = posts.find(p => p.id === id);
-        if (!post) {
-          console.error('Post not found');
-          return;
-        }
-
-        // Update the post with rejection status
-        await apiClient.put(`/posts/${id}`, {
-          title: post.title,
-          content: post.content,
-          excerpt: post.excerpt,
-          featured_image: post.featured_image,
-          category_id: post.category_id,
-          is_published: post.is_published,
-          approval_status: 'rejected',
-          rejection_reason: reason,
-          meta_description: post.meta_description || '',
-          meta_keywords: post.meta_keywords || ''
-        });
-        fetchPosts(pagination.currentPage);
-      } catch (error) {
-        console.error('Error rejecting post:', error);
-      }
-    }
+  const handleApprove = async (post: Post) => {
+    const ok = await confirm({ title: 'Approve post', message: `Approve "${post.title}"?`, confirmText: 'Approve', type: 'info' });
+    if (ok) reviewMutation.mutate({ post, approve: true });
   };
+
+  const toggleTag = (id: number, checked: boolean) =>
+    setFormData((prev) => ({ ...prev, tags: checked ? [...prev.tags, id] : prev.tags.filter((t) => t !== id) }));
+
+  const toggleTagFilter = (id: string, checked: boolean) =>
+    setFilters((prev) => ({ ...prev, tags: checked ? [...prev.tags, id] : prev.tags.filter((t) => t !== id) }));
+
+  const pageInfo = postsQuery.data;
 
   return (
     <div className="space-y-6">
-      {/* Header Section - Responsive */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Blog Posts Management</h1>
-        <button
-          onClick={() => {
-            if (showForm) {
-              resetForm();
-            } else {
-              setShowForm(true);
-            }
-          }}
-          className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-        >
-          {showForm ? 'Cancel' : 'Add Post'}
-        </button>
-      </div>
-
-      {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-8">
-          <div className="space-y-4 sm:space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <select
-                value={formData.category_id}
-                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                required
-              >
-                <option value="">Select Category</option>
-                {(categories || []).map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-              <div className="space-y-2">
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                  {(tags || []).map(tag => (
-                    <label key={tag.id} className="flex items-center space-x-2 cursor-pointer p-1">
-                      <input
-                        type="checkbox"
-                        checked={formData.tags.includes(tag.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({
-                              ...formData,
-                              tags: [...formData.tags, tag.id]
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              tags: formData.tags.filter(id => id !== tag.id)
-                            });
-                          }
-                        }}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <span 
-                        className="px-2 py-1 text-xs rounded-full text-white whitespace-nowrap"
-                        style={{ backgroundColor: tag.color }}
-                      >
-                        {tag.name}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {formData.tags.length === 0 && (
-                  <p className="text-sm text-gray-500">No tags selected</p>
-                )}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Excerpt</label>
-              <textarea
-                value={formData.excerpt}
-                onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Content (Markdown/HTML)</label>
-              <p className="text-xs text-gray-500 mb-2 hidden sm:block">
-                💡 Supports Markdown and HTML. Use <code className="bg-gray-100 px-1 rounded">![alt text](image-url)</code> for images or <code className="bg-gray-100 px-1 rounded">&lt;img src="URL" alt="description" class="w-full rounded-lg my-4" /&gt;</code>
-              </p>
-              <div className="text-xs text-gray-400 mb-2">
-                Content size: {formData.content.length.toLocaleString()} characters
-                {formData.content.length > 500000 && (
-                  <span className="text-yellow-600 ml-2">⚠️ Large content - consider breaking into smaller sections</span>
-                )}
-              </div>
-              <div className="w-full">
-                <RichTextEditor
-                value={formData.content}
-                  onChange={(value) => setFormData({ ...formData, content: value })}
-                  placeholder="Write your content here... You can use Markdown or HTML"
-                  height={window.innerWidth < 640 ? 300 : 400}
-              />
-            </div>
-            </div>
-            <EnhancedImageUpload
-              onImageUploaded={(imageUrl) => setFormData({ ...formData, featured_image: imageUrl })}
-              currentImage={formData.featured_image}
-              label="Featured Image"
-              maxSize={5}
-            />
-            <div className="border-t pt-4 mt-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">SEO Settings</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
-                  <textarea
-                    value={formData.meta_description}
-                    onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    rows={2}
-                    placeholder="Brief description for search engines (150-160 characters)"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Meta Keywords</label>
-                  <input
-                    type="text"
-                    value={formData.meta_keywords}
-                    onChange={(e) => setFormData({ ...formData, meta_keywords: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    placeholder="keyword1, keyword2, keyword3"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="published"
-                checked={formData.is_published}
-                onChange={(e) => setFormData({ ...formData, is_published: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="published" className="ml-2 text-sm font-medium text-gray-700">
-                Published
-              </label>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <button
-              type="submit"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-            >
-              {editingId ? 'Update' : 'Create'}
-            </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors w-full sm:w-auto"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </form>
-      )}
-
-      {/* Search Bar - Mobile Optimized */}
-      <div className="lg:hidden mb-4">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search posts..."
-            value={filters.search}
-            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-base"
-          />
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      {/* Advanced Filters */}
-      <AdvancedFilters
-        filterConfigs={filterConfigs}
-        filters={filters}
-        onFiltersChange={(newFilters) => setFilters(newFilters as typeof filters)}
-        onApply={() => {}} // Filters are applied automatically via useEffect
-        onClearAll={() => setFilters({
-          search: '',
-          category: '',
-          status: '',
-          approval_status: '',
-          tags: [],
-          dateFrom: '',
-          dateTo: ''
-        })}
-        isOpen={showFilters}
-        onToggle={() => setShowFilters(!showFilters)}
-        resultsCount={filteredPosts.length}
+      <AdminPageHeader
+        title="Posts"
+        description="Write, edit, publish and review blog articles."
+        actions={
+          <button type="button" className={primaryBtn} onClick={openCreate}>
+            <Plus className="h-4 w-4" aria-hidden="true" /> New post
+          </button>
+        }
       />
 
-      {/* Desktop Table View */}
-      <div className="hidden lg:block bg-white rounded-lg shadow-md overflow-hidden">
-        {loading ? (
-          <div className="p-6">
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-              <div className="space-y-3">
-                {[...Array(5)].map((_, index) => (
-                  <div key={index} className="flex items-center space-x-4">
-                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                    <div className="h-12 w-12 bg-gray-200 rounded"></div>
-                    <div className="h-6 bg-gray-200 rounded w-20"></div>
-                    <div className="h-6 bg-gray-200 rounded w-24"></div>
-                    <div className="h-6 bg-gray-200 rounded w-16 ml-auto"></div>
+      <AdminCard padded={false}>
+        <div className="space-y-3 border-b border-slate-200 p-4">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+            <div className="lg:w-72">
+              <SearchInput label="Search posts" placeholder="Search posts…" value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:flex">
+              <select aria-label="Filter by category" className={`${inputClass} lg:w-44`} value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })}>
+                <option value="">All categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={String(cat.id)}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              <select aria-label="Filter by status" className={`${inputClass} lg:w-36`} value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
+                <option value="">All statuses</option>
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+              </select>
+              <select
+                aria-label="Filter by approval"
+                className={`${inputClass} lg:w-40`}
+                value={filters.approval_status}
+                onChange={(e) => setFilters({ ...filters, approval_status: e.target.value })}
+              >
+                <option value="">All approvals</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+            <div className="flex gap-2 lg:ml-auto">
+              <button type="button" className={secondaryBtn} aria-expanded={showMoreFilters} onClick={() => setShowMoreFilters((v) => !v)}>
+                <SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> More filters
+              </button>
+              {filtersActive && (
+                <button type="button" className={secondaryBtn} onClick={() => setFilters(emptyFilters)}>
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+          {showMoreFilters && (
+            <div className="grid gap-4 rounded-lg bg-slate-50 p-3 md:grid-cols-[2fr_1fr_1fr]">
+              <fieldset>
+                <legend className="mb-1 text-sm font-medium text-slate-700">Tags</legend>
+                {tags.length ? (
+                  <div className="flex max-h-28 flex-wrap gap-2 overflow-y-auto">
+                    {tags.map((tag) => (
+                      <label key={tag.id} className="flex items-center gap-1.5 rounded-md bg-white px-2 py-1 text-xs text-slate-700 ring-1 ring-slate-200">
+                        <input type="checkbox" className="h-3.5 w-3.5 rounded border-slate-300" checked={filters.tags.includes(String(tag.id))} onChange={(e) => toggleTagFilter(String(tag.id), e.target.checked)} />
+                        {tag.name}
+                      </label>
+                    ))}
                   </div>
+                ) : (
+                  <p className="text-xs text-slate-500">No tags available.</p>
+                )}
+              </fieldset>
+              <Field label="From date">
+                {(props) => <input {...props} type="date" className={inputClass} value={filters.dateFrom} onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })} />}
+              </Field>
+              <Field label="To date">
+                {(props) => <input {...props} type="date" className={inputClass} value={filters.dateTo} onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })} />}
+              </Field>
+            </div>
+          )}
+          {filtersActive && !postsQuery.isLoading && (
+            <p className="text-xs text-slate-500" role="status">
+              {filteredPosts.length} of {posts.length} posts on this page match the filters.
+            </p>
+          )}
+        </div>
+
+        {postsQuery.isLoading ? (
+          <LoadingState label="Loading posts…" />
+        ) : postsQuery.isError ? (
+          <ErrorState message={apiErrorMessage(postsQuery.error)} onRetry={() => postsQuery.refetch()} />
+        ) : filteredPosts.length === 0 ? (
+          <EmptyState
+            icon={FileText}
+            title={filtersActive ? 'No posts match your filters' : 'No posts yet'}
+            description={filtersActive ? 'Try adjusting your filters to see more posts.' : 'Get started by creating your first blog post.'}
+            action={
+              filtersActive ? (
+                <button type="button" className={secondaryBtn} onClick={() => setFilters(emptyFilters)}>
+                  Clear filters
+                </button>
+              ) : (
+                <button type="button" className={primaryBtn} onClick={openCreate}>
+                  <Plus className="h-4 w-4" aria-hidden="true" /> Create first post
+                </button>
+              )
+            }
+          />
+        ) : (
+          <TableShell caption="Blog posts">
+            <thead>
+              <tr>
+                <th scope="col">Post</th>
+                <th scope="col">Category</th>
+                <th scope="col">Status</th>
+                <th scope="col">Approval</th>
+                <th scope="col">Created</th>
+                <th scope="col" className="!text-right">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredPosts.map((post) => {
+                const approval = post.approval_status || 'draft';
+                return (
+                  <tr key={post.id}>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        {post.featured_image ? (
+                          <img src={post.featured_image} alt="" loading="lazy" className="h-10 w-14 flex-none rounded-md border border-slate-200 object-cover" />
+                        ) : (
+                          <span className="flex h-10 w-14 flex-none items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-400">
+                            <ImageOff className="h-4 w-4" aria-hidden="true" />
+                          </span>
+                        )}
+                        <div className="min-w-0">
+                          <p className="max-w-xs truncate font-medium text-slate-900" title={post.title}>
+                            {post.title}
+                          </p>
+                          <p className="font-mono text-xs text-slate-400">#{post.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap">{categoryName(post) ?? <span className="text-slate-400">—</span>}</td>
+                    <td>
+                      <Badge tone={post.is_published ? 'success' : 'neutral'}>{post.is_published ? 'Published' : 'Draft'}</Badge>
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-1">
+                        <Badge tone={approvalTone[approval] ?? 'neutral'}>{approval.charAt(0).toUpperCase() + approval.slice(1)}</Badge>
+                        {approval === 'pending' && (
+                          <>
+                            <IconButton label={`Approve ${post.title}`} icon={Check} disabled={reviewMutation.isPending} onClick={() => handleApprove(post)} />
+                            <IconButton
+                              label={`Reject ${post.title}`}
+                              icon={X}
+                              tone="danger"
+                              disabled={reviewMutation.isPending}
+                              onClick={() => {
+                                setRejecting(post);
+                                setRejectReason('');
+                              }}
+                            />
+                          </>
+                        )}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap text-slate-500">{formatDate(post.created_at)}</td>
+                    <td>
+                      <div className="flex justify-end gap-1">
+                        <IconButton label={`Edit ${post.title}`} icon={Pencil} onClick={() => openEdit(post)} />
+                        <IconButton
+                          label={`Delete ${post.title}`}
+                          icon={Trash2}
+                          tone="danger"
+                          disabled={deleteMutation.isPending && deleteMutation.variables === post.id}
+                          onClick={() => handleDelete(post)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </TableShell>
+        )}
+      </AdminCard>
+
+      {pageInfo && pageInfo.lastPage > 1 && (
+        <Pagination
+          currentPage={pageInfo.currentPage}
+          lastPage={pageInfo.lastPage}
+          total={pageInfo.total}
+          perPage={pageInfo.perPage}
+          onPageChange={setPage}
+          loading={postsQuery.isFetching}
+        />
+      )}
+
+      <Modal
+        open={modalOpen}
+        onClose={closeModal}
+        size="xl"
+        title={editingId ? 'Edit post' : 'New post'}
+        description="Fields marked * are required."
+        footer={
+          <>
+            <button type="button" className={secondaryBtn} onClick={closeModal}>
+              Cancel
+            </button>
+            <button type="submit" form="post-form" className={primaryBtn} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Saving…' : editingId ? 'Update post' : 'Create post'}
+            </button>
+          </>
+        }
+      >
+        <form id="post-form" onSubmit={handleSubmit} noValidate className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
+            <Field label="Title" required error={errors.title}>
+              {(props) => <input {...props} type="text" maxLength={255} className={inputClass} value={formData.title} onChange={(e) => update('title', e.target.value)} />}
+            </Field>
+            <Field label="Category" required error={errors.category_id}>
+              {(props) => (
+                <select {...props} className={inputClass} value={formData.category_id} onChange={(e) => update('category_id', e.target.value)}>
+                  <option value="">Select category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          </div>
+
+          <fieldset>
+            <legend className="mb-1 text-sm font-medium text-slate-700">Tags</legend>
+            {tags.length ? (
+              <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
+                {tags.map((tag) => (
+                  <label key={tag.id} className="flex cursor-pointer items-center gap-1.5 rounded-full py-0.5 pl-1 pr-2 text-xs ring-1 ring-slate-200 hover:bg-slate-50">
+                    <input type="checkbox" className="h-3.5 w-3.5 rounded border-slate-300" checked={formData.tags.includes(tag.id)} onChange={(e) => toggleTag(tag.id, e.target.checked)} />
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: tag.color || '#64748b' }} aria-hidden="true" />
+                    {tag.name}
+                  </label>
                 ))}
               </div>
+            ) : (
+              <p className="text-sm text-slate-500">No tags yet. Create tags on the Tags page.</p>
+            )}
+            {errors.tags && <p className="mt-1 text-xs text-red-600">{errors.tags}</p>}
+          </fieldset>
+
+          <Field label="Excerpt" error={errors.excerpt}>
+            {(props) => <textarea {...props} rows={3} className={inputClass} value={formData.excerpt} onChange={(e) => update('excerpt', e.target.value)} />}
+          </Field>
+
+          <div>
+            <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-sm font-medium text-slate-700">
+                Content <span className="text-red-600" aria-hidden="true">*</span>
+              </p>
+              <p className={`text-xs ${formData.content.length > 500000 ? 'text-amber-700' : 'text-slate-500'}`}>
+                {formData.content.length.toLocaleString()} characters
+                {formData.content.length > 500000 && ' · large post, consider splitting it'}
+              </p>
             </div>
-          </div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">📝</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
-            <p className="text-gray-500 mb-4">
-              {filters.search || filters.category || filters.status || filters.approval_status || filters.tags.length > 0 || filters.dateFrom || filters.dateTo
-                ? 'Try adjusting your filters to see more posts.'
-                : 'Get started by creating your first blog post.'}
+            <p className="mb-2 hidden text-xs text-slate-500 sm:block">
+              Supports Markdown and HTML, e.g. <code className="rounded bg-slate-100 px-1">&lt;img src="URL" alt="description" /&gt;</code>. Line breaks are saved as HTML.
             </p>
-            {!showForm && (
-              <button
-                onClick={() => setShowForm(true)}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Create First Post
-              </button>
+            <RichTextEditor
+              value={formData.content}
+              onChange={(value) => update('content', value)}
+              placeholder="Write your content here... You can use Markdown or HTML"
+              height={typeof window !== 'undefined' && window.innerWidth < 640 ? 300 : 400}
+            />
+            {errors.content && (
+              <p role="alert" className="mt-1 text-xs text-red-600">
+                {errors.content}
+              </p>
             )}
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 admin-table">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured Image</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
-              <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-                {filteredPosts.map((post) => (
-              <tr key={post.id}>
-                  <td className="px-3 py-2 text-sm text-gray-500 font-mono">
-                    #{post.id}
-                  </td>
-                  <td className="px-3 py-2 font-medium text-gray-900 max-w-xs truncate" title={post.title}>
-                    {post.title}
-                  </td>
-                  <td className="px-3 py-2">
-                    {post.featured_image ? (
-                      <img
-                        src={post.featured_image}
-                        alt={post.title}
-                        className="w-16 h-16 object-cover rounded-lg border border-gray-300"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-400 text-xs">
-                        No Image
-                      </div>
-                    )}
-                  </td>
-                <td className="px-3 py-2">
-                  <span className={`px-2 py-1 text-xs rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {post.is_published ? 'Published' : 'Draft'}
-                  </span>
-                </td>
-                  <td className="px-3 py-2">
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        post.approval_status === 'approved' ? 'bg-green-100 text-green-800' :
-                        post.approval_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        post.approval_status === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {post.approval_status}
-                      </span>
-                      {post.approval_status === 'pending' && (
-                        <div className="flex space-x-1">
-                          <button
-                            onClick={() => handleApprove(post.id)}
-                            className="text-green-600 hover:text-green-800 text-xs"
-                            title="Approve"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            onClick={() => handleReject(post.id)}
-                            className="text-red-600 hover:text-red-800 text-xs"
-                            title="Reject"
-                          >
-                            ✗
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                <td className="px-3 py-2 text-right space-x-2">
-                  <button
-                    onClick={() => handleEdit(post)}
-                      className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(post.id)}
-                      className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-          </div>
-        )}
-      </div>
 
-      {/* Mobile Card View */}
-      <div className="lg:hidden space-y-4">
-        {loading ? (
-          <div className="space-y-4">
-            {[...Array(3)].map((_, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md p-4 animate-pulse">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                  <div className="h-6 bg-gray-200 rounded w-16"></div>
-                </div>
-                <div className="h-32 bg-gray-200 rounded-lg mb-3"></div>
-                <div className="flex justify-between items-center">
-                  <div className="h-6 bg-gray-200 rounded w-20"></div>
-                  <div className="flex space-x-2">
-                    <div className="h-8 bg-gray-200 rounded w-16"></div>
-                    <div className="h-8 bg-gray-200 rounded w-16"></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">📝</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
-            <p className="text-gray-500 mb-4">
-              {filters.search || filters.category || filters.status || filters.approval_status || filters.tags.length > 0 || filters.dateFrom || filters.dateTo
-                ? 'Try adjusting your filters to see more posts.'
-                : 'Get started by creating your first blog post.'}
-            </p>
-            {!showForm && (
-              <button
-                onClick={() => setShowForm(true)}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Create First Post
-              </button>
-            )}
-          </div>
-        ) : (
-          filteredPosts.map((post) => (
-          <div key={post.id} className="bg-white rounded-lg shadow-md p-4 space-y-3">
-            {/* Post Header */}
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-mono text-gray-500">#{post.id}</span>
-                  <h3 className="text-lg font-medium text-gray-900 truncate" title={post.title}>
-                    {post.title}
-                  </h3>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  {new Date(post.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex items-center space-x-2 ml-2">
-                <span className={`px-2 py-1 text-xs rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                  {post.is_published ? 'Published' : 'Draft'}
-                </span>
-              </div>
-            </div>
+          <EnhancedImageUpload onImageUploaded={(imageUrl) => update('featured_image', imageUrl)} currentImage={formData.featured_image} label="Featured Image" maxSize={5} />
 
-            {/* Featured Image */}
-            {post.featured_image && (
-              <div className="w-full">
-                <img
-                  src={post.featured_image}
-                  alt={post.title}
-                  className="w-full h-32 object-cover rounded-lg border border-gray-300"
+          <section className="space-y-4 border-t border-slate-200 pt-4">
+            <h3 className="text-sm font-semibold text-slate-900">SEO settings</h3>
+            <Field label="Meta description" hint={`${formData.meta_description.length} characters · aim for 150–160`} error={errors.meta_description}>
+              {(props) => (
+                <textarea
+                  {...props}
+                  rows={2}
+                  className={inputClass}
+                  placeholder="Brief description for search engines"
+                  value={formData.meta_description}
+                  onChange={(e) => update('meta_description', e.target.value)}
                 />
-              </div>
-            )}
+              )}
+            </Field>
+            <Field label="Meta keywords" hint="Comma-separated, max 255 characters" error={errors.meta_keywords}>
+              {(props) => (
+                <input {...props} type="text" className={inputClass} placeholder="keyword1, keyword2, keyword3" value={formData.meta_keywords} onChange={(e) => update('meta_keywords', e.target.value)} />
+              )}
+            </Field>
+          </section>
 
-            {/* Approval Status */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  post.approval_status === 'approved' ? 'bg-green-100 text-green-800' :
-                  post.approval_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  post.approval_status === 'rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {post.approval_status}
-                </span>
-                {post.approval_status === 'pending' && (
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleApprove(post.id)}
-                      className="text-green-600 hover:text-green-800 text-sm px-2 py-1 rounded border border-green-300"
-                      title="Approve"
-                    >
-                      ✓ Approve
-                    </button>
-                    <button
-                      onClick={() => handleReject(post.id)}
-                      className="text-red-600 hover:text-red-800 text-sm px-2 py-1 rounded border border-red-300"
-                      title="Reject"
-                    >
-                      ✗ Reject
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+            <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-blue-600" checked={formData.is_published} onChange={(e) => update('is_published', e.target.checked)} />
+            Published
+          </label>
+        </form>
+      </Modal>
 
-            {/* Actions */}
-            <div className="flex space-x-2 pt-2 border-t border-gray-200">
-              <button
-                onClick={() => handleEdit(post)}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(post.id)}
-                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-          ))
-        )}
-      </div>
-
-      {/* Pagination */}
-        <Pagination
-          currentPage={pagination.currentPage}
-          lastPage={pagination.lastPage}
-          total={pagination.total}
-          perPage={pagination.perPage}
-          onPageChange={fetchPosts}
-          loading={loading}
-        />
-
-      {/* Floating Action Button - Mobile Only */}
-      {!showForm && (
-        <div className="lg:hidden fixed bottom-6 right-6 z-50">
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300"
-            title="Add New Post"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-      </div>
-      )}
+      <Modal
+        open={Boolean(rejecting)}
+        onClose={() => setRejecting(null)}
+        size="sm"
+        title="Reject post"
+        description={rejecting ? `"${rejecting.title}" will be marked as rejected.` : undefined}
+        footer={
+          <>
+            <button type="button" className={secondaryBtn} onClick={() => setRejecting(null)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={dangerBtn}
+              disabled={reviewMutation.isPending}
+              onClick={() => rejecting && reviewMutation.mutate({ post: rejecting, approve: false, reason: rejectReason })}
+            >
+              {reviewMutation.isPending ? 'Rejecting…' : 'Reject post'}
+            </button>
+          </>
+        }
+      >
+        <Field label="Reason for rejection" hint="Shared with the author.">
+          {(props) => <textarea {...props} rows={3} className={inputClass} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />}
+        </Field>
+      </Modal>
     </div>
   );
 }

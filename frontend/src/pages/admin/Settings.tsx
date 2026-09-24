@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Save } from 'lucide-react';
 import apiClient from '../../api/axios';
 import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
+import { AdminCard, AdminPageHeader, ErrorState, Field, LoadingState, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage } from '../../components/admin/utils';
 
-interface Settings {
+interface SiteSettings {
   site_name: string;
   site_description: string;
   site_url: string;
@@ -15,230 +18,215 @@ interface Settings {
   allowed_file_types: string[];
 }
 
+type Errors = Partial<Record<keyof SiteSettings, string>>;
+
+const DEFAULTS: SiteSettings = {
+  site_name: '',
+  site_description: '',
+  site_url: '',
+  admin_email: '',
+  maintenance_mode: false,
+  allow_registration: true,
+  max_file_size: 10,
+  allowed_file_types: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'txt', 'zip', 'json'],
+};
+
+const FILE_TYPES = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf', 'doc', 'docx', 'txt', 'zip', 'json'];
+
+const btnPrimary =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+
+/** Merges whatever the API returns onto the defaults, ignoring unexpected value types. */
+function normalise(payload: unknown): SiteSettings {
+  const raw = ((payload as { data?: unknown })?.data ?? payload) as Partial<Record<keyof SiteSettings, unknown>> | null;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return DEFAULTS;
+  const str = (v: unknown, d: string) => (typeof v === 'string' ? v : d);
+  const bool = (v: unknown, d: boolean) => (typeof v === 'boolean' ? v : v === 1 || v === '1' || v === 'true' ? true : v === 0 || v === '0' || v === 'false' ? false : d);
+  return {
+    site_name: str(raw.site_name, DEFAULTS.site_name),
+    site_description: str(raw.site_description, DEFAULTS.site_description),
+    site_url: str(raw.site_url, DEFAULTS.site_url),
+    admin_email: str(raw.admin_email, DEFAULTS.admin_email),
+    maintenance_mode: bool(raw.maintenance_mode, DEFAULTS.maintenance_mode),
+    allow_registration: bool(raw.allow_registration, DEFAULTS.allow_registration),
+    max_file_size: Number(raw.max_file_size) > 0 ? Number(raw.max_file_size) : DEFAULTS.max_file_size,
+    allowed_file_types: Array.isArray(raw.allowed_file_types) ? raw.allowed_file_types.filter((t): t is string => typeof t === 'string') : DEFAULTS.allowed_file_types,
+  };
+}
+
+function validate(s: SiteSettings): Errors {
+  const errors: Errors = {};
+  if (!s.site_name.trim()) errors.site_name = 'Site name is required.';
+  if (!s.site_url.trim()) errors.site_url = 'Site URL is required.';
+  else if (!/^https?:\/\/\S+$/i.test(s.site_url.trim())) errors.site_url = 'Enter a full URL starting with http:// or https://.';
+  if (!s.admin_email.trim()) errors.admin_email = 'Admin email is required.';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.admin_email.trim())) errors.admin_email = 'Enter a valid email address.';
+  if (!Number.isFinite(s.max_file_size) || s.max_file_size < 1 || s.max_file_size > 100) errors.max_file_size = 'Choose a size between 1 and 100 MB.';
+  return errors;
+}
+
+function serverErrors(error: unknown): Errors {
+  const bag = (error as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors;
+  if (!bag) return {};
+  return Object.fromEntries(Object.entries(bag).map(([k, v]) => [k.split('.')[0], v?.[0]])) as Errors;
+}
+
+function Toggle({ id, label, description, checked, onChange }: { id: string; label: string; description: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-4 first:pt-0 last:pb-0">
+      <div>
+        <p id={`${id}-label`} className="text-sm font-medium text-slate-900">
+          {label}
+        </p>
+        <p id={`${id}-desc`} className="text-sm text-slate-500">
+          {description}
+        </p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={`${id}-desc`}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 flex-none items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${checked ? 'bg-blue-600' : 'bg-slate-300'}`}
+      >
+        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
+      </button>
+    </div>
+  );
+}
+
 export default function Settings() {
+  useSEO({ title: 'Settings | Admin', robots: 'noindex, nofollow' });
   const { addToast } = useToast();
-  const [formData, setFormData] = useState<Settings>({
-    site_name: '',
-    site_description: '',
-    site_url: '',
-    admin_email: '',
-    maintenance_mode: false,
-    allow_registration: true,
-    max_file_size: 10,
-    allowed_file_types: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'txt', 'zip', 'json'],
-  });
-
-  useSEO({ title: 'Settings | Admin' });
-
   const queryClient = useQueryClient();
+  const [formData, setFormData] = useState<SiteSettings>(DEFAULTS);
+  const [errors, setErrors] = useState<Errors>({});
 
-  // Fetch settings
-  const { data: _settings, isLoading } = useQuery({
+  const settingsQuery = useQuery({
     queryKey: ['settings'],
-    queryFn: async () => {
-      const response = await apiClient.get('/settings');
-      return response.data;
-    },
+    queryFn: async () => normalise((await apiClient.get('/settings')).data),
   });
 
-  // Update settings mutation
+  // Populate the form once the saved settings arrive (previously the response was ignored).
+  useEffect(() => {
+    if (settingsQuery.data) setFormData(settingsQuery.data);
+  }, [settingsQuery.data]);
+
   const updateMutation = useMutation({
-    mutationFn: async (data: Settings) => {
-      const response = await apiClient.put('/settings', data);
-      return response.data;
-    },
+    mutationFn: async (data: SiteSettings) => (await apiClient.put('/settings', data)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      addToast({
-        type: 'success',
-        title: 'Settings Saved',
-        description: 'Settings saved successfully!',
-        duration: 5000
-      });
+      addToast({ type: 'success', title: 'Settings saved', description: 'Your changes are live.' });
+    },
+    onError: (error) => {
+      setErrors(serverErrors(error));
+      addToast({ type: 'error', title: 'Could not save settings', description: apiErrorMessage(error) });
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const set = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    updateMutation.mutate(formData);
+    const next = validate(formData);
+    setErrors(next);
+    if (Object.keys(next).length) return;
+    updateMutation.mutate({ ...formData, site_name: formData.site_name.trim(), site_url: formData.site_url.trim(), admin_email: formData.admin_email.trim() });
   };
 
-  const handleInputChange = (field: keyof Settings, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const header = <AdminPageHeader title="Settings" description="General site configuration, registration and upload limits." />;
 
-  const handleFileTypeChange = (type: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      allowed_file_types: checked
-        ? [...prev.allowed_file_types, type]
-        : prev.allowed_file_types.filter(t => t !== type),
-    }));
-  };
-
-  if (isLoading) {
+  if (settingsQuery.isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+      <div>
+        {header}
+        <AdminCard>
+          <LoadingState label="Loading settings…" />
+        </AdminCard>
+      </div>
+    );
+  }
+
+  if (settingsQuery.isError) {
+    return (
+      <div>
+        {header}
+        <AdminCard>
+          <ErrorState title="Could not load settings" message={apiErrorMessage(settingsQuery.error)} onRetry={() => settingsQuery.refetch()} />
+        </AdminCard>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-1">Configure your application settings</p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* General Settings */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">General Settings</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Site Name
-              </label>
-              <input
-                type="text"
-                value={formData.site_name}
-                onChange={(e) => handleInputChange('site_name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Site URL
-              </label>
-              <input
-                type="url"
-                value={formData.site_url}
-                onChange={(e) => handleInputChange('site_url', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
+      {header}
+      <form onSubmit={handleSubmit} noValidate className="space-y-6">
+        <AdminCard title="General">
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field label="Site name" required error={errors.site_name}>
+              {(props) => <input {...props} className={inputClass} value={formData.site_name} onChange={(e) => set('site_name', e.target.value)} />}
+            </Field>
+            <Field label="Site URL" required error={errors.site_url}>
+              {(props) => <input {...props} type="url" className={inputClass} placeholder="https://example.com" value={formData.site_url} onChange={(e) => set('site_url', e.target.value)} />}
+            </Field>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Site Description
-              </label>
-              <textarea
-                value={formData.site_description}
-                onChange={(e) => handleInputChange('site_description', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
-              />
+              <Field label="Site description" hint="Used as the default meta description.">
+                {(props) => <textarea {...props} rows={3} className={inputClass} value={formData.site_description} onChange={(e) => set('site_description', e.target.value)} />}
+              </Field>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Admin Email
-              </label>
-              <input
-                type="email"
-                value={formData.admin_email}
-                onChange={(e) => handleInputChange('admin_email', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
+            <Field label="Admin email" required error={errors.admin_email}>
+              {(props) => <input {...props} type="email" className={inputClass} value={formData.admin_email} onChange={(e) => set('admin_email', e.target.value)} />}
+            </Field>
           </div>
-        </div>
+        </AdminCard>
 
-        {/* System Settings */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">System Settings</h2>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">Maintenance Mode</h3>
-                <p className="text-sm text-gray-500">Enable to put the site in maintenance mode</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.maintenance_mode}
-                  onChange={(e) => handleInputChange('maintenance_mode', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">Allow Registration</h3>
-                <p className="text-sm text-gray-500">Allow new users to register</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.allow_registration}
-                  onChange={(e) => handleInputChange('allow_registration', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
+        <AdminCard title="System">
+          <div className="divide-y divide-slate-100">
+            <Toggle id="maintenance" label="Maintenance mode" description="Show a maintenance page to visitors." checked={formData.maintenance_mode} onChange={(v) => set('maintenance_mode', v)} />
+            <Toggle id="registration" label="Allow registration" description="Let new users create accounts." checked={formData.allow_registration} onChange={(v) => set('allow_registration', v)} />
           </div>
-        </div>
+        </AdminCard>
 
-        {/* File Upload Settings */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">File Upload Settings</h2>
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Maximum File Size (MB)
-              </label>
-              <input
-                type="number"
-                value={formData.max_file_size}
-                onChange={(e) => handleInputChange('max_file_size', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min="1"
-                max="100"
-              />
+        <AdminCard title="File uploads">
+          <div className="space-y-5">
+            <div className="max-w-xs">
+              <Field label="Maximum file size (MB)" error={errors.max_file_size}>
+                {(props) => (
+                  <input {...props} type="number" min={1} max={100} className={inputClass} value={Number.isFinite(formData.max_file_size) ? formData.max_file_size : ''} onChange={(e) => set('max_file_size', parseInt(e.target.value, 10))} />
+                )}
+              </Field>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Allowed File Types
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf', 'doc', 'docx', 'txt', 'zip', 'json'].map((type) => (
-                  <label key={type} className="flex items-center space-x-2">
+            <fieldset>
+              <legend className="mb-2 text-sm font-medium text-slate-700">Allowed file types</legend>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+                {FILE_TYPES.map((type) => (
+                  <label key={type} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
                     <input
                       type="checkbox"
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
                       checked={formData.allowed_file_types.includes(type)}
-                      onChange={(e) => handleFileTypeChange(type, e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      onChange={(e) =>
+                        set('allowed_file_types', e.target.checked ? [...formData.allowed_file_types, type] : formData.allowed_file_types.filter((t) => t !== type))
+                      }
                     />
-                    <span className="text-sm text-gray-700">{type.toUpperCase()}</span>
+                    {type.toUpperCase()}
                   </label>
                 ))}
               </div>
-            </div>
+            </fieldset>
           </div>
-        </div>
+        </AdminCard>
 
-        {/* Save Button */}
         <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={updateMutation.isPending}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
-          >
-            {updateMutation.isPending ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                Saving...
-              </>
-            ) : (
-              'Save Settings'
-            )}
+          <button type="submit" className={btnPrimary} disabled={updateMutation.isPending}>
+            <Save className="h-4 w-4" aria-hidden="true" />
+            {updateMutation.isPending ? 'Saving…' : 'Save settings'}
           </button>
         </div>
       </form>

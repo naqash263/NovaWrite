@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSEO } from '../../utils/seo';
 
 export default function TextToSpeech() {
   const [text, setText] = useState<string>('');
@@ -18,47 +17,6 @@ export default function TextToSpeech() {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const wordsRef = useRef<string[]>([]);
 
-  useSEO({
-    title: 'Free Text to Speech Converter - Online TTS Tool | Convert Text to Voice',
-    description: 'Free online text to speech converter. Convert any text to natural-sounding speech with multiple voices, adjustable speed, pitch, and volume. No registration required. Works in all modern browsers.',
-    url: '/resources/utility-tools/text-to-speech',
-    keywords: [
-      'text to speech', 'TTS', 'speech synthesis', 'text to voice', 'voice generator',
-      'online TTS', 'free text to speech', 'speech converter', 'text reader',
-      'voice synthesizer', 'audio generator', 'speech tool'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Text to Speech Converter',
-      'description': 'Free online text to speech converter with multiple voices, adjustable speed, pitch, and volume controls.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/text-to-speech',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Multiple voice options',
-        'Adjustable speed (0.5x to 2x)',
-        'Pitch control',
-        'Volume control',
-        'Text highlighting during playback',
-        'Real-time character and word count',
-        'Reading time estimation'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'ratingCount': '1950',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
 
   useEffect(() => {
     // Load available voices
@@ -167,9 +125,9 @@ export default function TextToSpeech() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           🔊 Text to Speech Converter
-        </h1>
+        </h2>
         <p className="text-gray-600 mb-6">
           Convert your text into natural-sounding speech. Choose from multiple voices, adjust speed, pitch, and volume.
         </p>
@@ -320,7 +278,7 @@ export default function TextToSpeech() {
         {/* Highlighted Text Preview */}
         {text && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Text Preview</h3>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Text Preview</h4>
             <div className="text-gray-800 leading-relaxed">
               {getHighlightedText()}
             </div>
@@ -331,7 +289,7 @@ export default function TextToSpeech() {
         <div className="space-y-6 mt-8">
           {/* About Section */}
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Text to Speech</h2>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Text to Speech</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               Our Text to Speech converter is a powerful, browser-based tool that uses the Web Speech API 
               to convert written text into natural-sounding speech. This technology is built into modern 
@@ -347,7 +305,7 @@ export default function TextToSpeech() {
 
           {/* Use Cases */}
           <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-600 mr-2">✓</span>
@@ -378,14 +336,14 @@ export default function TextToSpeech() {
 
           {/* Features */}
           <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Voices</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Multiple Voices</h5>
                   <p className="text-sm text-gray-600">Choose from system voices in multiple languages and accents</p>
                 </div>
               </div>
@@ -394,7 +352,7 @@ export default function TextToSpeech() {
                   <span className="text-green-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Customizable Controls</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Customizable Controls</h5>
                   <p className="text-sm text-gray-600">Adjust speed (0.5x-2x), pitch, and volume to your preference</p>
                 </div>
               </div>
@@ -403,7 +361,7 @@ export default function TextToSpeech() {
                   <span className="text-purple-600 font-bold">3</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Text Highlighting</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Text Highlighting</h5>
                   <p className="text-sm text-gray-600">See words highlighted as they're being spoken</p>
                 </div>
               </div>
@@ -412,7 +370,7 @@ export default function TextToSpeech() {
                   <span className="text-orange-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Privacy-First</h4>
+                  <h5 className="font-semibold text-gray-900 mb-1">Privacy-First</h5>
                   <p className="text-sm text-gray-600">All processing happens in your browser - no data sent to servers</p>
                 </div>
               </div>
@@ -421,31 +379,31 @@ export default function TextToSpeech() {
 
           {/* FAQ Section */}
           <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How does text to speech work?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">How does text to speech work?</h5>
                 <p className="text-gray-700 text-sm">
                   The tool uses the Web Speech API built into modern browsers. Your text is converted to 
                   speech locally on your device without sending any data to external servers.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What browsers support this tool?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">What browsers support this tool?</h5>
                 <p className="text-gray-700 text-sm">
                   The Web Speech API is supported in Chrome, Edge, Safari, and Firefox. Voice availability 
                   depends on your operating system and browser.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I download the audio?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Can I download the audio?</h5>
                 <p className="text-gray-700 text-sm">
                   Currently, the tool plays audio in real-time. For audio file downloads, you may need to 
                   use browser extensions or screen recording software.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my text stored or saved?</h4>
+                <h5 className="font-semibold text-gray-900 mb-2">Is my text stored or saved?</h5>
                 <p className="text-gray-700 text-sm">
                   No, all processing happens locally in your browser. We do not store, track, or transmit 
                   any of your text data.
@@ -457,7 +415,7 @@ export default function TextToSpeech() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
             <li>Maximum text length: 5000 characters</li>
             <li>Voice availability depends on your browser and operating system</li>

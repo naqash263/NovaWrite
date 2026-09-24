@@ -83,6 +83,14 @@ class UserManagementController extends Controller
             'password' => 'sometimes|nullable|string|min:8',
         ]);
 
+        // Prevent admins from removing their own admin access (the last admin could lock everyone out)
+        if ($user->id === auth()->id() && $request->has('role') && $request->role !== $user->role) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot change your own role'
+            ], 422);
+        }
+
         $updateData = $request->only(['name', 'email', 'role']);
 
         // Handle password update

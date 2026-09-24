@@ -1,403 +1,256 @@
-import { useState } from 'react';
-import { useSEO } from '../../utils/seo';
+import { useMemo, useState } from 'react';
+
+type Compounding = 'annually' | 'semiannually' | 'quarterly' | 'monthly' | 'daily';
+type ContributionFrequency = 'monthly' | 'yearly';
+
+const compoundingOptions: Record<Compounding, { n: number; label: string }> = {
+  annually: { n: 1, label: 'Annually (1× per year)' },
+  semiannually: { n: 2, label: 'Semi-annually (2× per year)' },
+  quarterly: { n: 4, label: 'Quarterly (4× per year)' },
+  monthly: { n: 12, label: 'Monthly (12× per year)' },
+  daily: { n: 365, label: 'Daily (365× per year)' },
+};
+
+const currencies = ['USD', 'EUR', 'GBP', 'INR', 'PKR', 'AED', 'CAD', 'AUD'];
+
+const parse = (s: string) => (s.trim() === '' ? NaN : Number(s));
+
+interface Inputs {
+  principal: number;
+  rate: number;
+  n: number;
+  contribution: number;
+  perYear: number;
+  atStart: boolean;
+}
+
+/**
+ * Balance after `years`, using A = P(1 + r/n)^(nt) for the principal and a future-value-of-annuity
+ * formula for contributions, with the per-contribution rate derived from the compounding frequency.
+ */
+function balanceAt(years: number, { principal, rate, n, contribution, perYear, atStart }: Inputs) {
+  const r = rate / 100;
+  const principalFv = principal * Math.pow(1 + r / n, n * years);
+  const count = Math.floor(perYear * years + 1e-9);
+  const i = Math.pow(1 + r / n, n / perYear) - 1;
+  let contributionsFv = 0;
+  if (contribution > 0 && count > 0) {
+    // Contributions made before `years` keep growing for any remaining fraction of a period.
+    const growthAfterLast = Math.pow(1 + r / n, n * (years - count / perYear));
+    contributionsFv = (i === 0 ? contribution * count : contribution * ((Math.pow(1 + i, count) - 1) / i) * (atStart ? 1 + i : 1)) * growthAfterLast;
+  }
+  const deposited = principal + contribution * count;
+  const balance = principalFv + contributionsFv;
+  return { balance, deposited, interest: balance - deposited };
+}
 
 export default function CompoundInterestCalculator() {
-  const [principal, setPrincipal] = useState<number>(10000);
-  const [interestRate, setInterestRate] = useState<number>(5);
-  const [timePeriod, setTimePeriod] = useState<number>(10);
-  const [compoundingFrequency, setCompoundingFrequency] = useState<'annually' | 'semiannually' | 'quarterly' | 'monthly' | 'daily'>('monthly');
-  const [additionalContribution, setAdditionalContribution] = useState<number>(0);
-  const [contributionFrequency, setContributionFrequency] = useState<'monthly' | 'yearly'>('monthly');
+  const [principal, setPrincipal] = useState('10000');
+  const [interestRate, setInterestRate] = useState('5');
+  const [timePeriod, setTimePeriod] = useState('10');
+  const [compounding, setCompounding] = useState<Compounding>('monthly');
+  const [contribution, setContribution] = useState('0');
+  const [contributionFrequency, setContributionFrequency] = useState<ContributionFrequency>('monthly');
+  const [timing, setTiming] = useState<'end' | 'start'>('end');
+  const [currency, setCurrency] = useState('USD');
 
-  useSEO({
-    title: 'Free Compound Interest Calculator Online - Investment Growth | No Signup',
-    description: 'Free compound interest calculator online - no signup required. Calculate future value, investment growth, and returns instantly. Supports multiple compounding frequencies and additional contributions. Perfect for financial planning. All calculations in your browser.',
-    url: '/resources/utility-tools/compound-interest-calculator',
-    keywords: [
-      'free compound interest calculator', 'compound interest calculator', 'free compound interest calculator online', 'compound interest calculator online', 'investment calculator free',
-      'investment calculator', 'future value calculator',
-      'compound interest', 'investment growth calculator', 'savings calculator', 'interest calculator', 'free online compound interest calculator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Compound Interest Calculator',
-      'description': 'Free online compound interest calculator for calculating investment growth and future value.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/compound-interest-calculator',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Calculate compound interest',
-        'Future value calculator',
-        'Multiple compounding frequencies',
-        'Additional contributions',
-        'Investment growth projection',
-        'Visual results'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.9',
-        'ratingCount': '1500',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
+  const p = parse(principal);
+  const rate = parse(interestRate);
+  const years = parse(timePeriod);
+  const c = contribution.trim() === '' ? 0 : parse(contribution);
 
-  const calculateCompoundInterest = () => {
-    const r = interestRate / 100;
-    const t = timePeriod;
-    
-    // Compounding frequency multiplier
-    const n = compoundingFrequency === 'annually' ? 1 :
-               compoundingFrequency === 'semiannually' ? 2 :
-               compoundingFrequency === 'quarterly' ? 4 :
-               compoundingFrequency === 'monthly' ? 12 : 365;
-    
-    // Calculate compound interest on principal
-    const futureValuePrincipal = principal * Math.pow(1 + r / n, n * t);
-    
-    // Calculate future value of additional contributions
-    let futureValueContributions = 0;
-    if (additionalContribution > 0) {
-      const contributionPeriods = contributionFrequency === 'monthly' ? t * 12 : t;
-      const contributionRate = contributionFrequency === 'monthly' ? r / 12 : r;
-      const totalContributions = additionalContribution * contributionPeriods;
-      
-      if (contributionRate > 0) {
-        // Future value of annuity formula
-        futureValueContributions = additionalContribution * 
-          ((Math.pow(1 + contributionRate, contributionPeriods) - 1) / contributionRate);
-      } else {
-        futureValueContributions = totalContributions;
-      }
-    }
-    
-    const totalFutureValue = futureValuePrincipal + futureValueContributions;
-    const totalContributions = principal + (additionalContribution * (contributionFrequency === 'monthly' ? timePeriod * 12 : timePeriod));
-    const totalInterest = totalFutureValue - totalContributions;
-    
-    return {
-      futureValue: totalFutureValue,
-      interestEarned: totalInterest,
-      totalContributions,
-      principal,
-      contributions: additionalContribution * (contributionFrequency === 'monthly' ? timePeriod * 12 : timePeriod)
-    };
+  const errors = {
+    principal: Number.isNaN(p) ? 'Enter the initial amount (0 is allowed).' : p < 0 ? 'The initial amount cannot be negative.' : p > 1e12 ? 'Enter an amount up to 1,000,000,000,000.' : '',
+    rate: Number.isNaN(rate) ? 'Enter the annual interest rate.' : rate < 0 || rate > 100 ? 'Enter a rate between 0 and 100%.' : '',
+    years: Number.isNaN(years) ? 'Enter the number of years.' : years <= 0 || years > 100 ? 'Enter a period between 0 and 100 years.' : '',
+    contribution: Number.isNaN(c) || c < 0 ? 'Contributions must be 0 or more.' : c > 1e10 ? 'Enter a contribution up to 10,000,000,000.' : '',
   };
+  const valid = !errors.principal && !errors.rate && !errors.years && !errors.contribution;
 
-  const results = calculateCompoundInterest();
+  const n = compoundingOptions[compounding].n;
+  const perYear = contributionFrequency === 'monthly' ? 12 : 1;
+  const atStart = timing === 'start';
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const results = useMemo(() => {
+    if (!valid) return null;
+    const inputs: Inputs = { principal: p, rate, n, contribution: c, perYear, atStart };
+    const final = balanceAt(years, inputs);
+    const rows: { year: number; deposited: number; interest: number; balance: number }[] = [];
+    const wholeYears = Math.floor(years);
+    for (let y = 1; y <= wholeYears; y++) rows.push({ year: y, ...balanceAt(y, inputs) });
+    if (years > wholeYears) rows.push({ year: Number(years.toFixed(2)), ...final });
+    const apy = (Math.pow(1 + rate / 100 / n, n) - 1) * 100;
+    return { final, rows, apy };
+  }, [valid, p, rate, years, c, n, perYear, atStart]);
+
+  const money = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(n);
+
+  const field = (
+    id: string,
+    label: string,
+    value: string,
+    set: (v: string) => void,
+    error: string,
+    extra?: { suffix?: string; step?: string },
+  ) => (
+    <div>
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          type="number"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => set(e.target.value)}
+          min="0"
+          step={extra?.step}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={`w-full p-3 ${extra?.suffix ? 'pr-10' : ''} border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg ${
+            error ? 'border-red-400' : 'border-gray-300'
+          }`}
+        />
+        {extra?.suffix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" aria-hidden="true">{extra.suffix}</span>}
+      </div>
+      {error && (
+        <p id={`${id}-error`} className="text-sm text-red-700 mt-1">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+
+  const selectClass = 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          📈 Free Compound Interest Calculator Online
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Free compound interest calculator online - no signup required. Calculate how your investments grow with compound interest instantly. See the power of compounding over time. Supports multiple compounding frequencies and additional contributions. Perfect for financial planning. All calculations in your browser.
-        </p>
-
+    <div className="max-w-5xl mx-auto p-4 sm:p-6">
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Input Section */}
-          <div className="space-y-6">
+          {/* Inputs */}
+          <div className="space-y-5">
+            {field('ci-principal', `Initial investment (${currency})`, principal, setPrincipal, errors.principal, { step: '100' })}
+            {field('ci-rate', 'Annual interest rate', interestRate, setInterestRate, errors.rate, { suffix: '%', step: '0.1' })}
+            {field('ci-years', 'Time period (years)', timePeriod, setTimePeriod, errors.years, { step: '1' })}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Initial Investment (Principal) ($)
+              <label htmlFor="ci-compounding" className="block text-sm font-medium text-gray-700 mb-2">
+                Compounding frequency
               </label>
-              <input
-                type="number"
-                value={principal}
-                onChange={(e) => setPrincipal(parseFloat(e.target.value) || 0)}
-                min="0"
-                step="100"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                placeholder="10000"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Annual Interest Rate (%)
-              </label>
-              <input
-                type="number"
-                value={interestRate}
-                onChange={(e) => setInterestRate(parseFloat(e.target.value) || 0)}
-                min="0"
-                max="100"
-                step="0.1"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                placeholder="5.0"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Time Period (Years)
-              </label>
-              <input
-                type="number"
-                value={timePeriod}
-                onChange={(e) => setTimePeriod(parseFloat(e.target.value) || 0)}
-                min="0"
-                step="1"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                placeholder="10"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Compounding Frequency
-              </label>
-              <select
-                value={compoundingFrequency}
-                onChange={(e) => setCompoundingFrequency(e.target.value as any)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="annually">Annually</option>
-                <option value="semiannually">Semiannually (2x per year)</option>
-                <option value="quarterly">Quarterly (4x per year)</option>
-                <option value="monthly">Monthly (12x per year)</option>
-                <option value="daily">Daily (365x per year)</option>
+              <select id="ci-compounding" value={compounding} onChange={(e) => setCompounding(e.target.value as Compounding)} className={selectClass}>
+                {(Object.keys(compoundingOptions) as Compounding[]).map((k) => (
+                  <option key={k} value={k}>
+                    {compoundingOptions[k].label}
+                  </option>
+                ))}
               </select>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Additional Monthly/Yearly Contribution ($)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={additionalContribution}
-                  onChange={(e) => setAdditionalContribution(parseFloat(e.target.value) || 0)}
-                  min="0"
-                  step="10"
-                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="0"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {field('ci-contribution', `Regular contribution (${currency})`, contribution, setContribution, errors.contribution, { step: '10' })}
+              <div>
+                <label htmlFor="ci-contribution-frequency" className="block text-sm font-medium text-gray-700 mb-2">
+                  Contribution frequency
+                </label>
                 <select
+                  id="ci-contribution-frequency"
                   value={contributionFrequency}
-                  onChange={(e) => setContributionFrequency(e.target.value as any)}
-                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={(e) => setContributionFrequency(e.target.value as ContributionFrequency)}
+                  className={selectClass}
                 >
                   <option value="monthly">Monthly</option>
                   <option value="yearly">Yearly</option>
                 </select>
               </div>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="ci-timing" className="block text-sm font-medium text-gray-700 mb-2">
+                  Contributions made at
+                </label>
+                <select id="ci-timing" value={timing} onChange={(e) => setTiming(e.target.value as 'end' | 'start')} className={selectClass}>
+                  <option value="end">End of each period</option>
+                  <option value="start">Start of each period</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="ci-currency" className="block text-sm font-medium text-gray-700 mb-2">
+                  Currency
+                </label>
+                <select id="ci-currency" value={currency} onChange={(e) => setCurrency(e.target.value)} className={selectClass}>
+                  {currencies.map((cur) => (
+                    <option key={cur} value={cur}>
+                      {cur}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
-          {/* Results Section */}
-          <div className="space-y-4">
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg">
-              <h2 className="text-lg font-semibold text-gray-700 mb-4">Future Value</h2>
-              <div className="text-3xl font-bold text-green-600 mb-4">
-                {formatCurrency(results.futureValue)}
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Principal:</span>
-                  <span className="font-medium">{formatCurrency(results.principal)}</span>
-                </div>
-                {additionalContribution > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Contributions:</span>
-                    <span className="font-medium">{formatCurrency(results.contributions)}</span>
+          {/* Results */}
+          <div className="space-y-4 min-w-0" aria-live="polite">
+            {!results ? (
+              <p className="p-4 bg-gray-50 rounded-lg text-gray-600">Fix the highlighted fields to see your results.</p>
+            ) : (
+              <>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 sm:p-6 rounded-lg">
+                  <h2 className="text-lg font-semibold text-gray-800 mb-2">Future value</h2>
+                  <div className="text-3xl font-bold text-green-700 mb-4 break-words" data-testid="ci-future-value">
+                    {money(results.final.balance)}
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Interest Earned:</span>
-                  <span className="font-medium text-green-600">{formatCurrency(results.interestEarned)}</span>
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-gray-700">Initial investment</dt>
+                      <dd className="font-medium">{money(p)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-gray-700">Contributions</dt>
+                      <dd className="font-medium" data-testid="ci-contributions">{money(results.final.deposited - p)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-gray-700">Interest earned</dt>
+                      <dd className="font-medium text-green-700" data-testid="ci-interest">{money(results.final.interest)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2 pt-2 border-t border-green-200">
+                      <dt className="text-gray-700">Effective annual yield (APY)</dt>
+                      <dd className="font-medium" data-testid="ci-apy">{results.apy.toFixed(3)}%</dd>
+                    </div>
+                  </dl>
                 </div>
-              </div>
-            </div>
 
-            <div className="bg-blue-50 p-6 rounded-lg">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Summary</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Contributions:</span>
-                  <span className="font-medium">{formatCurrency(results.totalContributions)}</span>
+                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                  <h2 className="text-sm font-semibold text-gray-800 mb-3">Growth by year</h2>
+                  <div className="max-h-80 overflow-auto">
+                    <table className="w-full text-xs sm:text-sm" data-testid="ci-table">
+                      <thead className="sticky top-0 bg-gray-50">
+                        <tr className="border-b">
+                          <th scope="col" className="text-left py-2 px-1 sm:px-2">Year</th>
+                          <th scope="col" className="text-right py-2 px-1 sm:px-2">Deposited</th>
+                          <th scope="col" className="text-right py-2 px-1 sm:px-2">Interest</th>
+                          <th scope="col" className="text-right py-2 px-1 sm:px-2">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {results.rows.map((row) => (
+                          <tr key={row.year} className="border-b last:border-0">
+                            <td className="py-1.5 px-1 sm:px-2">{row.year}</td>
+                            <td className="text-right py-1.5 px-1 sm:px-2 tabular-nums">{money(row.deposited)}</td>
+                            <td className="text-right py-1.5 px-1 sm:px-2 tabular-nums">{money(row.interest)}</td>
+                            <td className="text-right py-1.5 px-1 sm:px-2 tabular-nums">{money(row.balance)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Interest:</span>
-                  <span className="font-medium text-blue-600">{formatCurrency(results.interestEarned)}</span>
-                </div>
-                <div className="flex justify-between pt-2 border-t border-gray-300">
-                  <span className="text-gray-700 font-medium">Future Value:</span>
-                  <span className="font-bold text-blue-700">{formatCurrency(results.futureValue)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <p className="text-xs text-gray-600">
-                <strong>Compounding:</strong> {compoundingFrequency.charAt(0).toUpperCase() + compoundingFrequency.slice(1)} 
-                ({compoundingFrequency === 'annually' ? '1' : compoundingFrequency === 'semiannually' ? '2' : compoundingFrequency === 'quarterly' ? '4' : compoundingFrequency === 'monthly' ? '12' : '365'}x per year)
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About Compound Interest Calculator</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our Compound Interest Calculator helps you understand how your investments grow over time with compound interest. 
-              Compound interest is the interest calculated on the initial principal and accumulated interest from previous periods, 
-              making your money grow faster over time.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              The calculator supports multiple compounding frequencies (annually, quarterly, monthly, daily), additional 
-              contributions, and shows you the future value of your investment. Perfect for planning savings, investments, 
-              and retirement goals.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Calculate investment growth</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Plan retirement savings</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Compare investment options</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Calculate savings account growth</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Plan for financial goals</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Understand compound interest power</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Compounding Frequencies</h4>
-                  <p className="text-sm text-gray-600">Annually, quarterly, monthly, or daily compounding</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Additional Contributions</h4>
-                  <p className="text-sm text-gray-600">Add monthly or yearly contributions to your investment</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Detailed Breakdown</h4>
-                  <p className="text-sm text-gray-600">See principal, contributions, and interest earned</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Instant Calculations</h4>
-                  <p className="text-sm text-gray-600">Real-time results as you change inputs</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What is compound interest?</h4>
-                <p className="text-gray-700 text-sm">
-                  Compound interest is interest calculated on the initial principal and accumulated interest from previous 
-                  periods. This means your money grows faster over time because you earn interest on both your original 
-                  investment and the interest you've already earned.
+                <p className="text-xs text-gray-500">
+                  Assumes a fixed rate with no taxes, fees or withdrawals. Real investment returns vary.
                 </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">How does compounding frequency affect returns?</h4>
-                <p className="text-gray-700 text-sm">
-                  More frequent compounding (e.g., daily vs. annually) results in higher returns because interest is 
-                  calculated and added more often. However, the difference becomes smaller as the frequency increases.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Should I include additional contributions?</h4>
-                <p className="text-gray-700 text-sm">
-                  Yes, if you plan to make regular contributions to your investment, include them to get a more accurate 
-                  projection of your future value. This is especially important for retirement planning and savings goals.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Are the results guaranteed?</h4>
-                <p className="text-gray-700 text-sm">
-                  No, these are projections based on the interest rate you enter. Actual returns may vary based on market 
-                  conditions, fees, and other factors. This calculator is for planning purposes only.
-                </p>
-              </div>
-            </div>
+              </>
+            )}
           </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>Start investing early to maximize compound interest benefits</li>
-            <li>More frequent compounding (monthly/daily) yields higher returns</li>
-            <li>Regular contributions significantly increase future value</li>
-            <li>Higher interest rates dramatically impact long-term growth</li>
-            <li>Use this calculator to compare different investment options</li>
-          </ul>
         </div>
       </div>
     </div>
   );
 }
-

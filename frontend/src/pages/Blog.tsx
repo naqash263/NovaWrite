@@ -61,7 +61,7 @@ export default function Blog() {
 
   useSEO({
     title: 'Blog - AI Automation & Business Intelligence | Naqash Thaheem',
-    description: 'Expert insights on AI automation, CRM integration, Power BI dashboards, and business process optimization from Systems Analyst Naqash Thaheem.',
+    description: 'Expert insights on AI automation, CRM integration, Power BI dashboards, and business process optimization from Technical Project Manager Naqash Thaheem.',
     keywords: ['AI automation', 'CRM integration', 'Power BI', 'business intelligence', 'workflow automation', 'n8n', 'Zoho CRM', 'systems analysis', 'UAE tech'],
     url: '/blog'
   });

@@ -1,193 +1,258 @@
-import { useState, useEffect } from 'react';
+import { useId, useState } from 'react';
+import { CopyButton } from './UnitConverter';
 
 type ConversionType = 'case' | 'url' | 'base64' | 'binary';
+type CaseType = 'upper' | 'lower' | 'title' | 'sentence' | 'camel' | 'pascal' | 'snake' | 'kebab' | 'constant';
+type Direction = 'encode' | 'decode';
+
+const caseOptions: { id: CaseType; label: string }[] = [
+  { id: 'upper', label: 'UPPERCASE' },
+  { id: 'lower', label: 'lowercase' },
+  { id: 'title', label: 'Title Case' },
+  { id: 'sentence', label: 'Sentence case' },
+  { id: 'camel', label: 'camelCase' },
+  { id: 'pascal', label: 'PascalCase' },
+  { id: 'snake', label: 'snake_case' },
+  { id: 'kebab', label: 'kebab-case' },
+  { id: 'constant', label: 'CONSTANT_CASE' },
+];
+
+const encoder = new TextEncoder();
+const strictDecoder = new TextDecoder('utf-8', { fatal: true });
+
+const capitalize = (w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+const words = (text: string) =>
+  text
+    .replace(/(\p{Ll}|\p{N})(\p{Lu})/gu, '$1 $2')
+    .replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, '$1 $2')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+
+function convertCase(text: string, type: CaseType): string {
+  switch (type) {
+    case 'upper':
+      return text.toUpperCase();
+    case 'lower':
+      return text.toLowerCase();
+    case 'title':
+      return text.toLowerCase().replace(/(^|[\s\-–—(["“‘/])(\p{L})/gu, (_, pre: string, ch: string) => pre + ch.toUpperCase());
+    case 'sentence':
+      return text
+        .toLowerCase()
+        .replace(/(^\s*|[.!?]\s+|\n\s*)(\p{L})/gu, (_, pre: string, ch: string) => pre + ch.toUpperCase())
+        .replace(/(^|\s)i(?=[\s.,!?;:'’]|$)/g, '$1I');
+    case 'camel':
+      return words(text)
+        .map((w, i) => (i === 0 ? w.toLowerCase() : capitalize(w)))
+        .join('');
+    case 'pascal':
+      return words(text).map(capitalize).join('');
+    case 'snake':
+      return words(text).map((w) => w.toLowerCase()).join('_');
+    case 'kebab':
+      return words(text).map((w) => w.toLowerCase()).join('-');
+    case 'constant':
+      return words(text).map((w) => w.toUpperCase()).join('_');
+  }
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
+
+function decodeUtf8(bytes: Uint8Array): string {
+  try {
+    return strictDecoder.decode(bytes);
+  } catch {
+    throw new Error('The decoded bytes are not valid UTF-8 text (the data may be a binary file).');
+  }
+}
+
+function base64Decode(input: string): string {
+  let clean = input.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(clean) || clean.length % 4 === 1) {
+    throw new Error('This is not valid Base64. Base64 uses only A–Z, a–z, 0–9, +, / (or - and _) and = padding.');
+  }
+  clean = clean.padEnd(Math.ceil(clean.length / 4) * 4, '=');
+  const binary = atob(clean);
+  return decodeUtf8(Uint8Array.from(binary, (c) => c.charCodeAt(0)));
+}
+
+function binaryDecode(input: string): string {
+  const compact = input.trim();
+  const groups = /\s/.test(compact) ? compact.split(/\s+/) : compact.match(/.{1,8}/g) ?? [];
+  if (!groups.every((g) => /^[01]{1,8}$/.test(g))) {
+    throw new Error('Binary input must contain only 0 and 1, in groups of up to 8 bits separated by spaces.');
+  }
+  if (!/\s/.test(compact) && compact.length % 8 !== 0) throw new Error('Binary without spaces must be a multiple of 8 bits long.');
+  return decodeUtf8(Uint8Array.from(groups, (g) => parseInt(g, 2)));
+}
+
+function transform(text: string, type: ConversionType, caseType: CaseType, direction: Direction): string {
+  if (type === 'case') return convertCase(text, caseType);
+  if (type === 'url') {
+    if (direction === 'encode') return encodeURIComponent(text);
+    try {
+      return decodeURIComponent(text);
+    } catch {
+      throw new Error('This is not valid URL-encoded text: every % must be followed by two hexadecimal digits that form valid UTF-8.');
+    }
+  }
+  if (type === 'base64') return direction === 'encode' ? bytesToBase64(encoder.encode(text)) : base64Decode(text);
+  return direction === 'encode'
+    ? Array.from(encoder.encode(text), (b) => b.toString(2).padStart(8, '0')).join(' ')
+    : binaryDecode(text);
+}
+
+const inputClass =
+  'w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-3 text-base focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500';
 
 export default function TextConverter() {
-  const [conversionType, setConversionType] = useState<ConversionType>('case');
-  const [inputText, setInputText] = useState<string>('');
-  const [outputText, setOutputText] = useState<string>('');
-  const [caseType, setCaseType] = useState<'upper' | 'lower' | 'title' | 'sentence'>('upper');
+  const id = useId();
+  const [type, setType] = useState<ConversionType>('case');
+  const [caseType, setCaseType] = useState<CaseType>('upper');
+  const [direction, setDirection] = useState<Direction>('encode');
+  const [input, setInput] = useState('');
 
-  const convertText = () => {
-    if (!inputText) {
-      setOutputText('');
-      return;
-    }
-
+  let output = '';
+  let error: string | null = null;
+  if (input) {
     try {
-      switch (conversionType) {
-        case 'case':
-          switch (caseType) {
-            case 'upper':
-              setOutputText(inputText.toUpperCase());
-              break;
-            case 'lower':
-              setOutputText(inputText.toLowerCase());
-              break;
-            case 'title':
-              setOutputText(inputText.replace(/\w\S*/g, (txt) => 
-                txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-              ));
-              break;
-            case 'sentence':
-              setOutputText(inputText.charAt(0).toUpperCase() + inputText.slice(1).toLowerCase());
-              break;
-          }
-          break;
-        case 'url':
-          setOutputText(encodeURIComponent(inputText));
-          break;
-        case 'base64':
-          setOutputText(btoa(inputText));
-          break;
-        case 'binary':
-          setOutputText(
-            inputText.split('').map(char => char.charCodeAt(0).toString(2).padStart(8, '0')).join(' ')
-          );
-          break;
-      }
-    } catch (error) {
-      setOutputText('Error: Invalid input');
+      output = transform(input, type, caseType, direction);
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'This text could not be converted.';
     }
+  }
+
+  const download = () => {
+    const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'converted-text.txt';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const decodeText = () => {
-    if (!inputText) {
-      setOutputText('');
-      return;
-    }
-
-    try {
-      switch (conversionType) {
-        case 'url':
-          setOutputText(decodeURIComponent(inputText));
-          break;
-        case 'base64':
-          setOutputText(atob(inputText));
-          break;
-        case 'binary':
-          setOutputText(
-            inputText.split(' ').map(bin => String.fromCharCode(parseInt(bin, 2))).join('')
-          );
-          break;
-        default:
-          setOutputText('Decode not available for this type');
-      }
-    } catch (error) {
-      setOutputText('Error: Invalid input');
-    }
-  };
-
-  const handleInputChange = (value: string) => {
-    setInputText(value);
-  };
-
-  useEffect(() => {
-    if (inputText && conversionType === 'case') {
-      convertText();
-    }
-  }, [inputText, caseType, conversionType]);
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
+  const buttonClass = (active: boolean) =>
+    `flex-1 rounded-lg px-5 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+      active ? 'bg-blue-600 text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+    }`;
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Conversion Type</label>
-        <select
-          value={conversionType}
-          onChange={(e) => {
-            setConversionType(e.target.value as ConversionType);
-            setOutputText('');
-          }}
-          className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base touch-manipulation"
-        >
-          <option value="case">Case Converter</option>
-          <option value="url">URL Encoder/Decoder</option>
-          <option value="base64">Base64 Encoder/Decoder</option>
-          <option value="binary">Text to Binary / Binary to Text</option>
-        </select>
-      </div>
-
-      {conversionType === 'case' && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Case Type</label>
-          <select
-            value={caseType}
-            onChange={(e) => {
-              setCaseType(e.target.value as typeof caseType);
-              convertText();
-            }}
-            className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base touch-manipulation"
-          >
-            <option value="upper">UPPERCASE</option>
-            <option value="lower">lowercase</option>
-            <option value="title">Title Case</option>
-            <option value="sentence">Sentence case</option>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="min-w-0">
+          <label htmlFor={`${id}-type`} className="mb-1.5 block text-sm font-medium text-gray-700">
+            Conversion type
+          </label>
+          <select id={`${id}-type`} value={type} onChange={(e) => setType(e.target.value as ConversionType)} className={inputClass}>
+            <option value="case">Case converter</option>
+            <option value="url">URL encode / decode</option>
+            <option value="base64">Base64 encode / decode</option>
+            <option value="binary">Text ↔ binary</option>
           </select>
         </div>
-      )}
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Input Text</label>
-        <textarea
-          value={inputText}
-          onChange={(e) => handleInputChange(e.target.value)}
-          className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm sm:text-base"
-          rows={6}
-          placeholder="Enter text to convert..."
-        />
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-        <button
-          onClick={convertText}
-          className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-medium touch-manipulation shadow-sm"
-        >
-          {conversionType === 'case' ? 'Convert' : 'Encode'}
-        </button>
-        {(conversionType === 'url' || conversionType === 'base64' || conversionType === 'binary') && (
-          <button
-            onClick={decodeText}
-            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors font-medium touch-manipulation shadow-sm"
-          >
-            Decode
-          </button>
+        {type === 'case' ? (
+          <div className="min-w-0">
+            <label htmlFor={`${id}-case`} className="mb-1.5 block text-sm font-medium text-gray-700">
+              Case
+            </label>
+            <select id={`${id}-case`} value={caseType} onChange={(e) => setCaseType(e.target.value as CaseType)} className={inputClass}>
+              {caseOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="min-w-0">
+            <span className="mb-1.5 block text-sm font-medium text-gray-700" id={`${id}-dir`}>
+              Direction
+            </span>
+            <div className="flex gap-2" role="group" aria-labelledby={`${id}-dir`}>
+              <button type="button" aria-pressed={direction === 'encode'} onClick={() => setDirection('encode')} className={buttonClass(direction === 'encode')}>
+                Encode
+              </button>
+              <button type="button" aria-pressed={direction === 'decode'} onClick={() => setDirection('decode')} className={buttonClass(direction === 'decode')}>
+                Decode
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
-      {outputText && (
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-gray-700">Output Text</label>
+      <div>
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <label htmlFor={`${id}-input`} className="text-sm font-medium text-gray-700">
+            Input text
+          </label>
+          <span className="text-xs text-gray-500">{input.length.toLocaleString('en-US')} characters</span>
+        </div>
+        <textarea
+          id={`${id}-input`}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          rows={6}
+          spellCheck={false}
+          className={`${inputClass} font-mono text-sm`}
+          placeholder={type === 'case' || direction === 'encode' ? 'Type or paste text to convert…' : 'Paste encoded text to decode…'}
+        />
+      </div>
+
+      <div aria-live="polite">
+        {error && (
+          <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700" data-testid="text-error">
+            {error}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+          <label htmlFor={`${id}-output`} className="text-sm font-medium text-gray-700">
+            Output
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <CopyButton text={output} label="Copy" className="px-2.5 py-1.5" />
             <button
-              onClick={() => copyToClipboard(outputText)}
-              className="text-sm text-blue-600 hover:text-blue-700"
+              type="button"
+              onClick={download}
+              disabled={!output}
+              className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Copy to Clipboard
+              Download .txt
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setInput(output);
+                if (type !== 'case') setDirection(direction === 'encode' ? 'decode' : 'encode');
+              }}
+              disabled={!output}
+              className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Use as input
             </button>
           </div>
-          <textarea
-            value={outputText}
-            readOnly
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 font-mono"
-            rows={6}
-          />
         </div>
-      )}
-
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-semibold text-gray-900 mb-2">Conversion Types</h3>
-        <ul className="text-sm text-gray-600 space-y-1">
-          <li>• <strong>Case Converter:</strong> Transform text between uppercase, lowercase, title case, and sentence case</li>
-          <li>• <strong>URL Encoder/Decoder:</strong> Encode text for URLs or decode URL-encoded strings</li>
-          <li>• <strong>Base64 Encoder/Decoder:</strong> Encode/decode text using Base64 encoding</li>
-          <li>• <strong>Binary Converter:</strong> Convert text to binary representation or decode binary to text</li>
-        </ul>
+        <textarea
+          id={`${id}-output`}
+          value={output}
+          readOnly
+          rows={6}
+          data-testid="text-output"
+          className="w-full min-w-0 rounded-lg border border-gray-300 bg-gray-50 px-3 py-3 font-mono text-sm"
+          placeholder="The result appears here as you type."
+        />
       </div>
+
+      <p className="rounded-xl bg-gray-50 p-4 text-sm text-gray-600">
+        Base64 and binary use UTF-8, so emoji and non-Latin text round-trip correctly. URL encoding follows encodeURIComponent (spaces become %20).
+      </p>
     </div>
   );
 }
-

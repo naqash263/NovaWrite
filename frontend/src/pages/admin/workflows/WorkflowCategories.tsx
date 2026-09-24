@@ -1,262 +1,244 @@
-import React, { useState, useEffect } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FolderTree, Pencil, Plus, Trash2 } from 'lucide-react';
 import apiClient from '../../../api/axios';
+import { useSEO } from '../../../utils/seo';
 import { useToast } from '../../../hooks/use-toast';
+import { useConfirm } from '../../../hooks/use-confirm';
+import { AdminCard, AdminPageHeader, Badge, EmptyState, ErrorState, Field, IconButton, LoadingState, Modal, SearchInput, TableShell, inputClass } from '../../../components/admin/ui';
+import { apiErrorMessage, asList } from '../../../components/admin/utils';
 
 interface WorkflowCategory {
   id: number;
   name: string;
   slug: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
+  description?: string | null;
+  workflows_count?: number;
+  created_at?: string;
+}
+
+type FormErrors = Partial<Record<'name' | 'description', string>>;
+
+const primaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const secondaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-60';
+
+function serverErrors(error: unknown): FormErrors {
+  const errors = (error as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors ?? {};
+  return { name: errors.name?.[0], description: errors.description?.[0] };
 }
 
 export default function WorkflowCategories() {
-  const [categories, setCategories] = useState<WorkflowCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<WorkflowCategory | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-  });
+  useSEO({ title: 'Workflow Categories | Admin', robots: 'noindex, nofollow' });
+  const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { confirm } = useConfirm();
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  const [search, setSearch] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<WorkflowCategory | null>(null);
+  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [errors, setErrors] = useState<FormErrors>({});
 
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get('/admin/workflow-categories');
-      setCategories(response.data.data || response.data);
-    } catch (error) {
-      console.error('Error fetching workflow categories:', error);
-      addToast({
-        type: 'error',
-        title: 'Error',
-        description: 'Failed to fetch workflow categories',
-        duration: 3000
-      });
-    } finally {
-      setLoading(false);
-    }
+  const { data: categories = [], isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['admin-workflow-categories'],
+    queryFn: async () => asList<WorkflowCategory>((await apiClient.get('/admin/workflow-categories')).data),
+  });
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return categories;
+    return categories.filter((c) => [c.name, c.slug, c.description].some((v) => v?.toLowerCase().includes(term)));
+  }, [categories, search]);
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: { name: string; description: string }) =>
+      editing ? apiClient.put(`/admin/workflow-categories/${editing.id}`, payload) : apiClient.post('/admin/workflow-categories', payload),
+    onSuccess: () => {
+      addToast({ type: 'success', title: editing ? 'Category updated' : 'Category created' });
+      closeModal();
+      queryClient.invalidateQueries({ queryKey: ['admin-workflow-categories'] });
+    },
+    onError: (err) => {
+      setErrors(serverErrors(err));
+      addToast({ type: 'error', title: 'Could not save category', description: apiErrorMessage(err) });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiClient.delete(`/admin/workflow-categories/${id}`),
+    onSuccess: () => {
+      addToast({ type: 'success', title: 'Category deleted' });
+      queryClient.invalidateQueries({ queryKey: ['admin-workflow-categories'] });
+    },
+    onError: (err) => addToast({ type: 'error', title: 'Could not delete category', description: apiErrorMessage(err) }),
+  });
+
+  const openCreate = () => {
+    setEditing(null);
+    setFormData({ name: '', description: '' });
+    setErrors({});
+    setModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const openEdit = (category: WorkflowCategory) => {
+    setEditing(category);
+    setFormData({ name: category.name ?? '', description: category.description ?? '' });
+    setErrors({});
+    setModalOpen(true);
+  };
+
+  function closeModal() {
+    setModalOpen(false);
+    setEditing(null);
+    setErrors({});
+  }
+
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    try {
-      if (editingCategory) {
-        await apiClient.put(`/admin/workflow-categories/${editingCategory.id}`, formData);
-        addToast({
-          type: 'success',
-          title: 'Success',
-          description: 'Workflow category updated successfully',
-          duration: 3000
-        });
-      } else {
-        await apiClient.post('/admin/workflow-categories', formData);
-        addToast({
-          type: 'success',
-          title: 'Success',
-          description: 'Workflow category created successfully',
-          duration: 3000
-        });
-      }
-      setShowForm(false);
-      setEditingCategory(null);
-      resetForm();
-      fetchCategories();
-    } catch (error: any) {
-      console.error('Error saving workflow category:', error);
-      addToast({
-        type: 'error',
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to save workflow category',
-        duration: 5000
-      });
-    }
-  };
-
-  const handleEdit = (category: WorkflowCategory) => {
-    setEditingCategory(category);
-    setFormData({
-      name: category.name,
-      description: category.description || '',
-    });
-    setShowForm(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this workflow category?')) {
+    const name = formData.name.trim();
+    if (!name) {
+      setErrors({ name: 'Name is required.' });
       return;
     }
-
-    try {
-      await apiClient.delete(`/admin/workflow-categories/${id}`);
-      addToast({
-        type: 'success',
-        title: 'Success',
-        description: 'Workflow category deleted successfully',
-        duration: 3000
-      });
-      fetchCategories();
-    } catch (error: any) {
-      console.error('Error deleting workflow category:', error);
-      addToast({
-        type: 'error',
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to delete workflow category',
-        duration: 5000
-      });
-    }
+    setErrors({});
+    saveMutation.mutate({ name, description: formData.description });
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
+  const handleDelete = async (category: WorkflowCategory) => {
+    const ok = await confirm({
+      title: 'Delete category',
+      message: `Delete "${category.name}"? Categories that still contain workflows cannot be deleted.`,
+      confirmText: 'Delete',
+      type: 'danger',
     });
-    setEditingCategory(null);
+    if (ok) deleteMutation.mutate(category.id);
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Workflow Categories</h1>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowForm(true);
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Add Category
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Workflow Categories"
+        description="Group automation workflows so visitors can browse them by topic."
+        actions={
+          <button type="button" className={primaryBtn} onClick={openCreate}>
+            <Plus className="h-4 w-4" aria-hidden="true" /> Add category
+          </button>
+        }
+      />
 
-      {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">
-            {editingCategory ? 'Edit Category' : 'Add New Category'}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={3}
-              />
-            </div>
-            <div className="flex space-x-3">
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {editingCategory ? 'Update' : 'Create'}
+      <AdminCard
+        padded={false}
+        title="All categories"
+        description={isLoading ? undefined : `${categories.length} total`}
+        actions={
+          <div className="w-full sm:w-64">
+            <SearchInput label="Search categories" placeholder="Search categories…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+        }
+      >
+        {isLoading ? (
+          <LoadingState label="Loading categories…" />
+        ) : isError ? (
+          <ErrorState message={apiErrorMessage(error)} onRetry={() => refetch()} />
+        ) : categories.length === 0 ? (
+          <EmptyState
+            icon={FolderTree}
+            title="No categories yet"
+            description="Create your first category to start organising workflows."
+            action={
+              <button type="button" className={primaryBtn} onClick={openCreate}>
+                <Plus className="h-4 w-4" aria-hidden="true" /> Add category
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  resetForm();
-                }}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            }
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState title="No matching categories" description={`Nothing matches "${search}".`} />
+        ) : (
+          <TableShell caption="Workflow categories">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Slug
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col">Name</th>
+                <th scope="col">Slug</th>
+                <th scope="col">Workflows</th>
+                <th scope="col" className="!text-right">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {categories.map((category) => (
-                <tr key={category.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {category.name}
+            <tbody className="divide-y divide-slate-100">
+              {filtered.map((category) => (
+                <tr key={category.id}>
+                  <td>
+                    <p className="font-medium text-slate-900">{category.name}</p>
+                    {category.description && <p className="mt-0.5 line-clamp-1 max-w-md text-xs text-slate-500">{category.description}</p>}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {category.slug}
+                  <td className="whitespace-nowrap font-mono text-xs text-slate-500">{category.slug}</td>
+                  <td>
+                    <Badge tone={category.workflows_count ? 'info' : 'neutral'}>{category.workflows_count ?? 0}</Badge>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {category.description || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(category.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleEdit(category)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(category.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
+                  <td>
+                    <div className="flex justify-end gap-1">
+                      <IconButton label={`Edit ${category.name}`} icon={Pencil} onClick={() => openEdit(category)} />
+                      <IconButton
+                        label={`Delete ${category.name}`}
+                        icon={Trash2}
+                        tone="danger"
+                        disabled={deleteMutation.isPending && deleteMutation.variables === category.id}
+                        onClick={() => handleDelete(category)}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
-        {categories.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No workflow categories found. Create your first category!
-          </div>
+          </TableShell>
         )}
-      </div>
+      </AdminCard>
+
+      <Modal
+        open={modalOpen}
+        onClose={closeModal}
+        title={editing ? 'Edit workflow category' : 'New workflow category'}
+        description="The slug is generated from the name."
+        footer={
+          <>
+            <button type="button" className={secondaryBtn} onClick={closeModal}>
+              Cancel
+            </button>
+            <button type="submit" form="workflow-category-form" className={primaryBtn} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Saving…' : editing ? 'Save changes' : 'Create category'}
+            </button>
+          </>
+        }
+      >
+        <form id="workflow-category-form" onSubmit={handleSubmit} noValidate className="space-y-4">
+          <Field label="Name" required error={errors.name}>
+            {(props) => (
+              <input
+                {...props}
+                type="text"
+                className={inputClass}
+                value={formData.name}
+                maxLength={255}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field label="Description" error={errors.description}>
+            {(props) => (
+              <textarea
+                {...props}
+                rows={3}
+                className={inputClass}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            )}
+          </Field>
+        </form>
+      </Modal>
     </div>
   );
 }

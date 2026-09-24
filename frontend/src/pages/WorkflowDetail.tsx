@@ -85,7 +85,7 @@ export default function WorkflowDetail() {
     
     // If still too short, add default text
     if (description.length < 120) {
-      description = `${workflow.title} - Download this AI automation workflow template by Systems Analyst Naqash Thaheem. ${workflow.summary || 'Free workflow template for business automation and process improvement.'}`;
+      description = `${workflow.title} - Download this AI automation workflow template by Technical Project Manager Naqash Thaheem. ${workflow.summary || 'Free workflow template for business automation and process improvement.'}`;
     }
     
     // Ensure description is within optimal length
@@ -159,18 +159,11 @@ export default function WorkflowDetail() {
         'availability': 'https://schema.org/InStock',
         'url': `https://naqashthaheem.com/workflows/${slug}`
       },
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '5',
-        'ratingCount': '1',
-        'bestRating': '5',
-        'worstRating': '1'
-      },
       'author': {
         '@type': 'Person',
         'name': 'Naqash Thaheem',
         'url': 'https://naqashthaheem.com/about',
-        'jobTitle': 'Systems Analyst & AI Automation Specialist'
+        'jobTitle': 'Technical Project Manager & AI Automation Specialist'
       },
       'publisher': {
         '@type': 'Person',

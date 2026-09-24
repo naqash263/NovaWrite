@@ -5,10 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/prerender.mjs",
     "build:analyze": "ANALYZE=true tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:e2e": "playwright test",
+    "test:e2e:build": "npm run build && playwright test",
+    "og:image": "node scripts/generate-og-image.mjs",
+    "prerender": "node scripts/prerender.mjs"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -37,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/typography": "^0.5.19",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^24.7.0",

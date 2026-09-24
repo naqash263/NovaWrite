@@ -1,114 +1,109 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PDFDocument, degrees } from 'pdf-lib';
-import { useSEO } from '../../utils/seo';
+
+type RotateMode = 'all' | 'odd' | 'even' | 'selected';
+type Angle = 90 | 180 | 270;
+
+const isPdf = (file: File) => file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+
+const formatSize = (bytes: number) =>
+  bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(2)} MB` : `${(bytes / 1024).toFixed(1)} KB`;
+
+/** Parses "1-3, 5, 8-" into sorted, unique zero-based page indices or returns an error message. */
+function parsePageNumbers(input: string, maxPages: number): number[] | string {
+  const parts = input
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return 'Enter the pages to rotate, for example 1, 3-5.';
+  const pages: number[] = [];
+  for (const part of parts) {
+    const match = part.match(/^(\d+)\s*(?:[-–]\s*(\d*))?$/);
+    if (!match) return `"${part}" is not a valid page or range. Use numbers like 3 or ranges like 2-5.`;
+    const start = parseInt(match[1], 10);
+    const isRange = /[-–]/.test(part);
+    const end = isRange ? (match[2] ? parseInt(match[2], 10) : maxPages) : start;
+    if (start < 1 || end < 1) return 'Page numbers start at 1.';
+    if (start > maxPages || end > maxPages) return `This PDF has ${maxPages} page${maxPages !== 1 ? 's' : ''}. "${part}" is out of range.`;
+    if (start > end) return `"${part}" is reversed. Write the lower page number first.`;
+    for (let i = start; i <= end; i++) pages.push(i - 1);
+  }
+  return [...new Set(pages)].sort((a, b) => a - b);
+}
+
+const angleOptions: { value: Angle; label: string; text: string }[] = [
+  { value: 90, label: '90° right', text: 'Quarter turn clockwise' },
+  { value: 180, label: '180°', text: 'Upside down' },
+  { value: 270, label: '90° left', text: 'Quarter turn counter-clockwise' },
+];
 
 export default function PDFRotate() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [pageCount, setPageCount] = useState<number>(0);
-  const [rotationAngle, setRotationAngle] = useState<90 | 180 | 270>(90);
-  const [rotateMode, setRotateMode] = useState<'all' | 'selected'>('all');
-  const [selectedPages, setSelectedPages] = useState<string>('');
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [rotatedPdfUrl, setRotatedPdfUrl] = useState<string>('');
+  const [pageCount, setPageCount] = useState(0);
+  const [rotationAngle, setRotationAngle] = useState<Angle>(90);
+  const [rotateMode, setRotateMode] = useState<RotateMode>('all');
+  const [selectedPages, setSelectedPages] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+  const [rotatedPdfUrl, setRotatedPdfUrl] = useState('');
+  const [resultText, setResultText] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useSEO({
-    title: 'Free PDF Rotator Online - Rotate PDF Pages 90, 180, 270 | No Signup',
-    description: 'Free PDF rotator online - no signup required. Rotate PDF pages 90°, 180°, or 270° instantly. Rotate all pages or selected pages. Fix PDF orientation issues. All processing happens in your browser. Perfect for document management.',
-    url: '/resources/utility-tools/pdf-rotate',
-    keywords: [
-      'free PDF rotator online', 'PDF rotate', 'free PDF rotator', 'PDF rotator online', 'rotate PDF pages free',
-      'rotate PDF', 'rotate PDF pages', 'PDF page rotator',
-      'online PDF rotate', 'free PDF rotate', 'rotate PDF 90 degrees', 'fix PDF orientation', 'free online PDF rotator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'PDF Rotate',
-      'description': 'Free online tool to rotate PDF pages. All processing happens in your browser.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/pdf-rotate',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Rotate PDF pages 90°, 180°, 270°',
-        'Rotate all pages or selected pages',
-        'Fix document orientation',
-        'Client-side processing',
-        'No file size limits',
-        'Instant download'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.6',
-        'ratingCount': '900',
-        'bestRating': '5',
-        'worstRating': '1'
-      }
-    }
-  });
+  useEffect(() => {
+    return () => {
+      if (rotatedPdfUrl) URL.revokeObjectURL(rotatedPdfUrl);
+    };
+  }, [rotatedPdfUrl]);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      setError('Please select a PDF file');
-      return;
-    }
-
-    setPdfFile(file);
-    setError('');
+  // Any option change invalidates the previous result.
+  const invalidate = () => {
     setRotatedPdfUrl('');
-
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      setPageCount(pdfDoc.getPageCount());
-    } catch (err) {
-      setError('Failed to read PDF. It may be corrupted or password-protected.');
-      setPdfFile(null);
-    }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    setResultText('');
   };
 
-  const parsePageNumbers = (input: string, maxPages: number): number[] => {
-    const pages: number[] = [];
-    const parts = input.split(',').map(p => p.trim());
-
-    for (const part of parts) {
-      if (part.includes('-')) {
-        const [start, end] = part.split('-').map(n => parseInt(n.trim()));
-        if (isNaN(start) || isNaN(end) || start < 1 || end > maxPages || start > end) {
-          return [];
-        }
-        for (let i = start; i <= end; i++) {
-          pages.push(i - 1);
-        }
-      } else {
-        const page = parseInt(part);
-        if (isNaN(page) || page < 1 || page > maxPages) {
-          return [];
-        }
-        pages.push(page - 1);
-      }
+  const loadFile = async (file: File | undefined) => {
+    if (!file) return;
+    if (!isPdf(file)) {
+      setError(`${file.name} is not a PDF file. Please choose a .pdf file.`);
+      return;
     }
-
-    return [...new Set(pages)].sort((a, b) => a - b);
+    setError('');
+    setRotatedPdfUrl('');
+    setResultText('');
+    try {
+      const pdfDoc = await PDFDocument.load(await file.arrayBuffer());
+      setPdfFile(file);
+      setPageCount(pdfDoc.getPageCount());
+    } catch {
+      setError(`Could not read ${file.name}. It may be corrupted or password-protected.`);
+      setPdfFile(null);
+      setPageCount(0);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleRotate = async () => {
     if (!pdfFile) {
-      setError('Please select a PDF file first');
+      setError('Please select a PDF file first.');
+      return;
+    }
+
+    let pagesToRotate: number[];
+    const every = Array.from({ length: pageCount }, (_, i) => i);
+    if (rotateMode === 'all') pagesToRotate = every;
+    else if (rotateMode === 'odd') pagesToRotate = every.filter((i) => i % 2 === 0);
+    else if (rotateMode === 'even') pagesToRotate = every.filter((i) => i % 2 === 1);
+    else {
+      const parsed = parsePageNumbers(selectedPages, pageCount);
+      if (typeof parsed === 'string') {
+        setError(parsed);
+        return;
+      }
+      pagesToRotate = parsed;
+    }
+    if (pagesToRotate.length === 0) {
+      setError('There are no pages that match this selection.');
       return;
     }
 
@@ -116,50 +111,30 @@ export default function PDFRotate() {
     setError('');
 
     try {
-      const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const totalPages = pdfDoc.getPageCount();
-
-      let pagesToRotate: number[] = [];
-      if (rotateMode === 'all') {
-        pagesToRotate = Array.from({ length: totalPages }, (_, i) => i);
-      } else {
-        if (!selectedPages.trim()) {
-          setError('Please enter page numbers to rotate');
-          setIsProcessing(false);
-          return;
-        }
-        pagesToRotate = parsePageNumbers(selectedPages, totalPages);
-        if (pagesToRotate.length === 0) {
-          setError('Invalid page numbers');
-          setIsProcessing(false);
-          return;
-        }
-      }
-
-      pagesToRotate.forEach(pageIndex => {
+      const pdfDoc = await PDFDocument.load(await pdfFile.arrayBuffer());
+      pagesToRotate.forEach((pageIndex) => {
         const page = pdfDoc.getPage(pageIndex);
-        const currentRotation = page.getRotation();
-        page.setRotation(degrees(currentRotation.angle + rotationAngle));
+        const next = (((page.getRotation().angle + rotationAngle) % 360) + 360) % 360;
+        page.setRotation(degrees(next));
       });
-
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      setRotatedPdfUrl(url);
+      setRotatedPdfUrl(URL.createObjectURL(blob));
+      const label = angleOptions.find((a) => a.value === rotationAngle)?.label ?? `${rotationAngle}°`;
+      setResultText(`Rotated ${pagesToRotate.length} of ${pageCount} page${pageCount !== 1 ? 's' : ''} by ${label}.`);
     } catch (err) {
       console.error('Rotate error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to rotate PDF. The file may be corrupted or password-protected.');
+      setError('Failed to rotate the PDF. The file may be corrupted or password-protected.');
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleDownload = () => {
-    if (!rotatedPdfUrl) return;
+    if (!rotatedPdfUrl || !pdfFile) return;
     const link = document.createElement('a');
     link.href = rotatedPdfUrl;
-    link.download = pdfFile?.name.replace('.pdf', '') + '_rotated.pdf';
+    link.download = `${pdfFile.name.replace(/\.pdf$/i, '')}_rotated.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -169,63 +144,72 @@ export default function PDFRotate() {
     setPdfFile(null);
     setPageCount(0);
     setSelectedPages('');
+    setRotateMode('all');
     setError('');
-    if (rotatedPdfUrl) {
-      URL.revokeObjectURL(rotatedPdfUrl);
-    }
     setRotatedPdfUrl('');
+    setResultText('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
+
+  const modes: { value: RotateMode; title: string }[] = [
+    { value: 'all', title: `All pages${pageCount ? ` (${pageCount})` : ''}` },
+    { value: 'odd', title: 'Odd pages (1, 3, 5…)' },
+    { value: 'even', title: 'Even pages (2, 4, 6…)' },
+    { value: 'selected', title: 'Specific pages' },
+  ];
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔄 Free PDF Rotator Online
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Free PDF rotator online - no signup required. Rotate PDF pages 90°, 180°, or 270° to fix orientation instantly. Rotate all pages or selected pages. All processing happens in your browser. Perfect for document management.
-        </p>
-
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
         {/* Stats */}
         {pdfFile && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-600">File Name</div>
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="bg-blue-50 p-3 rounded-lg min-w-0">
+              <div className="text-sm text-gray-600">File</div>
               <div className="text-sm font-bold text-blue-600 truncate">{pdfFile.name}</div>
             </div>
             <div className="bg-green-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-600">Total Pages</div>
+              <div className="text-sm text-gray-600">Pages</div>
               <div className="text-2xl font-bold text-green-600">{pageCount}</div>
             </div>
             <div className="bg-purple-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-600">File Size</div>
-              <div className="text-sm font-bold text-purple-600">
-                {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
-              </div>
+              <div className="text-sm text-gray-600">Size</div>
+              <div className="text-sm font-bold text-purple-600">{formatSize(pdfFile.size)}</div>
             </div>
           </div>
         )}
 
         {/* File Upload */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select PDF File
+        <div
+          className={`mb-6 rounded-lg border-2 border-dashed p-4 transition-colors ${isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragOver(false);
+            void loadFile(e.dataTransfer.files?.[0]);
+          }}
+        >
+          <label htmlFor="pdf-rotate-input" className="block text-sm font-medium text-gray-700 mb-2">
+            Select a PDF file (or drop it here)
           </label>
           <input
+            id="pdf-rotate-input"
             ref={fileInputRef}
             type="file"
-            accept=".pdf"
-            onChange={handleFileSelect}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            accept=".pdf,application/pdf"
+            onChange={(e) => void loadFile(e.target.files?.[0])}
+            className="w-full min-w-0 p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          <p className="text-sm text-gray-500 mt-2">
-            Maximum file size: 50MB. Password-protected PDFs are not supported.
-          </p>
+          <p className="text-sm text-gray-500 mt-2">Password-protected PDFs are not supported.</p>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-800 text-sm">{error}</p>
           </div>
         )}
@@ -233,254 +217,119 @@ export default function PDFRotate() {
         {/* Rotation Options */}
         {pdfFile && (
           <div className="space-y-6 mb-6">
-            {/* Rotation Angle */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Rotation Angle
-              </label>
-              <div className="grid grid-cols-3 gap-3">
-                {([90, 180, 270] as const).map((angle) => (
+            <fieldset>
+              <legend className="block text-sm font-medium text-gray-700 mb-3">Rotation</legend>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {angleOptions.map((opt) => (
                   <button
-                    key={angle}
-                    onClick={() => setRotationAngle(angle)}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      rotationAngle === angle
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      setRotationAngle(opt.value);
+                      invalidate();
+                    }}
+                    aria-pressed={rotationAngle === opt.value}
+                    className={`p-3 sm:p-4 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      rotationAngle === opt.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <div className="text-2xl font-bold text-gray-900 mb-1">{angle}°</div>
-                    <div className="text-xs text-gray-600">
-                      {angle === 90 && 'Quarter turn clockwise'}
-                      {angle === 180 && 'Half turn (upside down)'}
-                      {angle === 270 && 'Quarter turn counterclockwise'}
-                    </div>
+                    <span className="block text-lg sm:text-2xl font-bold text-gray-900 mb-1">{opt.label}</span>
+                    <span className="block text-xs text-gray-600">{opt.text}</span>
                   </button>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
-            {/* Rotate Mode */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Rotate
-              </label>
-              <div className="space-y-3">
-                <label className="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="rotateMode"
-                    value="all"
-                    checked={rotateMode === 'all'}
-                    onChange={(e) => setRotateMode(e.target.value as any)}
-                    className="mr-3"
-                  />
-                  <div>
-                    <div className="font-medium text-gray-900">All Pages</div>
-                    <div className="text-sm text-gray-600">Rotate all {pageCount} pages</div>
-                  </div>
-                </label>
-                <label className="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="rotateMode"
-                    value="selected"
-                    checked={rotateMode === 'selected'}
-                    onChange={(e) => setRotateMode(e.target.value as any)}
-                    className="mr-3"
-                  />
-                  <div>
-                    <div className="font-medium text-gray-900">Selected Pages</div>
-                    <div className="text-sm text-gray-600">Rotate specific pages (e.g., 1,3,5 or 1-5)</div>
-                  </div>
-                </label>
+            <fieldset>
+              <legend className="block text-sm font-medium text-gray-700 mb-3">Pages to rotate</legend>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {modes.map((mode) => (
+                  <label
+                    key={mode.value}
+                    className={`flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 ${
+                      rotateMode === mode.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="rotateMode"
+                      value={mode.value}
+                      checked={rotateMode === mode.value}
+                      onChange={() => {
+                        setRotateMode(mode.value);
+                        invalidate();
+                      }}
+                      className="mr-3"
+                    />
+                    <span className="font-medium text-gray-900">{mode.title}</span>
+                  </label>
+                ))}
               </div>
 
               {rotateMode === 'selected' && (
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Page Numbers
+                  <label htmlFor="pdf-rotate-pages" className="block text-sm font-medium text-gray-700 mb-2">
+                    Page numbers
                   </label>
                   <input
+                    id="pdf-rotate-pages"
                     type="text"
+                    inputMode="numeric"
                     value={selectedPages}
-                    onChange={(e) => setSelectedPages(e.target.value)}
-                    placeholder="e.g., 1,3,5 or 1-5 or 1-3,5,7-10"
+                    onChange={(e) => {
+                      setSelectedPages(e.target.value);
+                      invalidate();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') void handleRotate();
+                    }}
+                    placeholder="e.g. 1, 3-5, 8-"
+                    aria-describedby="pdf-rotate-pages-hint"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Enter page numbers (1-{pageCount}). Use commas for multiple pages, dashes for ranges.
+                  <p id="pdf-rotate-pages-hint" className="text-xs text-gray-500 mt-1">
+                    Pages 1–{pageCount}. Separate with commas; use a dash for ranges. “8-” means page 8 to the end.
                   </p>
                 </div>
               )}
-            </div>
+            </fieldset>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="flex flex-wrap gap-3">
           <button
+            type="button"
             onClick={handleRotate}
             disabled={!pdfFile || isProcessing}
             className="flex-1 sm:flex-none px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
           >
-            {isProcessing ? 'Rotating...' : '🔄 Rotate PDF'}
+            {isProcessing ? 'Rotating…' : 'Rotate PDF'}
           </button>
           {rotatedPdfUrl && (
             <button
+              type="button"
               onClick={handleDownload}
               className="flex-1 sm:flex-none px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
             >
-              📥 Download Rotated PDF
+              Download rotated PDF
             </button>
           )}
           <button
+            type="button"
             onClick={handleClear}
             className="flex-1 sm:flex-none px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors"
           >
-            🗑️ Clear
+            Clear
           </button>
         </div>
 
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">About PDF Rotate</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our PDF Rotate is a powerful, client-side tool that rotates PDF pages to fix orientation issues. 
-              All processing happens locally in your browser using the pdf-lib library, ensuring your files never leave 
-              your device. This provides maximum privacy and security for your documents.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Perfect for fixing scanned documents that are upside down or sideways, correcting page orientation, 
-              or rotating specific pages in a document. The tool supports rotating all pages or selected pages with 
-              multiple rotation angles.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h3>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Fix scanned documents that are upside down</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Correct page orientation in PDFs</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Rotate specific pages in a document</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Fix landscape/portrait orientation issues</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Correct rotated images in PDFs</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Prepare documents for printing</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Multiple Angles</h4>
-                  <p className="text-sm text-gray-600">Rotate 90°, 180°, or 270°</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Selective Rotation</h4>
-                  <p className="text-sm text-gray-600">Rotate all pages or selected pages</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Privacy-First</h4>
-                  <p className="text-sm text-gray-600">All processing happens in your browser</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Instant Results</h4>
-                  <p className="text-sm text-gray-600">Rotate and download in seconds</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Is my PDF data stored or uploaded?</h4>
-                <p className="text-gray-700 text-sm">
-                  No, all PDF rotation happens locally in your browser. Your files are never uploaded to any server 
-                  or stored anywhere. Your privacy is guaranteed.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I rotate specific pages?</h4>
-                <p className="text-gray-700 text-sm">
-                  Yes, select "Selected Pages" mode and enter page numbers (e.g., 1,3,5 or 1-5) to rotate only 
-                  those pages.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Can I rotate password-protected PDFs?</h4>
-                <p className="text-gray-700 text-sm">
-                  Password-protected PDFs cannot be rotated. You'll need to remove the password first using a PDF 
-                  password remover tool.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What rotation angles are available?</h4>
-                <p className="text-gray-700 text-sm">
-                  You can rotate pages 90° (quarter turn), 180° (half turn/upside down), or 270° (three-quarter turn).
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h3>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>90° rotates clockwise, 270° rotates counterclockwise</li>
-            <li>180° flips the page upside down</li>
-            <li>Use "Selected Pages" to rotate only specific pages</li>
-            <li>All processing happens in your browser - no uploads required</li>
-            <li>You can rotate the same page multiple times to achieve different angles</li>
-          </ul>
-        </div>
+        {resultText && (
+          <p role="status" className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800" data-testid="rotate-result">
+            {resultText}
+          </p>
+        )}
       </div>
     </div>
   );
 }
-

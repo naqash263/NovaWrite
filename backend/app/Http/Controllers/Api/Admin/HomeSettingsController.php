@@ -170,7 +170,7 @@ class HomeSettingsController extends Controller
     /**
      * Get public home settings (for frontend display)
      */
-    public function getPublicSettings(): JsonResponse
+    public function getPublicSettings(Request $request): JsonResponse
     {
         $settings = HomeSettings::active()
             ->orderBy('sort_order')

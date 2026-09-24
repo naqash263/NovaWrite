@@ -1,421 +1,193 @@
-import { useState, useEffect } from 'react';
-import { useSEO } from '../../utils/seo';
+import { useMemo, useState } from 'react';
 
-// Simple token estimation based on common models
-// This is an approximation - actual token counts vary by model
-const estimateTokens = (text: string, model: string): number => {
-  if (!text.trim()) return 0;
-  
-  // Remove extra whitespace
-  const cleaned = text.trim();
-  
-  switch (model) {
-    case 'gpt-3.5-turbo':
-    case 'gpt-4':
-    case 'gpt-4-turbo':
-      // OpenAI models: ~4 characters per token on average
-      // More accurate: count words and punctuation
-      const words = cleaned.split(/\s+/).length;
-      const chars = cleaned.length;
-      // Rough estimate: 1 token ≈ 4 characters or 0.75 words
-      return Math.ceil(Math.max(chars / 4, words / 0.75));
-    
-    case 'claude-3':
-    case 'claude-3-opus':
-    case 'claude-3-sonnet':
-      // Anthropic Claude: similar to GPT
-      const claudeWords = cleaned.split(/\s+/).length;
-      const claudeChars = cleaned.length;
-      return Math.ceil(Math.max(claudeChars / 4, claudeWords / 0.75));
-    
-    case 'gemini-pro':
-    case 'gemini-1.5':
-      // Google Gemini: similar tokenization
-      const geminiWords = cleaned.split(/\s+/).length;
-      const geminiChars = cleaned.length;
-      return Math.ceil(Math.max(geminiChars / 4, geminiWords / 0.75));
-    
-    case 'llama-2':
-    case 'llama-3':
-      // Meta LLaMA: similar to GPT
-      const llamaWords = cleaned.split(/\s+/).length;
-      const llamaChars = cleaned.length;
-      return Math.ceil(Math.max(llamaChars / 4, llamaWords / 0.75));
-    
-    default:
-      // Default estimation: 1 token ≈ 4 characters
-      return Math.ceil(cleaned.length / 4);
+/**
+ * Heuristic token estimate modelled on how BPE tokenizers (GPT, Claude, Gemini, Llama) pre-split text:
+ * words with their leading space, digit groups of up to 3, punctuation runs and whitespace runs.
+ * It is an approximation: exact counts need the provider's own tokenizer.
+ */
+const PRE_TOKEN = /'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}{1,3}| ?[^\s\p{L}\p{N}]+|\s+/giu;
+const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+
+function estimateChunk(chunk: string): number {
+  const body = chunk.startsWith(' ') ? chunk.slice(1) : chunk;
+  if (!body) return 1;
+  if (/^\s+$/.test(chunk)) return 1;
+  if (/^\p{N}+$/u.test(body)) return 1;
+  if (/^\p{L}+$/u.test(body)) {
+    const chars = Array.from(body);
+    if (chars.some((c) => CJK.test(c))) return chars.length;
+    // eslint-disable-next-line no-control-regex
+    if (/^[\x00-\x7F]+$/.test(body)) return chars.length <= 7 ? 1 : Math.ceil(chars.length / 5);
+    return Math.ceil(chars.length / 2);
   }
-};
+  // Punctuation / symbols / emoji.
+  const chars = Array.from(body);
+  // eslint-disable-next-line no-control-regex
+  const ascii = chars.filter((c) => /^[\x00-\x7F]$/.test(c)).length;
+  return Math.max(1, Math.ceil(ascii / 2) + (chars.length - ascii) * 2);
+}
 
-const MODELS = [
-  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (OpenAI)' },
-  { value: 'gpt-4', label: 'GPT-4 (OpenAI)' },
-  { value: 'gpt-4-turbo', label: 'GPT-4 Turbo (OpenAI)' },
-  { value: 'claude-3', label: 'Claude 3 (Anthropic)' },
-  { value: 'claude-3-opus', label: 'Claude 3 Opus (Anthropic)' },
-  { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet (Anthropic)' },
-  { value: 'gemini-pro', label: 'Gemini Pro (Google)' },
-  { value: 'gemini-1.5', label: 'Gemini 1.5 (Google)' },
-  { value: 'llama-2', label: 'LLaMA 2 (Meta)' },
-  { value: 'llama-3', label: 'LLaMA 3 (Meta)' },
-  { value: 'general', label: 'General Estimation' },
-];
+function estimateTokens(text: string): number {
+  if (!text) return 0;
+  let total = 0;
+  for (const m of text.matchAll(PRE_TOKEN)) total += estimateChunk(m[0]);
+  return total;
+}
+
+const CONTEXT_PRESETS = [8_000, 32_000, 128_000, 200_000, 1_000_000];
+
+const formatUsd = (n: number) => (n === 0 ? '$0' : n < 0.01 ? `$${n.toFixed(6)}` : `$${n.toFixed(4)}`);
 
 export default function TokenCounter() {
-  const [text, setText] = useState<string>('');
-  const [selectedModel, setSelectedModel] = useState<string>('gpt-3.5-turbo');
-  const [tokenCount, setTokenCount] = useState<number>(0);
-  const [charCount, setCharCount] = useState<number>(0);
-  const [wordCount, setWordCount] = useState<number>(0);
-  const [paragraphCount, setParagraphCount] = useState<number>(0);
-  const [sentenceCount, setSentenceCount] = useState<number>(0);
+  const [text, setText] = useState('');
+  const [contextWindow, setContextWindow] = useState(128_000);
+  const [price, setPrice] = useState('');
+  const [status, setStatus] = useState('');
 
-  useSEO({
-    title: 'Free Token Counter AI Models - Count GPT, Claude, Gemini Tokens | No Signup',
-    description: 'Free token counter AI models - no signup required. Count tokens for GPT-3.5, GPT-4, Claude, Gemini, and other AI models instantly. Estimate API costs and track token usage. Perfect for AI developers. All processing in your browser.',
-    url: '/resources/utility-tools/token-counter',
-    keywords: [
-      'free token counter AI models', 'token counter', 'free token counter', 'token counter AI models', 'AI token counter',
-      'token calculator', 'gpt token counter', 'claude token counter',
-      'openai token counter', 'token count', 'gpt-4 tokens',
-      'claude tokens', 'gemini tokens', 'llm token counter', 'api token calculator'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'Token Counter',
-      'description': 'Free online token counter for AI models. Count tokens for GPT, Claude, Gemini, and other AI models.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/token-counter',
-      'applicationCategory': 'UtilityApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Count tokens for multiple AI models',
-        'Support for GPT-3.5, GPT-4, Claude, Gemini',
-        'Character and word count',
-        'Real-time token estimation',
-        'API cost estimation',
-        'No registration required'
-      ],
-      'aggregateRating': {
-        '@type': 'AggregateRating',
-        'ratingValue': '4.8',
-        'reviewCount': '1520'
-      }
-    }
-  });
-
-  useEffect(() => {
-    if (!text.trim()) {
-      setTokenCount(0);
-      setCharCount(0);
-      setWordCount(0);
-      setParagraphCount(0);
-      setSentenceCount(0);
-      return;
-    }
-
-    const cleaned = text.trim();
-    
-    // Character count (including spaces)
-    setCharCount(cleaned.length);
-    
-    // Word count
-    const words = cleaned.split(/\s+/).filter(word => word.length > 0);
-    setWordCount(words.length);
-    
-    // Paragraph count
-    const paragraphs = cleaned.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-    setParagraphCount(paragraphs.length || 1);
-    
-    // Sentence count (simple estimation)
-    const sentences = cleaned.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    setSentenceCount(sentences.length || 1);
-    
-    // Token count based on selected model
-    const tokens = estimateTokens(cleaned, selectedModel);
-    setTokenCount(tokens);
-  }, [text, selectedModel]);
-
-  const copyToClipboard = (value: string) => {
-    navigator.clipboard.writeText(value);
-  };
-
-  const clearText = () => {
-    setText('');
-  };
-
-  const getEstimatedCost = (tokens: number, model: string): string => {
-    // Rough cost estimates per 1M tokens (as of 2024)
-    const costs: Record<string, { input: number; output: number }> = {
-      'gpt-3.5-turbo': { input: 0.5, output: 1.5 },
-      'gpt-4': { input: 30, output: 60 },
-      'gpt-4-turbo': { input: 10, output: 30 },
-      'claude-3': { input: 3, output: 15 },
-      'claude-3-opus': { input: 15, output: 75 },
-      'claude-3-sonnet': { input: 3, output: 15 },
-      'gemini-pro': { input: 0.5, output: 1.5 },
-      'gemini-1.5': { input: 1.25, output: 5 },
+  const stats = useMemo(() => {
+    const tokens = estimateTokens(text);
+    return {
+      tokens,
+      characters: Array.from(text).length,
+      words: text.split(/\s+/).filter(Boolean).length,
+      lines: text ? text.split('\n').length : 0,
+      charsPerToken: tokens ? Array.from(text).length / tokens : 0,
     };
+  }, [text]);
 
-    const cost = costs[model];
-    if (!cost) return 'N/A';
+  const priceNum = parseFloat(price);
+  const cost = Number.isFinite(priceNum) && priceNum >= 0 ? (stats.tokens / 1_000_000) * priceNum : null;
+  const usage = contextWindow > 0 ? (stats.tokens / contextWindow) * 100 : 0;
 
-    const inputCost = (tokens / 1_000_000) * cost.input;
-    const outputCost = (tokens / 1_000_000) * cost.output;
-    
-    return `Input: $${inputCost.toFixed(6)} | Output: $${outputCost.toFixed(6)}`;
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(String(stats.tokens));
+      setStatus('Token estimate copied.');
+    } catch {
+      setStatus('Copy failed.');
+    }
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free Token Counter AI Models</h1>
-        <p className="text-gray-600 mb-6">
-          Free token counter AI models - no signup required. Count tokens for GPT-3.5, GPT-4, Claude, Gemini, and other AI models instantly. Estimate API costs and track token usage. Perfect for AI developers. All processing in your browser.
-        </p>
-
-        {/* Model Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select AI Model
-          </label>
-          <select
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {MODELS.map((model) => (
-              <option key={model.value} value={model.value}>
-                {model.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Text Input */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Enter Text to Count Tokens
+    <div className="rounded-lg bg-white p-4 shadow-lg sm:p-6">
+      <div className="space-y-6">
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <label htmlFor="token-text" className="block text-sm font-medium text-gray-700">
+              Prompt or text
             </label>
-            <button
-              onClick={clearText}
-              className="text-sm text-gray-600 hover:text-gray-800"
-            >
+            <button type="button" onClick={() => setText('')} disabled={!text} className="text-sm text-blue-700 hover:underline disabled:text-gray-400">
               Clear
             </button>
           </div>
           <textarea
+            id="token-text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Paste or type your text here to count tokens..."
-            className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+            placeholder="Paste a prompt, document or code…"
+            className="h-56 w-full resize-y rounded-lg border border-gray-300 p-3 font-mono text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        {/* Statistics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {/* Token Count */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="text-sm font-medium text-blue-900">Tokens</h3>
-                <p className="text-2xl font-bold text-blue-600 mt-1">{tokenCount.toLocaleString()}</p>
-              </div>
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="col-span-2 rounded-lg border border-blue-200 bg-blue-50 p-3 sm:col-span-1">
+            <dt className="text-sm text-blue-900">Estimated tokens</dt>
+            <dd className="flex items-center justify-between gap-2">
+              <span className="text-2xl font-bold text-blue-700" data-testid="token-count">
+                ≈ {stats.tokens.toLocaleString()}
+              </span>
               <button
-                onClick={() => copyToClipboard(tokenCount.toString())}
-                className="text-blue-600 hover:text-blue-700 text-sm"
-                title="Copy token count"
+                type="button"
+                onClick={copy}
+                disabled={!stats.tokens}
+                className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:bg-gray-300"
               >
-                📋
+                Copy
               </button>
+            </dd>
+          </div>
+          <div className="rounded-lg bg-gray-50 p-3">
+            <dt className="text-sm text-gray-600">Characters</dt>
+            <dd className="text-2xl font-bold text-gray-900" data-testid="token-characters">
+              {stats.characters.toLocaleString()}
+            </dd>
+          </div>
+          <div className="rounded-lg bg-gray-50 p-3">
+            <dt className="text-sm text-gray-600">Words</dt>
+            <dd className="text-2xl font-bold text-gray-900" data-testid="token-words">
+              {stats.words.toLocaleString()}
+            </dd>
+          </div>
+          <div className="rounded-lg bg-gray-50 p-3">
+            <dt className="text-sm text-gray-600">Chars per token</dt>
+            <dd className="text-2xl font-bold text-gray-900">{stats.charsPerToken ? stats.charsPerToken.toFixed(1) : '—'}</dd>
+          </div>
+        </dl>
+        <p aria-live="polite" className="min-h-[1.25rem] text-sm text-green-700">
+          {status}
+        </p>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="rounded-lg bg-gray-50 p-4">
+            <label htmlFor="token-context" className="mb-2 block text-sm font-medium text-gray-700">
+              Context window (tokens)
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <input
+                id="token-context"
+                type="number"
+                min={1}
+                value={contextWindow}
+                onChange={(e) => setContextWindow(e.target.valueAsNumber || 0)}
+                className="w-36 rounded-lg border border-gray-300 px-3 py-2 font-mono"
+              />
+              {CONTEXT_PRESETS.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setContextWindow(n)}
+                  aria-pressed={contextWindow === n}
+                  className={`rounded-lg border px-2 py-1 text-xs ${contextWindow === n ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'}`}
+                >
+                  {n >= 1_000_000 ? `${n / 1_000_000}M` : `${n / 1000}K`}
+                </button>
+              ))}
             </div>
-            <p className="text-xs text-blue-700">Estimated for {MODELS.find(m => m.value === selectedModel)?.label}</p>
+            <div className="mt-3 h-2 rounded-full bg-gray-200" aria-hidden="true">
+              <div className={`h-2 rounded-full ${usage > 100 ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, usage)}%` }} />
+            </div>
+            <p className={`mt-1 text-sm ${usage > 100 ? 'font-semibold text-red-700' : 'text-gray-600'}`} data-testid="token-context-usage">
+              {usage.toFixed(usage < 1 ? 2 : 1)}% of the context window{usage > 100 ? ' (too long)' : ''}
+            </p>
           </div>
 
-          {/* Character Count */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="text-sm font-medium text-green-900">Characters</h3>
-                <p className="text-2xl font-bold text-green-600 mt-1">{charCount.toLocaleString()}</p>
-              </div>
-              <button
-                onClick={() => copyToClipboard(charCount.toString())}
-                className="text-green-600 hover:text-green-700 text-sm"
-                title="Copy character count"
-              >
-                📋
-              </button>
-            </div>
-            <p className="text-xs text-green-700">Including spaces</p>
-          </div>
-
-          {/* Word Count */}
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="text-sm font-medium text-purple-900">Words</h3>
-                <p className="text-2xl font-bold text-purple-600 mt-1">{wordCount.toLocaleString()}</p>
-              </div>
-              <button
-                onClick={() => copyToClipboard(wordCount.toString())}
-                className="text-purple-600 hover:text-purple-700 text-sm"
-                title="Copy word count"
-              >
-                📋
-              </button>
-            </div>
-            <p className="text-xs text-purple-700">Space-separated</p>
-          </div>
-
-          {/* Paragraph Count */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="text-sm font-medium text-yellow-900">Paragraphs</h3>
-                <p className="text-2xl font-bold text-yellow-600 mt-1">{paragraphCount.toLocaleString()}</p>
-              </div>
-              <button
-                onClick={() => copyToClipboard(paragraphCount.toString())}
-                className="text-yellow-600 hover:text-yellow-700 text-sm"
-                title="Copy paragraph count"
-              >
-                📋
-              </button>
-            </div>
-            <p className="text-xs text-yellow-700">Double line breaks</p>
-          </div>
-
-          {/* Sentence Count */}
-          <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="text-sm font-medium text-pink-900">Sentences</h3>
-                <p className="text-2xl font-bold text-pink-600 mt-1">{sentenceCount.toLocaleString()}</p>
-              </div>
-              <button
-                onClick={() => copyToClipboard(sentenceCount.toString())}
-                className="text-pink-600 hover:text-pink-700 text-sm"
-                title="Copy sentence count"
-              >
-                📋
-              </button>
-            </div>
-            <p className="text-xs text-pink-700">Estimated count</p>
-          </div>
-
-          {/* Estimated Cost */}
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="text-sm font-medium text-indigo-900">Est. Cost</h3>
-                <p className="text-sm font-semibold text-indigo-600 mt-1">
-                  {getEstimatedCost(tokenCount, selectedModel)}
-                </p>
-              </div>
-            </div>
-            <p className="text-xs text-indigo-700">Per 1M tokens (approx.)</p>
+          <div className="rounded-lg bg-gray-50 p-4">
+            <label htmlFor="token-price" className="mb-2 block text-sm font-medium text-gray-700">
+              Your model’s price per 1M input tokens (USD)
+            </label>
+            <input
+              id="token-price"
+              type="number"
+              min={0}
+              step="0.01"
+              inputMode="decimal"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="e.g. 3"
+              className="w-36 rounded-lg border border-gray-300 px-3 py-2 font-mono"
+            />
+            <p className="mt-3 text-sm text-gray-700" data-testid="token-cost">
+              {cost === null ? 'Enter the current price from your provider’s pricing page to estimate cost.' : `Estimated input cost: ${formatUsd(cost)}`}
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* SEO Content */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About Token Counter</h2>
-        <div className="prose max-w-none">
-          <p className="text-gray-700 mb-4">
-            Token Counter is a free online tool that counts tokens in text for various AI models including 
-            GPT-3.5, GPT-4, Claude, Gemini, and LLaMA. Understanding token counts is essential for managing 
-            API costs and ensuring your prompts fit within model limits.
-          </p>
-          
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Supported AI Models</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>OpenAI Models:</strong> GPT-3.5 Turbo, GPT-4, GPT-4 Turbo</li>
-            <li><strong>Anthropic Models:</strong> Claude 3, Claude 3 Opus, Claude 3 Sonnet</li>
-            <li><strong>Google Models:</strong> Gemini Pro, Gemini 1.5</li>
-            <li><strong>Meta Models:</strong> LLaMA 2, LLaMA 3</li>
-            <li><strong>General Estimation:</strong> Universal token counting for any model</li>
-          </ul>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Key Features</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>Multi-Model Support:</strong> Count tokens for different AI models with model-specific algorithms</li>
-            <li><strong>Real-Time Counting:</strong> Instant token count updates as you type</li>
-            <li><strong>Comprehensive Statistics:</strong> Token count, character count, word count, paragraph count, and sentence count</li>
-            <li><strong>Cost Estimation:</strong> Estimate API costs based on token count and model pricing</li>
-            <li><strong>Copy to Clipboard:</strong> Easily copy any statistic with one click</li>
-            <li><strong>No Registration:</strong> Start counting tokens immediately without creating an account</li>
-            <li><strong>Privacy-Focused:</strong> All counting happens in your browser - your text never leaves your device</li>
-          </ul>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>API Cost Management:</strong> Estimate costs before making API calls to AI models</li>
-            <li><strong>Prompt Optimization:</strong> Ensure prompts fit within token limits for different models</li>
-            <li><strong>Content Planning:</strong> Plan content length based on token constraints</li>
-            <li><strong>Budget Planning:</strong> Calculate expected costs for AI API usage</li>
-            <li><strong>Model Selection:</strong> Compare token counts across different models</li>
-            <li><strong>Documentation:</strong> Track token usage in documentation and reports</li>
-            <li><strong>Development:</strong> Test and optimize prompts during development</li>
-            <li><strong>Education:</strong> Learn about tokenization and AI model limits</li>
-          </ul>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">How Token Counting Works</h3>
-          <p className="text-gray-700 mb-2">
-            Token counting varies by model, but generally follows these principles:
-          </p>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li><strong>Tokenization:</strong> Text is split into tokens, which can be words, subwords, or characters</li>
-            <li><strong>Model-Specific:</strong> Different models use different tokenization algorithms (e.g., GPT uses BPE, Claude uses similar methods)</li>
-            <li><strong>Estimation:</strong> Our tool provides estimates based on common patterns (approximately 4 characters or 0.75 words per token)</li>
-            <li><strong>Accuracy:</strong> For exact counts, use the official tokenizer for each model (this tool provides estimates)</li>
-          </ul>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Important Notes</h3>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <ul className="list-disc list-inside text-gray-700 space-y-2 text-sm">
-              <li><strong>Estimation Only:</strong> Token counts are estimates. For exact counts, use official tokenizers from each provider.</li>
-              <li><strong>Model Variations:</strong> Actual token counts may vary slightly between model versions and updates.</li>
-              <li><strong>Cost Estimates:</strong> Pricing is approximate and may change. Always check official pricing from AI providers.</li>
-              <li><strong>Context Limits:</strong> Be aware of context window limits for each model (e.g., GPT-4: 8K-128K tokens).</li>
-            </ul>
-          </div>
-
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Frequently Asked Questions</h3>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">How accurate is the token counter?</h4>
-              <p className="text-gray-700">The token counter provides estimates based on common tokenization patterns. For exact counts, use the official tokenizer from each AI provider (e.g., OpenAI's tiktoken library).</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Why do token counts differ between models?</h4>
-              <p className="text-gray-700">Different AI models use different tokenization algorithms. GPT models use Byte Pair Encoding (BPE), while Claude and Gemini use similar but distinct methods, resulting in different token counts for the same text.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">How do I reduce token count?</h4>
-              <p className="text-gray-700">To reduce token count: remove unnecessary words, use abbreviations, shorten sentences, remove redundant information, and use concise language. However, be careful not to lose important context.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What is a token limit?</h4>
-              <p className="text-gray-700">Token limits (context windows) define the maximum number of tokens a model can process in a single request. Exceeding limits will cause errors. Common limits: GPT-3.5 (4K-16K), GPT-4 (8K-128K), Claude 3 (200K).</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Is my text stored or sent anywhere?</h4>
-              <p className="text-gray-700">No, all token counting happens entirely in your browser. Your text never leaves your device and is never stored or transmitted to any server.</p>
-            </div>
-          </div>
-        </div>
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          This is an estimate, not an exact tokenizer. Each AI model family (OpenAI GPT, Anthropic Claude, Google Gemini, Meta Llama)
+          uses its own tokenizer, so real counts can differ, especially for code, non-English text and emoji. For exact numbers use the
+          provider’s token-counting API or official tokenizer. Your text never leaves your browser.
+        </p>
       </div>
     </div>
   );
 }
-

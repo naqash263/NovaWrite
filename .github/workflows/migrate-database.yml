@@ -76,7 +76,6 @@ jobs:
         curl -f https://naqashthaheem.com/api/health || echo "Health check failed"
         
         # Test database debug endpoint
-        curl -f https://naqashthaheem.com/api/debug/database || echo "Debug endpoint failed"
         
     - name: Create Summary
       run: |

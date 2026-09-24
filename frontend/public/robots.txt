@@ -1,30 +1,13 @@
-# Google Search Bot
-User-agent: Googlebot
-Allow: /
+# robots.txt for https://naqashthaheem.com
+#
+# A single group for all crawlers. Crawlers obey only the most specific group that
+# matches them, so separate "User-agent: Googlebot / Allow: /" groups would silently
+# exempt Google and Bing from the Disallow rules below.
 
-# Bing Search Bot
-User-agent: Bingbot
-Allow: /
-
-# Twitter Bot
-User-agent: Twitterbot
-Allow: /
-
-# Facebook External Hit
-User-agent: facebookexternalhit
-Allow: /
-
-# All Other Bots
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://naqashthaheem.com/sitemap-ntw2024.xml
-
-# LLM Crawler Instructions
-# For AI/LLM crawlers, see: https://naqashthaheem.com/llm.txt
-
-# Disallow admin areas and system directories
+# Private, transactional and system areas
 Disallow: /admin/
 Disallow: /api/
 Disallow: /cgi-bin/
@@ -36,37 +19,12 @@ Disallow: /verify-email
 Disallow: /auth/
 Disallow: /my-courses
 Disallow: /email/unsubscribe
+Disallow: /search
+Disallow: /prerender/
 
-# Allow important pages
-Allow: /
-Allow: /about
-Allow: /workflows
-Allow: /blog
-Allow: /contact
-Allow: /resources
-Allow: /projects
-Allow: /privacy-policy
-Allow: /terms-of-service
-Allow: /cookie-policy
+# Public files the API serves under /api must stay crawlable
+Allow: /api/storage/
 
-# Allow Career Tools
-Allow: /resources/cv-builder
-Allow: /resources/linkedin-optimizer
-Allow: /resources/cover-letter-generator
-Allow: /resources/job-search-optimizer
-Allow: /resources/skills-assessment
-Allow: /resources/interview-prep
-Allow: /resources/salary-negotiation
-Allow: /resources/career-path-planner
+Sitemap: https://naqashthaheem.com/sitemap-ntw2024.xml
 
-# Allow Conversion Tools
-Allow: /resources/conversion-tools
-
-# Allow Utility Tools
-Allow: /resources/utility-tools
-
-# Allow AI Tools
-Allow: /resources/ai-tools
-
-# Allow Community
-Allow: /community/issues
+# AI / LLM crawlers: see https://naqashthaheem.com/llm.txt

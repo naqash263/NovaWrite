@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
-import ApiKeyManager from '../../components/ApiKeyManager';
-import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+import CareerToolLayout from '../../components/career/CareerToolLayout';
+import StepIndicator from '../../components/career/StepIndicator';
+import { asArray, asText, copyText, inputClass, labelClass, postCareerTool, splitList } from '../../components/career/careerUtils';
 
 interface InterviewData {
   jobTitle: string;
@@ -10,97 +10,192 @@ interface InterviewData {
   industry: string;
   experience: string;
   interviewType: string;
-  skills: string[];
+  technicalSkills: string;
+  softSkills: string;
 }
+
+interface PracticeQuestion {
+  question: string;
+  category: string;
+  difficulty: string;
+  tips: string;
+  sampleAnswer: string;
+}
+
+interface PrepPlan {
+  practiceQuestions: PracticeQuestion[];
+  star: { key: string; text: string }[];
+  keyPoints: string[];
+  culture: string;
+  recentNews: string;
+  values: string[];
+  interviewTips: string[];
+  technicalPrep: { topic: string; importance: string; resources: string[] }[];
+  questionsToAsk: string[];
+  confidenceTips: string[];
+  commonMistakes: string[];
+}
+
+// Values accepted by CareerToolsController::generateInterviewPrep.
+const INTERVIEW_TYPES = [
+  { value: 'phone', label: 'Phone Interview', icon: '📞' },
+  { value: 'video', label: 'Video Interview', icon: '💻' },
+  { value: 'in-person', label: 'In-Person Interview', icon: '🤝' },
+  { value: 'panel', label: 'Panel Interview', icon: '👥' },
+];
+
+const STAR_DEFAULTS = [
+  { key: 'Situation', text: 'Set the scene briefly: where you were working, the team and the challenge.' },
+  { key: 'Task', text: 'Explain what you were responsible for and what success looked like.' },
+  { key: 'Action', text: 'Describe the specific steps you took. Say "I", not "we", so your contribution is clear.' },
+  { key: 'Result', text: 'Share the outcome, ideally with a number, and what you learned.' },
+];
+
+const STEPS = ['Job Details', 'Interview Type', 'Skills & Experience', 'Practice Questions', 'STAR Method', 'Company Research'];
+
+function normalizePlan(raw: Record<string, unknown>): PrepPlan {
+  const list = (v: unknown) => asArray(v).map(asText).filter(Boolean);
+  const research = (raw.companyResearch ?? raw.companyInsights ?? {}) as Record<string, unknown>;
+  const starRaw = raw.starMethod && typeof raw.starMethod === 'object' ? Object.entries(raw.starMethod as Record<string, unknown>) : [];
+  return {
+    practiceQuestions: asArray<Record<string, unknown>>(raw.practiceQuestions)
+      .map((q) => (typeof q === 'string' ? { question: q } : q) as Record<string, unknown>)
+      .map((q) => ({
+        question: asText(q.question),
+        category: asText(q.category) || 'General',
+        difficulty: asText(q.difficulty),
+        tips: asText(q.tips),
+        sampleAnswer: asText(q.sampleAnswer ?? q.answer),
+      }))
+      .filter((q) => q.question),
+    star: starRaw.length ? starRaw.map(([key, v]) => ({ key: key.charAt(0).toUpperCase() + key.slice(1), text: asText(v) })) : STAR_DEFAULTS,
+    keyPoints: list(research.keyPoints),
+    culture: asText(research.culture),
+    recentNews: asText(research.recentNews),
+    values: list(research.values),
+    interviewTips: list(research.interviewTips ?? raw.successTips),
+    technicalPrep: asArray<Record<string, unknown>>(raw.technicalPrep).map((t) => ({
+      topic: asText(t?.topic ?? t),
+      importance: asText(t?.importance),
+      resources: asArray(t?.resources).map(asText).filter(Boolean),
+    })),
+    questionsToAsk: list(raw.questionsToAsk),
+    confidenceTips: list(raw.confidenceTips),
+    commonMistakes: list(raw.commonMistakes),
+  };
+}
+
+function planToText(plan: PrepPlan, data: InterviewData): string {
+  const lines = [`Interview prep: ${data.jobTitle} at ${data.company}`, '', 'Practice questions:'];
+  plan.practiceQuestions.forEach((q, i) => {
+    lines.push(`${i + 1}. ${q.question} (${q.category}${q.difficulty ? `, ${q.difficulty}` : ''})`);
+    if (q.tips) lines.push(`   Tip: ${q.tips}`);
+    if (q.sampleAnswer) lines.push(`   Sample answer: ${q.sampleAnswer}`);
+  });
+  lines.push('', 'STAR method:', ...plan.star.map((s) => `- ${s.key}: ${s.text}`));
+  if (plan.keyPoints.length) lines.push('', 'Company research:', ...plan.keyPoints.map((p) => `- ${p}`));
+  if (plan.questionsToAsk.length) lines.push('', 'Questions to ask:', ...plan.questionsToAsk.map((p) => `- ${p}`));
+  if (plan.confidenceTips.length) lines.push('', 'Confidence tips:', ...plan.confidenceTips.map((p) => `- ${p}`));
+  return lines.join('\n');
+}
+
+const BulletList = ({ items, marker = '✓', markerClass = 'text-green-600' }: { items: string[]; marker?: string; markerClass?: string }) => (
+  <ul className="space-y-2">
+    {items.map((item) => (
+      <li key={item} className="flex items-start gap-2">
+        <span className={`mt-0.5 ${markerClass}`} aria-hidden="true">
+          {marker}
+        </span>
+        <span className="text-gray-700">{item}</span>
+      </li>
+    ))}
+  </ul>
+);
 
 const InterviewPrep: React.FC = () => {
   const { addToast } = useToast();
-  const [interviewData, setInterviewData] = useState<InterviewData>({
+  const [data, setData] = useState<InterviewData>({
     jobTitle: '',
     company: '',
     industry: '',
     experience: '',
     interviewType: '',
-    skills: []
+    technicalSkills: '',
+    softSkills: '',
   });
-  const [prepPlan, setPrepPlan] = useState<any>(null);
+  const [prepPlan, setPrepPlan] = useState<PrepPlan | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
+  const [openQuestion, setOpenQuestion] = useState<number | null>(null);
 
-  useSEO({
-    title: 'Free Interview Prep Tool Online - AI-Powered Practice & Guidance | No Signup',
-    description: 'Free interview prep tool online - no signup required. Ace your next interview instantly with AI-powered preparation. Get practice questions, STAR method guidance, company research, and personalized feedback. Perfect for job seekers.',
-    url: '/resources/interview-prep',
-    keywords: [
-      'free interview prep tool', 'interview preparation', 'free interview prep tool online', 'online interview preparation tool', 'practice questions',
-      'STAR method', 'career tools', 'AI guidance', 'job interview',
-      'free online interview prep', 'interview practice tool free'
-    ]
-  });
+  const set = (field: keyof InterviewData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setData((d) => ({ ...d, [field]: e.target.value }));
 
-  const steps = [
-    { title: 'Job Details', description: 'Tell us about the position you\'re interviewing for' },
-    { title: 'Interview Type', description: 'Select the type of interview you\'re preparing for' },
-    { title: 'Skills & Experience', description: 'Highlight your relevant skills and experience' },
-    { title: 'Practice Questions', description: 'Get personalized practice questions' },
-    { title: 'STAR Method', description: 'Learn to structure your answers effectively' },
-    { title: 'Company Research', description: 'Get company-specific insights and tips' }
-  ];
+  const goTo = (step: number) => {
+    setError('');
+    setCurrentStep(step);
+  };
+
+  const continueFromJob = () => {
+    if (!data.jobTitle.trim() || !data.company.trim() || !data.industry) {
+      setError('Enter the job title, company name and industry to continue.');
+      return;
+    }
+    goTo(1);
+  };
 
   const generatePrepPlan = async () => {
-    setIsGenerating(true);
-    try {
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetchWithTimeout(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/interview-prep/generate`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            job_title: interviewData.jobTitle,
-            company_name: interviewData.company,
-            industry: interviewData.industry,
-            experience_level: interviewData.experience,
-            interview_type: interviewData.interviewType,
-            technical_skills: interviewData.skills,
-            soft_skills: [] // Default empty array since not in interface
-          })
-        },
-        120000 // 120 seconds timeout for N8N fallback
-      );
-
-      const result = await response.json();
-
-      if (result.success) {
-        setPrepPlan(result.data);
-        setCurrentStep(3);
-        addToast({
-          type: 'success',
-          title: 'Prep Plan Ready',
-          description: 'Your personalized interview preparation plan has been generated using AI.'
-        });
-      } else {
-        throw new Error(result.message || 'Generation failed');
-      }
-    } catch (error) {
-      addToast({
-        type: 'error',
-        title: 'Generation Failed',
-        description: 'Failed to generate prep plan. Please try again.'
-      });
-    } finally {
-      setIsGenerating(false);
+    const technical = splitList(data.technicalSkills);
+    const soft = splitList(data.softSkills);
+    if (!data.experience || technical.length === 0 || soft.length === 0) {
+      setError('Select your experience level and list at least one technical and one soft skill.');
+      return;
     }
+    setError('');
+    setIsGenerating(true);
+    const result = await postCareerTool<Record<string, unknown>>('interview-prep/generate', {
+      job_title: data.jobTitle.trim(),
+      company_name: data.company.trim(),
+      industry: data.industry,
+      experience_level: data.experience,
+      interview_type: data.interviewType,
+      technical_skills: technical,
+      soft_skills: soft,
+    });
+    setIsGenerating(false);
+    if (!result.ok) {
+      setError(result.message);
+      addToast({ type: 'error', title: 'Generation failed', description: result.message });
+      return;
+    }
+    setPrepPlan(normalizePlan(result.data));
+    setOpenQuestion(null);
+    goTo(3);
+    addToast({ type: 'success', title: 'Prep plan ready', description: 'Open each question to see tips and a sample answer.' });
   };
+
+  const navButtons = (back: () => void, next: () => void, nextLabel: string, disabled = false, backLabel = 'Back') => (
+    <div className="flex flex-col gap-3 sm:flex-row">
+      <button type="button" onClick={back} className="flex-1 rounded-md bg-gray-600 px-6 py-3 font-medium text-white hover:bg-gray-700">
+        {backLabel}
+      </button>
+      <button
+        type="button"
+        onClick={next}
+        disabled={disabled}
+        className="flex-1 rounded-md bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {nextLabel}
+      </button>
+    </div>
+  );
+
+  const errorBox = error ? (
+    <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+      {error}
+    </div>
+  ) : null;
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -108,63 +203,41 @@ const InterviewPrep: React.FC = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Job Details</h2>
-              <p className="text-gray-600 mb-8">
-                Tell us about the position you're interviewing for to get personalized preparation.
-              </p>
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">Job Details</h2>
+              <p className="text-gray-600">Tell us about the position you're interviewing for.</p>
             </div>
-
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Title
+                <label htmlFor="ip-jobTitle" className={labelClass}>
+                  Job Title *
                 </label>
-                <input
-                  type="text"
-                  value={interviewData.jobTitle}
-                  onChange={(e) => setInterviewData({...interviewData, jobTitle: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Senior Software Engineer"
-                />
+                <input id="ip-jobTitle" type="text" value={data.jobTitle} onChange={set('jobTitle')} maxLength={255} className={inputClass} placeholder="e.g., Senior Software Engineer" />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Name
+                <label htmlFor="ip-company" className={labelClass}>
+                  Company Name *
                 </label>
-                <input
-                  type="text"
-                  value={interviewData.company}
-                  onChange={(e) => setInterviewData({...interviewData, company: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., TechCorp Inc."
-                />
+                <input id="ip-company" type="text" value={data.company} onChange={set('company')} maxLength={255} className={inputClass} placeholder="e.g., TechCorp Inc." />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Industry
+                <label htmlFor="ip-industry" className={labelClass}>
+                  Industry *
                 </label>
-                <select
-                  value={interviewData.industry}
-                  onChange={(e) => setInterviewData({...interviewData, industry: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
+                <select id="ip-industry" value={data.industry} onChange={set('industry')} className={inputClass}>
                   <option value="">Select industry</option>
                   <option value="technology">Technology</option>
                   <option value="finance">Finance</option>
                   <option value="healthcare">Healthcare</option>
                   <option value="education">Education</option>
                   <option value="consulting">Consulting</option>
+                  <option value="retail">Retail &amp; e-commerce</option>
+                  <option value="government">Government &amp; non-profit</option>
                   <option value="other">Other</option>
                 </select>
               </div>
             </div>
-
-            <button
-              onClick={() => setCurrentStep(1)}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-            >
+            {errorBox}
+            <button type="button" onClick={continueFromJob} className="w-full rounded-md bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700">
               Continue
             </button>
           </div>
@@ -174,53 +247,31 @@ const InterviewPrep: React.FC = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Interview Type</h2>
-              <p className="text-gray-600 mb-8">
-                What type of interview are you preparing for?
-              </p>
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">Interview Type</h2>
+              <p className="text-gray-600">What type of interview are you preparing for?</p>
             </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {[
-                { value: 'phone', label: 'Phone Interview', icon: '📞' },
-                { value: 'video', label: 'Video Interview', icon: '💻' },
-                { value: 'in-person', label: 'In-Person Interview', icon: '🤝' },
-                { value: 'panel', label: 'Panel Interview', icon: '👥' },
-                { value: 'technical', label: 'Technical Interview', icon: '💻' },
-                { value: 'case-study', label: 'Case Study Interview', icon: '📊' }
-              ].map((type) => (
+            <div className="grid gap-4 md:grid-cols-2" role="radiogroup" aria-label="Interview type">
+              {INTERVIEW_TYPES.map((type) => (
                 <button
+                  type="button"
+                  role="radio"
+                  aria-checked={data.interviewType === type.value}
                   key={type.value}
-                  onClick={() => setInterviewData({...interviewData, interviewType: type.value})}
-                  className={`p-4 border-2 rounded-lg text-left transition-colors ${
-                    interviewData.interviewType === type.value
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                  onClick={() => setData({ ...data, interviewType: type.value })}
+                  className={`rounded-lg border-2 p-4 text-left transition-colors ${
+                    data.interviewType === type.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{type.icon}</span>
+                  <span className="flex items-center gap-3">
+                    <span className="text-2xl" aria-hidden="true">
+                      {type.icon}
+                    </span>
                     <span className="font-medium">{type.label}</span>
-                  </div>
+                  </span>
                 </button>
               ))}
             </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(0)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Back
-              </button>
-              <button
-                onClick={() => setCurrentStep(2)}
-                disabled={!interviewData.interviewType}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                Continue
-              </button>
-            </div>
+            {navButtons(() => goTo(0), () => goTo(2), 'Continue', !data.interviewType)}
           </div>
         );
 
@@ -228,59 +279,37 @@ const InterviewPrep: React.FC = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Skills & Experience</h2>
-              <p className="text-gray-600 mb-8">
-                Highlight your relevant skills and experience level.
-              </p>
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">Skills &amp; Experience</h2>
+              <p className="text-gray-600">Highlight the skills the interviewer is likely to probe.</p>
             </div>
-
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Years of Experience
+                <label htmlFor="ip-experience" className={labelClass}>
+                  Experience Level *
                 </label>
-                <select
-                  value={interviewData.experience}
-                  onChange={(e) => setInterviewData({...interviewData, experience: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
+                <select id="ip-experience" value={data.experience} onChange={set('experience')} className={inputClass}>
                   <option value="">Select experience level</option>
                   <option value="entry">Entry Level (0-2 years)</option>
                   <option value="mid">Mid Level (3-5 years)</option>
                   <option value="senior">Senior Level (6-10 years)</option>
-                  <option value="lead">Lead/Principal (10+ years)</option>
+                  <option value="executive">Lead / Executive (10+ years)</option>
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Relevant Skills (comma-separated)
+                <label htmlFor="ip-technical" className={labelClass}>
+                  Technical Skills (comma-separated) *
                 </label>
-                <input
-                  type="text"
-                  value={interviewData.skills.join(', ')}
-                  onChange={(e) => setInterviewData({...interviewData, skills: e.target.value.split(',').map(s => s.trim())})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., JavaScript, React, Node.js, Python, AWS"
-                />
+                <input id="ip-technical" type="text" value={data.technicalSkills} onChange={set('technicalSkills')} className={inputClass} placeholder="e.g., JavaScript, React, SQL, AWS" />
+              </div>
+              <div>
+                <label htmlFor="ip-soft" className={labelClass}>
+                  Soft Skills (comma-separated) *
+                </label>
+                <input id="ip-soft" type="text" value={data.softSkills} onChange={set('softSkills')} className={inputClass} placeholder="e.g., Communication, Stakeholder Management, Mentoring" />
               </div>
             </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Back
-              </button>
-              <button
-                onClick={generatePrepPlan}
-                disabled={isGenerating}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                {isGenerating ? 'Generating Plan...' : 'Generate Prep Plan'}
-              </button>
-            </div>
+            {errorBox}
+            {navButtons(() => goTo(1), generatePrepPlan, isGenerating ? 'Generating Plan…' : 'Generate Prep Plan', isGenerating)}
           </div>
         );
 
@@ -288,61 +317,57 @@ const InterviewPrep: React.FC = () => {
         return (
           <div className="space-y-8">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Practice Questions</h2>
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">Practice Questions</h2>
               <p className="text-gray-600">
-                Here are personalized practice questions based on your interview details.
+                Personalised questions for {data.jobTitle} at {data.company}. Answer out loud before opening the sample.
               </p>
             </div>
-
-            <div className="space-y-4">
-              {prepPlan?.practiceQuestions.map((question: any, index: number) => (
-                <div key={index} className="bg-white border rounded-lg p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">{question.question}</h3>
-                      <div className="flex items-center gap-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          question.category === 'Technical' ? 'bg-blue-100 text-blue-800' :
-                          question.category === 'Behavioral' ? 'bg-green-100 text-green-800' :
-                          'bg-purple-100 text-purple-800'
-                        }`}>
-                          {question.category}
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          question.difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
-                          question.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {question.difficulty}
-                        </span>
+            {prepPlan && prepPlan.practiceQuestions.length > 0 ? (
+              <ol className="space-y-4">
+                {prepPlan.practiceQuestions.map((q, index) => (
+                  <li key={index} className="rounded-lg border bg-white p-4 sm:p-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h3 className="mb-2 font-semibold text-gray-900">{q.question}</h3>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">{q.category}</span>
+                          {q.difficulty && <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">{q.difficulty}</span>}
+                        </div>
                       </div>
+                      {(q.tips || q.sampleAnswer) && (
+                        <button
+                          type="button"
+                          aria-expanded={openQuestion === index}
+                          aria-controls={`ip-answer-${index}`}
+                          onClick={() => setOpenQuestion(openQuestion === index ? null : index)}
+                          className="self-start whitespace-nowrap font-medium text-blue-700 hover:text-blue-900"
+                        >
+                          {openQuestion === index ? 'Hide Answer' : 'View Answer'}
+                        </button>
+                      )}
                     </div>
-                    <button
-                      onClick={() => setSelectedQuestion(question)}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      View Answer
-                    </button>
-                  </div>
-                  <p className="text-gray-600 text-sm">{question.tips}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(0)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Start Over
-              </button>
-              <button
-                onClick={() => setCurrentStep(4)}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                Learn STAR Method
-              </button>
-            </div>
+                    {openQuestion === index && (
+                      <div id={`ip-answer-${index}`} className="mt-4 space-y-3 border-t pt-4">
+                        {q.tips && (
+                          <p className="text-sm text-gray-700">
+                            <strong>Tip:</strong> {q.tips}
+                          </p>
+                        )}
+                        {q.sampleAnswer && (
+                          <div className="rounded-lg bg-gray-50 p-4">
+                            <p className="mb-1 text-sm font-semibold text-gray-900">Sample answer</p>
+                            <p className="italic text-gray-700">{q.sampleAnswer}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="italic text-gray-500">No practice questions were returned. Try generating the plan again.</p>
+            )}
+            {navButtons(() => goTo(2), () => goTo(4), 'Learn STAR Method', false, 'Edit Details')}
           </div>
         );
 
@@ -350,59 +375,39 @@ const InterviewPrep: React.FC = () => {
         return (
           <div className="space-y-8">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">STAR Method</h2>
-              <p className="text-gray-600">
-                Master the STAR method to structure your behavioral interview answers effectively.
-              </p>
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">STAR Method</h2>
+              <p className="text-gray-600">Structure behavioural answers so they are specific and easy to follow.</p>
             </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {Object.entries(prepPlan?.starMethod || {}).map(([key, value]) => (
-                <div key={key} className="bg-white border rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 capitalize">
-                    {key}
-                  </h3>
-                  <p className="text-gray-600">{value as string}</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              {(prepPlan?.star ?? STAR_DEFAULTS).map((s) => (
+                <div key={s.key} className="rounded-lg border bg-white p-4 sm:p-6">
+                  <h3 className="mb-2 text-lg font-semibold text-gray-900">{s.key}</h3>
+                  <p className="text-gray-600">{s.text}</p>
                 </div>
               ))}
             </div>
-
-            <div className="bg-blue-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Example STAR Answer</h3>
-              <div className="space-y-3">
+            <div className="rounded-lg bg-blue-50 p-4 sm:p-6">
+              <h3 className="mb-4 text-lg font-semibold text-gray-900">Example STAR answer</h3>
+              <dl className="space-y-3">
                 <div>
-                  <strong className="text-blue-800">Situation:</strong>
-                  <p className="text-gray-700">"In my previous role as a software engineer, our team was struggling with a critical bug that was affecting our production system."</p>
+                  <dt className="font-semibold text-blue-800">Situation</dt>
+                  <dd className="text-gray-700">In my previous role our team was dealing with a critical bug that was affecting the production system.</dd>
                 </div>
                 <div>
-                  <strong className="text-blue-800">Task:</strong>
-                  <p className="text-gray-700">"I was responsible for leading the debugging effort and ensuring the system was restored within 24 hours."</p>
+                  <dt className="font-semibold text-blue-800">Task</dt>
+                  <dd className="text-gray-700">I was responsible for leading the debugging effort and restoring the service within 24 hours.</dd>
                 </div>
                 <div>
-                  <strong className="text-blue-800">Action:</strong>
-                  <p className="text-gray-700">"I organized a team meeting, analyzed the logs, identified the root cause, and implemented a fix with proper testing."</p>
+                  <dt className="font-semibold text-blue-800">Action</dt>
+                  <dd className="text-gray-700">I organised the team, analysed the logs, identified the root cause and shipped a tested fix.</dd>
                 </div>
                 <div>
-                  <strong className="text-blue-800">Result:</strong>
-                  <p className="text-gray-700">"We resolved the issue in 18 hours, preventing significant revenue loss, and implemented monitoring to prevent similar issues."</p>
+                  <dt className="font-semibold text-blue-800">Result</dt>
+                  <dd className="text-gray-700">We restored the service in 18 hours and added monitoring so the issue could not recur unnoticed.</dd>
                 </div>
-              </div>
+              </dl>
             </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(3)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Back to Questions
-              </button>
-              <button
-                onClick={() => setCurrentStep(5)}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                Company Research
-              </button>
-            </div>
+            {navButtons(() => goTo(3), () => goTo(5), 'Company Research', false, 'Back to Questions')}
           </div>
         );
 
@@ -410,94 +415,83 @@ const InterviewPrep: React.FC = () => {
         return (
           <div className="space-y-8">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Company Research</h2>
-              <p className="text-gray-600">
-                Get insights about {interviewData.company} to help you prepare for your interview.
-              </p>
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">Company Research</h2>
+              <p className="text-gray-600">AI-generated starting points for {data.company}. Verify facts on the company's own website and recent news.</p>
             </div>
-
-            <div className="space-y-6">
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Company Culture</h3>
-                <p className="text-gray-700">{prepPlan?.companyInsights.culture}</p>
-              </div>
-
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Company Values</h3>
-                <div className="flex flex-wrap gap-2">
-                  {prepPlan?.companyInsights.values.map((value: string, index: number) => (
-                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                      {value}
-                    </span>
-                  ))}
+            {prepPlan && (
+              <div className="space-y-6">
+                {(prepPlan.keyPoints.length > 0 || prepPlan.culture || prepPlan.recentNews || prepPlan.values.length > 0) && (
+                  <div className="rounded-lg border bg-white p-4 sm:p-6">
+                    <h3 className="mb-3 text-lg font-semibold text-gray-900">About the company</h3>
+                    {prepPlan.keyPoints.length > 0 && <BulletList items={prepPlan.keyPoints} marker="•" markerClass="text-blue-600" />}
+                    {prepPlan.culture && (
+                      <p className="mt-3 text-gray-700">
+                        <strong>Culture:</strong> {prepPlan.culture}
+                      </p>
+                    )}
+                    {prepPlan.values.length > 0 && (
+                      <p className="mt-3 text-gray-700">
+                        <strong>Values:</strong> {prepPlan.values.join(', ')}
+                      </p>
+                    )}
+                    {prepPlan.recentNews && (
+                      <p className="mt-3 text-gray-700">
+                        <strong>Recent news:</strong> {prepPlan.recentNews}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {prepPlan.technicalPrep.length > 0 && (
+                  <div className="rounded-lg border bg-white p-4 sm:p-6">
+                    <h3 className="mb-3 text-lg font-semibold text-gray-900">Technical topics to revise</h3>
+                    <ul className="space-y-3">
+                      {prepPlan.technicalPrep.map((t) => (
+                        <li key={t.topic}>
+                          <span className="font-medium text-gray-900">{t.topic}</span>
+                          {t.importance && <span className="ml-2 text-sm text-gray-500">({t.importance} importance)</span>}
+                          {t.resources.length > 0 && <p className="text-sm text-gray-600">Resources: {t.resources.join(', ')}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="grid gap-6 md:grid-cols-2">
+                  {prepPlan.questionsToAsk.length > 0 && (
+                    <div className="rounded-lg bg-blue-50 p-4 sm:p-6">
+                      <h3 className="mb-3 text-lg font-semibold text-gray-900">Questions to ask the interviewer</h3>
+                      <BulletList items={prepPlan.questionsToAsk} marker="?" markerClass="text-blue-700" />
+                    </div>
+                  )}
+                  {(prepPlan.confidenceTips.length > 0 || prepPlan.interviewTips.length > 0) && (
+                    <div className="rounded-lg bg-green-50 p-4 sm:p-6">
+                      <h3 className="mb-3 text-lg font-semibold text-gray-900">Interview tips</h3>
+                      <BulletList items={[...prepPlan.interviewTips, ...prepPlan.confidenceTips]} />
+                    </div>
+                  )}
+                  {prepPlan.commonMistakes.length > 0 && (
+                    <div className="rounded-lg bg-red-50 p-4 sm:p-6">
+                      <h3 className="mb-3 text-lg font-semibold text-gray-900">Common mistakes to avoid</h3>
+                      <BulletList items={prepPlan.commonMistakes} marker="✗" markerClass="text-red-600" />
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent News</h3>
-                <p className="text-gray-700">{prepPlan?.companyInsights.recentNews}</p>
-              </div>
-
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Interview Tips</h3>
-                <ul className="space-y-2">
-                  {prepPlan?.companyInsights.interviewTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span className="text-gray-700">{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-red-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Common Mistakes to Avoid</h3>
-                <ul className="space-y-2">
-                  {prepPlan?.commonMistakes.map((mistake: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-red-500 mt-1">✗</span>
-                      <span className="text-gray-700">{mistake}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-green-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Success Tips</h3>
-                <ul className="space-y-2">
-                  {prepPlan?.successTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span className="text-gray-700">{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(4)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Back to STAR Method
-              </button>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(JSON.stringify(prepPlan, null, 2));
-                  addToast({
-                    type: 'success',
-                    title: 'Copied to Clipboard',
-                    description: 'Your interview prep plan has been copied to your clipboard.'
-                  });
-                }}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                Copy Prep Plan
-              </button>
-            </div>
+            )}
+            {navButtons(
+              () => goTo(4),
+              async () => {
+                if (!prepPlan) return;
+                const ok = await copyText(planToText(prepPlan, data));
+                addToast(
+                  ok
+                    ? { type: 'success', title: 'Copied to clipboard', description: 'Your prep plan has been copied as text.' }
+                    : { type: 'error', title: 'Copy failed', description: 'Your browser blocked clipboard access.' },
+                );
+              },
+              'Copy Prep Plan',
+              false,
+              'Back to STAR Method',
+            )}
           </div>
         );
 
@@ -507,142 +501,12 @@ const InterviewPrep: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Free Interview Prep Tool Online
-          </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Free interview prep tool online - no signup required. Ace your next interview instantly with AI-powered preparation. Get practice questions, 
-            STAR method guidance, company research, and personalized feedback.
-          </p>
-          
-          {/* Under Progress Banner */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8 max-w-4xl mx-auto">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
-                <span className="text-2xl">🚧</span>
-              </div>
-              <h2 className="text-2xl font-bold text-yellow-800">Under Progress</h2>
-            </div>
-            <p className="text-yellow-700 text-lg mb-4 text-center">
-              We're currently enhancing this tool with more advanced features and better AI integration.
-            </p>
-            <p className="text-yellow-600 text-center">
-              Check back soon for the complete interview preparation experience!
-            </p>
-          </div>
-          
-          {/* API Key Manager */}
-          <div className="max-w-2xl mx-auto px-4">
-            <ApiKeyManager />
-          </div>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between overflow-x-auto pb-2">
-            {steps.map((_, index) => (
-              <div key={index} className="flex items-center flex-shrink-0">
-                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
-                  index <= currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
-                }`}>
-                  {index + 1}
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-8 sm:w-16 h-1 mx-1 sm:mx-2 ${
-                    index < currentStep ? 'bg-blue-600' : 'bg-gray-300'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 text-center px-4">
-            <h3 className="font-medium text-gray-900 text-sm sm:text-base">{steps[currentStep].title}</h3>
-            <p className="text-xs sm:text-sm text-gray-600">{steps[currentStep].description}</p>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
-          {renderStepContent()}
-        </div>
-
-        {/* Features */}
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">❓</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Practice Questions</h3>
-            <p className="text-gray-600">Get personalized questions based on your role and industry</p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">⭐</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">STAR Method</h3>
-            <p className="text-gray-600">Learn to structure behavioral answers effectively</p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🏢</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Company Research</h3>
-            <p className="text-gray-600">Get insights about your target company</p>
-          </div>
-        </div>
+    <CareerToolLayout slug="interview-prep">
+      <div className="mx-auto max-w-4xl">
+        <StepIndicator steps={STEPS} current={currentStep} />
+        <div className="rounded-lg bg-white p-4 shadow-lg sm:p-6 lg:p-8">{renderStepContent()}</div>
       </div>
-
-      {/* Question Detail Modal */}
-      {selectedQuestion && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-xl font-semibold text-gray-900">Question Details</h3>
-                <button
-                  onClick={() => setSelectedQuestion(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Question</h4>
-                  <p className="text-gray-700">{selectedQuestion.question}</p>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Tips</h4>
-                  <p className="text-gray-700">{selectedQuestion.tips}</p>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Sample Answer</h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-gray-700 italic">{selectedQuestion.sampleAnswer}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 flex gap-4">
-                <button
-                  onClick={() => setSelectedQuestion(null)}
-                  className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </CareerToolLayout>
   );
 };
 

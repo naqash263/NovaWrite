@@ -1,757 +1,381 @@
 import React, { useState } from 'react';
-import { useSEO } from '../../utils/seo';
 import { useToast } from '../../hooks/use-toast';
-import ApiKeyManager from '../../components/ApiKeyManager';
-import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+import CareerToolLayout from '../../components/career/CareerToolLayout';
+import StepIndicator from '../../components/career/StepIndicator';
+import { asArray, asText, copyText, inputClass, labelClass, postCareerTool, splitList, toNumber } from '../../components/career/careerUtils';
 
-interface LinkedInProfile {
+interface ProfileForm {
   headline: string;
   summary: string;
-  skills: string[];
-  experience: Array<{
-    title: string;
-    company: string;
-    description: string;
-    duration?: string;
-  }>;
-  education: Array<{
-    degree: string;
-    school: string;
-    year: string;
-  }>;
-  profileUrl: string;
-  location?: string;
-  industry?: string;
+  skills: string;
+  industry: string;
+}
+
+interface Recommendation {
+  category: string;
+  priority: string;
+  suggestion: string;
+  example: string;
 }
 
 interface LinkedInAnalysis {
-  headlineScore: number;
-  summaryScore: number;
-  skillsScore: number;
-  overallScore: number;
-  recommendations: Array<{
-    category: string;
-    priority: string;
-    suggestion: string;
-    example: string;
-  }>;
+  headlineScore: number | null;
+  summaryScore: number | null;
+  skillsScore: number | null;
+  overallScore: number | null;
+  recommendations: Recommendation[];
   keywordSuggestions: string[];
   profileStrengths: string[];
   areasForImprovement: string[];
   industryKeywords: string[];
 }
 
+// LinkedIn limits: headline 220 characters; the API accepts an About section up to 2,000.
+const HEADLINE_MAX = 220;
+const SUMMARY_MAX = 2000;
+const STEPS = ['Your Profile', 'Results & Action Plan'];
+
+function normalizeAnalysis(raw: Record<string, unknown>): LinkedInAnalysis {
+  const list = (v: unknown) => asArray(v).map(asText).filter(Boolean);
+  return {
+    headlineScore: toNumber(raw.headlineScore),
+    summaryScore: toNumber(raw.summaryScore),
+    skillsScore: toNumber(raw.skillsScore),
+    overallScore: toNumber(raw.overallScore),
+    recommendations: asArray<Record<string, unknown>>(raw.recommendations).map((r) => ({
+      category: asText(r?.category) || 'General',
+      priority: asText(r?.priority) || 'Medium',
+      suggestion: asText(r?.suggestion ?? r?.description),
+      example: asText(r?.example ?? r?.action),
+    })),
+    keywordSuggestions: list(raw.keywordSuggestions),
+    profileStrengths: list(raw.profileStrengths ?? raw.strengths),
+    areasForImprovement: list(raw.areasForImprovement ?? raw.weaknesses),
+    industryKeywords: list(raw.industryKeywords),
+  };
+}
+
+const score = (n: number | null) => (n === null ? '–' : `${Math.round(n)}%`);
+
+function analysisToText(a: LinkedInAnalysis): string {
+  const lines = [
+    'LinkedIn profile analysis',
+    `Overall: ${score(a.overallScore)} | Headline: ${score(a.headlineScore)} | Summary: ${score(a.summaryScore)} | Skills: ${score(a.skillsScore)}`,
+    '',
+    'Recommendations:',
+    ...a.recommendations.map((r) => `- [${r.priority}] ${r.category}: ${r.suggestion}${r.example ? ` (Example: ${r.example})` : ''}`),
+  ];
+  if (a.keywordSuggestions.length) lines.push('', `Keyword suggestions: ${a.keywordSuggestions.join(', ')}`);
+  if (a.profileStrengths.length) lines.push('', 'Strengths:', ...a.profileStrengths.map((s) => `- ${s}`));
+  if (a.areasForImprovement.length) lines.push('', 'Areas for improvement:', ...a.areasForImprovement.map((s) => `- ${s}`));
+  if (a.industryKeywords.length) lines.push('', `Industry keywords: ${a.industryKeywords.join(', ')}`);
+  return lines.join('\n');
+}
+
 const LinkedInOptimizer: React.FC = () => {
   const { addToast } = useToast();
-  const [profile, setProfile] = useState<LinkedInProfile>({
-    headline: '',
-    summary: '',
-    skills: [],
-    experience: [],
-    education: [],
-    profileUrl: ''
-  });
+  const [profile, setProfile] = useState<ProfileForm>({ headline: '', summary: '', skills: '', industry: '' });
   const [optimizations, setOptimizations] = useState<LinkedInAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
 
-  useSEO({
-    title: 'Free LinkedIn Optimizer Tool - Optimize LinkedIn Profile Online | No Signup',
-    description: 'Free LinkedIn optimizer tool - no signup required. Optimize your LinkedIn profile for maximum visibility instantly with AI-powered analysis. Get keyword suggestions, headline improvements, and engagement strategies. LinkedIn profile optimizer free. Perfect for job seekers.',
-    url: '/resources/linkedin-optimizer',
-    keywords: [
-      'free LinkedIn optimizer tool', 'LinkedIn optimizer', 'free LinkedIn optimizer', 'LinkedIn optimizer tool', 'LinkedIn profile optimizer free',
-      'LinkedIn optimization', 'online LinkedIn optimizer', 'LinkedIn profile optimization tool free',
-      'professional profile', 'career tools', 'AI analysis', 'profile optimization',
-      'free LinkedIn headline optimizer', 'optimize LinkedIn profile'
-    ]
-  });
-
-  const steps = [
-    { title: 'Profile Information', description: 'Share your current LinkedIn profile details' },
-    { title: 'AI Analysis', description: 'Get AI-powered optimization recommendations' },
-    { title: 'Results & Action Plan', description: 'Review your personalized improvement plan' }
-  ];
-
-  const analyzeLinkedInUrl = (url: string) => {
-    // Basic LinkedIn URL validation (supports country-specific domains like ae.linkedin.com)
-    const linkedinRegex = /^https?:\/\/(www\.)?([a-z]{2}\.)?linkedin\.com\/in\/[a-zA-Z0-9-]+\/?$/;
-    return linkedinRegex.test(url);
-  };
-
-  const extractProfileData = async (url: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/linkedin/extract-profile`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ url })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Failed to extract profile data');
-      }
-    } catch (error) {
-      console.error('Profile extraction error:', error);
-      throw new Error('Failed to extract data from LinkedIn URL');
-    }
-  };
+  const skills = splitList(profile.skills);
 
   const handleAnalyze = async () => {
+    if (!profile.headline.trim() && !profile.summary.trim() && skills.length === 0) {
+      setError('Add at least your headline, About section or skills so there is something to analyse.');
+      return;
+    }
+    setError('');
     setIsAnalyzing(true);
-    try {
-      let profileData = { ...profile };
-      
-      // If profile URL is provided, try to extract data
-      if (profile.profileUrl && analyzeLinkedInUrl(profile.profileUrl)) {
-        addToast({
-          type: 'info',
-          title: 'Analyzing Profile',
-          description: 'Extracting data from your LinkedIn profile...'
-        });
-        
-        try {
-          const extractedData = await extractProfileData(profile.profileUrl) as any;
-          profileData = { ...profileData, ...extractedData };
-          setProfile(profileData);
-        } catch (error) {
-          addToast({
-            type: 'warning',
-            title: 'URL Extraction Failed',
-            description: 'Could not extract data from LinkedIn URL. Please fill in the form manually.'
-          });
-        }
-      }
-      
-      // Check if we have enough data to analyze
-      if (!profileData.headline && !profileData.summary && (!profileData.skills || profileData.skills.length === 0)) {
-        addToast({
-          type: 'error',
-          title: 'Insufficient Data',
-          description: 'Please provide at least a headline, summary, or skills to analyze your LinkedIn profile.'
-        });
-        setIsAnalyzing(false);
-        return;
-      }
-      
-      // Call real AI analysis
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetchWithTimeout(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8001/api'}/career-tools/linkedin/analyze`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            profile_data: {
-              headline: profileData.headline,
-              summary: profileData.summary,
-              skills: profileData.skills,
-              experience: profileData.experience,
-              education: profileData.education,
-              location: profileData.location,
-              industry: profileData.industry
-            }
-          })
-        },
-        120000 // 120 seconds timeout for N8N fallback
-      );
-
-      const result = await response.json();
-
-      if (result.success) {
-        setOptimizations(result.data);
-        setCurrentStep(2); // Go directly to results (step 2)
-        addToast({
-          type: 'success',
-          title: 'Analysis Complete',
-          description: 'Your LinkedIn profile has been analyzed using AI. Check the recommendations below.'
-        });
-      } else {
-        throw new Error(result.message || 'Analysis failed');
-      }
-    } catch (error) {
-      addToast({
-        type: 'error',
-        title: 'Analysis Failed',
-        description: 'Failed to analyze your profile. Please try again.'
-      });
-    } finally {
-      setIsAnalyzing(false);
+    const result = await postCareerTool<Record<string, unknown>>('linkedin/analyze', {
+      profile_data: {
+        headline: profile.headline.trim(),
+        summary: profile.summary.trim(),
+        skills,
+        experience: [],
+        education: [],
+        industry: profile.industry.trim() || undefined,
+      },
+    });
+    setIsAnalyzing(false);
+    if (!result.ok) {
+      setError(result.message);
+      addToast({ type: 'error', title: 'Analysis failed', description: result.message });
+      return;
     }
+    setOptimizations(normalizeAnalysis(result.data));
+    setCurrentStep(1);
+    addToast({ type: 'success', title: 'Analysis complete', description: 'Review the scores and recommendations below.' });
   };
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Profile Information</h2>
-              <p className="text-gray-600 mb-8">
-                Share your current LinkedIn profile details. We'll keep it simple and focused on what matters most.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Headline *
-                </label>
-                <input
-                  type="text"
-                  value={profile.headline}
-                  onChange={(e) => setProfile({...profile, headline: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Software Engineer at Tech Company"
-                />
-                <p className="text-sm text-gray-500 mt-1">Your current LinkedIn headline</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profile Summary *
-                </label>
-                <textarea
-                  value={profile.summary}
-                  onChange={(e) => setProfile({...profile, summary: e.target.value})}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Briefly describe your professional background and key achievements..."
-                />
-                <p className="text-sm text-gray-500 mt-1">Your current LinkedIn summary/about section</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Skills (comma-separated) *
-                </label>
-                <input
-                  type="text"
-                  value={profile.skills.join(', ')}
-                  onChange={(e) => setProfile({...profile, skills: e.target.value.split(',').map(s => s.trim())})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., JavaScript, React, Node.js, Python, Leadership"
-                />
-                <p className="text-sm text-gray-500 mt-1">List your top 5-10 most relevant skills</p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleAnalyze}
-              disabled={isAnalyzing || !profile.headline.trim() || !profile.summary.trim() || profile.skills.length === 0}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              {isAnalyzing ? 'Analyzing Profile...' : 'Analyze My Profile'}
-            </button>
-          </div>
-        );
-
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">AI Analysis in Progress</h2>
-              <p className="text-gray-600 mb-8">
-                Our AI is analyzing your LinkedIn profile to provide personalized optimization recommendations...
-              </p>
-              <div className="flex justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Analysis Results</h2>
-              <div className="bg-blue-50 rounded-lg p-6 mb-6">
-                <div className="text-4xl font-bold text-blue-600 mb-2">
-                  {optimizations?.overallScore}%
-                </div>
-                <p className="text-blue-800">Overall Profile Score</p>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-4 mb-8">
-              <div className="bg-white p-4 rounded-lg border">
-                <div className="text-2xl font-bold text-green-600 mb-1">
-                  {optimizations?.headlineScore}%
-                </div>
-                <p className="text-sm text-gray-600">Headline Score</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border">
-                <div className="text-2xl font-bold text-yellow-600 mb-1">
-                  {optimizations?.summaryScore}%
-                </div>
-                <p className="text-sm text-gray-600">Summary Score</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border">
-                <div className="text-2xl font-bold text-green-600 mb-1">
-                  {optimizations?.skillsScore}%
-                </div>
-                <p className="text-sm text-gray-600">Skills Score</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {/* Actionable Solutions Section */}
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">🎯 Actionable Solutions</h3>
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Quick Wins You Can Implement Today</h4>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
-                        <div>
-                          <h5 className="font-medium text-gray-900">Optimize Your Headline</h5>
-                          <p className="text-sm text-gray-600">Add industry keywords and your unique value proposition</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
-                        <div>
-                          <h5 className="font-medium text-gray-900">Enhance Your Summary</h5>
-                          <p className="text-sm text-gray-600">Include quantifiable achievements and specific skills</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
-                        <div>
-                          <h5 className="font-medium text-gray-900">Add Missing Skills</h5>
-                          <p className="text-sm text-gray-600">Include trending keywords relevant to your industry</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
-                        <div>
-                          <h5 className="font-medium text-gray-900">Use Industry Keywords</h5>
-                          <p className="text-sm text-gray-600">Incorporate trending terms to improve search visibility</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">5</div>
-                        <div>
-                          <h5 className="font-medium text-gray-900">Quantify Achievements</h5>
-                          <p className="text-sm text-gray-600">Add specific numbers and metrics to your experience</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">6</div>
-                        <div>
-                          <h5 className="font-medium text-gray-900">Update Regularly</h5>
-                          <p className="text-sm text-gray-600">Keep your profile fresh with recent accomplishments</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">📋 Detailed Recommendations</h3>
-                <div className="space-y-4">
-                  {optimizations?.recommendations && optimizations.recommendations.length > 0 ? (
-                    optimizations.recommendations.map((rec: any, index: number) => (
-                      <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">{rec?.category || 'General'}</h4>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            rec?.priority === 'High' ? 'bg-red-100 text-red-800' :
-                            rec?.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {rec?.priority || 'Medium'} Priority
-                          </span>
-                        </div>
-                        <p className="text-gray-600 mb-2">{rec?.suggestion || 'No suggestion available'}</p>
-                        <div className="bg-gray-50 p-3 rounded text-sm">
-                          <strong>Example:</strong> {rec?.example || 'No example available'}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 italic">No recommendations available</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Keyword Suggestions</h3>
-                <div className="flex flex-wrap gap-2">
-                  {optimizations?.keywordSuggestions && optimizations.keywordSuggestions.length > 0 ? (
-                    optimizations.keywordSuggestions.map((keyword: string, index: number) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm cursor-pointer hover:bg-blue-200"
-                        onClick={() => {
-                          const newSkills = [...profile.skills, keyword];
-                          setProfile({...profile, skills: newSkills});
-                        }}
-                      >
-                        + {keyword}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 italic">No keyword suggestions available</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Step-by-Step Action Plan */}
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">🚀 Step-by-Step Action Plan</h3>
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                  <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                    <h4 className="text-lg font-semibold text-gray-900">Your Personalized Improvement Roadmap</h4>
-                    <p className="text-sm text-gray-600 mt-1">Follow these steps to optimize your LinkedIn profile for maximum impact</p>
-                  </div>
-                  <div className="p-6">
-                    <div className="space-y-6">
-                      {/* Step 1: Headline Optimization */}
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
-                        <div className="flex-1">
-                          <h5 className="font-semibold text-gray-900 mb-2">Optimize Your Headline (Priority: High)</h5>
-                          <p className="text-gray-600 mb-3">Your headline is the first thing people see. Make it compelling and keyword-rich.</p>
-                          <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                            <p className="text-sm font-medium text-red-800 mb-2">Current Score: {optimizations?.headlineScore}%</p>
-                            <p className="text-sm text-red-700 mb-3">Target: 85%+ for maximum visibility</p>
-                            <div className="space-y-2">
-                              <p className="text-sm text-gray-700"><strong>Action Items:</strong></p>
-                              <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                                <li>• Include your primary role and industry</li>
-                                <li>• Add 2-3 relevant keywords</li>
-                                <li>• Mention your unique value proposition</li>
-                                <li>• Keep it under 120 characters</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Step 2: Summary Enhancement */}
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0 w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
-                        <div className="flex-1">
-                          <h5 className="font-semibold text-gray-900 mb-2">Enhance Your Summary (Priority: High)</h5>
-                          <p className="text-gray-600 mb-3">Your summary should tell your professional story and highlight key achievements.</p>
-                          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                            <p className="text-sm font-medium text-yellow-800 mb-2">Current Score: {optimizations?.summaryScore}%</p>
-                            <p className="text-sm text-yellow-700 mb-3">Target: 80%+ for better engagement</p>
-                            <div className="space-y-2">
-                              <p className="text-sm text-gray-700"><strong>Action Items:</strong></p>
-                              <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                                <li>• Start with a compelling opening statement</li>
-                                <li>• Include quantifiable achievements (numbers, percentages)</li>
-                                <li>• Mention specific skills and technologies</li>
-                                <li>• Add a call-to-action at the end</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Step 3: Skills Optimization */}
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0 w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
-                        <div className="flex-1">
-                          <h5 className="font-semibold text-gray-900 mb-2">Optimize Your Skills (Priority: Medium)</h5>
-                          <p className="text-gray-600 mb-3">Skills help you appear in relevant searches and showcase your expertise.</p>
-                          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                            <p className="text-sm font-medium text-green-800 mb-2">Current Score: {optimizations?.skillsScore}%</p>
-                            <p className="text-sm text-green-700 mb-3">Target: 90%+ for maximum searchability</p>
-                            <div className="space-y-2">
-                              <p className="text-sm text-gray-700"><strong>Action Items:</strong></p>
-                              <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                                <li>• Add 10-15 relevant skills (not more than 20)</li>
-                                <li>• Include both technical and soft skills</li>
-                                <li>• Use trending keywords in your industry</li>
-                                <li>• Get endorsements from colleagues</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Step 4: Profile Completion */}
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
-                        <div className="flex-1">
-                          <h5 className="font-semibold text-gray-900 mb-2">Complete Your Profile (Priority: Medium)</h5>
-                          <p className="text-gray-600 mb-3">A complete profile appears more professional and trustworthy to recruiters.</p>
-                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <div className="space-y-2">
-                              <p className="text-sm text-gray-700"><strong>Action Items:</strong></p>
-                              <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                                <li>• Add a professional profile photo</li>
-                                <li>• Include a background banner image</li>
-                                <li>• Fill in all experience sections with details</li>
-                                <li>• Add education and certifications</li>
-                                <li>• Write detailed job descriptions</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Profile Strengths</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                    <h4 className="font-medium text-green-900 mb-2">What's Working Well</h4>
-                    <ul className="space-y-1">
-                      {optimizations?.profileStrengths && optimizations.profileStrengths.length > 0 ? (
-                        optimizations.profileStrengths.map((strength: string, index: number) => (
-                          <li key={index} className="text-sm text-green-800 flex items-center">
-                            <span className="mr-2">✓</span>
-                            {strength}
-                          </li>
-                        ))
-                      ) : (
-                        <li className="text-sm text-gray-500 italic">No strengths identified</li>
-                      )}
-                    </ul>
-                  </div>
-                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                    <h4 className="font-medium text-yellow-900 mb-2">Areas for Improvement</h4>
-                    <ul className="space-y-1">
-                      {optimizations?.areasForImprovement && optimizations.areasForImprovement.length > 0 ? (
-                        optimizations.areasForImprovement.map((area: string, index: number) => (
-                          <li key={index} className="text-sm text-yellow-800 flex items-center">
-                            <span className="mr-2">!</span>
-                            {area}
-                          </li>
-                        ))
-                      ) : (
-                        <li className="text-sm text-gray-500 italic">No areas for improvement identified</li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Industry Keywords</h3>
-                <div className="flex flex-wrap gap-2">
-                  {optimizations?.industryKeywords && optimizations.industryKeywords.length > 0 ? (
-                    optimizations.industryKeywords.map((keyword: string, index: number) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
-                      >
-                        {keyword}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 italic">No industry keywords available</p>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  These keywords are trending in your industry and can help improve your profile visibility.
-                </p>
-              </div>
-            </div>
-
-            {/* Next Steps Section */}
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">🎯 Your Next Steps</h3>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Immediate Actions (Today)</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-gray-700">Update your headline with recommended keywords</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-gray-700">Add quantifiable achievements to your summary</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-gray-700">Include 3-5 trending skills from our suggestions</span>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">This Week</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-gray-700">Complete all profile sections (experience, education)</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-gray-700">Add a professional profile photo and banner</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-gray-700">Request endorsements from colleagues</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
-                <h5 className="font-semibold text-gray-900 mb-2">💡 Pro Tip</h5>
-                <p className="text-sm text-gray-600">
-                  LinkedIn profiles with complete information get 40x more opportunities. Focus on completing 
-                  your profile first, then optimize for keywords. Update your profile regularly to maintain 
-                  visibility in search results.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setCurrentStep(0)}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-              >
-                Analyze Another Profile
-              </button>
-              <button
-                onClick={() => {
-                  // Copy optimized content to clipboard
-                  navigator.clipboard.writeText(JSON.stringify(optimizations, null, 2));
-                  addToast({
-                    type: 'success',
-                    title: 'Copied to Clipboard',
-                    description: 'Optimization results have been copied to your clipboard.'
-                  });
-                }}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 font-medium"
-              >
-                Copy Results
-              </button>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
+  const addKeyword = (keyword: string) => {
+    if (skills.some((s) => s.toLowerCase() === keyword.toLowerCase())) return;
+    setProfile((p) => ({ ...p, skills: [...skills, keyword].join(', ') }));
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Free LinkedIn Optimizer Tool
-          </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 px-4">
-            Free LinkedIn optimizer tool - no signup required. Boost your LinkedIn visibility instantly with AI-powered analysis and optimization recommendations. LinkedIn profile optimizer free. We only ask for essential profile information - no personal details required! Perfect for job seekers.
+  const priorityClass = (p: string) =>
+    /high/i.test(p) ? 'bg-red-100 text-red-800' : /low/i.test(p) ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+
+  const renderProfileStep = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="mb-2 text-2xl font-bold text-gray-900">Profile Information</h2>
+        <p className="text-gray-600">Paste the sections recruiters see first. You don't need to connect your LinkedIn account.</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="li-headline" className={labelClass}>
+            Current Headline
+          </label>
+          <input
+            id="li-headline"
+            type="text"
+            value={profile.headline}
+            maxLength={HEADLINE_MAX}
+            onChange={(e) => setProfile({ ...profile, headline: e.target.value })}
+            className={inputClass}
+            placeholder="e.g., QA Automation Lead | Playwright, CI/CD | Helping SaaS teams ship faster"
+            aria-describedby="li-headline-count"
+          />
+          <p id="li-headline-count" className="mt-1 flex justify-between gap-2 text-sm text-gray-500">
+            <span>Put your role and main keywords first; long headlines are truncated in search results.</span>
+            <span data-testid="headline-count" className={profile.headline.length > 200 ? 'text-orange-600' : ''}>
+              {profile.headline.length}/{HEADLINE_MAX}
+            </span>
           </p>
-          
-          {/* API Key Manager */}
-          <div className="max-w-2xl mx-auto px-4">
-            <ApiKeyManager />
-          </div>
         </div>
 
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between overflow-x-auto pb-2">
-            {steps.map((_, index) => (
-              <div key={index} className="flex items-center flex-shrink-0">
-                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
-                  index <= currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
-                }`}>
-                  {index + 1}
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-8 sm:w-16 h-1 mx-1 sm:mx-2 ${
-                    index < currentStep ? 'bg-blue-600' : 'bg-gray-300'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 text-center px-4">
-            <h3 className="font-medium text-gray-900 text-sm sm:text-base">{steps[currentStep]?.title || 'Step'}</h3>
-            <p className="text-xs sm:text-sm text-gray-600">{steps[currentStep]?.description || 'Description'}</p>
-          </div>
+        <div>
+          <label htmlFor="li-summary" className={labelClass}>
+            About Section
+          </label>
+          <textarea
+            id="li-summary"
+            value={profile.summary}
+            maxLength={SUMMARY_MAX}
+            onChange={(e) => setProfile({ ...profile, summary: e.target.value })}
+            rows={6}
+            className={inputClass}
+            placeholder="Paste your LinkedIn About section..."
+          />
+          <p className="mt-1 text-right text-sm text-gray-500">
+            {profile.summary.length}/{SUMMARY_MAX}
+          </p>
         </div>
 
-        {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
-          {renderStepContent()}
+        <div>
+          <label htmlFor="li-skills" className={labelClass}>
+            Skills (comma-separated)
+          </label>
+          <input
+            id="li-skills"
+            type="text"
+            value={profile.skills}
+            onChange={(e) => setProfile({ ...profile, skills: e.target.value })}
+            className={inputClass}
+            placeholder="e.g., Test Automation, Playwright, Project Management, Leadership"
+          />
+          <p className="mt-1 text-sm text-gray-500">{skills.length} skills listed. Keep the ones most relevant to your target role at the top.</p>
         </div>
 
-        {/* Step Navigation */}
-        {currentStep > 0 && currentStep < 2 && (
-          <div className="mt-6 flex gap-4">
-            <button
-              onClick={() => setCurrentStep(currentStep - 1)}
-              className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md hover:bg-gray-700 font-medium"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setCurrentStep(currentStep + 1)}
-              disabled={currentStep === 1}
-              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              Next
-            </button>
-          </div>
-        )}
-
-        {/* Features */}
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🔍</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">AI Analysis</h3>
-            <p className="text-gray-600">Advanced AI analyzes your profile for optimization opportunities</p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">📈</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Keyword Optimization</h3>
-            <p className="text-gray-600">Get trending keywords to improve your search visibility</p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">💡</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Smart Recommendations</h3>
-            <p className="text-gray-600">Personalized suggestions to enhance your professional presence</p>
-          </div>
+        <div>
+          <label htmlFor="li-industry" className={labelClass}>
+            Target role or industry (optional)
+          </label>
+          <input
+            id="li-industry"
+            type="text"
+            value={profile.industry}
+            onChange={(e) => setProfile({ ...profile, industry: e.target.value })}
+            className={inputClass}
+            placeholder="e.g., SaaS product management"
+          />
         </div>
       </div>
+
+      {error && (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleAnalyze}
+        disabled={isAnalyzing}
+        className="w-full rounded-md bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isAnalyzing ? 'Analyzing Profile…' : 'Analyze My Profile'}
+      </button>
     </div>
+  );
+
+  const renderResults = (a: LinkedInAnalysis) => (
+    <div className="space-y-8">
+      <div className="text-center">
+        <h2 className="mb-4 text-2xl font-bold text-gray-900">Analysis Results</h2>
+        <div className="mb-6 rounded-lg bg-blue-50 p-6">
+          <p className="mb-1 text-4xl font-bold text-blue-600" data-testid="overall-score">
+            {score(a.overallScore)}
+          </p>
+          <p className="text-blue-800">Overall profile score</p>
+        </div>
+      </div>
+
+      <dl className="grid gap-4 sm:grid-cols-3">
+        {[
+          ['Headline', a.headlineScore],
+          ['About section', a.summaryScore],
+          ['Skills', a.skillsScore],
+        ].map(([label, value]) => (
+          <div key={label as string} className="flex flex-col-reverse rounded-lg border bg-white p-4">
+            <dt className="text-sm text-gray-600">{label} score</dt>
+            <dd className="mb-1 text-2xl font-bold text-green-600">{score(value as number | null)}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <section>
+        <h3 className="mb-4 text-xl font-semibold text-gray-900">Recommendations</h3>
+        {a.recommendations.length > 0 ? (
+          <ul className="space-y-4">
+            {a.recommendations.map((rec, index) => (
+              <li key={index} className="rounded-lg border border-gray-200 bg-white p-4">
+                <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+                  <h4 className="font-medium text-gray-900">{rec.category}</h4>
+                  <span className={`rounded-full px-2 py-1 text-xs font-medium ${priorityClass(rec.priority)}`}>{rec.priority} priority</span>
+                </div>
+                <p className="mb-2 text-gray-600">{rec.suggestion}</p>
+                {rec.example && (
+                  <p className="rounded bg-gray-50 p-3 text-sm">
+                    <strong>Example:</strong> {rec.example}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="italic text-gray-500">No recommendations returned.</p>
+        )}
+      </section>
+
+      {a.keywordSuggestions.length > 0 && (
+        <section>
+          <h3 className="mb-2 text-xl font-semibold text-gray-900">Keyword suggestions</h3>
+          <p className="mb-3 text-sm text-gray-600">Click a keyword to add it to your skills list, then copy the list into LinkedIn.</p>
+          <div className="flex flex-wrap gap-2">
+            {a.keywordSuggestions.map((keyword) => {
+              const added = skills.some((s) => s.toLowerCase() === keyword.toLowerCase());
+              return (
+                <button
+                  type="button"
+                  key={keyword}
+                  onClick={() => addKeyword(keyword)}
+                  aria-pressed={added}
+                  className={`rounded-full px-3 py-1 text-sm ${added ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}`}
+                >
+                  {added ? '✓' : '+'} {keyword}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 break-words text-sm text-gray-700" data-testid="skills-list">
+            <strong>Your skills:</strong> {skills.join(', ') || '–'}
+          </p>
+        </section>
+      )}
+
+      <section>
+        <h3 className="mb-4 text-xl font-semibold text-gray-900">Action plan</h3>
+        <ol className="space-y-4">
+          {[
+            ['Headline', a.headlineScore, 'Lead with your target role and two or three keywords, then add the value you bring. Keep the key terms in the first 60 characters.'],
+            ['About section', a.summaryScore, 'Open with who you help and how, add two or three quantified achievements and finish with a call to action.'],
+            ['Skills', a.skillsScore, 'List the skills from your target job descriptions, pin the top three and ask colleagues for endorsements.'],
+            ['Profile completeness', null, 'Add a professional photo, a banner, detailed experience entries, education and certifications.'],
+          ].map(([title, value, text], i) => (
+            <li key={title as string} className="flex gap-4">
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">{i + 1}</span>
+              <div>
+                <h4 className="font-semibold text-gray-900">
+                  {title as string}
+                  {value !== null && <span className="ml-2 text-sm font-normal text-gray-500">current score {score(value as number)}</span>}
+                </h4>
+                <p className="text-gray-600">{text as string}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {(a.profileStrengths.length > 0 || a.areasForImprovement.length > 0) && (
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+            <h3 className="mb-2 font-medium text-green-900">What's working well</h3>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-green-800">
+              {a.profileStrengths.length ? a.profileStrengths.map((s) => <li key={s}>{s}</li>) : <li>No strengths returned.</li>}
+            </ul>
+          </div>
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+            <h3 className="mb-2 font-medium text-yellow-900">Areas for improvement</h3>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-yellow-800">
+              {a.areasForImprovement.length ? a.areasForImprovement.map((s) => <li key={s}>{s}</li>) : <li>No areas returned.</li>}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {a.industryKeywords.length > 0 && (
+        <section>
+          <h3 className="mb-3 text-xl font-semibold text-gray-900">Industry keywords</h3>
+          <ul className="flex flex-wrap gap-2">
+            {a.industryKeywords.map((k) => (
+              <li key={k} className="rounded-full bg-purple-100 px-3 py-1 text-sm text-purple-800">
+                {k}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <button
+          type="button"
+          onClick={() => setCurrentStep(0)}
+          className="flex-1 rounded-md bg-gray-600 px-6 py-3 font-medium text-white hover:bg-gray-700"
+        >
+          Edit Profile &amp; Re-analyze
+        </button>
+        <button
+          type="button"
+          onClick={async () => {
+            const ok = await copyText(analysisToText(a));
+            addToast(
+              ok
+                ? { type: 'success', title: 'Copied to clipboard', description: 'Your analysis has been copied as text.' }
+                : { type: 'error', title: 'Copy failed', description: 'Your browser blocked clipboard access.' },
+            );
+          }}
+          className="flex-1 rounded-md bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
+        >
+          Copy Results
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <CareerToolLayout slug="linkedin-optimizer">
+      <div className="mx-auto max-w-4xl">
+        <StepIndicator steps={STEPS} current={currentStep} />
+        <div className="rounded-lg bg-white p-4 shadow-lg sm:p-6 lg:p-8">
+          {currentStep === 1 && optimizations ? renderResults(optimizations) : renderProfileStep()}
+        </div>
+      </div>
+    </CareerToolLayout>
   );
 };
 

@@ -1,555 +1,335 @@
-import React, { useState, useEffect } from 'react';
+import { useState, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Activity, AlertTriangle, CheckCircle2, Database, ExternalLink, HardDrive, HelpCircle, ListChecks, MemoryStick, RefreshCw, Server, XCircle } from 'lucide-react';
 import apiClient from '../../api/axios';
-import { useToast } from '../../hooks/use-toast';
+import { API_CONFIG } from '../../config/api';
+import Button from '../../components/ui/Button';
+import { AdminCard, AdminPageHeader, Badge, ErrorState, LoadingState, StatCard } from '../../components/admin/ui';
+import { useSEO } from '../../utils/seo';
+
+type Check = { status?: string; response_time_ms?: number; error?: string; [key: string]: unknown };
 
 interface HealthCheck {
-  status: string;
-  timestamp: string;
-  service: string;
-  version: string;
+  status?: string;
+  timestamp?: string;
+  service?: string;
+  version?: string;
   critical_issues?: number;
-  checks?: {
-    [key: string]: {
-      status: string;
-      response_time_ms?: number;
-      error?: string;
-      [key: string]: any;
-    };
-  };
+  checks?: Record<string, Check>;
+  message?: string;
 }
 
 interface QueueHealthData {
-  status: string;
-  queue_worker: { running: boolean; process: string | null };
-  scheduler: { running: boolean; process: string | null };
-  pending_emails: number;
-  jobs_in_queue: number;
-  n8n_config_active: boolean;
-  issues: string[];
-  instructions: Array<{ service: string; command: string; verify: string }>;
+  status?: string;
+  queue_worker?: { running?: boolean; process?: string | null };
+  scheduler?: { running?: boolean; process?: string | null };
+  pending_emails?: number;
+  jobs_in_queue?: number;
+  n8n_config_active?: boolean;
+  issues?: unknown;
+  instructions?: unknown;
 }
 
 interface MonitoringData {
-  basic: HealthCheck;
-  comprehensive: HealthCheck;
-  database: HealthCheck;
-  storage: HealthCheck;
-  queue?: QueueHealthData;
+  basic: HealthCheck | null;
+  comprehensive: HealthCheck | null;
+  database: HealthCheck | null;
+  storage: HealthCheck | null;
+  queue: QueueHealthData | null;
+  failed: string[];
   lastChecked: string;
 }
 
-const Monitoring: React.FC = () => {
-  const [monitoringData, setMonitoringData] = useState<MonitoringData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const { addToast } = useToast();
+const ENDPOINTS = [
+  { key: 'basic', path: '/health', label: 'Basic health', hint: 'Quick API status' },
+  { key: 'comprehensive', path: '/health/comprehensive', label: 'Comprehensive', hint: 'Detailed system report' },
+  { key: 'database', path: '/health/database', label: 'Database', hint: 'Connectivity & records' },
+  { key: 'storage', path: '/health/storage', label: 'Storage', hint: 'File system health' },
+  { key: 'queue', path: '/health/queue', label: 'Queue', hint: 'Workers & email queue' },
+] as const;
 
-  const fetchMonitoringData = async () => {
-    try {
-      setLoading(true);
-      
-      const [basicRes, comprehensiveRes, databaseRes, storageRes, queueRes] = await Promise.all([
-        apiClient.get('/health'),
-        apiClient.get('/health/comprehensive'),
-        apiClient.get('/health/database'),
-        apiClient.get('/health/storage'),
-        apiClient.get('/health/queue').catch(() => ({ data: null }))
-      ]);
+const asObject = <T,>(v: unknown): T | null => (v && typeof v === 'object' && !Array.isArray(v) ? (v as T) : null);
 
-      setMonitoringData({
-        basic: basicRes.data,
-        comprehensive: comprehensiveRes.data,
-        database: databaseRes.data,
-        storage: storageRes.data,
-        queue: queueRes.data,
-        lastChecked: new Date().toISOString()
-      });
-    } catch (error: any) {
-      console.error('Error fetching monitoring data:', error);
-      addToast({
-        type: 'error',
-        title: 'Monitoring Error',
-        description: 'Failed to fetch monitoring data: ' + (error.response?.data?.message || error.message)
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+async function loadMonitoring(): Promise<MonitoringData> {
+  // Health endpoints answer 503 with a JSON body when something is unhealthy, so a rejected
+  // request still carries useful data. Only a request with no body at all counts as failed.
+  const settled = await Promise.allSettled(ENDPOINTS.map((e) => apiClient.get(e.path)));
+  const result: MonitoringData = { basic: null, comprehensive: null, database: null, storage: null, queue: null, failed: [], lastChecked: new Date().toISOString() };
+  settled.forEach((outcome, i) => {
+    const key = ENDPOINTS[i].key;
+    const body = outcome.status === 'fulfilled' ? outcome.value.data : (outcome.reason as { response?: { data?: unknown } })?.response?.data;
+    const obj = asObject<HealthCheck & QueueHealthData>(body);
+    if (!obj) result.failed.push(ENDPOINTS[i].label);
+    (result as unknown as Record<string, unknown>)[key] = obj;
+  });
+  return result;
+}
 
-  useEffect(() => {
-    fetchMonitoringData();
-    
-    let interval: ReturnType<typeof setInterval>;
-    if (autoRefresh) {
-      interval = setInterval(fetchMonitoringData, 30000); // Refresh every 30 seconds
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [autoRefresh]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'healthy': return 'text-green-600 bg-green-100';
-      case 'warning': return 'text-yellow-600 bg-yellow-100';
-      case 'critical': return 'text-red-600 bg-red-100';
-      case 'unhealthy': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'healthy': return '✅';
-      case 'warning': return '⚠️';
-      case 'critical': return '🚨';
-      case 'unhealthy': return '❌';
-      default: return '❓';
-    }
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString();
-  };
-
-  const formatResponseTime = (ms: number) => {
-    if (ms < 100) return `${ms}ms`;
-    if (ms < 1000) return `${ms}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
-  };
-
-  if (loading && !monitoringData) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading monitoring data...</p>
-          </div>
-        </div>
-      </div>
-    );
+const statusTone = (status?: string) => {
+  switch (status) {
+    case 'healthy':
+    case 'ok':
+      return 'success' as const;
+    case 'warning':
+      return 'warning' as const;
+    case 'critical':
+    case 'unhealthy':
+    case 'error':
+      return 'danger' as const;
+    default:
+      return 'neutral' as const;
   }
-
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">System Monitoring</h1>
-              <p className="mt-2 text-gray-600">Real-time health monitoring and system status</p>
-            </div>
-            <div className="flex space-x-4">
-              <button
-                onClick={fetchMonitoringData}
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? 'Refreshing...' : 'Refresh Now'}
-              </button>
-              <button
-                onClick={() => setAutoRefresh(!autoRefresh)}
-                className={`px-4 py-2 rounded-lg ${
-                  autoRefresh 
-                    ? 'bg-green-600 text-white hover:bg-green-700' 
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                {autoRefresh ? 'Auto Refresh ON' : 'Auto Refresh OFF'}
-              </button>
-            </div>
-          </div>
-          {monitoringData && (
-            <p className="mt-2 text-sm text-gray-500">
-              Last checked: {formatTimestamp(monitoringData.lastChecked)}
-            </p>
-          )}
-        </div>
-
-        {/* Quick Health Check Links */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Health Check Links</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <a
-              href="https://naqashthaheem.com/api/health"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Basic Health</h3>
-                  <p className="text-sm text-gray-500">Quick API status</p>
-                </div>
-                <svg className="w-4 h-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </div>
-            </a>
-            <a
-              href="https://naqashthaheem.com/api/health/comprehensive"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Comprehensive</h3>
-                  <p className="text-sm text-gray-500">Detailed system report</p>
-                </div>
-                <svg className="w-4 h-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </div>
-            </a>
-            <a
-              href="https://naqashthaheem.com/api/health/database"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Database</h3>
-                  <p className="text-sm text-gray-500">DB connectivity & performance</p>
-                </div>
-                <svg className="w-4 h-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </div>
-            </a>
-            <a
-              href="https://naqashthaheem.com/api/health/storage"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Storage</h3>
-                  <p className="text-sm text-gray-500">File system health</p>
-                </div>
-                <svg className="w-4 h-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </div>
-            </a>
-          </div>
-        </div>
-
-        {/* Overall Status */}
-        {monitoringData && (
-          <div className="mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Overall System Status</h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(monitoringData.basic.status)}`}>
-                    {getStatusIcon(monitoringData.basic.status)} Basic Health
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(monitoringData.comprehensive.status)}`}>
-                    {getStatusIcon(monitoringData.comprehensive.status)} Comprehensive
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(monitoringData.database.status)}`}>
-                    {getStatusIcon(monitoringData.database.status)} Database
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(monitoringData.storage.status)}`}>
-                    {getStatusIcon(monitoringData.storage.status)} Storage
-                  </div>
-                </div>
-              </div>
-              {monitoringData.comprehensive.critical_issues && monitoringData.comprehensive.critical_issues > 0 && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-800 font-medium">
-                    🚨 {monitoringData.comprehensive.critical_issues} critical issue(s) detected
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Detailed Checks */}
-        {monitoringData && monitoringData.comprehensive.checks && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Database Performance */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Database Performance</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Status:</span>
-                  <span className={`px-2 py-1 rounded text-sm ${getStatusColor(monitoringData.comprehensive.checks.database?.status || 'unknown')}`}>
-                    {getStatusIcon(monitoringData.comprehensive.checks.database?.status || 'unknown')} 
-                    {monitoringData.comprehensive.checks.database?.status || 'Unknown'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Response Time:</span>
-                  <span>{formatResponseTime(monitoringData.comprehensive.checks.database?.response_time_ms || 0)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Connection:</span>
-                  <span>{monitoringData.comprehensive.checks.database?.connection || 'Unknown'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Storage Performance */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Storage Performance</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Status:</span>
-                  <span className={`px-2 py-1 rounded text-sm ${getStatusColor(monitoringData.comprehensive.checks.storage?.status || 'unknown')}`}>
-                    {getStatusIcon(monitoringData.comprehensive.checks.storage?.status || 'unknown')} 
-                    {monitoringData.comprehensive.checks.storage?.status || 'Unknown'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Response Time:</span>
-                  <span>{formatResponseTime(monitoringData.comprehensive.checks.storage?.response_time_ms || 0)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Writable:</span>
-                  <span>{monitoringData.comprehensive.checks.storage?.writable ? '✅ Yes' : '❌ No'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Memory Usage */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Memory Usage</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Status:</span>
-                  <span className={`px-2 py-1 rounded text-sm ${getStatusColor(monitoringData.comprehensive.checks.memory?.status || 'unknown')}`}>
-                    {getStatusIcon(monitoringData.comprehensive.checks.memory?.status || 'unknown')} 
-                    {monitoringData.comprehensive.checks.memory?.status || 'Unknown'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Current Usage:</span>
-                  <span>{monitoringData.comprehensive.checks.memory?.current_usage_mb || 0} MB</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Peak Usage:</span>
-                  <span>{monitoringData.comprehensive.checks.memory?.peak_usage_mb || 0} MB</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Limit:</span>
-                  <span>{monitoringData.comprehensive.checks.memory?.limit || 'Unknown'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Disk Space */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Disk Space</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Status:</span>
-                  <span className={`px-2 py-1 rounded text-sm ${getStatusColor(monitoringData.comprehensive.checks.disk_space?.status || 'unknown')}`}>
-                    {getStatusIcon(monitoringData.comprehensive.checks.disk_space?.status || 'unknown')} 
-                    {monitoringData.comprehensive.checks.disk_space?.status || 'Unknown'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Usage:</span>
-                  <span>{monitoringData.comprehensive.checks.disk_space?.usage_percent || 0}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Free Space:</span>
-                  <span>{monitoringData.comprehensive.checks.disk_space?.free_space_gb || 0} GB</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Total Space:</span>
-                  <span>{monitoringData.comprehensive.checks.disk_space?.total_space_gb || 0} GB</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Queue Health */}
-        {monitoringData && monitoringData.queue && (
-          <div className="mt-6 bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Queue & Email System Health</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Queue Worker Status */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Queue Worker:</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    monitoringData.queue.queue_worker.running 
-                      ? 'text-green-600 bg-green-100' 
-                      : 'text-red-600 bg-red-100'
-                  }`}>
-                    {monitoringData.queue.queue_worker.running ? '✅ Running' : '❌ Not Running'}
-                  </span>
-                </div>
-                
-                {/* Scheduler Status */}
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Scheduler:</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    monitoringData.queue.scheduler.running 
-                      ? 'text-green-600 bg-green-100' 
-                      : 'text-red-600 bg-red-100'
-                  }`}>
-                    {monitoringData.queue.scheduler.running ? '✅ Running' : '❌ Not Running'}
-                  </span>
-                </div>
-                
-                {/* N8n Configuration */}
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">N8n Config:</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    monitoringData.queue.n8n_config_active 
-                      ? 'text-green-600 bg-green-100' 
-                      : 'text-yellow-600 bg-yellow-100'
-                  }`}>
-                    {monitoringData.queue.n8n_config_active ? '✅ Active' : '⚠️ Inactive'}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Queue Statistics */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Pending Emails:</span>
-                  <span className={`font-bold ${
-                    monitoringData.queue.pending_emails > 0 
-                      ? 'text-yellow-600' 
-                      : 'text-green-600'
-                  }`}>
-                    {monitoringData.queue.pending_emails}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Jobs in Queue:</span>
-                  <span className={`font-bold ${
-                    monitoringData.queue.jobs_in_queue > 0 
-                      ? 'text-blue-600' 
-                      : 'text-gray-600'
-                  }`}>
-                    {monitoringData.queue.jobs_in_queue}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Issues */}
-            {monitoringData.queue.issues && monitoringData.queue.issues.length > 0 && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <h4 className="font-semibold text-red-800 mb-2">⚠️ Issues Detected:</h4>
-                <ul className="list-disc list-inside space-y-1">
-                  {monitoringData.queue.issues.map((issue, index) => (
-                    <li key={index} className="text-red-700">{issue}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Instructions */}
-            {monitoringData.queue.instructions && monitoringData.queue.instructions.length > 0 && (
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-semibold text-blue-800 mb-2">📋 To Fix Issues:</h4>
-                <div className="space-y-2">
-                  {monitoringData.queue.instructions.map((instruction, index) => (
-                    <div key={index} className="bg-white p-3 rounded border border-blue-100">
-                      <div className="font-medium text-blue-900 mb-1">{instruction.service}:</div>
-                      <code className="block text-xs bg-gray-100 p-2 rounded mt-1 break-all">
-                        {instruction.command}
-                      </code>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Database Records */}
-        {monitoringData && monitoringData.comprehensive.checks?.database_performance?.records && (
-          <div className="mt-6 bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Database Records</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {monitoringData.comprehensive.checks.database_performance.records.users || 0}
-                </div>
-                <div className="text-sm text-gray-600">Users</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {monitoringData.comprehensive.checks.database_performance.records.courses || 0}
-                </div>
-                <div className="text-sm text-gray-600">Courses</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {monitoringData.comprehensive.checks.database_performance.records.posts || 0}
-                </div>
-                <div className="text-sm text-gray-600">Posts</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  {monitoringData.comprehensive.checks.database_performance.records.workflows || 0}
-                </div>
-                <div className="text-sm text-gray-600">Workflows</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Error Information */}
-        {monitoringData && monitoringData.comprehensive.checks?.recent_errors && (
-          <div className="mt-6 bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Recent Errors</h3>
-            <div className="flex items-center space-x-4">
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(monitoringData.comprehensive.checks.recent_errors.status)}`}>
-                {getStatusIcon(monitoringData.comprehensive.checks.recent_errors.status)} 
-                {monitoringData.comprehensive.checks.recent_errors.status}
-              </div>
-              <span className="text-gray-600">
-                {monitoringData.comprehensive.checks.recent_errors.error_count_last_hour || 0} errors in the last hour
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 };
 
-export default Monitoring;
+function StatusBadge({ status }: { status?: string }) {
+  const tone = statusTone(status);
+  const Icon = tone === 'success' ? CheckCircle2 : tone === 'warning' ? AlertTriangle : tone === 'danger' ? XCircle : HelpCircle;
+  return (
+    <Badge tone={tone}>
+      <Icon className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+      {status || 'unknown'}
+    </Badge>
+  );
+}
+
+const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+const fmtMs = (v: unknown) => {
+  const ms = num(v);
+  if (ms === undefined) return '—';
+  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;
+};
+const fmtNum = (v: unknown, suffix = '') => {
+  const n = num(v);
+  return n === undefined ? '—' : `${n.toLocaleString()}${suffix}`;
+};
+const text = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? String(v) : '—');
+
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2 text-sm">
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="text-right font-medium text-slate-900">{children}</dd>
+    </div>
+  );
+}
+
+function CheckCard({ title, icon: Icon, check, children }: { title: string; icon: typeof Database; check?: Check; children?: ReactNode }) {
+  return (
+    <AdminCard
+      title={
+        <span className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-slate-500" aria-hidden="true" />
+          {title}
+        </span>
+      }
+    >
+      <dl className="divide-y divide-slate-100">
+        <Row label="Status">
+          <StatusBadge status={check?.status} />
+        </Row>
+        {children}
+        {typeof check?.error === 'string' && check.error && <p className="pt-2 text-xs text-red-700">{check.error}</p>}
+      </dl>
+    </AdminCard>
+  );
+}
+
+export default function Monitoring() {
+  useSEO({ title: 'System Monitoring | Admin', robots: 'noindex, nofollow' });
+  const [autoRefresh, setAutoRefresh] = useState(false);
+
+  const query = useQuery({
+    queryKey: ['admin-monitoring'],
+    queryFn: loadMonitoring,
+    refetchInterval: autoRefresh ? 30_000 : false,
+  });
+  const data = query.data;
+  const checks = asObject<Record<string, Check>>(data?.comprehensive?.checks) ?? {};
+  const records = asObject<Record<string, unknown>>(checks.database_performance?.records) ?? asObject<Record<string, unknown>>((data?.database as Record<string, unknown> | null)?.records);
+  const queue = data?.queue;
+  const queueIssues = Array.isArray(queue?.issues) ? (queue.issues as unknown[]).filter((i): i is string => typeof i === 'string') : [];
+  const queueInstructions = Array.isArray(queue?.instructions)
+    ? (queue.instructions as unknown[]).filter((i): i is { service?: string; command?: string } => !!asObject(i))
+    : [];
+  const criticalIssues = num(data?.comprehensive?.critical_issues) ?? 0;
+  const apiBase = API_CONFIG.BASE_URL.replace(/\/$/, '');
+  const allFailed = !!data && data.failed.length === ENDPOINTS.length;
+
+  return (
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="System Monitoring"
+        description={data ? `Health of the API, database, storage and queue. Last checked ${new Date(data.lastChecked).toLocaleTimeString()}.` : 'Health of the API, database, storage and queue.'}
+        actions={
+          <>
+            <Button
+              variant={autoRefresh ? 'primary' : 'outline'}
+              size="sm"
+              aria-pressed={autoRefresh}
+              onClick={() => setAutoRefresh((v) => !v)}
+            >
+              Auto refresh {autoRefresh ? 'on' : 'off'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => query.refetch()} disabled={query.isFetching} leftIcon={<RefreshCw className={`h-4 w-4 ${query.isFetching ? 'animate-spin' : ''}`} />}>
+              {query.isFetching ? 'Refreshing…' : 'Refresh now'}
+            </Button>
+          </>
+        }
+      />
+
+      {query.isLoading ? (
+        <LoadingState label="Running health checks…" />
+      ) : query.isError || allFailed ? (
+        <AdminCard>
+          <ErrorState title="Could not reach the health endpoints" message="The API did not respond. Check that the backend is running." onRetry={() => query.refetch()} />
+        </AdminCard>
+      ) : (
+        data && (
+          <>
+            {data.failed.length > 0 && (
+              <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                Some checks did not respond ({data.failed.join(', ')}). Other results are current.
+              </div>
+            )}
+            {criticalIssues > 0 && (
+              <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                {criticalIssues} critical issue{criticalIssues === 1 ? '' : 's'} detected
+              </div>
+            )}
+
+            <AdminCard title="Overall status">
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-testid="overall-status">
+                {ENDPOINTS.map((e) => {
+                  const entry = data[e.key] as { status?: string } | null;
+                  return (
+                    <li key={e.key} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2">
+                      <span className="text-sm text-slate-700">{e.label}</span>
+                      <StatusBadge status={entry ? entry.status : 'unreachable'} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </AdminCard>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <CheckCard title="Database" icon={Database} check={checks.database ?? (data.database as Check | null) ?? undefined}>
+                <Row label="Response time">{fmtMs(checks.database?.response_time_ms ?? (data.database as Check | null)?.response_time_ms)}</Row>
+                <Row label="Connection">{text(checks.database?.connection ?? (data.database as Check | null)?.connection)}</Row>
+              </CheckCard>
+              <CheckCard title="Storage" icon={HardDrive} check={checks.storage ?? (data.storage as Check | null) ?? undefined}>
+                <Row label="Response time">{fmtMs(checks.storage?.response_time_ms ?? (data.storage as Check | null)?.response_time_ms)}</Row>
+                <Row label="Writable">
+                  {(checks.storage?.writable ?? (data.storage as Check | null)?.writable) === true ? <Badge tone="success">Yes</Badge> : (checks.storage?.writable ?? (data.storage as Check | null)?.writable) === false ? <Badge tone="danger">No</Badge> : '—'}
+                </Row>
+              </CheckCard>
+              <CheckCard title="Memory" icon={MemoryStick} check={checks.memory}>
+                <Row label="Current usage">{fmtNum(checks.memory?.current_usage_mb, ' MB')}</Row>
+                <Row label="Peak usage">{fmtNum(checks.memory?.peak_usage_mb, ' MB')}</Row>
+                <Row label="Limit">{text(checks.memory?.limit)}</Row>
+              </CheckCard>
+              <CheckCard title="Disk space" icon={Server} check={checks.disk_space}>
+                <Row label="Usage">{fmtNum(checks.disk_space?.usage_percent, '%')}</Row>
+                <Row label="Free space">{fmtNum(checks.disk_space?.free_space_gb, ' GB')}</Row>
+                <Row label="Total space">{fmtNum(checks.disk_space?.total_space_gb, ' GB')}</Row>
+              </CheckCard>
+            </div>
+
+            {records && (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="db-records">
+                <StatCard label="Users" value={fmtNum(records.users)} />
+                <StatCard label="Courses" value={fmtNum(records.courses)} />
+                <StatCard label="Posts" value={fmtNum(records.posts)} />
+                <StatCard label="Workflows" value={fmtNum(records.workflows)} />
+              </div>
+            )}
+
+            {queue && (
+              <AdminCard
+                title={
+                  <span className="flex items-center gap-2">
+                    <ListChecks className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                    Queue &amp; email system
+                  </span>
+                }
+              >
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <dl className="divide-y divide-slate-100">
+                    <Row label="Queue worker">{queue.queue_worker?.running ? <Badge tone="success">Running</Badge> : <Badge tone="danger">Not running</Badge>}</Row>
+                    <Row label="Scheduler">{queue.scheduler?.running ? <Badge tone="success">Running</Badge> : <Badge tone="danger">Not running</Badge>}</Row>
+                    <Row label="n8n configuration">{queue.n8n_config_active ? <Badge tone="success">Active</Badge> : <Badge tone="warning">Inactive</Badge>}</Row>
+                  </dl>
+                  <dl className="divide-y divide-slate-100">
+                    <Row label="Pending emails">{fmtNum(queue.pending_emails)}</Row>
+                    <Row label="Jobs in queue">{fmtNum(queue.jobs_in_queue)}</Row>
+                  </dl>
+                </div>
+                {queueIssues.length > 0 && (
+                  <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+                    <p className="flex items-center gap-2 text-sm font-semibold text-red-800">
+                      <AlertTriangle className="h-4 w-4" aria-hidden="true" /> Issues detected
+                    </p>
+                    <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-red-700">
+                      {queueIssues.map((issue, i) => (
+                        <li key={i}>{issue}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {queueInstructions.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-semibold text-slate-900">How to fix</p>
+                    {queueInstructions.map((ins, i) => (
+                      <div key={i} className="rounded-lg border border-slate-200 p-3">
+                        <p className="text-sm font-medium text-slate-900">{ins.service ?? 'Service'}</p>
+                        <code className="mt-1 block break-all rounded bg-slate-100 p-2 text-xs text-slate-800">{ins.command ?? ''}</code>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </AdminCard>
+            )}
+
+            {checks.recent_errors && (
+              <AdminCard
+                title={
+                  <span className="flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                    Recent errors
+                  </span>
+                }
+              >
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <StatusBadge status={checks.recent_errors.status} />
+                  <span className="text-slate-600">{fmtNum(checks.recent_errors.error_count_last_hour ?? 0)} errors in the last hour</span>
+                </div>
+              </AdminCard>
+            )}
+          </>
+        )
+      )}
+
+      <AdminCard title="Raw health endpoints" description="Open the JSON reports directly.">
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {ENDPOINTS.map((e) => (
+            <li key={e.key}>
+              <a
+                href={`${apiBase}${e.path}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm hover:border-blue-300 hover:bg-blue-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium text-slate-900">{e.label}</span>
+                  <span className="block text-xs text-slate-500">{e.hint}</span>
+                </span>
+                <ExternalLink className="h-4 w-4 flex-none text-slate-400" aria-hidden="true" />
+                <span className="sr-only">(opens in a new tab)</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </AdminCard>
+    </div>
+  );
+}

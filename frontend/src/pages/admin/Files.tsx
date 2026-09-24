@@ -1,546 +1,455 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Archive,
+  Copy,
+  ExternalLink,
+  File as FileIcon,
+  FileCode2,
+  FileText,
+  Files as FilesIcon,
+  Image as ImageIcon,
+  LayoutGrid,
+  Link2,
+  List,
+  Trash2,
+  Upload,
+  type LucideIcon,
+} from 'lucide-react';
 import apiClient from '../../api/axios';
 import { useSEO } from '../../utils/seo';
 import { API_CONFIG } from '../../config/api';
+import { useToast } from '../../hooks/use-toast';
+import { useConfirm } from '../../hooks/use-confirm';
+import { AdminCard, AdminPageHeader, Badge, EmptyState, ErrorState, Field, IconButton, LoadingState, Modal, SearchInput, TableShell, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage, asList } from '../../components/admin/utils';
 
-interface File {
+interface StoredFile {
   id: number;
-  name: string;
-  original_name: string;
+  name?: string;
+  original_name?: string;
   path: string;
-  mime_type: string;
-  size: number;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
+  mime_type?: string | null;
+  size?: number;
+  is_public?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  /** Links are kept in this browser session only (there is no links API). */
+  isLocalLink?: boolean;
 }
 
-interface FileCategory {
-  type: string;
-  label: string;
-  icon: string;
-  color: string;
-}
+type Category = 'image' | 'document' | 'archive' | 'other';
 
-const FILE_CATEGORIES: FileCategory[] = [
-  { type: 'image', label: 'Images', icon: '🖼️', color: 'bg-blue-100 text-blue-800' },
-  { type: 'document', label: 'Documents', icon: '📄', color: 'bg-green-100 text-green-800' },
-  { type: 'archive', label: 'Archives', icon: '📦', color: 'bg-purple-100 text-purple-800' },
-  { type: 'other', label: 'Other', icon: '📁', color: 'bg-gray-100 text-gray-800' },
+const FILE_CATEGORIES: { type: Category; label: string; icon: LucideIcon; tone: 'info' | 'success' | 'warning' | 'neutral' }[] = [
+  { type: 'image', label: 'Images', icon: ImageIcon, tone: 'info' },
+  { type: 'document', label: 'Documents', icon: FileText, tone: 'success' },
+  { type: 'archive', label: 'Archives', icon: Archive, tone: 'warning' },
+  { type: 'other', label: 'Other', icon: FileIcon, tone: 'neutral' },
 ];
 
+const MAX_SIZE = 10 * 1024 * 1024;
+const ALLOWED_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+  'image/svg+xml',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+  'application/zip',
+  'application/json',
+];
+
+const primaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+const secondaryBtn =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-60';
+
+const formatFileSize = (bytes = 0) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
+
+const getFileCategory = (mimeType?: string | null): Category => {
+  const mime = mimeType ?? '';
+  if (mime.startsWith('image/')) return 'image';
+  if (mime.includes('pdf') || mime.includes('document') || mime.includes('text') || mime.includes('msword')) return 'document';
+  if (mime.includes('zip') || mime.includes('rar') || mime.includes('archive')) return 'archive';
+  return 'other';
+};
+
+const getFileIcon = (mimeType?: string | null): LucideIcon => {
+  const mime = mimeType ?? '';
+  if (mime === 'application/link') return Link2;
+  if (mime.startsWith('image/')) return ImageIcon;
+  if (mime.includes('json')) return FileCode2;
+  if (mime.includes('zip') || mime.includes('rar')) return Archive;
+  if (mime.includes('pdf') || mime.includes('word') || mime.includes('document') || mime.includes('text')) return FileText;
+  return FileIcon;
+};
+
+const displayName = (file: StoredFile) => file.original_name || file.name || `File #${file.id}`;
+const fileUrl = (file: StoredFile) => (file.isLocalLink ? file.path : API_CONFIG.getStorageUrl(file.path ?? ''));
+
 export default function Files() {
-  const [files, setFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  useSEO({ title: 'Manage Files | Admin', robots: 'noindex, nofollow' });
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
+  const { confirm } = useConfirm();
+
+  const [selectedCategory, setSelectedCategory] = useState<'all' | Category>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showLinkModal, setShowLinkModal] = useState(false);
-  const [linkUrl, setLinkUrl] = useState('');
-  const [linkTitle, setLinkTitle] = useState('');
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState('');
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [link, setLink] = useState({ title: '', url: '' });
+  const [linkErrors, setLinkErrors] = useState<{ title?: string; url?: string }>({});
+  const [localLinks, setLocalLinks] = useState<StoredFile[]>([]);
 
-  useSEO({ title: 'Manage Files | Admin' });
-
-  useEffect(() => {
-    fetchFiles();
-  }, []);
-
-  const fetchFiles = async () => {
-    try {
-      const response = await apiClient.get('/files');
-      setFiles(response.data);
-    } catch (error) {
-      console.error('Error fetching files:', error);
-    }
-  };
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Reset messages
-    setError('');
-    setSuccess('');
-
-    // Client-side validation
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'application/zip', 'application/json'];
-    
-    if (file.size > maxSize) {
-      setError('File size must not exceed 10MB.');
-      e.target.value = '';
-      return;
-    }
-    
-    if (!allowedTypes.includes(file.type)) {
-      setError('Only JPG, PNG, GIF, WebP, AVIF, SVG, PDF, DOC, DOCX, TXT, ZIP, and JSON files are allowed.');
-      e.target.value = '';
-      return;
-    }
-
-    setUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('is_public', '1');
-
-    try {
-      const response = await apiClient.post('/files', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setSuccess(response.data.message || 'File uploaded successfully!');
-      fetchFiles();
-      e.target.value = '';
-      setShowUploadModal(false); // Close modal after successful upload
-    } catch (error: any) {
-      console.error('Error uploading file:', error);
-      if (error.response?.data?.errors) {
-        // Display validation errors
-        const errorMessages = Object.values(error.response.data.errors).flat();
-        setError(errorMessages.join(' '));
-      } else {
-        setError(error.response?.data?.message || 'Error uploading file. Please try again.');
-      }
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this file?')) {
-      try {
-        await apiClient.delete(`/files/${id}`);
-        fetchFiles();
-      } catch (error) {
-        console.error('Error deleting file:', error);
-      }
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-  };
-
-  const getFileCategory = (mimeType: string): string => {
-    if (mimeType.startsWith('image/')) return 'image';
-    if (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('text')) return 'document';
-    if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('archive')) return 'archive';
-    return 'other';
-  };
-
-  const getFileIcon = (mimeType: string): string => {
-    if (mimeType.startsWith('image/')) return '🖼️';
-    if (mimeType.includes('pdf')) return '📄';
-    if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
-    if (mimeType.includes('zip') || mimeType.includes('rar')) return '📦';
-    if (mimeType.includes('json')) return '🔧';
-    return '📁';
-  };
-
-  const getFileUrl = (file: File): string => {
-    return API_CONFIG.getStorageUrl(file.path);
-  };
-
-  const filteredFiles = files.filter(file => {
-    const matchesCategory = selectedCategory === 'all' || getFileCategory(file.mime_type) === selectedCategory;
-    const matchesSearch = file.original_name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+  const { data: serverFiles = [], isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['admin-files'],
+    queryFn: async () => asList<StoredFile>((await apiClient.get('/files')).data),
   });
 
-  const handleLinkSubmit = async () => {
-    if (!linkUrl || !linkTitle) {
-      setError('Please provide both URL and title for the link.');
+  const files = useMemo(() => [...localLinks, ...serverFiles], [localLinks, serverFiles]);
+
+  const filteredFiles = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return files.filter((file) => {
+      const matchesCategory = selectedCategory === 'all' || getFileCategory(file.mime_type) === selectedCategory;
+      return matchesCategory && displayName(file).toLowerCase().includes(term);
+    });
+  }, [files, searchTerm, selectedCategory]);
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const body = new FormData();
+      body.append('file', file);
+      body.append('is_public', '1');
+      return (await apiClient.post('/files', body, { headers: { 'Content-Type': 'multipart/form-data' } })).data;
+    },
+    onSuccess: (data) => {
+      addToast({ type: 'success', title: 'File uploaded', description: data?.message });
+      closeUpload();
+      queryClient.invalidateQueries({ queryKey: ['admin-files'] });
+    },
+    onError: (err) => {
+      const message = apiErrorMessage(err, 'Error uploading file. Please try again.');
+      setUploadError(message);
+      addToast({ type: 'error', title: 'Upload failed', description: message });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiClient.delete(`/files/${id}`),
+    onSuccess: () => {
+      addToast({ type: 'success', title: 'File deleted' });
+      queryClient.invalidateQueries({ queryKey: ['admin-files'] });
+    },
+    onError: (err) => addToast({ type: 'error', title: 'Could not delete file', description: apiErrorMessage(err) }),
+  });
+
+  function closeUpload() {
+    setUploadOpen(false);
+    setSelectedFile(null);
+    setUploadError('');
+  }
+
+  const validateFile = (file: File | null): string => {
+    if (!file) return 'Choose a file to upload.';
+    if (file.size > MAX_SIZE) return 'File size must not exceed 10MB.';
+    if (!ALLOWED_TYPES.includes(file.type)) return 'Only JPG, PNG, GIF, WebP, AVIF, SVG, PDF, DOC, DOCX, TXT, ZIP, and JSON files are allowed.';
+    return '';
+  };
+
+  const handleUploadSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const message = validateFile(selectedFile);
+    setUploadError(message);
+    if (message || !selectedFile) return;
+    uploadMutation.mutate(selectedFile);
+  };
+
+  const handleLinkSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const next: typeof linkErrors = {};
+    if (!link.title.trim()) next.title = 'Link title is required.';
+    if (!link.url.trim()) next.url = 'URL is required.';
+    else {
+      try {
+        new URL(link.url);
+      } catch {
+        next.url = 'Enter a full URL, e.g. https://example.com';
+      }
+    }
+    setLinkErrors(next);
+    if (Object.keys(next).length) return;
+    const now = new Date().toISOString();
+    setLocalLinks((prev) => [
+      { id: -Date.now(), name: link.title.trim(), original_name: link.title.trim(), path: link.url.trim(), mime_type: 'application/link', size: 0, is_public: true, created_at: now, updated_at: now, isLocalLink: true },
+      ...prev,
+    ]);
+    addToast({ type: 'success', title: 'Link added', description: 'Links are kept for this session only.' });
+    setLinkOpen(false);
+    setLink({ title: '', url: '' });
+  };
+
+  const handleDelete = async (file: StoredFile) => {
+    if (file.isLocalLink) {
+      setLocalLinks((prev) => prev.filter((l) => l.id !== file.id));
       return;
     }
+    const ok = await confirm({
+      title: 'Delete file',
+      message: `Delete "${displayName(file)}"? Pages that link to it will show a broken file.`,
+      confirmText: 'Delete',
+      type: 'danger',
+    });
+    if (ok) deleteMutation.mutate(file.id);
+  };
 
+  const copyUrl = async (file: StoredFile) => {
     try {
-      // Create a virtual file entry for the link
-      const linkFile = {
-        id: Date.now(), // Temporary ID
-        name: linkTitle,
-        original_name: linkTitle,
-        path: linkUrl,
-        mime_type: 'application/link',
-        size: 0,
-        is_public: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      setFiles(prev => [linkFile, ...prev]);
-      setShowLinkModal(false);
-      setLinkUrl('');
-      setLinkTitle('');
-      setSuccess('Link added successfully!');
-    } catch (error) {
-      setError('Failed to add link. Please try again.');
+      await navigator.clipboard.writeText(fileUrl(file));
+      addToast({ type: 'success', title: 'URL copied' });
+    } catch {
+      addToast({ type: 'error', title: 'Could not copy URL', description: fileUrl(file) });
     }
   };
 
+  const categoryMeta = (file: StoredFile) => FILE_CATEGORIES.find((c) => c.type === getFileCategory(file.mime_type)) ?? FILE_CATEGORIES[3];
+
+  const renderActions = (file: StoredFile) => (
+    <div className="flex items-center justify-end gap-1">
+      <a
+        href={fileUrl(file)}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Open ${displayName(file)}`}
+        title={file.isLocalLink ? 'Open link' : 'View file'}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+      >
+        <ExternalLink className="h-4 w-4" aria-hidden="true" />
+      </a>
+      <IconButton label={`Copy URL of ${displayName(file)}`} icon={Copy} onClick={() => copyUrl(file)} />
+      <IconButton
+        label={`Delete ${displayName(file)}`}
+        icon={Trash2}
+        tone="danger"
+        disabled={deleteMutation.isPending && deleteMutation.variables === file.id}
+        onClick={() => handleDelete(file)}
+      />
+    </div>
+  );
+
+  const filterButton = (value: 'all' | Category, label: string, Icon?: LucideIcon) => (
+    <button
+      key={value}
+      type="button"
+      aria-pressed={selectedCategory === value}
+      onClick={() => setSelectedCategory(value)}
+      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+        selectedCategory === value ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+      }`}
+    >
+      {Icon && <Icon className="h-3.5 w-3.5" aria-hidden="true" />}
+      {label}
+    </button>
+  );
+
   return (
-    <div>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">File Management</h1>
-          <p className="text-gray-600 mt-1">Organize and manage your files and links</p>
-        </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => setShowLinkModal(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
-          >
-            <span className="mr-2">🔗</span>
-            Add Link
-          </button>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-          >
-            <span className="mr-2">📁</span>
-            Upload File
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Files"
+        description="Upload and manage images, documents and downloads used across the site."
+        actions={
+          <>
+            <button type="button" className={secondaryBtn} onClick={() => setLinkOpen(true)}>
+              <Link2 className="h-4 w-4" aria-hidden="true" /> Add link
+            </button>
+            <button type="button" className={primaryBtn} onClick={() => setUploadOpen(true)}>
+              <Upload className="h-4 w-4" aria-hidden="true" /> Upload file
+            </button>
+          </>
+        }
+      />
 
-      {/* Messages */}
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 flex items-center">
-          <span className="mr-2">⚠️</span>
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6 flex items-center">
-          <span className="mr-2">✅</span>
-          {success}
-        </div>
-      )}
-
-      {/* Filters and Controls */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          {/* Search */}
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search files..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-400">🔍</span>
-              </div>
-            </div>
+      <AdminCard padded={false}>
+        <div className="flex flex-col gap-3 border-b border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="w-full lg:max-w-xs">
+            <SearchInput label="Search files" placeholder="Search files…" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
-
-          {/* Category Filter */}
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === 'all'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              All Files
-            </button>
-            {FILE_CATEGORIES.map((category) => (
-              <button
-                key={category.type}
-                onClick={() => setSelectedCategory(category.type)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedCategory === category.type
-                    ? category.color
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <span className="mr-1">{category.icon}</span>
-                {category.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by type">
+            {filterButton('all', 'All files')}
+            {FILE_CATEGORIES.map((c) => filterButton(c.type, c.label, c.icon))}
           </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <span className="text-lg">⊞</span>
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`p-2 rounded-lg transition-colors ${
-                viewMode === 'table'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <span className="text-lg">☰</span>
-            </button>
+          <div className="flex gap-1" role="group" aria-label="View mode">
+            <IconButton label="Grid view" icon={LayoutGrid} aria-pressed={viewMode === 'grid'} className={viewMode === 'grid' ? 'bg-slate-100 text-slate-900' : ''} onClick={() => setViewMode('grid')} />
+            <IconButton label="Table view" icon={List} aria-pressed={viewMode === 'table'} className={viewMode === 'table' ? 'bg-slate-100 text-slate-900' : ''} onClick={() => setViewMode('table')} />
           </div>
         </div>
-      </div>
 
-      {/* Files Display */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredFiles.map((file) => (
-            <div key={file.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-2xl">{getFileIcon(file.mime_type)}</span>
-                  <div className="flex space-x-1">
-                    <button
-                      onClick={() => navigator.clipboard.writeText(getFileUrl(file))}
-                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Copy URL"
-                    >
-                      📋
-                    </button>
-                    <button
-                      onClick={() => handleDelete(file.id)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                      title="Delete"
-                    >
-                      🗑️
-                    </button>
+        {isLoading ? (
+          <LoadingState label="Loading files…" />
+        ) : isError ? (
+          <ErrorState message={apiErrorMessage(error)} onRetry={() => refetch()} />
+        ) : filteredFiles.length === 0 ? (
+          <EmptyState
+            icon={FilesIcon}
+            title={files.length ? 'No matching files' : 'No files yet'}
+            description={files.length ? 'Try adjusting your search or filter.' : 'Upload your first file or add a link to get started.'}
+            action={
+              files.length ? undefined : (
+                <button type="button" className={primaryBtn} onClick={() => setUploadOpen(true)}>
+                  <Upload className="h-4 w-4" aria-hidden="true" /> Upload file
+                </button>
+              )
+            }
+          />
+        ) : viewMode === 'grid' ? (
+          <ul className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="Files">
+            {filteredFiles.map((file) => {
+              const Icon = getFileIcon(file.mime_type);
+              const meta = categoryMeta(file);
+              return (
+                <li key={file.id} className="flex flex-col rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:shadow-sm">
+                  <div className="mb-3 flex items-start justify-between gap-2">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    {renderActions(file)}
                   </div>
-                </div>
-                <h3 className="font-medium text-gray-900 truncate mb-1">{file.original_name}</h3>
-                <p className="text-sm text-gray-500 mb-2">{formatFileSize(file.size)}</p>
-                <div className="flex items-center justify-between">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    FILE_CATEGORIES.find(cat => cat.type === getFileCategory(file.mime_type))?.color || 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {FILE_CATEGORIES.find(cat => cat.type === getFileCategory(file.mime_type))?.label || 'Other'}
-                  </span>
-                  {file.mime_type === 'application/link' ? (
-                    <a
-                      href={file.path}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      Open Link →
-                    </a>
-                  ) : (
-                    <a
-                      href={getFileUrl(file)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      View →
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+                  <p className="truncate font-medium text-slate-900" title={displayName(file)}>
+                    {displayName(file)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">{file.isLocalLink ? 'External link' : formatFileSize(file.size)}</p>
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    <Badge tone={meta.tone}>{file.isLocalLink ? 'Link' : meta.label}</Badge>
+                    {file.isLocalLink && <Badge tone="warning">Not saved</Badge>}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <TableShell caption="Files">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th scope="col">Name</th>
+                <th scope="col">Type</th>
+                <th scope="col">Size</th>
+                <th scope="col">URL</th>
+                <th scope="col" className="!text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredFiles.map((file) => (
-                <tr key={file.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <span className="text-lg mr-3">{getFileIcon(file.mime_type)}</span>
-                      <span className="font-medium text-gray-900">{file.original_name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{file.mime_type}</td>
-                  <td className="px-6 py-4 text-gray-600">{formatFileSize(file.size)}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      FILE_CATEGORIES.find(cat => cat.type === getFileCategory(file.mime_type))?.color || 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {FILE_CATEGORIES.find(cat => cat.type === getFileCategory(file.mime_type))?.label || 'Other'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500 truncate max-w-xs">
-                        {file.mime_type === 'application/link' ? file.path : getFileUrl(file)}
-                      </span>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(file.mime_type === 'application/link' ? file.path : getFileUrl(file))}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                        title="Copy URL"
-                      >
-                        📋
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    {file.mime_type === 'application/link' ? (
-                      <a
-                        href={file.path}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        Open Link
-                      </a>
-                    ) : (
-                      <a
-                        href={getFileUrl(file)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        View
-                      </a>
-                    )}
-                    <button
-                      onClick={() => handleDelete(file.id)}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-slate-100">
+              {filteredFiles.map((file) => {
+                const Icon = getFileIcon(file.mime_type);
+                const meta = categoryMeta(file);
+                return (
+                  <tr key={file.id}>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 flex-none text-slate-400" aria-hidden="true" />
+                        <span className="max-w-[16rem] truncate font-medium text-slate-900">{displayName(file)}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <Badge tone={meta.tone}>{file.isLocalLink ? 'Link' : meta.label}</Badge>
+                    </td>
+                    <td className="whitespace-nowrap text-slate-500">{file.isLocalLink ? '—' : formatFileSize(file.size)}</td>
+                    <td>
+                      <span className="block max-w-xs truncate font-mono text-xs text-slate-500">{fileUrl(file)}</span>
+                    </td>
+                    <td>{renderActions(file)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
-          </table>
-        </div>
-      )}
+          </TableShell>
+        )}
+      </AdminCard>
 
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Upload File</h3>
-            <label className="block w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 cursor-pointer transition-colors text-center">
-              {uploading ? (
-                <>
-                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  Uploading...
-                </>
-              ) : (
-                'Choose File'
-              )}
+      <Modal
+        open={uploadOpen}
+        onClose={closeUpload}
+        title="Upload file"
+        description="Max 10MB. JPG, PNG, GIF, WebP, AVIF, SVG, PDF, DOC, DOCX, TXT, ZIP or JSON."
+        footer={
+          <>
+            <button type="button" className={secondaryBtn} onClick={closeUpload}>
+              Cancel
+            </button>
+            <button type="submit" form="file-upload-form" className={primaryBtn} disabled={uploadMutation.isPending}>
+              {uploadMutation.isPending ? 'Uploading…' : 'Upload'}
+            </button>
+          </>
+        }
+      >
+        <form id="file-upload-form" onSubmit={handleUploadSubmit} noValidate>
+          <Field label="File" required error={uploadError} hint={selectedFile ? `${selectedFile.name} · ${formatFileSize(selectedFile.size)}` : undefined}>
+            {(props) => (
               <input
+                {...props}
                 type="file"
-                onChange={handleUpload}
-                className="hidden"
-                disabled={uploading}
-                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.zip,.json,.gif,.webp,.svg"
-              />
-            </label>
-            <div className="flex justify-end space-x-3 mt-4">
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Link Modal */}
-      {showLinkModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Add Link</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Link Title</label>
-                <input
-                  type="text"
-                  value={linkTitle}
-                  onChange={(e) => setLinkTitle(e.target.value)}
-                  placeholder="Enter link title"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
-                <input
-                  type="url"
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="https://example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowLinkModal(false);
-                  setLinkUrl('');
-                  setLinkTitle('');
+                disabled={uploadMutation.isPending}
+                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.zip,.json,.gif,.webp,.avif,.svg"
+                className="block w-full rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setSelectedFile(file);
+                  setUploadError(file ? validateFile(file) : '');
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleLinkSubmit}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Add Link
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              />
+            )}
+          </Field>
+        </form>
+      </Modal>
 
-      {/* Empty State */}
-      {filteredFiles.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">📁</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No files found</h3>
-          <p className="text-gray-500 mb-6">
-            {searchTerm || selectedCategory !== 'all' 
-              ? 'Try adjusting your search or filter criteria.'
-              : 'Upload your first file or add a link to get started.'
-            }
-          </p>
-          <div className="flex justify-center space-x-3">
+      <Modal
+        open={linkOpen}
+        onClose={() => {
+          setLinkOpen(false);
+          setLinkErrors({});
+        }}
+        title="Add link"
+        description="Links are listed for this browser session only; they are not stored on the server."
+        footer={
+          <>
             <button
-              onClick={() => setShowUploadModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              type="button"
+              className={secondaryBtn}
+              onClick={() => {
+                setLinkOpen(false);
+                setLinkErrors({});
+              }}
             >
-              Upload File
+              Cancel
             </button>
-            <button
-              onClick={() => setShowLinkModal(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Add Link
+            <button type="submit" form="file-link-form" className={primaryBtn}>
+              Add link
             </button>
-          </div>
-        </div>
-      )}
+          </>
+        }
+      >
+        <form id="file-link-form" onSubmit={handleLinkSubmit} noValidate className="space-y-4">
+          <Field label="Link title" required error={linkErrors.title}>
+            {(props) => <input {...props} type="text" className={inputClass} placeholder="Enter link title" value={link.title} onChange={(e) => setLink({ ...link, title: e.target.value })} />}
+          </Field>
+          <Field label="URL" required error={linkErrors.url}>
+            {(props) => <input {...props} type="url" className={inputClass} placeholder="https://example.com" value={link.url} onChange={(e) => setLink({ ...link, url: e.target.value })} />}
+          </Field>
+        </form>
+      </Modal>
     </div>
   );
 }

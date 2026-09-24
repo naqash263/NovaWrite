@@ -1,224 +1,194 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { CopyButton, parseNumberInput } from './UnitConverter';
 
 type UnitSystem = 'metric' | 'imperial';
 
+const LB = 0.45359237; // kg, exact
+const IN = 0.0254; // m, exact
+
+// WHO adult BMI classification (kg/m²).
+const categories = [
+  { max: 18.5, label: 'Underweight', range: 'Below 18.5', tone: 'bg-sky-100 text-sky-900' },
+  { max: 25, label: 'Healthy weight', range: '18.5 – 24.9', tone: 'bg-emerald-100 text-emerald-900' },
+  { max: 30, label: 'Overweight', range: '25.0 – 29.9', tone: 'bg-amber-100 text-amber-900' },
+  { max: 35, label: 'Obesity class I', range: '30.0 – 34.9', tone: 'bg-orange-100 text-orange-900' },
+  { max: 40, label: 'Obesity class II', range: '35.0 – 39.9', tone: 'bg-red-100 text-red-900' },
+  { max: Infinity, label: 'Obesity class III', range: '40.0 and above', tone: 'bg-red-200 text-red-950' },
+];
+
+/** Category for a BMI rounded to one decimal, so the label always matches the number shown. */
+const categoryFor = (bmi: number) => categories.find((c) => Math.round(bmi * 10) / 10 < c.max)!;
+
+const inputClass =
+  'w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-3 text-base focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500';
+
 export default function BMICalculator() {
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>('metric');
-  const [weight, setWeight] = useState<string>('');
-  const [height, setHeight] = useState<string>('');
-  const [bmi, setBmi] = useState<number | null>(null);
-  const [category, setCategory] = useState<string>('');
+  const id = useId();
+  const [system, setSystem] = useState<UnitSystem>('metric');
+  const [kg, setKg] = useState('');
+  const [cm, setCm] = useState('');
+  const [lb, setLb] = useState('');
+  const [ft, setFt] = useState('');
+  const [inches, setInches] = useState('');
 
-  const calculateBMI = () => {
-    const w = parseFloat(weight);
-    const h = parseFloat(height);
+  let error: string | null = null;
+  let heightM: number | null = null;
+  let weightKg: number | null = null;
 
-    if (!w || !h || w <= 0 || h <= 0) {
-      setBmi(null);
-      setCategory('');
-      return;
-    }
+  const nums = system === 'metric' ? [kg, cm] : [lb, ft, inches];
+  const parsed = nums.map(parseNumberInput);
+  const filled = system === 'metric' ? parsed.every((v) => v !== null) : parsed[0] !== null && (parsed[1] !== null || parsed[2] !== null);
 
-    let bmiValue: number;
+  if (!filled) error = null;
+  else if (parsed.some((v) => v !== null && (Number.isNaN(v) || v < 0))) error = 'Enter positive numbers only.';
+  else if (system === 'metric') {
+    weightKg = parsed[0]!;
+    heightM = parsed[1]! / 100;
+  } else {
+    weightKg = parsed[0]! * LB;
+    heightM = ((parsed[1] ?? 0) * 12 + (parsed[2] ?? 0)) * IN;
+  }
 
-    if (unitSystem === 'metric') {
-      // BMI = weight (kg) / height (m)²
-      bmiValue = w / (h / 100) ** 2;
-    } else {
-      // BMI = (weight (lbs) / height (inches)²) × 703
-      bmiValue = (w / (h ** 2)) * 703;
-    }
+  if (!error && heightM !== null && weightKg !== null) {
+    if (heightM < 0.5 || heightM > 2.8) error = system === 'metric' ? 'Enter a height between 50 and 280 cm.' : 'Enter a height between 1 ft 8 in and 9 ft 2 in.';
+    else if (weightKg < 2 || weightKg > 650) error = system === 'metric' ? 'Enter a weight between 2 and 650 kg.' : 'Enter a weight between 5 and 1,430 lb.';
+  }
 
-    setBmi(bmiValue);
+  const bmi = !error && heightM && weightKg ? weightKg / heightM ** 2 : null;
+  const category = bmi !== null ? categoryFor(bmi) : null;
+  const healthy = heightM && !error ? { min: 18.5 * heightM ** 2, max: 24.9 * heightM ** 2 } : null;
+  const fmtWeight = (kgValue: number) => (system === 'metric' ? `${kgValue.toFixed(1)} kg` : `${(kgValue / LB).toFixed(1)} lb`);
+  const markerPct = bmi !== null ? Math.min(100, Math.max(0, ((bmi - 15) / (40 - 15)) * 100)) : 0;
 
-    // Determine category
-    if (bmiValue < 18.5) {
-      setCategory('Underweight');
-    } else if (bmiValue < 25) {
-      setCategory('Normal weight');
-    } else if (bmiValue < 30) {
-      setCategory('Overweight');
-    } else {
-      setCategory('Obese');
-    }
+  const clear = () => {
+    setKg('');
+    setCm('');
+    setLb('');
+    setFt('');
+    setInches('');
   };
 
-  const getCategoryColor = (cat: string): string => {
-    switch (cat) {
-      case 'Underweight':
-        return 'bg-blue-100 text-blue-800';
-      case 'Normal weight':
-        return 'bg-green-100 text-green-800';
-      case 'Overweight':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Obese':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const numberInput = (key: string, label: string, value: string, set: (v: string) => void, placeholder: string) => (
+    <div className="min-w-0">
+      <label htmlFor={`${id}-${key}`} className="mb-1.5 block text-sm font-medium text-gray-700">
+        {label}
+      </label>
+      <input
+        id={`${id}-${key}`}
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        value={value}
+        onChange={(e) => set(e.target.value)}
+        className={`${inputClass} text-lg`}
+        placeholder={placeholder}
+      />
+    </div>
+  );
 
-  const handleClear = () => {
-    setWeight('');
-    setHeight('');
-    setBmi(null);
-    setCategory('');
-  };
+  const tab = (value: UnitSystem, label: string) => (
+    <button
+      type="button"
+      aria-pressed={system === value}
+      onClick={() => setSystem(value)}
+      className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 sm:flex-none ${
+        system === value ? 'bg-blue-600 text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Unit System</label>
-        <select
-          value={unitSystem}
-          onChange={(e) => {
-            setUnitSystem(e.target.value as UnitSystem);
-            setBmi(null);
-            setCategory('');
-          }}
-          className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base touch-manipulation"
-        >
-          <option value="metric">Metric (kg, cm)</option>
-          <option value="imperial">Imperial (lbs, inches)</option>
-        </select>
+      <div className="flex gap-2" role="group" aria-label="Units">
+        {tab('metric', 'Metric (kg, cm)')}
+        {tab('imperial', 'US / Imperial (lb, ft, in)')}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Weight ({unitSystem === 'metric' ? 'kg' : 'lbs'})
-          </label>
-          <input
-            type="number"
-            value={weight}
-            onChange={(e) => {
-              setWeight(e.target.value);
-              calculateBMI();
-            }}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg"
-            placeholder={`Enter weight in ${unitSystem === 'metric' ? 'kg' : 'lbs'}`}
-            step="0.1"
-            inputMode="decimal"
-          />
+      {system === 'metric' ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {numberInput('kg', 'Weight (kg)', kg, setKg, 'e.g. 70')}
+          {numberInput('cm', 'Height (cm)', cm, setCm, 'e.g. 175')}
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Height ({unitSystem === 'metric' ? 'cm' : 'inches'})
-          </label>
-          <input
-            type="number"
-            value={height}
-            onChange={(e) => {
-              setHeight(e.target.value);
-              calculateBMI();
-            }}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg"
-            placeholder={`Enter height in ${unitSystem === 'metric' ? 'cm' : 'inches'}`}
-            step="0.1"
-            inputMode="decimal"
-          />
-        </div>
-      </div>
-
-      {(weight || height) && (
-        <div className="flex justify-center">
-          <button
-            onClick={handleClear}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 active:bg-gray-400 transition-colors font-medium touch-manipulation"
-          >
-            Clear
-          </button>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {numberInput('lb', 'Weight (lb)', lb, setLb, 'e.g. 160')}
+          {numberInput('ft', 'Height (ft)', ft, setFt, 'e.g. 5')}
+          {numberInput('in', 'Height (in)', inches, setInches, 'e.g. 9')}
         </div>
       )}
 
-      {bmi !== null && (
-        <div className="bg-blue-50 rounded-lg p-4 sm:p-6">
-          <div className="text-center">
-            <p className="text-xs sm:text-sm text-gray-600 mb-2">Your BMI</p>
-            <p className="text-3xl sm:text-4xl font-bold text-blue-900 mb-3 sm:mb-4">{bmi.toFixed(1)}</p>
-            <span className={`inline-block px-3 sm:px-4 py-2 rounded-full font-semibold text-sm sm:text-base ${getCategoryColor(category)}`}>
-              {category}
-            </span>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-semibold text-gray-900 mb-2">BMI Categories</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-gray-700">Underweight</span>
-            <span className="text-gray-600">&lt; 18.5</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-green-700 font-medium">Normal weight</span>
-            <span className="text-gray-600">18.5 - 24.9</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-yellow-700 font-medium">Overweight</span>
-            <span className="text-gray-600">25 - 29.9</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-red-700 font-medium">Obese</span>
-            <span className="text-gray-600">≥ 30</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-sm text-yellow-800">
-          <strong>Note:</strong> BMI is a screening tool and does not directly measure body fat or health. 
-          It's important to consult with a healthcare professional for a comprehensive health assessment.
-        </p>
-      </div>
-
-      {/* SEO & AI-Friendly Content */}
-      <div className="mt-8 space-y-6">
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">About BMI (Body Mass Index)</h3>
-          <p className="text-gray-700 mb-4">
-            Body Mass Index (BMI) is a measure of body fat based on height and weight. It's calculated by dividing weight in kilograms 
-            by the square of height in meters (kg/m²). BMI provides a simple numeric measure that helps categorize weight status.
+      <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 sm:p-5" aria-live="polite">
+        {error && (
+          <p className="text-sm font-medium text-red-700" data-testid="bmi-error">
+            {error}
           </p>
-          <p className="text-gray-700 mb-4">
-            <strong>BMI Categories:</strong> Underweight (&lt;18.5), Normal weight (18.5-24.9), Overweight (25-29.9), Obese (≥30). 
-            These categories are general guidelines and may not apply to everyone, especially athletes with high muscle mass or older adults.
-          </p>
-          <p className="text-gray-700">
-            <strong>Limitations:</strong> BMI doesn't distinguish between muscle and fat, so it may not accurately reflect body composition 
-            for athletes, pregnant women, or individuals with high muscle mass. Always consult healthcare professionals for personalized health advice.
-          </p>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Frequently Asked Questions</h3>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium text-gray-900 mb-1">How is BMI calculated?</h4>
-              <p className="text-sm text-gray-600">
-                BMI is calculated using the formula: BMI = weight (kg) / height (m)². For imperial units, 
-                the formula is: BMI = (weight (lbs) / height (inches)²) × 703. Our calculator handles both metric and imperial units automatically.
-              </p>
+        )}
+        {!error && bmi === null && <p className="text-sm text-gray-700">Enter your weight and height to see your BMI.</p>}
+        {bmi !== null && category && healthy && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Your BMI</p>
+                <p className="text-4xl font-bold text-blue-950" data-testid="bmi-value">
+                  {bmi.toFixed(1)}
+                </p>
+              </div>
+              <span className={`rounded-full px-4 py-2 text-sm font-semibold ${category.tone}`} data-testid="bmi-category">
+                {category.label}
+              </span>
             </div>
-            <div>
-              <h4 className="font-medium text-gray-900 mb-1">What is a healthy BMI range?</h4>
-              <p className="text-sm text-gray-600">
-                A healthy BMI typically falls between 18.5 and 24.9. However, individual factors like age, gender, muscle mass, 
-                and overall health should be considered. Consult with a healthcare provider for personalized recommendations.
-              </p>
+            <div aria-hidden="true">
+              <div className="relative h-2.5 rounded-full bg-gradient-to-r from-sky-300 via-emerald-400 via-40% to-red-400">
+                <span className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-blue-950 shadow" style={{ left: `${markerPct}%` }} />
+              </div>
+              <div className="mt-1 flex justify-between text-xs text-blue-800">
+                <span>15</span>
+                <span>18.5</span>
+                <span>25</span>
+                <span>30</span>
+                <span>40</span>
+              </div>
             </div>
-            <div>
-              <h4 className="font-medium text-gray-900 mb-1">Is BMI accurate for everyone?</h4>
-              <p className="text-sm text-gray-600">
-                BMI is a useful screening tool but has limitations. It may not accurately reflect body composition for athletes, 
-                pregnant women, older adults, or individuals with high muscle mass. It's best used as part of a comprehensive health assessment.
-              </p>
+            <p className="text-sm text-blue-900" data-testid="bmi-healthy">
+              Healthy weight for your height (BMI 18.5–24.9): {fmtWeight(healthy.min)} – {fmtWeight(healthy.max)}
+            </p>
+            <p className="text-sm text-blue-900">BMI Prime: {(bmi / 25).toFixed(2)} (1.00 is the top of the healthy range)</p>
+            <div className="flex flex-wrap gap-2">
+              <CopyButton text={`BMI ${bmi.toFixed(1)} (${category.label})`} label="Copy result" />
+              <button
+                type="button"
+                onClick={clear}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Clear
+              </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
+
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+        <table className="w-full text-left text-sm">
+          <caption className="px-4 pt-3 text-left text-sm font-semibold text-gray-900">Adult BMI categories (WHO)</caption>
+          <tbody>
+            {categories.map((c) => (
+              <tr key={c.label} className={`border-t border-gray-100 ${category?.label === c.label ? 'bg-blue-50 font-semibold' : ''}`}>
+                <th scope="row" className="px-4 py-2 font-normal">
+                  {c.label}
+                </th>
+                <td className="px-4 py-2 text-right font-mono">{c.range}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        BMI is a screening measure for adults aged 20 and over. It does not measure body fat directly and is not suitable for children, teenagers
+        (who use age- and sex-specific percentiles) or during pregnancy. Talk to a healthcare professional about your individual health.
+      </p>
     </div>
   );
 }
-

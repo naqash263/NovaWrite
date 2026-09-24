@@ -3,7 +3,7 @@ import { useSEO } from '../utils/seo';
 export default function PrivacyPolicy() {
   useSEO({
     title: 'Privacy Policy | Naqash Thaheem',
-    description: 'Privacy Policy for Naqash Thaheem - Systems Analyst & Automation Specialist. Learn how we collect, use, and protect your personal information.',
+    description: 'Privacy Policy for Naqash Thaheem - Technical Project Manager & AI Automation Specialist. Learn how we collect, use, and protect your personal information.',
     url: '/privacy-policy'
   });
 

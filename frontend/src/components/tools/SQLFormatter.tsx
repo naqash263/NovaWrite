@@ -1,241 +1,243 @@
-import { useState, useEffect } from 'react';
-import { format } from 'sql-formatter';
-import { useSEO } from '../../utils/seo';
+import { useMemo, useState, type ChangeEvent } from 'react';
+import { format, type SqlLanguage, type KeywordCase } from 'sql-formatter';
+
+type Indent = '2' | '4' | 'tab';
+
+const DIALECTS: { value: SqlLanguage; label: string }[] = [
+  { value: 'sql', label: 'Standard SQL' },
+  { value: 'mysql', label: 'MySQL' },
+  { value: 'mariadb', label: 'MariaDB' },
+  { value: 'postgresql', label: 'PostgreSQL' },
+  { value: 'sqlite', label: 'SQLite' },
+  { value: 'transactsql', label: 'SQL Server (T-SQL)' },
+  { value: 'plsql', label: 'Oracle PL/SQL' },
+  { value: 'bigquery', label: 'Google BigQuery' },
+  { value: 'snowflake', label: 'Snowflake' },
+  { value: 'redshift', label: 'Amazon Redshift' },
+  { value: 'spark', label: 'Spark SQL' },
+  { value: 'trino', label: 'Trino / Presto' },
+  { value: 'duckdb', label: 'DuckDB' },
+  { value: 'db2', label: 'IBM Db2' },
+];
+
+const SAMPLE = `select u.id, u.name, count(o.id) as orders, sum(o.total) as revenue from users u left join orders o on o.user_id = u.id and o.status = 'paid' -- only paid orders
+where u.created_at >= '2026-01-01' and u.country in ('GB', 'PK', 'US') group by u.id, u.name having count(o.id) > 2 order by revenue desc limit 20;`;
+
+/**
+ * Minifies SQL: removes comments and collapses whitespace, but never touches the contents
+ * of string literals or quoted identifiers.
+ */
+function minifySql(sql: string): string {
+  let out = '';
+  let i = 0;
+  const space = () => {
+    if (out && !out.endsWith(' ')) out += ' ';
+  };
+  while (i < sql.length) {
+    const c = sql[i];
+    if (c === "'" || c === '"' || c === '`' || c === '[') {
+      const close = c === '[' ? ']' : c;
+      let j = i + 1;
+      while (j < sql.length) {
+        if (sql[j] === '\\' && c !== '[') j += 2;
+        else if (sql[j] === close) {
+          if (sql[j + 1] === close && c !== '[') j += 2;
+          else break;
+        } else j++;
+      }
+      out += sql.slice(i, j + 1);
+      i = j + 1;
+    } else if (c === '-' && sql[i + 1] === '-') {
+      const nl = sql.indexOf('\n', i);
+      i = nl === -1 ? sql.length : nl;
+      space();
+    } else if (c === '/' && sql[i + 1] === '*') {
+      const end = sql.indexOf('*/', i + 2);
+      i = end === -1 ? sql.length : end + 2;
+      space();
+    } else if (/\s/.test(c)) {
+      space();
+      i++;
+    } else {
+      if ((c === ',' || c === ')' || c === ';') && out.endsWith(' ')) out = out.slice(0, -1);
+      out += c;
+      if (c === '(') {
+        while (/\s/.test(sql[i + 1] ?? '')) i++;
+      }
+      i++;
+    }
+  }
+  return out.trim();
+}
+
+function downloadText(text: string, filename: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/sql' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const btn = 'rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+const field = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500';
 
 export default function SQLFormatter() {
-  const [input, setInput] = useState<string>('');
-  const [output, setOutput] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [indent, setIndent] = useState<number>(2);
-  const [language, setLanguage] = useState<string>('sql');
-  const [isMinified, setIsMinified] = useState<boolean>(false);
+  const [input, setInput] = useState('');
+  const [language, setLanguage] = useState<SqlLanguage>('sql');
+  const [indent, setIndent] = useState<Indent>('2');
+  const [keywordCase, setKeywordCase] = useState<KeywordCase>('upper');
+  const [minify, setMinify] = useState(false);
+  const [notice, setNotice] = useState('');
 
-  useSEO({
-    title: 'Free SQL Formatter Online - Format SQL Queries | No Signup',
-    description: 'Free SQL formatter online - no signup required. Format SQL queries with proper indentation, syntax highlighting, and validation. Supports MySQL, PostgreSQL, SQL Server, and more. Minify SQL, copy to clipboard. All processing in your browser.',
-    url: '/resources/utility-tools/sql-formatter',
-    keywords: [
-      'free SQL formatter online', 'SQL formatter', 'free SQL formatter', 'SQL formatter online', 'format SQL online',
-      'SQL beautifier', 'format SQL', 'SQL query formatter',
-      'SQL prettifier', 'SQL validator', 'online SQL formatter', 'free SQL tool',
-      'beautify SQL', 'SQL code formatter', 'free online SQL formatter'
-    ],
-    structuredData: 'custom',
-    customStructuredData: {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      'name': 'SQL Formatter & Beautifier',
-      'description': 'Free online SQL formatter and beautifier with syntax validation and multiple database support.',
-      'url': 'https://naqashthaheem.com/resources/utility-tools/sql-formatter',
-      'applicationCategory': 'DeveloperApplication',
-      'operatingSystem': 'Web Browser',
-      'offers': {
-        '@type': 'Offer',
-        'price': '0',
-        'priceCurrency': 'USD'
-      },
-      'featureList': [
-        'Format SQL queries with proper indentation',
-        'Support for MySQL, PostgreSQL, SQL Server',
-        'Minify SQL queries',
-        'Syntax validation',
-        'Copy to clipboard',
-        'Real-time formatting'
-      ]
-    }
-  });
-
-  const formatSQL = () => {
-    setError('');
-    if (!input.trim()) {
-      setOutput('');
-      return;
-    }
-
+  const result = useMemo(() => {
+    if (!input.trim()) return { output: '', error: '' };
     try {
-      if (isMinified) {
-        // Minify SQL by removing extra whitespace
-        setOutput(input.replace(/\s+/g, ' ').trim());
-      } else {
-        const formatted = format(input, {
-          language: language as any,
-          tabWidth: indent,
-        });
-        setOutput(formatted);
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Invalid SQL';
-      setError(errorMessage);
-      setOutput('');
+      const formatted = format(input, {
+        language,
+        tabWidth: indent === 'tab' ? 2 : Number(indent),
+        useTabs: indent === 'tab',
+        keywordCase,
+      });
+      return { output: minify ? minifySql(formatted) : formatted, error: '' };
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Could not parse this SQL.';
+      return { output: minify ? minifySql(input) : '', error: message.split('\n')[0] };
     }
+  }, [input, language, indent, keywordCase, minify]);
+
+  const flash = (msg: string) => {
+    setNotice(msg);
+    window.setTimeout(() => setNotice((n) => (n === msg ? '' : n)), 2500);
   };
 
-  useEffect(() => {
-    if (input.trim()) {
-      formatSQL();
-    } else {
-      setOutput('');
-      setError('');
-    }
-  }, [input, indent, language, isMinified]);
-
-  const copyToClipboard = async (text: string) => {
+  const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      alert('Copied to clipboard!');
-    } catch (err) {
-      alert('Failed to copy. Please select and copy manually.');
+      flash('Copied to clipboard.');
+    } catch {
+      flash('Copy failed. Select the text and press Ctrl+C.');
     }
   };
 
-  const clearAll = () => {
-    setInput('');
-    setOutput('');
-    setError('');
+  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      flash('Files up to 5 MB are supported.');
+      return;
+    }
+    setInput(await file.text());
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Free SQL Formatter Online</h1>
-        <p className="text-gray-600 mb-6">
-          Free SQL formatter online - no signup required. Format and beautify your SQL queries with proper indentation and syntax highlighting. Supports MySQL, PostgreSQL, SQL Server, and more. Minify SQL for production. All processing in your browser.
-        </p>
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <label htmlFor="sql-dialect" className="mb-1.5 block text-sm font-medium text-slate-700">
+            Dialect
+          </label>
+          <select id="sql-dialect" value={language} onChange={(e) => setLanguage(e.target.value as SqlLanguage)} className={field}>
+            {DIALECTS.map((d) => (
+              <option key={d.value} value={d.value}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="sql-keyword-case" className="mb-1.5 block text-sm font-medium text-slate-700">
+            Keyword case
+          </label>
+          <select id="sql-keyword-case" value={keywordCase} onChange={(e) => setKeywordCase(e.target.value as KeywordCase)} className={field}>
+            <option value="upper">UPPERCASE</option>
+            <option value="lower">lowercase</option>
+            <option value="preserve">Keep as typed</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="sql-indent" className="mb-1.5 block text-sm font-medium text-slate-700">
+            Indentation
+          </label>
+          <select id="sql-indent" value={indent} onChange={(e) => setIndent(e.target.value as Indent)} disabled={minify} className={field}>
+            <option value="2">2 spaces</option>
+            <option value="4">4 spaces</option>
+            <option value="tab">Tab</option>
+          </select>
+        </div>
+        <label className="flex items-center gap-2 self-end pb-2 text-sm text-slate-700">
+          <input type="checkbox" checked={minify} onChange={(e) => setMinify(e.target.checked)} className="h-4 w-4 rounded border-slate-300" />
+          Minify to one line
+        </label>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Input Section */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                SQL Query Input
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="min-w-0">
+          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+            <label htmlFor="sql-input" className="block text-sm font-medium text-slate-700">
+              SQL input
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setInput(SAMPLE)} className={`${btn} bg-slate-100 px-3 py-1 text-xs text-slate-800 hover:bg-slate-200`}>
+                Load sample
+              </button>
+              <label className={`${btn} cursor-pointer bg-slate-100 px-3 py-1 text-xs text-slate-800 hover:bg-slate-200 focus-within:ring-2 focus-within:ring-blue-500`}>
+                Open .sql file
+                <input type="file" accept=".sql,text/plain" onChange={onFile} className="sr-only" />
               </label>
-              <button
-                onClick={clearAll}
-                className="text-sm text-blue-600 hover:text-blue-700"
-              >
-                Clear All
+              <button type="button" onClick={() => setInput('')} disabled={!input} className={`${btn} bg-slate-100 px-3 py-1 text-xs text-slate-800 hover:bg-slate-200`}>
+                Clear
               </button>
             </div>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste your SQL query here..."
-              className="w-full h-96 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-            />
-            <div className="text-xs text-gray-500 mt-1">
-              {input.length} characters
-            </div>
           </div>
-
-          {/* Output Section */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Formatted SQL
-              </label>
-              {output && (
-                <button
-                  onClick={() => copyToClipboard(output)}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  Copy
-                </button>
-              )}
-            </div>
-            <textarea
-              value={output}
-              readOnly
-              placeholder="Formatted SQL will appear here..."
-              className="w-full h-96 p-4 border border-gray-300 rounded-lg resize-none bg-gray-50 font-mono text-sm"
-            />
-            {error && (
-              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm">{error}</p>
-              </div>
-            )}
-          </div>
+          <textarea
+            id="sql-input"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            spellCheck={false}
+            aria-invalid={Boolean(result.error)}
+            aria-describedby={result.error ? 'sql-error' : undefined}
+            placeholder="Paste a SQL query, e.g. select * from users where id = 1"
+            className="h-80 w-full resize-y rounded-lg border border-slate-300 p-3 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-
-        {/* Options */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Database Dialect
+        <div className="min-w-0">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <label htmlFor="sql-output" className="block text-sm font-medium text-slate-700">
+              {minify ? 'Minified SQL' : 'Formatted SQL'}
             </label>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="sql">Standard SQL</option>
-              <option value="mysql">MySQL</option>
-              <option value="postgresql">PostgreSQL</option>
-              <option value="mariadb">MariaDB</option>
-              <option value="sqlite">SQLite</option>
-              <option value="mssql">SQL Server</option>
-              <option value="db2">DB2</option>
-              <option value="plsql">PL/SQL</option>
-            </select>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => copy(result.output)} disabled={!result.output} className={`${btn} bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700`}>
+                Copy
+              </button>
+              <button type="button" onClick={() => downloadText(result.output + '\n', 'query.sql')} disabled={!result.output} className={`${btn} bg-slate-100 px-3 py-1 text-xs text-slate-800 hover:bg-slate-200`}>
+                Download
+              </button>
+            </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Indentation: {indent} spaces
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="8"
-              value={indent}
-              onChange={(e) => setIndent(parseInt(e.target.value))}
-              className="w-full"
-            />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="minify"
-              checked={isMinified}
-              onChange={(e) => setIsMinified(e.target.checked)}
-              className="mr-2"
-            />
-            <label htmlFor="minify" className="text-sm text-gray-700">
-              Minify SQL
-            </label>
-          </div>
+          <textarea
+            id="sql-output"
+            value={result.output}
+            readOnly
+            spellCheck={false}
+            placeholder="Formatted SQL appears here as you type."
+            className="h-80 w-full resize-y rounded-lg border border-slate-300 bg-slate-50 p-3 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
       </div>
 
-      {/* SEO Content */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">About SQL Formatter</h2>
-        <div className="prose max-w-none">
-          <p className="text-gray-700 mb-4">
-            SQL Formatter is a free online tool that formats and beautifies SQL queries 
-            with proper indentation, making them more readable and maintainable.
-          </p>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Format SQL queries with proper indentation</li>
-            <li>Support for multiple database dialects (MySQL, PostgreSQL, SQL Server, etc.)</li>
-            <li>Minify SQL queries to reduce file size</li>
-            <li>Syntax validation and error detection</li>
-            <li>Customizable indentation (1-8 spaces)</li>
-            <li>Copy formatted SQL to clipboard</li>
-          </ul>
-          <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Format messy SQL queries for better readability</li>
-            <li>Prepare SQL queries for documentation</li>
-            <li>Standardize SQL code style across teams</li>
-            <li>Minify SQL for production deployment</li>
-            <li>Learn SQL formatting best practices</li>
-            <li>Debug SQL query structure</li>
-          </ul>
+      {result.error && (
+        <div id="sql-error" role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+          <p className="font-semibold">This SQL could not be parsed for the selected dialect.</p>
+          <p className="mt-1 break-words font-mono text-xs">{result.error}</p>
+          <p className="mt-1">Check for unclosed quotes or brackets, or try a different dialect.</p>
         </div>
-      </div>
+      )}
+
+      <p aria-live="polite" className="mt-2 min-h-[1.25rem] text-sm text-slate-600">
+        {notice}
+      </p>
     </div>
   );
 }
-

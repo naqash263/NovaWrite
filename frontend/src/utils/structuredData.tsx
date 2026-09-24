@@ -167,7 +167,7 @@ export const generateBlogPostSchema = (post: {
       "height": 630
     } : {
       "@type": "ImageObject",
-      "url": "https://naqashthaheem.com/images/og-default.jpg",
+      "url": "https://naqashthaheem.com/images/og-default.png",
       "width": 1200,
       "height": 630
     },

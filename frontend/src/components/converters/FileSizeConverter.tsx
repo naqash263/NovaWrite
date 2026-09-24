@@ -1,135 +1,44 @@
-import { useState } from 'react';
+import UnitConverter, { type ConverterUnit } from './UnitConverter';
 
-interface Unit {
-  name: string;
-  symbol: string;
-  toBytes: number;
-}
-
-const units: Unit[] = [
-  { name: 'Bytes', symbol: 'B', toBytes: 1 },
-  { name: 'Kilobytes', symbol: 'KB', toBytes: 1024 },
-  { name: 'Megabytes', symbol: 'MB', toBytes: 1024 * 1024 },
-  { name: 'Gigabytes', symbol: 'GB', toBytes: 1024 * 1024 * 1024 },
-  { name: 'Terabytes', symbol: 'TB', toBytes: 1024 * 1024 * 1024 * 1024 },
-  { name: 'Petabytes', symbol: 'PB', toBytes: 1024 * 1024 * 1024 * 1024 * 1024 },
+// Factors to bytes. Decimal (SI) units use powers of 1,000; binary (IEC) units use powers of 1,024.
+const units: ConverterUnit[] = [
+  { id: 'bit', name: 'Bits', symbol: 'bit', factor: 1 / 8, group: 'Bits and bytes' },
+  { id: 'B', name: 'Bytes', symbol: 'B', factor: 1, group: 'Bits and bytes' },
+  { id: 'KB', name: 'Kilobytes (1,000 B)', symbol: 'KB', factor: 1e3, group: 'Decimal (SI, powers of 1,000)' },
+  { id: 'MB', name: 'Megabytes (1,000 KB)', symbol: 'MB', factor: 1e6, group: 'Decimal (SI, powers of 1,000)' },
+  { id: 'GB', name: 'Gigabytes (1,000 MB)', symbol: 'GB', factor: 1e9, group: 'Decimal (SI, powers of 1,000)' },
+  { id: 'TB', name: 'Terabytes (1,000 GB)', symbol: 'TB', factor: 1e12, group: 'Decimal (SI, powers of 1,000)' },
+  { id: 'PB', name: 'Petabytes (1,000 TB)', symbol: 'PB', factor: 1e15, group: 'Decimal (SI, powers of 1,000)' },
+  { id: 'KiB', name: 'Kibibytes (1,024 B)', symbol: 'KiB', factor: 1024, group: 'Binary (IEC, powers of 1,024)' },
+  { id: 'MiB', name: 'Mebibytes (1,024 KiB)', symbol: 'MiB', factor: 1024 ** 2, group: 'Binary (IEC, powers of 1,024)' },
+  { id: 'GiB', name: 'Gibibytes (1,024 MiB)', symbol: 'GiB', factor: 1024 ** 3, group: 'Binary (IEC, powers of 1,024)' },
+  { id: 'TiB', name: 'Tebibytes (1,024 GiB)', symbol: 'TiB', factor: 1024 ** 4, group: 'Binary (IEC, powers of 1,024)' },
+  { id: 'PiB', name: 'Pebibytes (1,024 TiB)', symbol: 'PiB', factor: 1024 ** 5, group: 'Binary (IEC, powers of 1,024)' },
+  { id: 'Mbit', name: 'Megabits (1,000,000 bits)', symbol: 'Mb', factor: 1e6 / 8, group: 'Network (bits)' },
+  { id: 'Gbit', name: 'Gigabits (1,000,000,000 bits)', symbol: 'Gb', factor: 1e9 / 8, group: 'Network (bits)' },
 ];
 
 export default function FileSizeConverter() {
-  const [fromValue, setFromValue] = useState<string>('1');
-  const [fromUnit, setFromUnit] = useState<string>('MB');
-  const [toUnit, setToUnit] = useState<string>('GB');
-
-  const convert = (value: number, from: string, to: string): number => {
-    const fromUnitData = units.find(u => u.symbol === from);
-    const toUnitData = units.find(u => u.symbol === to);
-    
-    if (!fromUnitData || !toUnitData) return 0;
-    
-    const bytes = value * fromUnitData.toBytes;
-    return bytes / toUnitData.toBytes;
-  };
-
-  const result = convert(parseFloat(fromValue) || 0, fromUnit, toUnit);
-
-  const swapUnits = () => {
-    const tempUnit = fromUnit;
-    setFromUnit(toUnit);
-    setToUnit(tempUnit);
-    setFromValue(result.toFixed(6));
-  };
-
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <input
-              type="number"
-              value={fromValue}
-              onChange={(e) => setFromValue(e.target.value)}
-              className="flex-1 min-w-0 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg"
-              placeholder="Enter size"
-              inputMode="decimal"
-            />
-            <select
-              value={fromUnit}
-              onChange={(e) => setFromUnit(e.target.value)}
-              className="w-full sm:w-56 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base touch-manipulation"
-            >
-              {units.map(unit => (
-                <option key={unit.symbol} value={unit.symbol}>
-                  {unit.name} ({unit.symbol})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <input
-              type="text"
-              value={isNaN(result) ? '' : result.toFixed(6)}
-              readOnly
-              className="flex-1 min-w-0 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-base sm:text-lg font-semibold"
-            />
-            <select
-              value={toUnit}
-              onChange={(e) => setToUnit(e.target.value)}
-              className="w-full sm:w-56 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base touch-manipulation"
-            >
-              {units.map(unit => (
-                <option key={unit.symbol} value={unit.symbol}>
-                  {unit.name} ({unit.symbol})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <button
-          onClick={swapUnits}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-medium touch-manipulation shadow-sm"
-        >
-          ↕ Swap Units
-        </button>
-      </div>
-
-      <div className="bg-blue-50 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          <strong>Conversion:</strong> {fromValue || '0'} {units.find(u => u.symbol === fromUnit)?.name} = {result.toFixed(6)} {units.find(u => u.symbol === toUnit)?.name}
+    <UnitConverter
+      quantity="data size"
+      units={units}
+      defaultFrom="GB"
+      defaultTo="MB"
+      presets={[
+        { label: 'GB → MB', value: '1', from: 'GB', to: 'MB' },
+        { label: 'MB → GB', value: '500', from: 'MB', to: 'GB' },
+        { label: '1 TB drive → GiB', value: '1', from: 'TB', to: 'GiB' },
+        { label: 'GiB → GB', value: '1', from: 'GiB', to: 'GB' },
+        { label: 'Mb → MB', value: '100', from: 'Mbit', to: 'MB' },
+      ]}
+      note={
+        <p>
+          <strong>Which standard?</strong> KB, MB, GB and TB here are decimal SI units (1 KB = 1,000 bytes), as used by storage makers and macOS.
+          KiB, MiB, GiB and TiB are binary IEC units (1 KiB = 1,024 bytes); Windows uses the binary values but labels them KB, MB and GB. That is why
+          a 1 TB drive shows as about 931 GB in Windows.
         </p>
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-semibold text-gray-900 mb-2">File Size Reference</h3>
-        <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
-          <div>
-            <p className="font-medium mb-1">Common Sizes</p>
-            <ul className="space-y-1">
-              <li>• 1 KB = 1,024 bytes</li>
-              <li>• 1 MB = 1,024 KB</li>
-              <li>• 1 GB = 1,024 MB</li>
-              <li>• 1 TB = 1,024 GB</li>
-            </ul>
-          </div>
-          <div>
-            <p className="font-medium mb-1">Examples</p>
-            <ul className="space-y-1">
-              <li>• Text file: ~1-10 KB</li>
-              <li>• Photo: ~2-5 MB</li>
-              <li>• Video: ~100-500 MB</li>
-              <li>• Movie: ~1-5 GB</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
+      }
+    />
   );
 }
-

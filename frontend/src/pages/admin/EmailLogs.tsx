@@ -1,352 +1,326 @@
-import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { CheckCircle2, ChevronLeft, ChevronRight, Lightbulb, Mail, RefreshCw, TrendingUp, XCircle } from 'lucide-react';
+import apiClient from '../../api/axios';
+import { useSEO } from '../../utils/seo';
+import { AdminCard, AdminPageHeader, Badge, EmptyState, ErrorState, Field, IconButton, LoadingState, SearchInput, StatCard, TableShell, inputClass } from '../../components/admin/ui';
+import { apiErrorMessage, asList } from '../../components/admin/utils';
 
 interface EmailLog {
   id: number;
   action: string;
   recipient_email: string;
-  status: 'success' | 'failed';
+  status: 'success' | 'failed' | string;
   error_message: string | null;
-  payload: any;
-  response: any;
   attempts: number;
   created_at: string;
   failure_reason_code?: string | null;
   failure_category?: string | null;
-  error_details?: any;
   http_status_code?: number | null;
-  provider_name?: string;
+  provider_name?: string | null;
 }
 
 interface FailureCategory {
   category: string;
   count: number;
-  description: string;
-  suggested_action: string;
+  description?: string;
+  suggested_action?: string;
 }
 
 interface LogStats {
-  total: number;
-  success: number;
-  failed: number;
-  success_rate: number;
-  common_errors: Array<{ error_message: string; count: number }>;
+  total?: number;
+  success?: number;
+  failed?: number;
+  success_rate?: number;
+  common_errors?: Array<{ error_message: string; count: number }>;
   failure_categories?: FailureCategory[];
   failure_by_provider?: Array<{ provider_name: string; count: number }>;
-  failure_trends?: Array<{ date: string; count: number }>;
 }
 
-const EmailLogs: React.FC = () => {
-  const [logs, setLogs] = useState<EmailLog[]>([]);
-  const [stats, setStats] = useState<LogStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    status: 'all',
-    action: 'all',
-    search: '',
-    date_from: '',
-    date_to: ''
+interface Filters {
+  status: string;
+  action: string;
+  date_from: string;
+  date_to: string;
+}
+
+const ACTIONS = [
+  { value: 'welcome_email', label: 'Welcome email' },
+  { value: 'password_reset', label: 'Password reset' },
+  { value: 'email_verification', label: 'Email verification' },
+  { value: 'course_enrollment', label: 'Course enrollment' },
+  { value: 'workflow_notification', label: 'Workflow notification' },
+  { value: 'newsletter', label: 'Newsletter' },
+  { value: 'system_maintenance', label: 'System maintenance' },
+];
+
+const EMPTY_FILTERS: Filters = { status: 'all', action: 'all', date_from: '', date_to: '' };
+
+const btnSecondary =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-60';
+
+const num = (v: unknown) => (typeof v === 'number' ? v.toLocaleString() : '—');
+
+function useDebounced<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
+export default function EmailLogs() {
+  useSEO({ title: 'Email Logs | Admin', robots: 'noindex, nofollow' });
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounced(search);
+  const [page, setPage] = useState(1);
+
+  const dateError = filters.date_from && filters.date_to && filters.date_from > filters.date_to ? 'The start date must be before the end date.' : undefined;
+
+  const logsQuery = useQuery({
+    queryKey: ['email-logs', filters, debouncedSearch, page],
+    enabled: !dateError,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const params: Record<string, string | number> = { page };
+      if (filters.status !== 'all') params.status = filters.status;
+      if (filters.action !== 'all') params.action = filters.action;
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+      if (filters.date_from) params.date_from = filters.date_from;
+      // Include the whole end day.
+      if (filters.date_to) params.date_to = `${filters.date_to} 23:59:59`;
+      const payload = (await apiClient.get('/admin/email-logs', { params })).data;
+      const p = payload?.data;
+      return { items: asList<EmailLog>(payload), meta: { current_page: p?.current_page ?? 1, last_page: p?.last_page ?? 1, total: p?.total } };
+    },
   });
 
-  useEffect(() => {
-    fetchLogs();
-    fetchStats();
-  }, [filters]);
+  const statsQuery = useQuery({
+    queryKey: ['email-logs-stats'],
+    queryFn: async () => {
+      const data = (await apiClient.get('/admin/email-logs/stats')).data?.data;
+      return (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as LogStats;
+    },
+  });
 
-  const fetchLogs = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (filters.status !== 'all') params.append('status', filters.status);
-      if (filters.action !== 'all') params.append('action', filters.action);
-      if (filters.search) params.append('search', filters.search);
-      if (filters.date_from) params.append('date_from', filters.date_from);
-      if (filters.date_to) params.append('date_to', filters.date_to);
+  const logs = logsQuery.data?.items ?? [];
+  const meta = logsQuery.data?.meta;
+  const stats = statsQuery.data;
+  const categories = Array.isArray(stats?.failure_categories) ? stats.failure_categories : [];
+  const providers = Array.isArray(stats?.failure_by_provider) ? stats.failure_by_provider : [];
+  const commonErrors = Array.isArray(stats?.common_errors) ? stats.common_errors : [];
+  const filtered = filters.status !== 'all' || filters.action !== 'all' || !!filters.date_from || !!filters.date_to || !!debouncedSearch.trim();
 
-      const response = await fetch(`/api/admin/email-logs?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setLogs(data.data.data || data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching logs:', error);
-    } finally {
-      setLoading(false);
-    }
+  const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
+    setFilters((f) => ({ ...f, [key]: value }));
+    setPage(1);
   };
-
-  const fetchStats = async () => {
-    try {
-      const response = await fetch('/api/admin/email-logs/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setStats(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'failed':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'bg-green-100 text-green-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Email Logs</h1>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Email Logs"
+        description="Every delivery attempt made through n8n, with failure diagnostics."
+        actions={
+          <button
+            type="button"
+            className={btnSecondary}
+            onClick={() => {
+              logsQuery.refetch();
+              statsQuery.refetch();
+            }}
+            disabled={logsQuery.isFetching}
+          >
+            <RefreshCw className={`h-4 w-4 ${logsQuery.isFetching ? 'animate-spin' : ''}`} aria-hidden="true" />
+            Refresh
+          </button>
+        }
+      />
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <AlertCircle className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Success</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.success}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <XCircle className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Failed</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.failed}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <AlertCircle className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Success Rate</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.success_rate}%</p>
-              </div>
-            </div>
-          </div>
+      {stats && !statsQuery.isError && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="log-stats">
+          <StatCard label="Total" icon={Mail} value={num(stats.total)} />
+          <StatCard label="Delivered" icon={CheckCircle2} value={num(stats.success)} />
+          <StatCard label="Failed" icon={XCircle} value={num(stats.failed)} />
+          <StatCard label="Success rate" icon={TrendingUp} value={typeof stats.success_rate === 'number' ? `${stats.success_rate}%` : '—'} />
         </div>
       )}
 
-      {/* Failure Analysis Section */}
-      {stats?.failure_categories && stats.failure_categories.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Failure Analysis by Category</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            {stats.failure_categories.map((category, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-900 capitalize">{category.category}</span>
-                  <span className="text-sm font-bold text-red-600">{category.count}</span>
-                </div>
-                <p className="text-xs text-gray-600 mb-2">{category.description}</p>
-                <p className="text-xs text-blue-600 italic">💡 {category.suggested_action}</p>
-              </div>
-            ))}
-          </div>
-          {stats.failure_by_provider && stats.failure_by_provider.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Failures by Provider</h4>
-              <div className="flex flex-wrap gap-2">
-                {stats.failure_by_provider.map((provider, index) => (
-                  <span key={index} className="px-3 py-1 bg-gray-100 rounded-full text-xs">
-                    {provider.provider_name}: {provider.count}
-                  </span>
+      {(categories.length > 0 || commonErrors.length > 0) && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          {categories.length > 0 && (
+            <AdminCard title="Failures by category">
+              <ul className="space-y-3">
+                {categories.map((c) => (
+                  <li key={c.category} className="rounded-lg border border-slate-200 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium capitalize text-slate-900">{c.category}</span>
+                      <Badge tone="danger">{c.count}</Badge>
+                    </div>
+                    {c.description && <p className="mt-1 text-xs text-slate-600">{c.description}</p>}
+                    {c.suggested_action && (
+                      <p className="mt-1.5 flex gap-1.5 text-xs text-blue-800">
+                        <Lightbulb className="h-3.5 w-3.5 flex-none" aria-hidden="true" />
+                        {c.suggested_action}
+                      </p>
+                    )}
+                  </li>
                 ))}
-              </div>
-            </div>
+              </ul>
+              {providers.length > 0 && (
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4 text-xs">
+                  <span className="font-medium text-slate-700">By provider:</span>
+                  {providers.map((p) => (
+                    <Badge key={p.provider_name}>
+                      {p.provider_name}: {p.count}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </AdminCard>
+          )}
+          {commonErrors.length > 0 && (
+            <AdminCard title="Most common errors">
+              <ul className="divide-y divide-slate-100">
+                {commonErrors.map((e, i) => (
+                  <li key={i} className="flex items-start justify-between gap-3 py-2 text-sm">
+                    <span className="min-w-0 break-words text-slate-700">{e.error_message}</span>
+                    <span className="flex-none text-xs font-medium text-red-700">{e.count}×</span>
+                  </li>
+                ))}
+              </ul>
+            </AdminCard>
           )}
         </div>
       )}
 
-      {/* Common Errors */}
-      {stats?.common_errors && stats.common_errors.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Common Error Messages</h3>
-          <div className="space-y-2">
-            {stats.common_errors.map((error, index) => (
-              <div key={index} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                <span className="text-sm text-red-800">{error.error_message}</span>
-                <span className="text-sm font-medium text-red-600">{error.count} times</span>
-              </div>
-            ))}
-          </div>
+      <AdminCard padded={false}>
+        <div className="grid gap-4 border-b border-slate-200 p-5 sm:grid-cols-2 lg:grid-cols-5">
+          <Field label="Status">
+            {(props) => (
+              <select {...props} className={inputClass} value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
+                <option value="all">All statuses</option>
+                <option value="success">Delivered</option>
+                <option value="failed">Failed</option>
+              </select>
+            )}
+          </Field>
+          <Field label="Action">
+            {(props) => (
+              <select {...props} className={inputClass} value={filters.action} onChange={(e) => setFilter('action', e.target.value)}>
+                <option value="all">All actions</option>
+                {ACTIONS.map((a) => (
+                  <option key={a.value} value={a.value}>
+                    {a.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <Field label="Recipient">
+            {(props) => (
+              <SearchInput
+                {...props}
+                label="Search by recipient email"
+                placeholder="Search email"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+              />
+            )}
+          </Field>
+          <Field label="From">{(props) => <input {...props} type="date" className={inputClass} value={filters.date_from} onChange={(e) => setFilter('date_from', e.target.value)} />}</Field>
+          <Field label="To" error={dateError}>
+            {(props) => <input {...props} type="date" className={inputClass} value={filters.date_to} onChange={(e) => setFilter('date_to', e.target.value)} />}
+          </Field>
         </div>
-      )}
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Statuses</option>
-              <option value="success">Success</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Action</label>
-            <select
-              value={filters.action}
-              onChange={(e) => setFilters({ ...filters, action: e.target.value })}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Actions</option>
-              <option value="welcome_email">Welcome Email</option>
-              <option value="password_reset">Password Reset</option>
-              <option value="email_verification">Email Verification</option>
-              <option value="course_enrollment">Course Enrollment</option>
-              <option value="workflow_notification">Workflow Notification</option>
-              <option value="newsletter">Newsletter</option>
-              <option value="system_maintenance">System Maintenance</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search Email</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              placeholder="Search by email..."
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+        {logsQuery.isLoading ? (
+          <LoadingState label="Loading logs…" />
+        ) : logsQuery.isError ? (
+          <ErrorState message={apiErrorMessage(logsQuery.error)} onRetry={() => logsQuery.refetch()} />
+        ) : logs.length === 0 ? (
+          filtered ? (
+            <EmptyState
+              title="No logs match these filters"
+              action={
+                <button
+                  type="button"
+                  className={btnSecondary}
+                  onClick={() => {
+                    setFilters(EMPTY_FILTERS);
+                    setSearch('');
+                  }}
+                >
+                  Clear filters
+                </button>
+              }
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-            <input
-              type="date"
-              value={filters.date_from}
-              onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-            <input
-              type="date"
-              value={filters.date_to}
-              onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Logs Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attempts</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {logs.map((log) => (
-              <tr key={log.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {log.action}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {log.recipient_email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(log.status)}`}>
-                    {getStatusIcon(log.status)}
-                    <span className="ml-1 capitalize">{log.status}</span>
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
-                  <div className="flex flex-col">
-                    {log.error_message && (
-                      <span className="truncate" title={log.error_message}>{log.error_message}</span>
-                    )}
-                    {log.failure_category && (
-                      <span className="text-xs text-gray-400 mt-1">
-                        {log.failure_category}
-                        {log.failure_reason_code && ` (${log.failure_reason_code})`}
-                        {log.http_status_code && ` - HTTP ${log.http_status_code}`}
-                      </span>
-                    )}
-                    {log.provider_name && (
-                      <span className="text-xs text-blue-500 mt-1">Provider: {log.provider_name}</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {log.attempts}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(log.created_at).toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ) : (
+            <EmptyState icon={Mail} title="No emails logged yet" description="Delivery attempts appear here as soon as the site sends email." />
+          )
+        ) : (
+          <>
+            <TableShell caption="Email logs">
+              <thead>
+                <tr>
+                  <th scope="col">Action</th>
+                  <th scope="col">Recipient</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Error</th>
+                  <th scope="col">Attempts</th>
+                  <th scope="col">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {logs.map((log) => (
+                  <tr key={log.id}>
+                    <td className="font-mono text-xs text-slate-900">{log.action}</td>
+                    <td className="whitespace-nowrap">{log.recipient_email}</td>
+                    <td>
+                      <Badge tone={log.status === 'success' ? 'success' : log.status === 'failed' ? 'danger' : 'neutral'}>{log.status === 'success' ? 'Delivered' : log.status}</Badge>
+                    </td>
+                    <td className="max-w-xs">
+                      {log.error_message ? (
+                        <span className="block truncate text-xs text-slate-700" title={log.error_message}>
+                          {log.error_message}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                      {log.failure_category && (
+                        <span className="block text-xs text-slate-500">
+                          {log.failure_category}
+                          {log.failure_reason_code ? ` (${log.failure_reason_code})` : ''}
+                          {log.http_status_code ? ` · HTTP ${log.http_status_code}` : ''}
+                          {log.provider_name ? ` · ${log.provider_name}` : ''}
+                        </span>
+                      )}
+                    </td>
+                    <td className="tabular-nums">{log.attempts}</td>
+                    <td className="whitespace-nowrap text-xs">{log.created_at ? new Date(log.created_at).toLocaleString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableShell>
+            {meta && meta.last_page > 1 && (
+              <nav aria-label="Pagination" className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-sm text-slate-600">
+                <span>
+                  Page {meta.current_page} of {meta.last_page}
+                </span>
+                <span className="flex gap-1">
+                  <IconButton label="Previous page" icon={ChevronLeft} disabled={page <= 1} onClick={() => setPage((p) => p - 1)} />
+                  <IconButton label="Next page" icon={ChevronRight} disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)} />
+                </span>
+              </nav>
+            )}
+          </>
+        )}
+      </AdminCard>
     </div>
   );
-};
-
-export default EmailLogs;
+}
