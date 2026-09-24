@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 
 // Include debug routes
-require_once __DIR__ . '/debug.php';
 
 // Health check endpoints (no authentication required)
 Route::get('/health', [App\Http\Controllers\Api\HealthController::class, 'basic']);
@@ -201,40 +200,6 @@ Route::get('/php-settings', function () {
     ]);
 });
 
-// Test CV template creation without middleware
-Route::post('/test-cv-template', function (Request $request) {
-    try {
-        $user = \App\Models\User::find(1); // Use admin user directly
-        if (!$user) {
-            return response()->json(['error' => 'User not found'], 404);
-        }
-        
-        $template = new \App\Models\CvTemplate();
-        $template->name = $request->input('name', 'Test Template');
-        $template->description = $request->input('description', 'Test description');
-        $template->category = $request->input('category', 'general');
-        $template->ats_score = $request->input('ats_score', 8);
-        $template->html_content = $request->input('html_content', '<div>test</div>');
-        $template->json_config = $request->input('json_config', ['layout' => 'single-column']);
-        $template->customizable_options = $request->input('customizable_options', []);
-        $template->field_mappings = $request->input('field_mappings', []);
-        $template->created_by = $user->id;
-        $template->save();
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'CV template created successfully',
-            'data' => $template->load('creator')
-        ], 201);
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to create template',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-});
 
 // Test route with middleware
 Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\AdminMiddleware::class])->post('/test-cv-template-auth', function (Request $request) {
@@ -271,8 +236,8 @@ Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\Adm
     }
 });
 
-// TEMPORARY SOLUTION: Working CV template creation route
-Route::post('/admin/cv-templates-temp', function (Request $request) {
+// CV template creation used by the admin UI (admins only; HTML templates render in the public CV builder)
+Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\AdminMiddleware::class])->post('/admin/cv-templates-temp', function (Request $request) {
     try {
         // Parse JSON strings if they come as strings
         $data = $request->all();
@@ -309,8 +274,7 @@ Route::post('/admin/cv-templates-temp', function (Request $request) {
             ], 422);
         }
 
-        // Use admin user (temporary solution)
-        $data['created_by'] = 1; // Admin user ID
+        $data['created_by'] = $request->user()->id;
 
         // Handle thumbnail upload
         if ($request->hasFile('thumbnail')) {
@@ -344,186 +308,10 @@ Route::get('/home-settings', [\App\Http\Controllers\Api\Admin\HomeSettingsContro
 Route::get('/adsense-settings/active', [\App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'getActive']);
 Route::get('/adsense-settings/debug', [\App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'debug']);
 
-// Debug endpoint to check JWT configuration
-Route::get('/debug/jwt', function () {
-    $jwtSecret = config('jwt.secret');
-    $jwtAlgo = config('jwt.algo');
-    $jwtTtl = config('jwt.ttl');
-    
-    return response()->json([
-        'jwt_secret_set' => !empty($jwtSecret),
-        'jwt_secret_length' => strlen($jwtSecret ?? ''),
-        'jwt_algo' => $jwtAlgo,
-        'jwt_ttl' => $jwtTtl,
-        'app_key_set' => !empty(config('app.key')),
-        'app_key_length' => strlen(config('app.key') ?? ''),
-    ]);
-});
 
-// Debug endpoint to check database tables
-Route::get('/debug/database', function () {
-    try {
-        // Test basic database connection
-        $connection = \Illuminate\Support\Facades\DB::connection();
-        $pdo = $connection->getPdo();
-        
-        // Get database name
-        $databaseName = config('database.connections.pgsql.database');
-        
-        // Try to get tables
-        $tables = \Illuminate\Support\Facades\DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = ?", [$databaseName]);
-        $tableNames = array_column($tables, 'table_name');
-        
-        // Also try a simple query to test connection
-        $testQuery = \Illuminate\Support\Facades\DB::select("SELECT 1 as test");
-        
-        // Check api_tokens table structure if it exists
-        $apiTokensStructure = null;
-        if (in_array('api_tokens', $tableNames)) {
-            $apiTokensStructure = \Illuminate\Support\Facades\DB::select("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'api_tokens' ORDER BY ordinal_position");
-        }
-        
-        return response()->json([
-            'database' => $databaseName,
-            'connection_working' => true,
-            'test_query' => $testQuery,
-            'tables' => $tableNames,
-            'api_tokens_exists' => in_array('api_tokens', $tableNames),
-            'api_tokens_structure' => $apiTokensStructure,
-            'migrations_table_exists' => in_array('migrations', $tableNames),
-            'total_tables' => count($tableNames),
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => $e->getMessage(),
-            'database' => config('database.connections.pgsql.database'),
-            'connection_working' => false,
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-        ]);
-    }
-});
 
-// Migration runner endpoint (temporary for fixing missing tables)
-Route::post('/debug/run-migrations', function () {
-    try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        $output = \Illuminate\Support\Facades\Artisan::output();
-        
-        return response()->json([
-            'success' => true,
-            'output' => $output,
-            'message' => 'Migrations completed successfully'
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-            'message' => 'Migration failed'
-        ]);
-    }
-});
 
-// Debug API token creation step by step
-Route::post('/debug/api-token-test', function (Request $request) {
-    try {
-        // Step 1: Test Auth
-        $user = \Illuminate\Support\Facades\Auth::guard('api')->user();
-        if (!$user) {
-            return response()->json(['error' => 'Not authenticated', 'step' => 'auth']);
-        }
-        
-        // Step 2: Test ApiToken model
-        $apiTokenModel = new \App\Models\ApiToken();
-        
-        // Step 3: Test database connection
-        $connection = \Illuminate\Support\Facades\DB::connection();
-        $pdo = $connection->getPdo();
-        
-        // Step 4: Test table exists
-        $tableExists = \Illuminate\Support\Facades\Schema::hasTable('api_tokens');
-        
-        // Step 5: Test creating a token
-        $testToken = \App\Models\ApiToken::create([
-            'name' => 'Debug Test Token',
-            'token' => \App\Models\ApiToken::generateToken(),
-            'permissions' => ['admin'],
-            'expires_at' => null,
-            'user_id' => $user->id,
-        ]);
-        
-        return response()->json([
-            'success' => true,
-            'user_id' => $user->id,
-            'user_role' => $user->role,
-            'table_exists' => $tableExists,
-            'connection_working' => true,
-            'token_created' => true,
-            'token_id' => $testToken->id,
-            'step' => 'complete'
-        ]);
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-            'trace' => $e->getTraceAsString()
-        ]);
-    }
-});
 
-// Simplified API token creation for debugging
-Route::post('/debug/simple-api-token', function (Request $request) {
-    try {
-        // Get authenticated user
-        $user = \Illuminate\Support\Facades\Auth::guard('api')->user();
-        if (!$user) {
-            return response()->json(['error' => 'Not authenticated'], 401);
-        }
-        
-        // Validate input
-        $name = $request->input('name', 'Test Token');
-        $permissions = $request->input('permissions', ['admin']);
-        $expiresInDays = $request->input('expires_in_days', 30);
-        
-        // Calculate expiration
-        $expiresAt = null;
-        if ($expiresInDays > 0) {
-            $expiresAt = \Carbon\Carbon::now()->addDays($expiresInDays);
-        }
-        
-        // Create token
-        $token = \App\Models\ApiToken::create([
-            'name' => $name,
-            'token' => \App\Models\ApiToken::generateToken(),
-            'permissions' => $permissions,
-            'expires_at' => $expiresAt,
-            'user_id' => $user->id,
-        ]);
-        
-        return response()->json([
-            'success' => true,
-            'token' => [
-                'id' => $token->id,
-                'name' => $token->name,
-                'token' => $token->token,
-                'permissions' => $token->permissions,
-                'expires_at' => $token->expires_at,
-                'created_at' => $token->created_at,
-            ]
-        ]);
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-        ]);
-    }
-});
 
 // Admin setup endpoint (temporary for initial setup) - REMOVED FOR SECURITY
 use App\Http\Controllers\Api\AuthController;
@@ -961,9 +749,8 @@ Route::prefix('cv-ai')->group(function () {
     Route::get('stats', [\App\Http\Controllers\Api\CvAiController::class, 'getApiStats']);
     Route::post('add-user-key', [\App\Http\Controllers\Api\CvAiController::class, 'addUserApiKey']);
     Route::get('check-encryption', [\App\Http\Controllers\Api\CvAiController::class, 'checkEncryptionConsistency']); // Prevention endpoint
-    Route::get('debug-keys', [\App\Http\Controllers\Api\CvAiController::class, 'debugApiKeys']); // Temporary debug endpoint
-    Route::get('fix-keys', [\App\Http\Controllers\Api\CvAiController::class, 'fixApiKeys']); // Temporary fix endpoint
-    Route::post('create-temp-key', [\App\Http\Controllers\Api\CvAiController::class, 'createTempApiKey']); // Emergency fix endpoint
+    // Re-encrypts stored API keys: admins only (it rewrites data)
+    Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\AdminMiddleware::class])->get('fix-keys', [\App\Http\Controllers\Api\CvAiController::class, 'fixApiKeys']);
 });
 
 // Public CV Template API

@@ -743,7 +743,7 @@ class CvAiController extends Controller
     {
         try {
             $checks = [
-                'app_key' => config('app.key'),
+                'app_key_set' => !empty(config('app.key')), // never return the key itself
                 'environment' => app()->environment(),
                 'encryption_driver' => config('app.cipher'),
                 'warnings' => [],
@@ -796,7 +796,7 @@ class CvAiController extends Controller
     {
         try {
             $debug = [
-                'app_key' => config('app.key'),
+                'app_key_set' => !empty(config('app.key')), // never return the key itself
                 'encryption_driver' => config('app.cipher'),
                 'api_keys' => []
             ];
@@ -816,11 +816,11 @@ class CvAiController extends Controller
                     $decrypted = decrypt($key->getRawOriginal('api_key'));
                     if (strpos($decrypted, 'AIza') === 0) {
                         $keyDebug['decryption_status'] = 'success_single';
-                        $keyDebug['api_key_preview'] = substr($decrypted, 0, 10) . '...';
+                        // key material is never returned
                     } else {
                         $doubleDecrypted = decrypt($decrypted);
                         $keyDebug['decryption_status'] = 'success_double';
-                        $keyDebug['api_key_preview'] = substr($doubleDecrypted, 0, 10) . '...';
+                        // key material is never returned
                     }
                 } catch (\Exception $e) {
                     $keyDebug['decryption_status'] = 'failed';
