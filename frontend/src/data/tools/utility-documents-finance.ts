@@ -589,7 +589,7 @@ export const utilityDocumentsFinanceTools: ToolContent[] = [
       },
     ],
     related: ['pdf-merger', 'pdf-splitter', 'file-converter', 'excel-csv-converter'],
-    processing: 'server',
+    processing: 'upload',
     comparison: {
       competitors: ['Smallpdf Word to PDF', 'Adobe Acrobat online Word to PDF', 'PDFgear Word to PDF', 'iLovePDF PDF to Word'],
       commonFeatures: ['Layout-preserving Word to PDF', 'PDF to editable Word with tables and images', 'OCR for scanned PDFs', 'Batch conversion', 'Automatic deletion of uploaded files'],
@@ -656,7 +656,7 @@ export const utilityDocumentsFinanceTools: ToolContent[] = [
       },
     ],
     related: ['file-converter', 'document-converter', 'json-formatter', 'pdf-merger'],
-    processing: 'server',
+    processing: 'upload',
     comparison: {
       competitors: ['TableConvert Excel to CSV', 'CloudConvert XLSX to CSV', 'Zamzar XLSX to CSV', 'ConvertSimple XLSX to CSV'],
       commonFeatures: ['XLSX and XLS to CSV', 'Choose which worksheet to export', 'Delimiter and encoding options', 'Batch conversion', 'In-browser processing without upload'],

@@ -17,8 +17,12 @@ export type ToolCategory =
   | 'ai-writing'
   | 'ai-analysis';
 
-/** Where the tool processes data. Shown to users and used in FAQ/privacy copy. */
-export type ProcessingMode = 'browser' | 'server' | 'ai';
+/**
+ * Where the tool processes data (shown to users):
+ * browser = nothing leaves the device; server = only public reference data is fetched (e.g. rates);
+ * upload = the user's file is sent to our server; ai = text is sent to an AI model.
+ */
+export type ProcessingMode = 'browser' | 'server' | 'upload' | 'ai';
 
 export interface ToolFaq {
   question: string;

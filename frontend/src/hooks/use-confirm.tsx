@@ -122,7 +122,16 @@ export const ConfirmDialog = () => {
   const styles = getTypeStyles();
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-[80] overflow-y-auto"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+      aria-describedby="confirm-dialog-message"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') confirmState.onCancel?.();
+      }}
+    >
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 transition-opacity" aria-hidden="true">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
@@ -137,11 +146,11 @@ export const ConfirmDialog = () => {
                 {getIcon()}
               </div>
               <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                <h3 className="text-lg leading-6 font-semibold text-gray-900">
+                <h3 id="confirm-dialog-title" className="text-lg leading-6 font-semibold text-gray-900">
                   {confirmState.title}
                 </h3>
                 <div className="mt-2">
-                  <p className="text-sm text-gray-600 leading-5">
+                  <p id="confirm-dialog-message" className="text-sm text-gray-600 leading-5">
                     {confirmState.message}
                   </p>
                 </div>
@@ -158,6 +167,7 @@ export const ConfirmDialog = () => {
             </button>
             <button
               type="button"
+              autoFocus
               className="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto transition-colors duration-200"
               onClick={confirmState.onCancel}
             >

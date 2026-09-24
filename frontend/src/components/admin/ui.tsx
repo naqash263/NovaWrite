@@ -295,7 +295,7 @@ export function Modal({
 /** Responsive table container with consistent header styling (use regular <table> markup inside). */
 export function TableShell({ children, caption }: { children: ReactNode; caption?: string }) {
   return (
-    <div className="-mx-px overflow-x-auto">
+    <div className="relative -mx-px overflow-x-auto">
       <table className="min-w-full divide-y divide-slate-200 text-sm [&_tbody_tr:hover]:bg-slate-50 [&_tbody_tr]:border-slate-100 [&_td]:px-4 [&_td]:py-3 [&_td]:align-middle [&_td]:text-slate-700 [&_th]:whitespace-nowrap [&_th]:bg-slate-50 [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-slate-500">
         {caption && <caption className="sr-only">{caption}</caption>}
         {children}

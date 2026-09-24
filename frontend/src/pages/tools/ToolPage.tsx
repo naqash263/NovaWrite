@@ -15,7 +15,11 @@ import { ErrorBoundary } from '../../components/ErrorBoundary';
 
 const processingCopy: Record<ToolContent['processing'], { label: string; text: string }> = {
   browser: { label: 'Runs in your browser', text: 'Your data is processed locally on your device and is never uploaded to our servers.' },
-  server: { label: 'Uses a live data service', text: 'Only the values needed for the calculation are sent to a data provider. Nothing is stored.' },
+  server: { label: 'Uses live reference data', text: 'Only public reference data (such as exchange rates) is downloaded. The values you enter stay in your browser.' },
+  upload: {
+    label: 'Uploads your file',
+    text: 'Your file is uploaded to our server for conversion and the result is stored there so you can download it. Avoid uploading confidential documents.',
+  },
   ai: { label: 'AI-powered', text: 'Your text is sent to an AI model to generate the result. It is not stored or used for training by this site.' },
 };
 

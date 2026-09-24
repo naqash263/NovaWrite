@@ -198,7 +198,7 @@ try {
         ...(t.faqs.length ? [schema.faqSchema(t.faqs)] : []),
       ],
       body: `${crumbs([home, resources, { name: hub.name, path: `/resources/${t.hub}` }, { name: t.name }])}<h1>${esc(t.name)}</h1><p>${esc(t.answer || t.summary)}</p>
-        <p>Free, no signup. ${t.processing === 'browser' ? 'Runs entirely in your browser; files and text are not uploaded.' : t.processing === 'ai' ? 'Text is processed by an AI model and is not stored.' : 'Uses a live data service for current values.'}</p>
+        <p>Free, no signup. ${t.processing === 'browser' ? 'Runs entirely in your browser; files and text are not uploaded.' : t.processing === 'ai' ? 'Text is processed by an AI model and is not stored.' : t.processing === 'upload' ? 'Your file is uploaded to our server for conversion.' : 'Downloads live reference data; your values stay in your browser.'}</p>
         ${t.howTo.length ? `<section><h2>How to use the ${esc(t.name)}</h2><ol>${t.howTo.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></section>` : ''}
         ${t.features.length ? `<section><h2>Features</h2>${list(t.features)}</section>` : ''}${faqHtml(t.faqs)}
         ${related.length ? `<section><h2>Related tools</h2>${links(related.map((r) => ({ href: toolPath(r), label: r.name, text: r.summary })))}</section>` : ''}
