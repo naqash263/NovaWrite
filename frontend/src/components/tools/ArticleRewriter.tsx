@@ -1,73 +1,84 @@
 import { useState } from 'react';
+import {
+  AiToolError,
+  countWords,
+  downloadTextFile,
+  isAbortError,
+  isSubmitShortcut,
+  postAiTool,
+  useAbortableRequest,
+  useCopyToClipboard,
+  useLimitedText,
+} from './aiToolClient';
+import {
+  AiNotice,
+  CopyFeedback,
+  ErrorAlert,
+  LoadingNotice,
+  TextCounter,
+  ToolCard,
+  inputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from './AiToolParts';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+// The backend accepts 50,000 characters, but the AI model's reply is capped at about
+// 2,048 tokens, so longer input would come back cut off. 5,000 characters keeps the
+// rewritten text complete.
+const MIN_CHARS = 50;
+const MAX_CHARS = 5000;
+
+type Style = 'formal' | 'casual' | 'creative' | 'academic' | 'professional';
+type Tone = 'neutral' | 'positive' | 'persuasive' | 'informative';
+
+interface RewriteResponse {
+  rewritten_text: string;
+}
 
 export default function ArticleRewriter() {
-  const [text, setText] = useState<string>('');
-  const [rewrittenText, setRewrittenText] = useState<string>('');
-  const [style, setStyle] = useState<'formal' | 'casual' | 'creative' | 'academic' | 'professional'>('formal');
-  const [tone, setTone] = useState<'neutral' | 'positive' | 'persuasive' | 'informative'>('neutral');
-  const [preserveMeaning, setPreserveMeaning] = useState<boolean>(true);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [stats, setStats] = useState<{
-    original_length: number;
-    rewritten_length: number;
-    word_count_original: number;
-    word_count_rewritten: number;
-  } | null>(null);
-
+  const { text, setText, onChange, truncated } = useLimitedText(MAX_CHARS);
+  const [rewrittenText, setRewrittenText] = useState('');
+  const [sourceText, setSourceText] = useState('');
+  const [style, setStyle] = useState<Style>('formal');
+  const [tone, setTone] = useState<Tone>('neutral');
+  const [preserveMeaning, setPreserveMeaning] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [invalid, setInvalid] = useState(false);
+  const nextSignal = useAbortableRequest();
+  const { copied, copyError, copy } = useCopyToClipboard();
 
   const handleRewrite = async () => {
-    if (!text.trim()) {
-      setError('Please enter some text to rewrite');
+    const trimmed = text.trim();
+    if (!trimmed) {
+      setInvalid(true);
+      setError('Please enter or paste some text to rewrite.');
+      return;
+    }
+    if (trimmed.length < MIN_CHARS) {
+      setInvalid(true);
+      setError(`Please enter at least ${MIN_CHARS} characters to rewrite (currently ${trimmed.length}).`);
       return;
     }
 
-    if (text.length < 50) {
-      setError('Text must be at least 50 characters long');
-      return;
-    }
-
+    setInvalid(false);
     setLoading(true);
     setError('');
     setRewrittenText('');
 
     try {
-      const response = await fetch(`${API_URL}/ai-tools/article-rewriter/rewrite`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: text.trim(),
-          style,
-          tone,
-          preserve_meaning: preserveMeaning
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to rewrite article');
-      }
-
-      if (data.success && data.data) {
-        setRewrittenText(data.data.rewritten_text);
-        setStats({
-          original_length: data.data.original_length,
-          rewritten_length: data.data.rewritten_length,
-          word_count_original: data.data.word_count_original,
-          word_count_rewritten: data.data.word_count_rewritten
-        });
-      } else {
-        throw new Error('Invalid response from server');
-      }
+      const data = await postAiTool<RewriteResponse>(
+        '/ai-tools/article-rewriter/rewrite',
+        { text: trimmed, style, tone, preserve_meaning: preserveMeaning },
+        nextSignal(),
+      );
+      const result = typeof data.rewritten_text === 'string' ? data.rewritten_text.trim() : '';
+      if (!result) throw new AiToolError('The AI returned an empty rewrite. Please try again.', 200);
+      setSourceText(trimmed);
+      setRewrittenText(result);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while rewriting the article';
-      setError(errorMessage);
-      console.error('Rewriting error:', err);
+      if (isAbortError(err)) return;
+      setError(err instanceof Error ? err.message : 'Something went wrong while rewriting your text.');
     } finally {
       setLoading(false);
     }
@@ -77,323 +88,119 @@ export default function ArticleRewriter() {
     setText('');
     setRewrittenText('');
     setError('');
-    setStats(null);
-  };
-
-  const copyToClipboard = async (textToCopy: string) => {
-    try {
-      await navigator.clipboard.writeText(textToCopy);
-      alert('Copied to clipboard!');
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
+    setInvalid(false);
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          ✍️ Free Article Rewriter Online
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Free article rewriter online - no signup required. Rewrite articles, essays, and text while maintaining meaning instantly. Choose from multiple writing styles and tones. Paraphrase tool free online. Get plagiarism-free, unique content. Perfect for content creators.
-        </p>
-
-        {/* Options */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Writing Style
-            </label>
-            <select
-              value={style}
-              onChange={(e) => setStyle(e.target.value as typeof style)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="formal">Formal</option>
-              <option value="casual">Casual</option>
-              <option value="creative">Creative</option>
-              <option value="academic">Academic</option>
-              <option value="professional">Professional</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tone
-            </label>
-            <select
-              value={tone}
-              onChange={(e) => setTone(e.target.value as typeof tone)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="neutral">Neutral</option>
-              <option value="positive">Positive</option>
-              <option value="persuasive">Persuasive</option>
-              <option value="informative">Informative</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Options
-            </label>
-            <label className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-300 rounded-lg hover:bg-gray-50">
-              <input
-                type="checkbox"
-                checked={preserveMeaning}
-                onChange={(e) => setPreserveMeaning(e.target.checked)}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">Preserve Exact Meaning</span>
-            </label>
-          </div>
+    <ToolCard>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div>
+          <label htmlFor="rewrite-style" className="mb-2 block text-sm font-medium text-gray-700">
+            Writing style
+          </label>
+          <select id="rewrite-style" value={style} onChange={(e) => setStyle(e.target.value as Style)} className={inputClass}>
+            <option value="formal">Formal</option>
+            <option value="casual">Casual</option>
+            <option value="creative">Creative</option>
+            <option value="academic">Academic</option>
+            <option value="professional">Professional</option>
+          </select>
         </div>
-
-        {/* Input Section */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Enter Text to Rewrite (max 50,000 characters)
-            </label>
-            <button
-              onClick={handleClear}
-              disabled={!text && !rewrittenText}
-              className="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              🗑️ Clear
-            </button>
-          </div>
-          <textarea
-            value={text}
-            onChange={(e) => {
-              const newText = e.target.value.slice(0, 50000);
-              setText(newText);
-            }}
-            placeholder="Paste or type your text here to rewrite..."
-            className="w-full h-64 sm:h-80 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
-            maxLength={50000}
-          />
-          <div className="text-sm text-gray-500 mt-1 text-right">
-            {text.length.toLocaleString()} / 50,000 characters
-          </div>
+        <div>
+          <label htmlFor="rewrite-tone" className="mb-2 block text-sm font-medium text-gray-700">
+            Tone
+          </label>
+          <select id="rewrite-tone" value={tone} onChange={(e) => setTone(e.target.value as Tone)} className={inputClass}>
+            <option value="neutral">Neutral</option>
+            <option value="positive">Positive</option>
+            <option value="persuasive">Persuasive</option>
+            <option value="informative">Informative</option>
+          </select>
         </div>
-
-        {/* Action Button */}
-        <div className="mb-6">
-          <button
-            onClick={handleRewrite}
-            disabled={loading || !text.trim() || text.length < 50}
-            className="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors text-lg"
-          >
-            {loading ? '⏳ Rewriting...' : '✨ Rewrite Article'}
-          </button>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-start">
-              <span className="text-red-600 text-xl mr-2">⚠️</span>
-              <div>
-                <div className="text-sm font-medium text-red-900">Error</div>
-                <div className="text-sm text-red-700 mt-1">{error}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Rewritten Text Section */}
-        {rewrittenText && (
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Rewritten Text
-              </label>
-              <button
-                onClick={() => copyToClipboard(rewrittenText)}
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                📋 Copy Rewritten Text
-              </button>
-            </div>
-            <div className="p-4 bg-gray-50 border border-gray-300 rounded-lg min-h-[200px]">
-              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{rewrittenText}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Statistics */}
-        {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">Original Words</div>
-              <div className="text-2xl font-bold text-blue-600">
-                {stats.word_count_original.toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">Rewritten Words</div>
-              <div className="text-2xl font-bold text-green-600">
-                {stats.word_count_rewritten.toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">Original Length</div>
-              <div className="text-2xl font-bold text-purple-600">
-                {stats.original_length.toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">Rewritten Length</div>
-              <div className="text-2xl font-bold text-orange-600">
-                {stats.rewritten_length.toLocaleString()}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Article Rewriter</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our AI-powered Article Rewriter is a sophisticated tool designed to help you create unique, 
-              plagiarism-free content while maintaining the original meaning. Whether you need to rewrite 
-              articles, essays, blog posts, or any other text, our advanced AI technology ensures high-quality 
-              results with multiple writing styles and tones to choose from.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              The tool uses state-of-the-art natural language processing to understand context, preserve 
-              key information, and generate fresh content that reads naturally. Perfect for content creators, 
-              students, researchers, and professionals who need to rephrase text while maintaining accuracy.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Rewriting blog posts and articles for SEO</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Paraphrasing academic papers and essays</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Creating unique content from existing sources</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Adapting content for different audiences</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Improving readability and clarity</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Changing writing style while keeping facts</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Multiple Writing Styles</h5>
-                  <p className="text-sm text-gray-600">Choose from formal, casual, creative, academic, or professional styles</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Tone Adjustment</h5>
-                  <p className="text-sm text-gray-600">Control the tone: neutral, positive, persuasive, or informative</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Meaning Preservation</h5>
-                  <p className="text-sm text-gray-600">Option to preserve exact meaning or allow creative adaptation</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Plagiarism-Free</h5>
-                  <p className="text-sm text-gray-600">Generate unique content that passes plagiarism checks</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
-            <div className="space-y-4">
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Is the rewritten content plagiarism-free?</h5>
-                <p className="text-gray-700 text-sm">
-                  Yes, our AI rewriter creates unique content by using different words, sentence structures, 
-                  and phrasing while maintaining the original meaning. However, we recommend running the 
-                  rewritten text through a plagiarism checker for verification.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Can I rewrite text in different languages?</h5>
-                <p className="text-gray-700 text-sm">
-                  Currently, the tool works best with English text. Support for other languages may be 
-                  added in the future.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">How accurate is the rewritten content?</h5>
-                <p className="text-gray-700 text-sm">
-                  The AI maintains high accuracy in preserving meaning and key information. The quality 
-                  depends on the input text clarity and the selected options. Always review the output 
-                  to ensure it meets your requirements.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What's the maximum text length?</h5>
-                <p className="text-gray-700 text-sm">
-                  You can rewrite up to 50,000 characters at once. For longer texts, consider breaking 
-                  them into smaller sections.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-900 mb-2">💡 Tips for Best Results</h4>
-          <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
-            <li>Provide clear, well-structured input text for better rewriting quality</li>
-            <li>Choose the writing style that matches your target audience</li>
-            <li>Use "Preserve Exact Meaning" for factual content that must remain accurate</li>
-            <li>Review the rewritten text to ensure it meets your requirements</li>
-            <li>For academic or professional use, always verify the output for accuracy</li>
-          </ul>
+        <div className="flex items-end">
+          <label className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-gray-300 p-3 hover:bg-gray-50">
+            <input
+              type="checkbox"
+              checked={preserveMeaning}
+              onChange={(e) => setPreserveMeaning(e.target.checked)}
+              className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">Keep the exact meaning</span>
+          </label>
         </div>
       </div>
-    </div>
+
+      <div>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <label htmlFor="rewriter-input" className="block text-sm font-medium text-gray-700">
+            Text to rewrite
+          </label>
+          <button type="button" onClick={handleClear} disabled={!text && !rewrittenText && !error} className={secondaryButtonClass}>
+            Clear
+          </button>
+        </div>
+        <textarea
+          id="rewriter-input"
+          value={text}
+          onChange={(e) => {
+            onChange(e);
+            if (invalid) setInvalid(false);
+          }}
+          onKeyDown={(e) => {
+            if (isSubmitShortcut(e)) {
+              e.preventDefault();
+              if (!loading) void handleRewrite();
+            }
+          }}
+          aria-invalid={invalid}
+          aria-describedby="rewriter-counter"
+          placeholder="Paste a paragraph or article section to rewrite (at least 50 characters)…"
+          className={`${inputClass} h-64 resize-y sm:h-80`}
+        />
+        <TextCounter id="rewriter-counter" text={text} min={MIN_CHARS} max={MAX_CHARS} truncated={truncated} />
+        <p className="mt-1 text-xs text-gray-500">Longer articles? Rewrite them one section at a time so the full text comes back.</p>
+      </div>
+
+      <div className="space-y-3">
+        <button type="button" onClick={handleRewrite} disabled={loading} className={primaryButtonClass}>
+          {loading ? 'Rewriting…' : 'Rewrite text'}
+        </button>
+        <AiNotice />
+      </div>
+
+      {loading && <LoadingNotice label="Rewriting your text with AI." />}
+      <ErrorAlert message={error} />
+
+      {rewrittenText && (
+        <section aria-labelledby="rewrite-heading" data-testid="ai-result">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h2 id="rewrite-heading" className="text-lg font-semibold text-gray-900">
+              Rewritten text
+            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <CopyFeedback copied={copied === 'rewrite'} copyError={copyError} />
+              <button type="button" onClick={() => copy(rewrittenText, 'rewrite')} className={secondaryButtonClass}>
+                Copy rewritten text
+              </button>
+              <button type="button" onClick={() => downloadTextFile(rewrittenText, 'rewritten-text.txt')} className={secondaryButtonClass}>
+                Download .txt
+              </button>
+              <button type="button" onClick={() => setText(rewrittenText)} className={secondaryButtonClass}>
+                Use as input
+              </button>
+            </div>
+          </div>
+          <div className="rounded-lg border border-gray-300 bg-gray-50 p-4">
+            <p className="whitespace-pre-wrap break-words leading-relaxed text-gray-800" data-testid="ai-result-text">
+              {rewrittenText}
+            </p>
+          </div>
+          <p className="mt-2 text-sm text-gray-600" data-testid="rewrite-stats">
+            {countWords(sourceText).toLocaleString()} words in → {countWords(rewrittenText).toLocaleString()} words out. Check facts, names
+            and numbers, and cite original sources where needed.
+          </p>
+        </section>
+      )}
+    </ToolCard>
   );
 }
-
