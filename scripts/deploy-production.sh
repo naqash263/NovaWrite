@@ -186,11 +186,13 @@ if [ ! -z "$STABLE_APP_KEY" ]; then
     echo "APP_KEY=$STABLE_APP_KEY" >> .env
   fi
   echo -e "${GREEN}✅ APP_KEY restored from environment${NC}"
+elif grep -q "^APP_KEY=base64:" .env; then
+  echo -e "${YELLOW}⚠️ STABLE_APP_KEY not provided, keeping the existing APP_KEY${NC}"
 else
-  echo -e "${YELLOW}⚠️ STABLE_APP_KEY not provided, generating new key${NC}"
+  # Never print the key: deploy output ends up in GitHub Actions logs.
+  echo -e "${YELLOW}⚠️ STABLE_APP_KEY not provided and no APP_KEY set, generating a new key${NC}"
   php artisan key:generate --force
-  NEW_KEY=$(grep '^APP_KEY=' .env | cut -d'=' -f2)
-  echo -e "${YELLOW}⚠️ Please add this key as STABLE_APP_KEY secret: $NEW_KEY${NC}"
+  echo -e "${YELLOW}⚠️ Copy APP_KEY from the server .env into the STABLE_APP_KEY repository secret${NC}"
 fi
 
 # Generate JWT secret if not set
