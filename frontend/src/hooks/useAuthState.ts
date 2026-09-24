@@ -1,0 +1,82 @@
+import { useState, useEffect } from 'react';
+import apiClient from '../api/axios';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+}
+
+/** Auth state for AuthProvider only. Components should call useAuth() to share one instance. */
+export function useAuthState() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [token, setTokenState] = useState<string | null>(localStorage.getItem('token'));
+
+  useEffect(() => {
+    if (token) {
+      fetchUser();
+    } else {
+      setLoading(false);
+    }
+  }, [token]);
+
+  const fetchUser = async () => {
+    try {
+      // Ensure the API client has the current token
+      const currentToken = localStorage.getItem('token');
+      if (currentToken) {
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+      }
+      
+      const response = await apiClient.get('/auth/me');
+      setUser(response.data);
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+      // Don't call logout() immediately - just set user to null
+      // This prevents redirect to login when token is invalid
+      setUser(null);
+      setTokenState(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+    const response = await apiClient.post('/auth/login', { 
+      email, 
+      password, 
+      remember_me: rememberMe 
+    });
+    const { token: newToken, user: userData } = response.data;
+    
+    // Store token in localStorage (persists across browser sessions)
+    localStorage.setItem('token', newToken);
+    setTokenState(newToken);
+    setUser(userData);
+    setLoading(false);
+    return response.data;
+  };
+
+  const logout = (redirectTo?: string) => {
+    localStorage.removeItem('token');
+    setTokenState(null);
+    setUser(null);
+    
+    // Redirect after logout
+    if (redirectTo) {
+      window.location.href = redirectTo;
+    }
+  };
+
+  return {
+    user,
+    loading,
+    isAuthenticated: !!user,
+    login,
+    logout,
+    setUser,
+    setTokenState,
+  };
+}

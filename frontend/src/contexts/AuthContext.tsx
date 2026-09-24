@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuthState } from '../hooks/useAuthState';
 
 interface User {
   id: number;
@@ -26,7 +26,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const auth = useAuth();
+  const auth = useAuthState();
   
   const isAdmin = auth.user?.role === 'admin';
 
