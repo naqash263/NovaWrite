@@ -78,3 +78,14 @@ export async function marketingRoutes() {
     ...caseStudies.map((c) => `/case-studies/${c.slug}`),
   ];
 }
+
+export const adminUser = { id: 1, name: 'Naqash Thaheem', email: 'admin@naqashthaheem.com', role: 'admin' };
+
+/** Signs the browser in as an admin (token in localStorage + mocked /auth/me). */
+export async function loginAsAdmin(page: Page, user: { id: number; name: string; email: string; role: string } = adminUser) {
+  await page.addInitScript(() => window.localStorage.setItem('token', 'e2e-admin-token'));
+  await page.route(
+    (url) => url.pathname === '/api/auth/me',
+    (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(user) }),
+  );
+}
