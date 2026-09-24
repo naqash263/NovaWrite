@@ -45,7 +45,6 @@ export default function Projects() {
     description: 'Explore my portfolio of AI automation projects, web applications, and business intelligence solutions. Real-world projects showcasing expertise in automation, CRM integration, and data analytics.',
     keywords: ['portfolio projects', 'AI automation projects', 'web development projects', 'business intelligence projects', 'CRM integration projects', 'data analytics projects', 'Naqash Thaheem projects'],
     url: '/projects',
-    image: '/images/projects-og.jpg',
     structuredData: 'website',
     customStructuredData: {
       '@context': 'https://schema.org',

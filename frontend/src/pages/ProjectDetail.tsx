@@ -87,7 +87,7 @@ export default function ProjectDetail() {
     description: getDescription(),
     keywords: getKeywords(),
     url: `/projects/${slug || ''}`,
-    image: project?.image_url || '/images/projects-og.jpg',
+    image: project?.image_url || '/images/og-default.png',
     type: 'article',
     publishedTime: project?.created_at,
     modifiedTime: project?.updated_at,
@@ -99,13 +99,13 @@ export default function ProjectDetail() {
       'name': project.title,
       'description': project.product_description || project.meta_description || project.description || project.summary || '',
       'url': `https://naqashthaheem.com/projects/${slug}`,
-      'image': project.image_url ? `https://naqashthaheem.com${project.image_url}` : 'https://naqashthaheem.com/images/projects-og.jpg',
+      'image': project.image_url ? `https://naqashthaheem.com${project.image_url}` : 'https://naqashthaheem.com/images/og-default.png',
       'applicationCategory': 'WebApplication',
       'author': {
         '@type': 'Person',
         'name': 'Naqash Thaheem',
         'url': 'https://naqashthaheem.com/about',
-        'jobTitle': 'Systems Analyst & AI Automation Specialist'
+        'jobTitle': 'Technical Project Manager & AI Automation Specialist'
       },
       'datePublished': project.created_at,
       'dateModified': project.updated_at,

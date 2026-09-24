@@ -3,7 +3,7 @@ import { useSEO } from '../utils/seo';
 export default function TermsOfService() {
   useSEO({
     title: 'Terms of Service | Naqash Thaheem',
-    description: 'Terms of Service for Naqash Thaheem - Systems Analyst & Automation Specialist. Read our terms and conditions for using our services.',
+    description: 'Terms of Service for Naqash Thaheem - Technical Project Manager & AI Automation Specialist. Read our terms and conditions for using our services.',
     url: '/terms-of-service'
   });
 

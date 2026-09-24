@@ -3,7 +3,7 @@ import { useSEO } from '../utils/seo';
 export default function CookiePolicy() {
   useSEO({
     title: 'Cookie Policy | Naqash Thaheem',
-    description: 'Cookie Policy for Naqash Thaheem - Systems Analyst & Automation Specialist. Learn about how we use cookies and similar technologies.',
+    description: 'Cookie Policy for Naqash Thaheem - Technical Project Manager & AI Automation Specialist. Learn about how we use cookies and similar technologies.',
     url: '/cookie-policy'
   });
 

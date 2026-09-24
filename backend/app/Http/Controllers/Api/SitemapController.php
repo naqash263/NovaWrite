@@ -24,7 +24,7 @@ class SitemapController extends Controller
         $lastWorkflowUpdate = Cache::get('workflows.last_updated', now()->subDays(1))->timestamp;
         $lastIssueUpdate = Cache::get('issues.last_updated', now()->subDays(1))->timestamp;
         // $lastCourseUpdate = Cache::get('courses.last_updated', now()->subDays(1))->timestamp; // Commented out: courses not included
-        $cacheKey = 'sitemap.xml.' . max($lastPostUpdate, $lastWorkflowUpdate, $lastIssueUpdate);
+        $cacheKey = 'sitemap.xml.v2.' . max($lastPostUpdate, $lastWorkflowUpdate, $lastIssueUpdate);
         
         $sitemap = Cache::remember($cacheKey, 3600, function () {
             return $this->generateSitemap();
@@ -42,10 +42,10 @@ class SitemapController extends Controller
     {
         Cache::forget('sitemap.xml');
         // Also clear any timestamped cache keys
-        Cache::forget('sitemap.xml.' . Cache::get('posts.last_updated', now())->timestamp);
-        Cache::forget('sitemap.xml.' . Cache::get('workflows.last_updated', now())->timestamp);
-        Cache::forget('sitemap.xml.' . Cache::get('issues.last_updated', now())->timestamp);
-        // Cache::forget('sitemap.xml.' . Cache::get('courses.last_updated', now())->timestamp); // Commented out: courses not included
+        Cache::forget('sitemap.xml.v2.' . Cache::get('posts.last_updated', now())->timestamp);
+        Cache::forget('sitemap.xml.v2.' . Cache::get('workflows.last_updated', now())->timestamp);
+        Cache::forget('sitemap.xml.v2.' . Cache::get('issues.last_updated', now())->timestamp);
+        // Cache::forget('sitemap.xml.v2.' . Cache::get('courses.last_updated', now())->timestamp); // Commented out: courses not included
     }
 
     /**
@@ -64,6 +64,37 @@ class SitemapController extends Controller
         // Static pages
         $xml .= $this->addUrl($baseUrl, '/', $today, 'weekly', '1.0');
         $xml .= $this->addUrl($baseUrl, '/about', $today, 'monthly', '0.8');
+
+        // Service landing pages (keep in sync with frontend/src/data/services.ts)
+        $xml .= $this->addUrl($baseUrl, '/services', $today, 'monthly', '0.9');
+        $servicePages = [
+            'technical-project-management',
+            'ai-automation',
+            'seo-organic-growth',
+            'crm-business-systems',
+            'qa-test-automation',
+            'saas-product-development',
+        ];
+        foreach ($servicePages as $service) {
+            $xml .= $this->addUrl($baseUrl, '/services/' . $service, $today, 'monthly', '0.9');
+        }
+
+        // Case studies (keep in sync with frontend/src/data/caseStudies.ts)
+        $xml .= $this->addUrl($baseUrl, '/case-studies', $today, 'monthly', '0.9');
+        $caseStudies = [
+            'cloudpos4u-restaurant-pos-saas',
+            'villas-olimpia-ai-booking-automation',
+            'recruitment-one-ai-talent-matching',
+            'ai-proposal-factory',
+            'ai-event-management-operating-system',
+            'website-issue-lead-generation-system',
+            'lead-generation-operating-system',
+            'socialai-corporate-gifts',
+            'smart-tuition',
+        ];
+        foreach ($caseStudies as $caseStudy) {
+            $xml .= $this->addUrl($baseUrl, '/case-studies/' . $caseStudy, $today, 'monthly', '0.8');
+        }
         $xml .= $this->addUrl($baseUrl, '/workflows', $today, 'daily', '0.9');
         $xml .= $this->addUrl($baseUrl, '/blog', $today, 'daily', '0.9');
         $xml .= $this->addUrl($baseUrl, '/contact', $today, 'monthly', '0.7');
@@ -125,8 +156,7 @@ class SitemapController extends Controller
         $xml .= $this->addUrl($baseUrl, '/privacy-policy', $today, 'yearly', '0.3');
         $xml .= $this->addUrl($baseUrl, '/terms-of-service', $today, 'yearly', '0.3');
         $xml .= $this->addUrl($baseUrl, '/cookie-policy', $today, 'yearly', '0.3');
-        $xml .= $this->addUrl($baseUrl, '/login', $today, 'monthly', '0.4');
-        $xml .= $this->addUrl($baseUrl, '/register', $today, 'monthly', '0.4');
+        // /login and /register are intentionally omitted: robots.txt disallows them.
 
         // Blog posts
         try {

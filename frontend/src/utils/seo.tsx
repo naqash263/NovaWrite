@@ -18,12 +18,20 @@ interface SEOProps {
   keywords?: string[];
   structuredData?: 'person' | 'website' | 'organization' | 'custom';
   customStructuredData?: any;
+  /** Robots directive, e.g. 'noindex, follow' for thin or error pages. */
+  robots?: string;
+  /** Page-owned JSON-LD blocks. Replaces any schema left behind by the previous route. */
+  jsonLd?: object[];
 }
+
+export const DEFAULT_OG_IMAGE = '/images/og-default.png';
+export const DEFAULT_ROBOTS = 'index, follow, max-image-preview:large, max-snippet:-1';
+const SITE_NAME = 'Naqash Thaheem | Technical Project Manager & AI Automation';
 
 export function useSEO({ 
   title, 
   description, 
-  image = '/images/og-default.jpg',
+  image = DEFAULT_OG_IMAGE,
   url,
   type = 'website',
   author = 'Naqash Thaheem',
@@ -31,8 +39,14 @@ export function useSEO({
   modifiedTime,
   keywords = [],
   structuredData,
-  customStructuredData
+  customStructuredData,
+  robots = DEFAULT_ROBOTS,
+  jsonLd
 }: SEOProps) {
+  // Serialise so inline arrays/objects don't retrigger the effect every render.
+  const jsonLdKey = jsonLd ? JSON.stringify(jsonLd) : '';
+  const keywordsKey = keywords.join('|');
+
   useEffect(() => {
     // SEO validation and warnings
     const warnings: string[] = [];
@@ -131,6 +145,7 @@ export function useSEO({
     }
     
     setMetaTag('author', author);
+    setMetaTag('robots', robots);
     
     // Open Graph meta tags
     setMetaTag('og:title', title, true);
@@ -140,14 +155,15 @@ export function useSEO({
     setMetaTag('og:type', type, true);
     
     // Safe image handling with fallback
-    const safeImage = image || '/images/og-default.jpg';
+    const safeImage = image || DEFAULT_OG_IMAGE;
     if (safeImage.startsWith('http')) {
       setMetaTag('og:image', safeImage, true);
     } else {
       setMetaTag('og:image', `${window.location.origin}${safeImage}`, true);
     }
     
-    setMetaTag('og:site_name', 'Naqash Thaheem - Systems Analyst & Automation Specialist', true);
+    setMetaTag('og:site_name', SITE_NAME, true);
+    setMetaTag('og:locale', 'en_US', true);
     
     if (url) {
       let ogUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
@@ -174,6 +190,7 @@ export function useSEO({
       if (modifiedTime) {
         setMetaTag('article:modified_time', modifiedTime, true);
       }
+      document.querySelectorAll('meta[property="article:tag"]').forEach(tag => tag.remove());
       if (keywords && keywords.length > 0) {
         keywords.forEach(keyword => {
           const meta = document.createElement('meta');
@@ -229,11 +246,10 @@ export function useSEO({
       canonicalUrl = canonicalUrl.replace('http://', 'https://');
     }
     
-    // Remove trailing slash and query parameters for consistency (except homepage)
-    const cleanUrl = canonicalUrl.split('?')[0];
-    const finalUrl = cleanUrl === window.location.origin || cleanUrl === `${window.location.origin}/` 
-      ? `${window.location.origin}/` 
-      : cleanUrl.replace(/\/$/, '');
+    // Drop query/hash; keep "/" for the homepage, strip trailing slashes elsewhere
+    const parsedCanonical = new URL(canonicalUrl);
+    const canonicalPath = parsedCanonical.pathname === '/' ? '/' : parsedCanonical.pathname.replace(/\/+$/, '');
+    const finalUrl = `${parsedCanonical.origin}${canonicalPath}`;
     
     canonical.href = finalUrl;
     document.head.appendChild(canonical);
@@ -265,6 +281,22 @@ export function useSEO({
         injectStructuredData(schema);
       }
     }
-    
-  }, [title, description, image, url, type, author, publishedTime, modifiedTime, keywords, structuredData, customStructuredData]);
+
+    // Page-owned structured data: clear leftovers from previous routes, then inject.
+    if (jsonLdKey) {
+      document.querySelectorAll('script[type="application/ld+json"]').forEach(script => script.remove());
+      (JSON.parse(jsonLdKey) as object[]).forEach(block => {
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.setAttribute('data-page-jsonld', 'true');
+        script.textContent = JSON.stringify(block);
+        document.head.appendChild(script);
+      });
+    }
+
+    return () => {
+      document.querySelectorAll('script[data-page-jsonld]').forEach(script => script.remove());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, description, image, url, type, author, publishedTime, modifiedTime, keywordsKey, structuredData, customStructuredData, robots, jsonLdKey]);
 }
