@@ -1,294 +1,227 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-const LOREM_IPSUM_WORDS = [
-  'lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit',
-  'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore',
-  'magna', 'aliqua', 'enim', 'ad', 'minim', 'veniam', 'quis', 'nostrud',
-  'exercitation', 'ullamco', 'laboris', 'nisi', 'ut', 'aliquip', 'ex', 'ea',
-  'commodo', 'consequat', 'duis', 'aute', 'irure', 'dolor', 'in', 'reprehenderit',
-  'voluptate', 'velit', 'esse', 'cillum', 'dolore', 'eu', 'fugiat', 'nulla',
-  'pariatur', 'excepteur', 'sint', 'occaecat', 'cupidatat', 'non', 'proident',
-  'sunt', 'in', 'culpa', 'qui', 'officia', 'deserunt', 'mollit', 'anim', 'id',
-  'est', 'laborum'
-];
+const LOREM_WORDS =
+  'lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim id est laborum curabitur pretium tincidunt lacus nulla gravida orci a odio nullam varius turpis et commodo pharetra est eros bibendum elit nec luctus magna felis sollicitudin mauris integer'.split(
+    ' ',
+  );
 
-const PLACEHOLDER_TEXTS = {
-  lorem: {
-    name: 'Lorem Ipsum',
-    words: LOREM_IPSUM_WORDS,
-    firstSentence: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
-  },
+const TEXT_TYPES = {
+  lorem: { name: 'Lorem Ipsum', words: LOREM_WORDS },
   bacon: {
     name: 'Bacon Ipsum',
-    words: ['bacon', 'ipsum', 'dolor', 'amet', 'short', 'loin', 'ribeye', 'pork', 'chop', 'tenderloin', 'brisket', 'sirloin', 'meatball', 'pork', 'belly', 'ham', 'hock', 'shank', 'turkey', 'chicken', 'beef', 'pork', 'loin', 'ribs', 'sausage', 'bacon', 'ham', 'pork', 'chop', 'tenderloin'],
-    firstSentence: 'Bacon ipsum dolor amet short loin ribeye pork chop tenderloin.'
+    words: 'bacon ipsum dolor amet short loin ribeye pork chop tenderloin brisket sirloin meatball belly ham hock shank turkey chicken beef ribs sausage jerky pastrami brisket flank salami prosciutto kielbasa'.split(' '),
   },
   cupcake: {
     name: 'Cupcake Ipsum',
-    words: ['cupcake', 'ipsum', 'dolor', 'sit', 'amet', 'chocolate', 'cake', 'sweet', 'sugar', 'frosting', 'sprinkles', 'vanilla', 'buttercream', 'cherry', 'strawberry', 'blueberry', 'raspberry', 'muffin', 'donut', 'cookie', 'brownie', 'pie', 'tart', 'pastry', 'cream', 'icing', 'glaze', 'topping', 'filling', 'decoration'],
-    firstSentence: 'Cupcake ipsum dolor sit amet chocolate cake sweet.'
+    words: 'cupcake ipsum dolor sit amet chocolate cake sweet sugar frosting sprinkles vanilla buttercream cherry strawberry muffin donut cookie brownie pie tart pastry cream icing glaze caramel toffee marzipan'.split(' '),
   },
   hipster: {
     name: 'Hipster Ipsum',
-    words: ['hipster', 'ipsum', 'dolor', 'sit', 'amet', 'artisan', 'organic', 'sustainable', 'vegan', 'gluten-free', 'locally', 'sourced', 'farm-to-table', 'craft', 'beer', 'coffee', 'vinyl', 'record', 'vintage', 'retro', 'indie', 'alternative', 'minimalist', 'aesthetic', 'trendy', 'unique', 'authentic', 'handmade', 'bespoke', 'curated'],
-    firstSentence: 'Hipster ipsum dolor sit amet artisan organic sustainable.'
-  }
+    words: 'hipster ipsum artisan organic sustainable vegan locally sourced farm-to-table craft beer coffee vinyl vintage retro indie minimalist aesthetic authentic handmade bespoke curated sourdough kombucha fixie'.split(' '),
+  },
 };
+type TextType = keyof typeof TEXT_TYPES;
+type Unit = 'paragraphs' | 'sentences' | 'words' | 'list';
+
+const LIMITS: Record<Unit, number> = { paragraphs: 50, sentences: 100, words: 1000, list: 50 };
+const UNIT_LABELS: Record<Unit, string> = { paragraphs: 'Paragraphs', sentences: 'Sentences', words: 'Words', list: 'List items' };
+const CLASSIC = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.';
+
+const rand = (min: number, max: number) => min + Math.floor(Math.random() * (max - min + 1));
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function sentence(words: string[]): string {
+  const n = rand(6, 14);
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) out.push(words[rand(0, words.length - 1)]);
+  // Add a comma in longer sentences for a more natural rhythm.
+  if (n > 9) out[rand(3, n - 4)] += ',';
+  const s = out.join(' ');
+  return s.charAt(0).toUpperCase() + s.slice(1) + '.';
+}
+
+const paragraph = (words: string[]) => Array.from({ length: rand(4, 7) }, () => sentence(words)).join(' ');
 
 export default function LoremIpsumGenerator() {
-  const [textType, setTextType] = useState<keyof typeof PLACEHOLDER_TEXTS>('lorem');
-  const [outputType, setOutputType] = useState<'paragraphs' | 'words' | 'sentences'>('paragraphs');
-  const [count, setCount] = useState<number>(3);
-  const [generatedText, setGeneratedText] = useState<string>('');
-  const [startWithLorem, setStartWithLorem] = useState<boolean>(true);
+  const [textType, setTextType] = useState<TextType>('lorem');
+  const [unit, setUnit] = useState<Unit>('paragraphs');
+  const [count, setCount] = useState(3);
+  const [startClassic, setStartClassic] = useState(true);
+  const [html, setHtml] = useState(false);
+  const [blocks, setBlocks] = useState<string[]>([]);
+  const [status, setStatus] = useState('');
 
+  const safeCount = Math.min(LIMITS[unit], Math.max(1, count || 1));
 
-  const getRandomWord = (): string => {
-    const words = PLACEHOLDER_TEXTS[textType].words;
-    return words[Math.floor(Math.random() * words.length)];
-  };
-
-  const generateSentence = (): string => {
-    const wordCount = Math.floor(Math.random() * 10) + 8; // 8-17 words
-    const words: string[] = [];
-    
-    for (let i = 0; i < wordCount; i++) {
-      words.push(getRandomWord());
-    }
-    
-    // Capitalize first word
-    words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
-    
-    return words.join(' ') + '.';
-  };
-
-  const generateParagraph = (): string => {
-    const sentenceCount = Math.floor(Math.random() * 3) + 3; // 3-5 sentences
-    const sentences: string[] = [];
-    
-    for (let i = 0; i < sentenceCount; i++) {
-      sentences.push(generateSentence());
-    }
-    
-    return sentences.join(' ');
-  };
-
-  const generateText = () => {
-    let result = '';
-    
-    if (outputType === 'words') {
-      const words: string[] = [];
-      for (let i = 0; i < count; i++) {
-        words.push(getRandomWord());
-      }
-      result = words.join(' ');
-    } else if (outputType === 'sentences') {
-      const sentences: string[] = [];
-      for (let i = 0; i < count; i++) {
-        sentences.push(generateSentence());
-      }
-      result = sentences.join(' ');
+  const generate = useCallback(() => {
+    const words = TEXT_TYPES[textType].words;
+    const classic = startClassic && textType === 'lorem';
+    let result: string[];
+    if (unit === 'words') {
+      const list = Array.from({ length: safeCount }, () => words[rand(0, words.length - 1)]);
+      if (classic) CLASSIC.replace(/[.,]/g, '').toLowerCase().split(' ').slice(0, safeCount).forEach((w, i) => (list[i] = w));
+      const text = list.join(' ');
+      result = [text.charAt(0).toUpperCase() + text.slice(1) + '.'];
+    } else if (unit === 'sentences') {
+      const list = Array.from({ length: safeCount }, () => sentence(words));
+      if (classic) list[0] = CLASSIC;
+      result = [list.join(' ')];
+    } else if (unit === 'list') {
+      result = Array.from({ length: safeCount }, () => sentence(words).replace(/\.$/, ''));
+      if (classic) result[0] = CLASSIC.replace(/\.$/, '');
     } else {
-      // paragraphs
-      const paragraphs: string[] = [];
-      for (let i = 0; i < count; i++) {
-        paragraphs.push(generateParagraph());
-      }
-      result = paragraphs.join('\n\n');
+      result = Array.from({ length: safeCount }, () => paragraph(words));
+      if (classic) result[0] = `${CLASSIC} ${result[0]}`;
     }
-    
-    // Start with Lorem Ipsum if enabled and using lorem type
-    if (startWithLorem && textType === 'lorem' && outputType === 'paragraphs') {
-      result = PLACEHOLDER_TEXTS.lorem.firstSentence + ' ' + result;
-    }
-    
-    setGeneratedText(result);
-  };
+    setBlocks(result);
+    setStatus('');
+  }, [textType, unit, safeCount, startClassic]);
 
-  const copyToClipboard = async () => {
+  useEffect(() => {
+    generate();
+  }, [generate]);
+
+  const output = html
+    ? unit === 'list'
+      ? `<ul>\n${blocks.map((b) => `  <li>${escapeHtml(b)}</li>`).join('\n')}\n</ul>`
+      : blocks.map((b) => `<p>${escapeHtml(b)}</p>`).join('\n')
+    : unit === 'list'
+      ? blocks.map((b) => `• ${b}`).join('\n')
+      : blocks.join('\n\n');
+
+  const wordCount = blocks.join(' ').split(/\s+/).filter(Boolean).length;
+
+  const copy = async () => {
     try {
-      await navigator.clipboard.writeText(generatedText);
-      alert('Text copied to clipboard!');
-    } catch (err) {
-      alert('Failed to copy text. Please select and copy manually.');
+      await navigator.clipboard.writeText(output);
+      setStatus(html ? 'HTML copied to clipboard.' : 'Text copied to clipboard.');
+    } catch {
+      setStatus('Copy failed. Select the text and copy it manually.');
     }
   };
 
-  const copyAsHTML = () => {
-    const htmlText = generatedText
-      .split('\n\n')
-      .map(p => `<p>${p}</p>`)
-      .join('\n');
-    
-    navigator.clipboard.writeText(htmlText).then(() => {
-      alert('HTML text copied to clipboard!');
-    }).catch(() => {
-      alert('Failed to copy text. Please select and copy manually.');
-    });
+  const download = () => {
+    const url = URL.createObjectURL(new Blob([output], { type: html ? 'text/html;charset=utf-8' : 'text/plain;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = html ? 'lorem-ipsum.html' : 'lorem-ipsum.txt';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Free Online Lorem Ipsum Generator</h2>
-        <p className="text-gray-600 mb-6">
-          Free online lorem ipsum generator - no download required. Generate placeholder text for your designs, mockups, and prototypes. Choose from multiple text types and formats. Perfect for web designers and developers.
-        </p>
-
-        <div className="space-y-6">
-          {/* Text Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Text Type
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {Object.entries(PLACEHOLDER_TEXTS).map(([key, value]) => (
-                <button
-                  key={key}
-                  onClick={() => setTextType(key as keyof typeof PLACEHOLDER_TEXTS)}
-                  className={`px-4 py-2 rounded-lg border-2 transition-colors ${
-                    textType === key
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  {value.name}
-                </button>
-              ))}
-            </div>
+    <div className="rounded-lg bg-white p-4 shadow-lg sm:p-6">
+      <div className="space-y-6">
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium text-gray-700">Text style</legend>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {(Object.keys(TEXT_TYPES) as TextType[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={textType === key}
+                onClick={() => setTextType(key)}
+                className={`rounded-lg border-2 px-3 py-2 transition-colors ${
+                  textType === key ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                {TEXT_TYPES[key].name}
+              </button>
+            ))}
           </div>
+        </fieldset>
 
-          {/* Output Type Selection */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Output Type
+            <label htmlFor="lorem-unit" className="mb-2 block text-sm font-medium text-gray-700">
+              Generate
             </label>
-            <div className="flex flex-wrap gap-3">
-              {(['paragraphs', 'words', 'sentences'] as const).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setOutputType(type)}
-                  className={`px-4 py-2 rounded-lg border-2 transition-colors capitalize ${
-                    outputType === type
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  {type}
-                </button>
+            <select
+              id="lorem-unit"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value as Unit)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+            >
+              {(Object.keys(UNIT_LABELS) as Unit[]).map((u) => (
+                <option key={u} value={u}>
+                  {UNIT_LABELS[u]}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
-
-          {/* Count Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Count: {count}
+            <label htmlFor="lorem-count" className="mb-2 block text-sm font-medium text-gray-700">
+              How many (1–{LIMITS[unit]})
             </label>
             <input
-              type="range"
-              min="1"
-              max={outputType === 'words' ? '100' : outputType === 'sentences' ? '20' : '10'}
+              id="lorem-count"
+              type="number"
+              min={1}
+              max={LIMITS[unit]}
               value={count}
-              onChange={(e) => setCount(parseInt(e.target.value))}
-              className="w-full"
+              onChange={(e) => setCount(e.target.valueAsNumber)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
             />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>1</span>
-              <span>{outputType === 'words' ? '100' : outputType === 'sentences' ? '20' : '10'}</span>
+            {count > LIMITS[unit] && <p className="mt-1 text-xs text-amber-700">Limited to {LIMITS[unit]}.</p>}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <label className={`flex items-center gap-2 text-sm ${textType === 'lorem' ? 'text-gray-700' : 'text-gray-400'}`}>
+            <input
+              type="checkbox"
+              checked={startClassic}
+              disabled={textType !== 'lorem'}
+              onChange={(e) => setStartClassic(e.target.checked)}
+              className="h-4 w-4 rounded"
+            />
+            Start with “Lorem ipsum dolor sit amet…”
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={html} onChange={(e) => setHtml(e.target.checked)} className="h-4 w-4 rounded" />
+            Wrap in HTML tags ({unit === 'list' ? '<ul><li>' : '<p>'})
+          </label>
+        </div>
+
+        <button
+          type="button"
+          onClick={generate}
+          className="w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+        >
+          Generate new text
+        </button>
+
+        <div>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <label htmlFor="lorem-output" className="block text-sm font-medium text-gray-700">
+              Generated text
+            </label>
+            <div className="flex gap-2">
+              <button type="button" onClick={copy} className="rounded bg-gray-800 px-3 py-1.5 text-sm text-white hover:bg-gray-900">
+                Copy
+              </button>
+              <button type="button" onClick={download} className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+                Download
+              </button>
             </div>
           </div>
-
-          {/* Start with Lorem option (only for lorem type) */}
-          {textType === 'lorem' && outputType === 'paragraphs' && (
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="startWithLorem"
-                checked={startWithLorem}
-                onChange={(e) => setStartWithLorem(e.target.checked)}
-                className="mr-2"
-              />
-              <label htmlFor="startWithLorem" className="text-sm text-gray-700">
-                Start with "Lorem ipsum dolor sit amet..."
-              </label>
-            </div>
-          )}
-
-          {/* Generate Button */}
-          <button
-            onClick={generateText}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Generate {outputType.charAt(0).toUpperCase() + outputType.slice(1)}
-          </button>
-
-          {/* Generated Text Output */}
-          {generatedText && (
-            <div className="mt-6">
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Generated Text
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={copyToClipboard}
-                    className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                  >
-                    Copy Text
-                  </button>
-                  {outputType === 'paragraphs' && (
-                    <button
-                      onClick={copyAsHTML}
-                      className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      Copy as HTML
-                    </button>
-                  )}
-                </div>
-              </div>
-              <textarea
-                value={generatedText}
-                readOnly
-                className="w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-sm resize-none"
-                style={{ whiteSpace: 'pre-wrap' }}
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                {generatedText.split(/\s+/).length} words • {generatedText.length} characters
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* SEO Content */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">About Lorem Ipsum Generator</h3>
-        <div className="prose max-w-none">
-          <p className="text-gray-700 mb-4">
-            Lorem Ipsum is placeholder text commonly used in the design and publishing industries. 
-            It's used to demonstrate the visual form of a document or typeface without relying on meaningful content.
-          </p>
-          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Features</h4>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Generate paragraphs, words, or sentences</li>
-            <li>Multiple text types: Lorem Ipsum, Bacon Ipsum, Cupcake Ipsum, Hipster Ipsum</li>
-            <li>Customizable count (1-100 words, 1-20 sentences, 1-10 paragraphs)</li>
-            <li>Copy to clipboard with one click</li>
-            <li>Copy as HTML format for web development</li>
-            <li>Word and character count</li>
-          </ul>
-          <h4 className="text-xl font-semibold text-gray-900 mt-6 mb-3">Use Cases</h4>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Web design mockups and prototypes</li>
-            <li>Print design layouts</li>
-            <li>Testing typography and font choices</li>
-            <li>Filling space in templates</li>
-            <li>Demonstrating content structure</li>
-          </ul>
+          <textarea
+            id="lorem-output"
+            data-testid="lorem-output"
+            value={output}
+            readOnly
+            className="h-64 w-full resize-y rounded-lg border border-gray-300 p-3 font-mono text-sm"
+          />
+          <div className="mt-1 flex flex-wrap justify-between gap-2 text-xs text-gray-500">
+            <span data-testid="lorem-stats">
+              {wordCount.toLocaleString()} words · {output.length.toLocaleString()} characters
+            </span>
+            <span aria-live="polite" className="text-green-700">
+              {status}
+            </span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

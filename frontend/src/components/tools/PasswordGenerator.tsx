@@ -1,388 +1,287 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
+const SETS = {
+  upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  lower: 'abcdefghijklmnopqrstuvwxyz',
+  numbers: '0123456789',
+  symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?/~',
+} as const;
+type SetKey = keyof typeof SETS;
+
+const SIMILAR = /[il1Lo0OI|]/g;
+const AMBIGUOUS = /[{}[\]()/\\'"`~,;:.<>]/g;
+const MIN_LENGTH = 4;
+const MAX_LENGTH = 128;
+
+/** Unbiased random integer in [0, max) from the Web Crypto CSPRNG (rejection sampling). */
+function secureRandomInt(max: number): number {
+  const limit = Math.floor(0x100000000 / max) * max;
+  const buf = new Uint32Array(1);
+  do {
+    crypto.getRandomValues(buf);
+  } while (buf[0] >= limit);
+  return buf[0] % max;
+}
+
+function buildPools(enabled: Record<SetKey, boolean>, excludeSimilar: boolean, excludeAmbiguous: boolean) {
+  return (Object.keys(SETS) as SetKey[])
+    .filter((k) => enabled[k])
+    .map((k) => {
+      let chars: string = SETS[k];
+      if (excludeSimilar) chars = chars.replace(SIMILAR, '');
+      if (excludeAmbiguous) chars = chars.replace(AMBIGUOUS, '');
+      return chars;
+    })
+    .filter(Boolean);
+}
+
+/** Generates a password containing at least one character from every selected set. */
+function generatePassword(length: number, pools: string[]): string {
+  const all = pools.join('');
+  if (!all) return '';
+  const chars: string[] = [];
+  // One guaranteed character per set (only when the length allows it).
+  if (length >= pools.length) for (const pool of pools) chars.push(pool[secureRandomInt(pool.length)]);
+  while (chars.length < length) chars.push(all[secureRandomInt(all.length)]);
+  // Fisher-Yates shuffle so the guaranteed characters are not always at the start.
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = secureRandomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
+}
+
+function strengthFor(bits: number) {
+  if (bits < 40) return { label: 'Very weak', bar: 'bg-red-500', text: 'text-red-700' };
+  if (bits < 60) return { label: 'Weak', bar: 'bg-orange-500', text: 'text-orange-700' };
+  if (bits < 80) return { label: 'Fair', bar: 'bg-yellow-500', text: 'text-yellow-700' };
+  if (bits < 100) return { label: 'Strong', bar: 'bg-blue-600', text: 'text-blue-700' };
+  return { label: 'Very strong', bar: 'bg-green-600', text: 'text-green-700' };
+}
+
+const OPTION_LABELS: Record<SetKey, string> = {
+  upper: 'Uppercase letters (A-Z)',
+  lower: 'Lowercase letters (a-z)',
+  numbers: 'Numbers (0-9)',
+  symbols: 'Symbols (!@#$%…)',
+};
 
 export default function PasswordGenerator() {
-  const [length, setLength] = useState<number>(16);
-  const [includeUppercase, setIncludeUppercase] = useState<boolean>(true);
-  const [includeLowercase, setIncludeLowercase] = useState<boolean>(true);
-  const [includeNumbers, setIncludeNumbers] = useState<boolean>(true);
-  const [includeSymbols, setIncludeSymbols] = useState<boolean>(true);
-  const [excludeSimilar, setExcludeSimilar] = useState<boolean>(true);
-  const [excludeAmbiguous, setExcludeAmbiguous] = useState<boolean>(false);
-  const [password, setPassword] = useState<string>('');
-  const [strength, setStrength] = useState<{ score: number; label: string; color: string }>({
-    score: 0,
-    label: '',
-    color: 'gray'
-  });
+  const [length, setLength] = useState(16);
+  const [enabled, setEnabled] = useState<Record<SetKey, boolean>>({ upper: true, lower: true, numbers: true, symbols: true });
+  const [excludeSimilar, setExcludeSimilar] = useState(false);
+  const [excludeAmbiguous, setExcludeAmbiguous] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [passwords, setPasswords] = useState<string[]>([]);
+  const [status, setStatus] = useState('');
 
+  const pools = buildPools(enabled, excludeSimilar, excludeAmbiguous);
+  const poolSize = pools.join('').length;
+  const bits = poolSize ? Math.round(length * Math.log2(poolSize)) : 0;
+  const strength = strengthFor(bits);
 
-  const generatePassword = useCallback(() => {
-    let charset = '';
-    
-    if (includeUppercase) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    if (includeLowercase) charset += 'abcdefghijklmnopqrstuvwxyz';
-    if (includeNumbers) charset += '0123456789';
-    if (includeSymbols) charset += '!@#$%^&*()_+-=[]{}|;:,.<>?';
-    
-    if (excludeSimilar) {
-      charset = charset.replace(/[il1Lo0O]/g, '');
-    }
-    
-    if (excludeAmbiguous) {
-      charset = charset.replace(/[{}[\]()/\\'"~,;.<>]/g, '');
-    }
-
-    if (!charset) {
-      setPassword('');
-      setStrength({ score: 0, label: 'Invalid', color: 'red' });
+  const generate = useCallback(() => {
+    const p = buildPools(enabled, excludeSimilar, excludeAmbiguous);
+    if (!p.length) {
+      setPasswords([]);
       return;
     }
+    setPasswords(Array.from({ length: quantity }, () => generatePassword(length, p)));
+    setStatus('');
+  }, [enabled, excludeSimilar, excludeAmbiguous, quantity, length]);
 
-    let generatedPassword = '';
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * charset.length);
-      generatedPassword += charset[randomIndex];
+  // Regenerate whenever the options change (and on first load).
+  useEffect(() => {
+    generate();
+  }, [generate]);
+
+  const copy = async (text: string, what: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus(`${what} copied to clipboard.`);
+    } catch {
+      setStatus('Copy failed. Select the text and copy it manually.');
     }
-
-    setPassword(generatedPassword);
-    calculateStrength(generatedPassword);
-  }, [length, includeUppercase, includeLowercase, includeNumbers, includeSymbols, excludeSimilar, excludeAmbiguous]);
-
-  const calculateStrength = (pwd: string) => {
-    let score = 0;
-    
-    if (pwd.length >= 8) score += 1;
-    if (pwd.length >= 12) score += 1;
-    if (pwd.length >= 16) score += 1;
-    if (/[a-z]/.test(pwd)) score += 1;
-    if (/[A-Z]/.test(pwd)) score += 1;
-    if (/[0-9]/.test(pwd)) score += 1;
-    if (/[^a-zA-Z0-9]/.test(pwd)) score += 1;
-    if (pwd.length >= 20) score += 1;
-
-    let label = '';
-    let color = '';
-    
-    if (score <= 2) {
-      label = 'Very Weak';
-      color = 'red';
-    } else if (score === 3) {
-      label = 'Weak';
-      color = 'orange';
-    } else if (score === 4 || score === 5) {
-      label = 'Fair';
-      color = 'yellow';
-    } else if (score === 6 || score === 7) {
-      label = 'Good';
-      color = 'blue';
-    } else {
-      label = 'Strong';
-      color = 'green';
-    }
-
-    setStrength({ score, label, color });
   };
 
-  const copyToClipboard = async () => {
-    if (password) {
-      try {
-        await navigator.clipboard.writeText(password);
-        alert('Password copied to clipboard!');
-      } catch (err) {
-        console.error('Failed to copy:', err);
-      }
-    }
+  const setLengthSafe = (value: number) => {
+    if (Number.isNaN(value)) return;
+    setLength(Math.min(MAX_LENGTH, Math.max(MIN_LENGTH, Math.round(value))));
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🔐 Free Password Generator Online
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Free password generator online - no signup required. Generate strong, secure, random passwords instantly with customizable options. Includes password strength meter. All processing in your browser for maximum security.
-        </p>
-
-        {/* Password Display */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Generated Password
+    <div className="rounded-lg bg-white p-4 shadow-lg sm:p-6">
+      <div className="space-y-6">
+        {/* Output */}
+        <div>
+          <label htmlFor="pw-output" className="mb-2 block text-sm font-medium text-gray-700">
+            Generated password
           </label>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input
+              id="pw-output"
+              data-testid="password-output"
               type="text"
-              value={password}
+              value={passwords[0] ?? ''}
               readOnly
-              className="flex-1 p-4 border border-gray-300 rounded-lg bg-gray-50 font-mono text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Click 'Generate Password' to create a password"
+              spellCheck={false}
+              className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-gray-50 p-3 font-mono text-lg focus:border-transparent focus:ring-2 focus:ring-blue-500"
+              placeholder="Select at least one character type"
             />
-            <button
-              onClick={copyToClipboard}
-              disabled={!password}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors whitespace-nowrap"
-            >
-              📋 Copy
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => passwords[0] && copy(passwords[0], 'Password')}
+                disabled={!passwords.length}
+                className="flex-1 whitespace-nowrap rounded-lg bg-blue-600 px-5 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400 sm:flex-none"
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                onClick={generate}
+                disabled={!pools.length}
+                className="flex-1 whitespace-nowrap rounded-lg bg-green-600 px-5 py-3 font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-400 sm:flex-none"
+              >
+                Generate
+              </button>
+            </div>
           </div>
+          <p aria-live="polite" className="mt-2 min-h-[1.25rem] text-sm text-green-700">
+            {status}
+          </p>
         </div>
 
-        {/* Strength Meter */}
-        {password && (
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">Password Strength:</span>
-              <span className={`text-sm font-bold ${
-                strength.color === 'red' ? 'text-red-600' :
-                strength.color === 'orange' ? 'text-orange-600' :
-                strength.color === 'yellow' ? 'text-yellow-600' :
-                strength.color === 'blue' ? 'text-blue-600' :
-                'text-green-600'
-              }`}>
-                {strength.label}
+        {/* Strength */}
+        {pools.length > 0 ? (
+          <div>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span className="font-medium text-gray-700">Strength</span>
+              <span className={`font-semibold ${strength.text}`} data-testid="password-strength">
+                {strength.label} · ~{bits} bits of entropy
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className={`h-3 rounded-full transition-all duration-300 ${
-                  strength.color === 'red' ? 'bg-red-500' :
-                  strength.color === 'orange' ? 'bg-orange-500' :
-                  strength.color === 'yellow' ? 'bg-yellow-500' :
-                  strength.color === 'blue' ? 'bg-blue-500' :
-                  'bg-green-500'
-                }`}
-                style={{ width: `${(strength.score / 9) * 100}%` }}
-              />
+            <div className="h-3 w-full rounded-full bg-gray-200" aria-hidden="true">
+              <div className={`h-3 rounded-full transition-all ${strength.bar}`} style={{ width: `${Math.min(100, (bits / 128) * 100)}%` }} />
             </div>
           </div>
+        ) : (
+          <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            Select at least one character type to generate a password.
+          </p>
         )}
 
-        {/* Length Slider */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <label className="text-sm font-medium text-gray-700">
-              Password Length: {length}
+        {/* Length */}
+        <div>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <label htmlFor="pw-length" className="text-sm font-medium text-gray-700">
+              Password length
             </label>
-            <span className="text-sm text-gray-500">4-128 characters</span>
+            <input
+              type="number"
+              aria-label="Password length (number)"
+              min={MIN_LENGTH}
+              max={MAX_LENGTH}
+              value={length}
+              onChange={(e) => setLengthSafe(e.target.valueAsNumber)}
+              className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-right font-mono"
+            />
           </div>
           <input
+            id="pw-length"
             type="range"
-            min="4"
-            max="128"
+            min={MIN_LENGTH}
+            max={MAX_LENGTH}
             value={length}
-            onChange={(e) => setLength(parseInt(e.target.value))}
+            onChange={(e) => setLengthSafe(e.target.valueAsNumber)}
             className="w-full"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            {MIN_LENGTH}–{MAX_LENGTH} characters. 16 or more is recommended for online accounts.
+          </p>
         </div>
 
-        {/* Options */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={includeUppercase}
-              onChange={(e) => setIncludeUppercase(e.target.checked)}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-            />
-            <span className="text-gray-700">Uppercase Letters (A-Z)</span>
-          </label>
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={includeLowercase}
-              onChange={(e) => setIncludeLowercase(e.target.checked)}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-            />
-            <span className="text-gray-700">Lowercase Letters (a-z)</span>
-          </label>
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={includeNumbers}
-              onChange={(e) => setIncludeNumbers(e.target.checked)}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-            />
-            <span className="text-gray-700">Numbers (0-9)</span>
-          </label>
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={includeSymbols}
-              onChange={(e) => setIncludeSymbols(e.target.checked)}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-            />
-            <span className="text-gray-700">Symbols (!@#$%...)</span>
-          </label>
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={excludeSimilar}
-              onChange={(e) => setExcludeSimilar(e.target.checked)}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-            />
-            <span className="text-gray-700">Exclude Similar (i, l, 1, L, o, 0, O)</span>
-          </label>
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={excludeAmbiguous}
-              onChange={(e) => setExcludeAmbiguous(e.target.checked)}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-            />
-            <span className="text-gray-700">Exclude Ambiguous ({ } [ ] ( ) / \ ' " ~ , ; . &lt; &gt;)</span>
-          </label>
+        {/* Character options */}
+        <fieldset>
+          <legend className="mb-3 text-sm font-medium text-gray-700">Characters to include</legend>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {(Object.keys(SETS) as SetKey[]).map((key) => (
+              <label key={key} className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={enabled[key]}
+                  onChange={(e) => setEnabled((prev) => ({ ...prev, [key]: e.target.checked }))}
+                  className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-gray-700">{OPTION_LABELS[key]}</span>
+              </label>
+            ))}
+            <label className="flex cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                checked={excludeSimilar}
+                onChange={(e) => setExcludeSimilar(e.target.checked)}
+                className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">Exclude look-alikes (i, l, 1, L, I, o, 0, O, |)</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                checked={excludeAmbiguous}
+                onChange={(e) => setExcludeAmbiguous(e.target.checked)}
+                className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">Exclude hard-to-type symbols ({'{ } [ ] ( ) / \\ \' " ` ~ , ; : . < >'})</span>
+            </label>
+          </div>
+        </fieldset>
+
+        {/* Bulk */}
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label htmlFor="pw-quantity" className="mb-2 block text-sm font-medium text-gray-700">
+              How many passwords
+            </label>
+            <select
+              id="pw-quantity"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              className="rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+            >
+              {[1, 5, 10, 25, 50].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+          {passwords.length > 1 && (
+            <button
+              type="button"
+              onClick={() => copy(passwords.join('\n'), `${passwords.length} passwords`)}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Copy all
+            </button>
+          )}
         </div>
 
-        {/* Generate Button */}
-        <button
-          onClick={generatePassword}
-          className="w-full sm:w-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors text-lg"
-        >
-          🔄 Generate Password
-        </button>
+        {passwords.length > 1 && (
+          <ol className="max-h-72 space-y-1 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-3 font-mono text-sm" data-testid="password-list">
+            {passwords.map((pw, i) => (
+              <li key={i} className="break-all">
+                {pw}
+              </li>
+            ))}
+          </ol>
+        )}
 
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Password Generator</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our Password Generator is a secure, client-side tool that creates strong, random passwords 
-              using cryptographically secure random number generation. All password generation happens 
-              locally in your browser, ensuring your passwords are never transmitted over the internet 
-              or stored on any server.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Perfect for creating secure passwords for online accounts, applications, and services. 
-              The tool includes a strength meter to help you understand the security level of your 
-              generated password, and customizable options to meet specific password requirements.
-            </p>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Creating passwords for new online accounts</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Generating secure API keys and tokens</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Meeting specific password requirements</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Creating temporary access passwords</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Generating passwords for team accounts</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Creating secure passphrases</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Customizable Length</h5>
-                  <p className="text-sm text-gray-600">Generate passwords from 4 to 128 characters long</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Character Options</h5>
-                  <p className="text-sm text-gray-600">Include/exclude uppercase, lowercase, numbers, and symbols</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Strength Meter</h5>
-                  <p className="text-sm text-gray-600">Real-time password strength assessment</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Privacy-First</h5>
-                  <p className="text-sm text-gray-600">All generation happens locally - no data sent to servers</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
-            <div className="space-y-4">
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">How secure are the generated passwords?</h5>
-                <p className="text-gray-700 text-sm">
-                  Passwords are generated using cryptographically secure random number generation, making 
-                  them highly secure and unpredictable. The randomness ensures each password is unique.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Is my password stored or transmitted?</h5>
-                <p className="text-gray-700 text-sm">
-                  No, all password generation happens locally in your browser. We never store, transmit, 
-                  or have access to your generated passwords.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What makes a strong password?</h5>
-                <p className="text-gray-700 text-sm">
-                  A strong password is at least 12 characters long, includes a mix of character types 
-                  (uppercase, lowercase, numbers, symbols), and doesn't use dictionary words or personal 
-                  information.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Can I generate multiple passwords?</h5>
-                <p className="text-gray-700 text-sm">
-                  Yes, simply click "Generate Password" multiple times to create different passwords. 
-                  Each generation creates a unique, random password.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Password Tips</h4>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>Use passwords with at least 12 characters for better security</li>
-            <li>Include a mix of uppercase, lowercase, numbers, and symbols</li>
-            <li>Don't reuse passwords across different accounts</li>
-            <li>Consider using a password manager to store your passwords securely</li>
-            <li>Change passwords regularly, especially for sensitive accounts</li>
-          </ul>
-        </div>
+        <p className="text-xs text-gray-500">
+          Passwords are generated on your device with the Web Crypto API (<code>crypto.getRandomValues</code>). They are never sent to
+          a server or stored.
+        </p>
       </div>
     </div>
   );
 }
-

@@ -1,355 +1,270 @@
-import { useState, useRef } from 'react';
-import { API_CONFIG } from '../../config/api';
+import { useEffect, useRef, useState } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+type Target = 'webp' | 'avif';
+const MIME: Record<Target, string> = { webp: 'image/webp', avif: 'image/avif' };
+const MAX_FILES = 30;
+
+interface Item {
+  id: number;
+  file: File;
+  status: 'pending' | 'done' | 'error';
+  blob?: Blob;
+  url?: string;
+  ext?: Target;
+  error?: string;
+}
+
+const formatBytes = (n: number) => (n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(2)} MB`);
+
+function canEncode(mime: string): boolean {
+  try {
+    const c = document.createElement('canvas');
+    c.width = c.height = 1;
+    return c.toDataURL(mime).startsWith(`data:${mime}`);
+  } catch {
+    return false;
+  }
+}
+
+async function encode(file: File, target: Target, quality: number): Promise<Blob> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('Your browser cannot open this image format.'));
+      i.src = url;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || 1024;
+    canvas.height = img.naturalHeight || 1024;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas is not available in this browser.');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, MIME[target], quality / 100));
+    if (!blob) throw new Error('Conversion failed. The image may be too large.');
+    if (blob.type !== MIME[target]) throw new Error(`Your browser cannot create ${target.toUpperCase()} files.`);
+    return blob;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 export default function WebPConverter() {
-  const [originalFile, setOriginalFile] = useState<File | null>(null);
-  const [originalImage, setOriginalImage] = useState<string | null>(null);
-  const [convertedImage, setConvertedImage] = useState<string | null>(null);
-  const [targetFormat, setTargetFormat] = useState<'webp' | 'avif'>('webp');
-  const [quality, setQuality] = useState<number>(85);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [conversionStats, setConversionStats] = useState<{
-    originalSize: number;
-    convertedSize: number;
-    reductionPercent: number;
-  } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [support] = useState(() => ({ webp: canEncode('image/webp'), avif: canEncode('image/avif') }));
+  const [target, setTarget] = useState<Target>('webp');
+  const [quality, setQuality] = useState(80);
+  const [items, setItems] = useState<Item[]>([]);
+  const [notice, setNotice] = useState('');
+  const [dragging, setDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const nextId = useRef(1);
+  const itemsRef = useRef<Item[]>([]);
+  itemsRef.current = items;
 
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/bmp'];
-    if (!allowedTypes.includes(file.type)) {
-      setError('Please select a valid image file (JPG, PNG, GIF, WebP, AVIF, BMP)');
-      return;
-    }
-
-    // Check file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File size must be less than 10MB');
-      return;
-    }
-
-    setError('');
-    setOriginalFile(file);
-    setConvertedImage(null);
-    setConversionStats(null);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setOriginalImage(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+  const addFiles = (list: FileList | File[]) => {
+    const all = Array.from(list);
+    const images = all.filter((f) => f.type.startsWith('image/'));
+    const accepted = images.slice(0, Math.max(0, MAX_FILES - itemsRef.current.length));
+    const msgs: string[] = [];
+    if (all.length > images.length) msgs.push(`${all.length - images.length} file(s) skipped because they are not images.`);
+    if (images.length > accepted.length) msgs.push(`Up to ${MAX_FILES} images can be converted at once.`);
+    setNotice(msgs.join(' '));
+    if (accepted.length) setItems((prev) => [...prev, ...accepted.map((file) => ({ id: nextId.current++, file, status: 'pending' as const }))]);
   };
 
-  const convertImage = async () => {
-    if (!originalFile) {
-      setError('Please select an image first');
-      return;
-    }
-
-    setIsProcessing(true);
-    setError('');
-    setConvertedImage(null);
-    setConversionStats(null);
-
-    try {
-      // Use the dedicated WebP/AVIF converter endpoint
-      const formData = new FormData();
-      formData.append('image', originalFile);
-      formData.append('format', targetFormat);
-      formData.append('quality', (quality / 100).toString());
-
-      const response = await fetch(`${API_URL}/utility-tools/webp-converter/convert`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to convert image');
+  const fileKey = items.map((i) => i.id).join(',');
+  useEffect(() => {
+    if (!fileKey || !support[target]) return;
+    let cancelled = false;
+    setItems((prev) => prev.map((p) => ({ ...p, status: 'pending' })));
+    const timer = setTimeout(async () => {
+      for (const item of itemsRef.current) {
+        if (cancelled) return;
+        try {
+          const blob = await encode(item.file, target, quality);
+          if (cancelled) return;
+          setItems((prev) =>
+            prev.map((p) => {
+              if (p.id !== item.id) return p;
+              if (p.url) URL.revokeObjectURL(p.url);
+              return { ...p, status: 'done', blob, ext: target, url: URL.createObjectURL(blob), error: undefined };
+            }),
+          );
+        } catch (err) {
+          if (!cancelled) setItems((prev) => prev.map((p) => (p.id === item.id ? { ...p, status: 'error', error: (err as Error).message } : p)));
+        }
       }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [fileKey, target, quality, support]);
 
-      // Get the converted file URL
-      const fullUrl = data.data.url.startsWith('http') 
-        ? data.data.url 
-        : API_CONFIG.getStorageUrl(data.data.path);
-
-      setConvertedImage(fullUrl);
-
-      // Set conversion stats
-      setConversionStats({
-        originalSize: data.data.original_size,
-        convertedSize: data.data.converted_size,
-        reductionPercent: Math.round(data.data.reduction_percent),
-      });
-
-    } catch (err: any) {
-      setError(err.message || 'Failed to convert image. Please try again.');
-      console.error('Conversion error:', err);
-    } finally {
-      setIsProcessing(false);
-    }
+  const outName = (item: Item) => `${item.file.name.replace(/\.[^.]+$/, '') || 'image'}.${item.ext ?? target}`;
+  const download = (item: Item) => {
+    if (!item.url) return;
+    const a = document.createElement('a');
+    a.href = item.url;
+    a.download = outName(item);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
-
-  const downloadImage = () => {
-    if (!convertedImage) return;
-
-    const link = document.createElement('a');
-    link.href = convertedImage;
-    link.download = originalFile 
-      ? `${originalFile.name.split('.')[0]}.${targetFormat}`
-      : `converted.${targetFormat}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
+  const done = items.filter((i) => i.status === 'done' && i.blob);
+  const before = done.reduce((s, i) => s + i.file.size, 0);
+  const after = done.reduce((s, i) => s + (i.blob?.size ?? 0), 0);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          WebP & AVIF Converter
-        </h2>
-        <p className="text-gray-600 mb-8">
-          Convert images to WebP or AVIF format for better performance and smaller file sizes. 
-          Modern image formats that provide superior compression while maintaining quality.
-        </p>
-
-        {/* File Input */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Image
-          </label>
+    <div className="rounded-lg bg-white p-4 shadow-lg sm:p-6">
+      <div className="space-y-6">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            addFiles(e.dataTransfer.files);
+          }}
+          className={`rounded-lg border-2 border-dashed p-6 text-center transition-colors ${dragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+        >
           <input
-            ref={fileInputRef}
+            ref={inputRef}
             type="file"
-            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/bmp"
-            onChange={handleFileSelect}
-            className="hidden"
+            accept="image/*"
+            multiple
+            className="sr-only"
+            tabIndex={-1}
+            aria-label="Images to convert"
+            data-testid="image-file-input"
+            onChange={(e) => {
+              if (e.target.files) addFiles(e.target.files);
+              e.target.value = '';
+            }}
           />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition-colors text-gray-600 hover:text-blue-600"
-          >
-            {originalFile ? originalFile.name : 'Click to select an image file'}
+          <button type="button" onClick={() => inputRef.current?.click()} className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700">
+            Choose images
           </button>
+          <p className="mt-2 text-sm text-gray-500">or drag and drop JPG, PNG, GIF, BMP or SVG files (up to {MAX_FILES}). Conversion happens in your browser.</p>
         </div>
 
-        {/* Format Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Target Format
-          </label>
-          <select
-            value={targetFormat}
-            onChange={(e) => setTargetFormat(e.target.value as 'webp' | 'avif')}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="webp">WebP (Better browser support)</option>
-            <option value="avif">AVIF (Best compression, newer format)</option>
-          </select>
-          <p className="text-sm text-gray-500 mt-2">
-            {targetFormat === 'webp' 
-              ? 'WebP provides excellent compression with wide browser support.'
-              : 'AVIF offers the best compression but requires modern browsers.'}
+        {notice && (
+          <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            {notice}
           </p>
-        </div>
-
-        {/* Quality Slider (for reference, actual conversion uses backend defaults) */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Quality: {quality}% (Backend optimized)
-          </label>
-          <input
-            type="range"
-            min="50"
-            max="100"
-            value={quality}
-            onChange={(e) => setQuality(parseInt(e.target.value))}
-            className="w-full"
-            disabled
-          />
-          <p className="text-sm text-gray-500 mt-1">
-            Quality is automatically optimized by the backend for best file size reduction.
-          </p>
-        </div>
-
-        {/* Convert Button */}
-        <div className="mb-6">
-          <button
-            onClick={convertImage}
-            disabled={!originalFile || isProcessing}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {isProcessing ? 'Converting...' : 'Convert to ' + targetFormat.toUpperCase()}
-          </button>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm">{error}</p>
-          </div>
         )}
 
-        {/* File Size Info - Show before conversion */}
-        {originalFile && !convertedImage && (
-          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm text-gray-600">Original File Size:</span>
-                <p className="text-lg font-semibold text-gray-900">{formatFileSize(originalFile.size)}</p>
-              </div>
-              <div className="text-sm text-gray-500">
-                {originalFile.name}
-              </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium text-gray-700">Convert to</legend>
+            <div className="flex flex-wrap gap-2">
+              {(['webp', 'avif'] as Target[]).map((x) => (
+                <button
+                  key={x}
+                  type="button"
+                  aria-pressed={target === x}
+                  disabled={!support[x]}
+                  onClick={() => setTarget(x)}
+                  className={`rounded-lg border-2 px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                    target === x ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {x === 'webp' ? 'WebP' : 'AVIF'}
+                </button>
+              ))}
             </div>
+            {!support.avif && (
+              <p className="mt-2 text-xs text-gray-500" data-testid="avif-unsupported">
+                AVIF is disabled because this browser cannot encode AVIF images.
+              </p>
+            )}
+            {!support.webp && (
+              <p role="alert" className="mt-2 text-sm text-red-700">
+                This browser cannot encode WebP. Try the latest Chrome, Edge or Firefox.
+              </p>
+            )}
+          </fieldset>
+          <div>
+            <label htmlFor="webp-quality" className="mb-2 block text-sm font-medium text-gray-700">
+              Quality: {quality}%
+            </label>
+            <input id="webp-quality" type="range" min={10} max={100} step={5} value={quality} onChange={(e) => setQuality(e.target.valueAsNumber)} className="w-full" />
+            <p className="mt-1 text-xs text-gray-500">75–85% is a good balance for photos on websites.</p>
           </div>
-        )}
+        </div>
 
-        {/* Images Preview */}
-        {originalImage && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                Original Image
-              </h4>
-              <div className="mb-2 p-2 bg-gray-100 rounded">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">File Size:</span>
-                  <span className="font-semibold text-gray-900">
-                    {originalFile ? formatFileSize(originalFile.size) : 'N/A'}
-                  </span>
-                </div>
-                {originalFile && (
-                  <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
-                    <span>Format:</span>
-                    <span>{originalFile.type.split('/')[1]?.toUpperCase() || 'Unknown'}</span>
-                  </div>
+        {items.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm text-gray-700" aria-live="polite" data-testid="webp-summary">
+                {done.length} of {items.length} converted
+                {done.length > 0 && ` · ${formatBytes(before)} → ${formatBytes(after)} (${after <= before ? `${Math.round((1 - after / before) * 100)}% smaller` : `${Math.round((after / before - 1) * 100)}% larger`})`}
+              </p>
+              <div className="flex gap-2">
+                {done.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => done.forEach((i, n) => setTimeout(() => download(i), n * 300))}
+                    className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                  >
+                    Download all
+                  </button>
                 )}
-              </div>
-              <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
-                <img
-                  src={originalImage}
-                  alt="Original"
-                  className="max-w-full h-auto rounded"
-                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    items.forEach((i) => i.url && URL.revokeObjectURL(i.url));
+                    setItems([]);
+                  }}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Clear all
+                </button>
               </div>
             </div>
-
-            {convertedImage && (
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                  Converted Image ({targetFormat.toUpperCase()})
-                </h4>
-                <div className="mb-2 p-2 bg-green-100 rounded">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">File Size:</span>
-                    <span className="font-semibold text-green-700">
-                      {conversionStats ? formatFileSize(conversionStats.convertedSize) : 'N/A'}
-                    </span>
-                  </div>
-                  {conversionStats && (
-                    <div className="flex items-center justify-between text-xs text-gray-600 mt-1">
-                      <span>Reduction:</span>
-                      <span className="font-semibold text-green-700">
-                        {conversionStats.reductionPercent > 0 ? '-' : '+'}
-                        {Math.abs(conversionStats.reductionPercent)}%
-                      </span>
+            <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200">
+              {items.map((item) => {
+                const pct = item.blob ? Math.round((1 - item.blob.size / item.file.size) * 100) : 0;
+                return (
+                  <li key={item.id} className="flex flex-wrap items-center gap-3 p-3" data-testid="webp-item">
+                    {item.url ? (
+                      <img src={item.url} alt="" className="h-14 w-14 flex-none rounded object-cover" />
+                    ) : (
+                      <div className="h-14 w-14 flex-none rounded bg-gray-100" aria-hidden="true" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-900">{item.file.name}</p>
+                      {item.status === 'pending' && <p className="text-xs text-gray-500">Converting…</p>}
+                      {item.status === 'error' && <p className="text-xs text-red-700">{item.error}</p>}
+                      {item.status === 'done' && item.blob && (
+                        <p className="text-xs text-gray-600" data-testid="webp-result">
+                          {formatBytes(item.file.size)} → {formatBytes(item.blob.size)}{' '}
+                          <span className={pct > 0 ? 'font-semibold text-green-700' : 'text-amber-700'}>
+                            ({pct > 0 ? `${pct}% smaller` : `${-pct}% larger – keep the original`})
+                          </span>
+                        </p>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="border border-green-300 rounded-lg p-4 bg-green-50">
-                  <img
-                    src={convertedImage}
-                    alt="Converted"
-                    className="max-w-full h-auto rounded"
-                  />
-                </div>
-              </div>
-            )}
+                    <button
+                      type="button"
+                      onClick={() => download(item)}
+                      disabled={item.status !== 'done'}
+                      aria-label={`Download ${outName(item)}`}
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                    >
+                      Download
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
-
-        {/* Conversion Stats - Enhanced Display */}
-        {conversionStats && (
-          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg shadow-sm">
-            <h5 className="font-bold text-lg text-gray-900 mb-4 flex items-center">
-              <span className="mr-2">📊</span>
-              Conversion Results
-            </h5>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Original Size</div>
-                <div className="text-2xl font-bold text-gray-900">{formatFileSize(conversionStats.originalSize)}</div>
-                <div className="text-xs text-gray-400 mt-1">Before conversion</div>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-green-200">
-                <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Converted Size</div>
-                <div className="text-2xl font-bold text-green-700">{formatFileSize(conversionStats.convertedSize)}</div>
-                <div className="text-xs text-gray-400 mt-1">After conversion</div>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-blue-200">
-                <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Size Reduction</div>
-                <div className="text-2xl font-bold text-blue-700">
-                  {conversionStats.reductionPercent > 0 ? '-' : '+'}
-                  {Math.abs(conversionStats.reductionPercent)}%
-                </div>
-                <div className="text-xs text-gray-400 mt-1">Space saved</div>
-              </div>
-            </div>
-            {conversionStats.reductionPercent > 0 && (
-              <div className="mt-4 p-3 bg-green-100 rounded-lg border border-green-300">
-                <p className="text-sm text-green-800">
-                  <strong>Great!</strong> You saved {formatFileSize(conversionStats.originalSize - conversionStats.convertedSize)} 
-                  ({conversionStats.reductionPercent}% reduction) by converting to {targetFormat.toUpperCase()}.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Download Button */}
-        {convertedImage && (
-          <div className="mb-6">
-            <button
-              onClick={downloadImage}
-              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-            >
-              Download {targetFormat.toUpperCase()} Image
-            </button>
-          </div>
-        )}
-
-        {/* Info Section */}
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h5 className="font-semibold text-blue-900 mb-2">About WebP & AVIF</h5>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• <strong>WebP:</strong> Developed by Google, provides 25-35% better compression than JPEG while maintaining quality</li>
-            <li>• <strong>AVIF:</strong> Next-generation format offering 50% better compression than JPEG with superior quality</li>
-            <li>• Both formats support transparency and animation</li>
-            <li>• Perfect for web optimization and faster page loads</li>
-            <li>• All conversions are processed securely on our servers</li>
-          </ul>
-        </div>
       </div>
     </div>
   );
 }
-

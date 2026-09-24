@@ -1,767 +1,361 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+type OutputFormat = 'same' | 'jpeg' | 'png' | 'webp';
+type Fit = 'stretch' | 'cover' | 'contain';
+const MIME: Record<Exclude<OutputFormat, 'same'>, string> = { jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const MAX_SIDE = 10000;
 
-interface Preset {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  description: string;
-  category: string;
-}
-
-const SOCIAL_MEDIA_PRESETS: Preset[] = [
-  {
-    id: 'instagram-post',
-    name: 'Instagram Post',
-    width: 1080,
-    height: 1080,
-    description: 'Square format for Instagram feed posts',
-    category: 'social-media'
-  },
-  {
-    id: 'instagram-story',
-    name: 'Instagram Story',
-    width: 1080,
-    height: 1920,
-    description: 'Vertical format for Instagram stories',
-    category: 'social-media'
-  },
-  {
-    id: 'instagram-reel',
-    name: 'Instagram Reel',
-    width: 1080,
-    height: 1920,
-    description: 'Vertical format for Instagram reels',
-    category: 'social-media'
-  },
-  {
-    id: 'facebook-post',
-    name: 'Facebook Post',
-    width: 1200,
-    height: 630,
-    description: 'Recommended size for Facebook posts',
-    category: 'social-media'
-  },
-  {
-    id: 'facebook-cover',
-    name: 'Facebook Cover',
-    width: 1640,
-    height: 859,
-    description: 'Facebook page cover photo',
-    category: 'social-media'
-  },
-  {
-    id: 'twitter-post',
-    name: 'Twitter Post',
-    width: 1200,
-    height: 675,
-    description: 'Recommended size for Twitter posts',
-    category: 'social-media'
-  },
-  {
-    id: 'twitter-header',
-    name: 'Twitter Header',
-    width: 1500,
-    height: 500,
-    description: 'Twitter profile header image',
-    category: 'social-media'
-  },
-  {
-    id: 'linkedin-post',
-    name: 'LinkedIn Post',
-    width: 1200,
-    height: 627,
-    description: 'Recommended size for LinkedIn posts',
-    category: 'social-media'
-  },
-  {
-    id: 'linkedin-cover',
-    name: 'LinkedIn Cover',
-    width: 1584,
-    height: 396,
-    description: 'LinkedIn company page cover image',
-    category: 'social-media'
-  },
-  {
-    id: 'youtube-thumbnail',
-    name: 'YouTube Thumbnail',
-    width: 1280,
-    height: 720,
-    description: 'YouTube video thumbnail (16:9)',
-    category: 'social-media'
-  },
-  {
-    id: 'pinterest-pin',
-    name: 'Pinterest Pin',
-    width: 1000,
-    height: 1500,
-    description: 'Vertical format for Pinterest pins',
-    category: 'social-media'
-  },
+const PRESETS = [
+  { id: 'ig-square', name: 'Instagram square post', width: 1080, height: 1080 },
+  { id: 'ig-portrait', name: 'Instagram portrait post', width: 1080, height: 1350 },
+  { id: 'story', name: 'Story / Reel (9:16)', width: 1080, height: 1920 },
+  { id: 'og', name: 'Facebook / Open Graph link image', width: 1200, height: 630 },
+  { id: 'x-post', name: 'X (Twitter) post, 16:9', width: 1200, height: 675 },
+  { id: 'x-header', name: 'X (Twitter) header', width: 1500, height: 500 },
+  { id: 'linkedin-post', name: 'LinkedIn shared image', width: 1200, height: 627 },
+  { id: 'linkedin-cover', name: 'LinkedIn cover', width: 1584, height: 396 },
+  { id: 'youtube', name: 'YouTube thumbnail', width: 1280, height: 720 },
+  { id: 'pinterest', name: 'Pinterest pin (2:3)', width: 1000, height: 1500 },
 ];
 
+const formatBytes = (n: number) => (n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(2)} MB`);
+const clampSide = (n: number) => Math.min(MAX_SIDE, Math.max(1, Math.round(n || 1)));
+
 export default function ImageResizer() {
-  const [originalImage, setOriginalImage] = useState<string | null>(null);
-  const [resizedImage, setResizedImage] = useState<string | null>(null);
-  const [width, setWidth] = useState<number>(800);
-  const [height, setHeight] = useState<number>(600);
-  const [maintainAspectRatio, setMaintainAspectRatio] = useState<boolean>(true);
-  const [quality, setQuality] = useState<number>(0.9);
-  const [format, setFormat] = useState<'png' | 'jpeg' | 'webp' | 'avif'>('jpeg');
-  const [originalSize, setOriginalSize] = useState<{ width: number; height: number } | null>(null);
-  const [fileSize, setFileSize] = useState<{ original: number; resized: number } | null>(null);
-  const [selectedPreset, setSelectedPreset] = useState<string>('default');
-  const [useApi, setUseApi] = useState<boolean>(false);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [originalFile, setOriginalFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
+  const [lock, setLock] = useState(true);
+  const [fit, setFit] = useState<Fit>('cover');
+  const [background, setBackground] = useState('#ffffff');
+  const [preset, setPreset] = useState('');
+  const [format, setFormat] = useState<OutputFormat>('same');
+  const [quality, setQuality] = useState(90);
+  const [result, setResult] = useState<{ url: string; blob: Blob; width: number; height: number } | null>(null);
+  const [error, setError] = useState('');
+  const [dragging, setDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  const ratio = img ? img.naturalWidth / img.naturalHeight : 1;
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file');
+  const loadFile = (f: File | undefined) => {
+    if (!f) return;
+    if (!f.type.startsWith('image/')) {
+      setError('Please choose an image file (JPG, PNG, WebP, GIF or BMP).');
       return;
     }
-
-    setOriginalFile(file);
-    setError('');
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const imageUrl = event.target?.result as string;
-      setOriginalImage(imageUrl);
-      setFileSize({ original: file.size, resized: 0 });
-
-      const img = new Image();
-      img.onload = () => {
-        setOriginalSize({ width: img.width, height: img.height });
-        if (selectedPreset === 'default') {
-          if (maintainAspectRatio) {
-            const aspectRatio = img.width / img.height;
-            if (width / height > aspectRatio) {
-              setHeight(Math.round(width / aspectRatio));
-            } else {
-              setWidth(Math.round(height * aspectRatio));
-            }
-          } else {
-            setWidth(img.width);
-            setHeight(img.height);
-          }
-        }
-        if (!useApi) {
-          resizeImage(img, width, height);
-        }
-      };
-      img.src = imageUrl;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handlePresetSelect = (presetId: string) => {
-    setSelectedPreset(presetId);
-    if (presetId !== 'default') {
-      const preset = SOCIAL_MEDIA_PRESETS.find(p => p.id === presetId);
-      if (preset) {
-        // Temporarily disable aspect ratio to set exact preset dimensions
-        const wasMaintainingAspect = maintainAspectRatio;
-        if (wasMaintainingAspect) {
-          setMaintainAspectRatio(false);
-        }
-        setWidth(preset.width);
-        setHeight(preset.height);
-        
-        // Trigger resize immediately if image is loaded
-        if (originalImage && !useApi) {
-          setTimeout(() => {
-            const img = new Image();
-            img.onload = () => {
-              resizeImage(img, preset.width, preset.height);
-            };
-            img.src = originalImage;
-          }, 50);
-        } else if (originalImage && useApi && originalFile) {
-          // For API mode, trigger resize
-          setTimeout(() => {
-            handleResize();
-          }, 50);
-        }
-        
-        // Re-enable aspect ratio after a brief moment if it was enabled
-        if (wasMaintainingAspect) {
-          setTimeout(() => {
-            setMaintainAspectRatio(true);
-          }, 200);
-        }
-      }
-    }
-  };
-
-  const resizeImage = (img: HTMLImageElement, targetWidth: number, targetHeight: number) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-
-    // Note: AVIF encoding is not supported in browser canvas yet
-    // For AVIF, use API mode instead
-    let mimeType: string;
-    if (format === 'avif') {
-      // Fallback to WebP for client-side processing, or use API
-      mimeType = 'image/webp';
-    } else {
-      mimeType = format === 'png' ? 'image/png' : format === 'webp' ? 'image/webp' : 'image/jpeg';
-    }
-    
-    const dataUrl = canvas.toDataURL(mimeType, quality);
-    setResizedImage(dataUrl);
-
-    // Calculate file size
-    const base64Length = dataUrl.length - (dataUrl.indexOf(',') + 1);
-    const padding = dataUrl.charAt(dataUrl.length - 2) === '=' ? 2 : dataUrl.charAt(dataUrl.length - 1) === '=' ? 1 : 0;
-    const fileSizeBytes = (base64Length * 3) / 4 - padding;
-    setFileSize(prev => prev ? { ...prev, resized: fileSizeBytes } : null);
-  };
-
-  const handleResize = async () => {
-    if (!originalImage || !originalFile) return;
-
-    if (useApi) {
-      setIsProcessing(true);
+    const url = URL.createObjectURL(f);
+    const image = new Image();
+    image.onload = () => {
       setError('');
-      try {
-        const formData = new FormData();
-        formData.append('image', originalFile);
-        formData.append('width', width.toString());
-        formData.append('height', height.toString());
-        formData.append('maintain_aspect_ratio', maintainAspectRatio.toString());
-        formData.append('quality', quality.toString());
-        formData.append('format', format);
-        if (selectedPreset !== 'default') {
-          formData.append('preset', selectedPreset);
-        }
-
-        const response = await fetch(`${API_URL}/utility-tools/image-resizer/resize`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to resize image');
-        }
-
-        if (data.success) {
-          setResizedImage(data.data.url);
-          setFileSize({
-            original: data.data.original_size,
-            resized: data.data.resized_size
-          });
-        }
-      } catch (err: any) {
-        setError(err.message || 'Failed to resize image via API');
-        setResizedImage(null);
-      } finally {
-        setIsProcessing(false);
-      }
-    } else {
-      const img = new Image();
-      img.onload = () => {
-        let targetWidth = width;
-        let targetHeight = height;
-
-        if (maintainAspectRatio && originalSize) {
-          const aspectRatio = originalSize.width / originalSize.height;
-          if (targetWidth / targetHeight > aspectRatio) {
-            targetHeight = Math.round(targetWidth / aspectRatio);
-            setHeight(targetHeight);
-          } else {
-            targetWidth = Math.round(targetHeight * aspectRatio);
-            setWidth(targetWidth);
-          }
-        }
-
-        resizeImage(img, targetWidth, targetHeight);
-      };
-      img.src = originalImage;
-    }
+      setFile(f);
+      setImg(image);
+      setWidth(image.naturalWidth);
+      setHeight(image.naturalHeight);
+      setPreset('');
+      setLock(true);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      setError('Your browser cannot open this image format. Try JPG, PNG or WebP.');
+    };
+    image.src = url;
   };
 
-  const handleWidthChange = (newWidth: number) => {
-    setWidth(newWidth);
-    setSelectedPreset('default');
-    if (maintainAspectRatio && originalSize && !useApi) {
-      const aspectRatio = originalSize.width / originalSize.height;
-      setHeight(Math.round(newWidth / aspectRatio));
-      if (originalImage) {
-        const img = new Image();
-        img.onload = () => {
-          resizeImage(img, newWidth, Math.round(newWidth / aspectRatio));
-        };
-        img.src = originalImage;
-      }
-    }
+  const changeWidth = (w: number) => {
+    if (Number.isNaN(w)) return;
+    const v = clampSide(w);
+    setWidth(v);
+    setPreset('');
+    if (lock) setHeight(clampSide(v / ratio));
+  };
+  const changeHeight = (h: number) => {
+    if (Number.isNaN(h)) return;
+    const v = clampSide(h);
+    setHeight(v);
+    setPreset('');
+    if (lock) setWidth(clampSide(v * ratio));
+  };
+  const scaleTo = (pct: number) => {
+    if (!img) return;
+    setPreset('');
+    setLock(true);
+    setWidth(clampSide((img.naturalWidth * pct) / 100));
+    setHeight(clampSide((img.naturalHeight * pct) / 100));
+  };
+  const applyPreset = (id: string) => {
+    setPreset(id);
+    const p = PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    setLock(false);
+    setWidth(p.width);
+    setHeight(p.height);
   };
 
-  const handleHeightChange = (newHeight: number) => {
-    setHeight(newHeight);
-    setSelectedPreset('default');
-    if (maintainAspectRatio && originalSize && !useApi) {
-      const aspectRatio = originalSize.width / originalSize.height;
-      setWidth(Math.round(newHeight * aspectRatio));
-      if (originalImage) {
-        const img = new Image();
-        img.onload = () => {
-          resizeImage(img, Math.round(newHeight * aspectRatio), newHeight);
-        };
-        img.src = originalImage;
-      }
-    }
-  };
-
-  const downloadImage = () => {
-    if (!resizedImage) return;
-
-    const link = document.createElement('a');
-    link.href = resizedImage;
-    link.download = `resized-image.${format}`;
-    link.click();
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-  };
-
+  // Render the resized image whenever settings change.
   useEffect(() => {
-    if (originalImage && !useApi && originalSize) {
-      const img = new Image();
-      img.onload = () => {
-        let targetWidth = width;
-        let targetHeight = height;
+    if (!img || !file || !width || !height) return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      const mime = format === 'same' ? (EXT[file.type] ? file.type : 'image/png') : MIME[format];
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return setError('Canvas is not available in this browser.');
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+      const sameRatio = Math.abs(width / height - iw / ih) < 0.01;
+      if (mime === 'image/jpeg' || (fit === 'contain' && !sameRatio)) {
+        ctx.fillStyle = mime === 'image/jpeg' && fit !== 'contain' ? '#ffffff' : background;
+        ctx.fillRect(0, 0, width, height);
+      }
+      ctx.imageSmoothingQuality = 'high';
+      if (sameRatio || fit === 'stretch') {
+        ctx.drawImage(img, 0, 0, width, height);
+      } else if (fit === 'cover') {
+        const s = Math.max(width / iw, height / ih);
+        const sw = width / s;
+        const sh = height / s;
+        ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, width, height);
+      } else {
+        const s = Math.min(width / iw, height / ih);
+        const dw = iw * s;
+        const dh = ih * s;
+        ctx.drawImage(img, (width - dw) / 2, (height - dh) / 2, dw, dh);
+      }
+      canvas.toBlob(
+        (blob) => {
+          if (cancelled) return;
+          if (!blob) return setError('The image is too large for your browser to resize. Try smaller dimensions.');
+          if (blob.type !== mime) return setError(`Your browser cannot save ${EXT[mime].toUpperCase()} files. Choose another format.`);
+          setError('');
+          setResult((prev) => {
+            if (prev) URL.revokeObjectURL(prev.url);
+            return { url: URL.createObjectURL(blob), blob, width, height };
+          });
+        },
+        mime,
+        quality / 100,
+      );
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [img, file, width, height, fit, background, format, quality]);
 
-        if (maintainAspectRatio && originalSize) {
-          const aspectRatio = originalSize.width / originalSize.height;
-          const targetAspectRatio = targetWidth / targetHeight;
-          
-          if (targetAspectRatio > aspectRatio) {
-            // Target is wider - adjust height
-            targetHeight = Math.round(targetWidth / aspectRatio);
-          } else {
-            // Target is taller - adjust width
-            targetWidth = Math.round(targetHeight * aspectRatio);
-          }
-        }
+  const download = () => {
+    if (!result || !file) return;
+    const a = document.createElement('a');
+    a.href = result.url;
+    a.download = `${file.name.replace(/\.[^.]+$/, '') || 'image'}-${result.width}x${result.height}.${EXT[result.blob.type] ?? 'png'}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
 
-        // Always resize with calculated dimensions
-        resizeImage(img, targetWidth, targetHeight);
-      };
-      img.src = originalImage;
-    }
-  }, [width, height, quality, format, maintainAspectRatio, originalImage, originalSize, useApi, selectedPreset]);
+  const aspectDiffers = img && Math.abs(width / height - ratio) >= 0.01;
+  const upscaled = img && (width > img.naturalWidth || height > img.naturalHeight);
+  const showQuality = format === 'jpeg' || format === 'webp' || (format === 'same' && file && file.type !== 'image/png');
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-          🖼️ Free Image Resizer Online
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Free image resizer online - no signup required. Resize images online instantly. Choose from social media presets or custom dimensions. Adjust format and quality. All processing in your browser.
-        </p>
+    <div className="rounded-lg bg-white p-4 shadow-lg sm:p-6">
+      <div className="space-y-6">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            loadFile(e.dataTransfer.files?.[0]);
+          }}
+          className={`rounded-lg border-2 border-dashed p-6 text-center transition-colors ${dragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            tabIndex={-1}
+            aria-label="Image to resize"
+            data-testid="image-file-input"
+            onChange={(e) => {
+              loadFile(e.target.files?.[0]);
+              e.target.value = '';
+            }}
+          />
+          <button type="button" onClick={() => inputRef.current?.click()} className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700">
+            {file ? 'Choose another image' : 'Choose image'}
+          </button>
+          <p className="mt-2 text-sm text-gray-500">or drag and drop a JPG, PNG, WebP, GIF or BMP. Nothing is uploaded.</p>
+          {file && img && (
+            <p className="mt-2 break-all text-sm text-gray-700">
+              {file.name} · {img.naturalWidth}×{img.naturalHeight}px · {formatBytes(file.size)}
+            </p>
+          )}
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Controls */}
-          <div>
-            {/* File Upload */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Image
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+        {error && (
+          <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            {error}
+          </p>
+        )}
 
-            {/* Processing Mode */}
-            <div className="mb-6">
-              <label className="flex items-center space-x-3 cursor-pointer">
+        {img && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="space-y-5">
+              <div>
+                <span className="mb-2 block text-sm font-medium text-gray-700">Scale by percentage</span>
+                <div className="flex flex-wrap gap-2">
+                  {[25, 50, 75, 100, 150, 200].map((p) => (
+                    <button key={p} type="button" onClick={() => scaleTo(p)} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:border-blue-500 hover:bg-blue-50">
+                      {p}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="rs-width" className="mb-1 block text-sm font-medium text-gray-700">
+                    Width (px)
+                  </label>
+                  <input
+                    id="rs-width"
+                    type="number"
+                    min={1}
+                    max={MAX_SIDE}
+                    value={width}
+                    onChange={(e) => changeWidth(e.target.valueAsNumber)}
+                    className="w-full rounded-lg border border-gray-300 p-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="rs-height" className="mb-1 block text-sm font-medium text-gray-700">
+                    Height (px)
+                  </label>
+                  <input
+                    id="rs-height"
+                    type="number"
+                    min={1}
+                    max={MAX_SIDE}
+                    value={height}
+                    onChange={(e) => changeHeight(e.target.valueAsNumber)}
+                    className="w-full rounded-lg border border-gray-300 p-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input
                   type="checkbox"
-                  checked={useApi}
-                  onChange={(e) => setUseApi(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                  checked={lock}
+                  onChange={(e) => {
+                    setLock(e.target.checked);
+                    if (e.target.checked) setHeight(clampSide(width / ratio));
+                  }}
+                  className="h-4 w-4 rounded"
                 />
-                <span className="text-gray-700">Use API for processing (better for large images)</span>
+                Lock aspect ratio
               </label>
-            </div>
 
-            {/* Social Media Presets */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Social Media Presets
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3">
-                <button
-                  onClick={() => handlePresetSelect('default')}
-                  className={`p-3 rounded-lg border-2 transition-all text-left ${
-                    selectedPreset === 'default'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+              <div>
+                <label htmlFor="rs-preset" className="mb-1 block text-sm font-medium text-gray-700">
+                  Social media size
+                </label>
+                <select
+                  id="rs-preset"
+                  value={preset}
+                  onChange={(e) => applyPreset(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 p-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 >
-                  <div className="font-semibold text-sm text-gray-900">Custom</div>
-                  <div className="text-xs text-gray-500">Manual size</div>
-                </button>
-                {SOCIAL_MEDIA_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    onClick={() => handlePresetSelect(preset.id)}
-                    className={`p-3 rounded-lg border-2 transition-all text-left ${
-                      selectedPreset === preset.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    title={preset.description}
-                  >
-                    <div className="font-semibold text-sm text-gray-900">{preset.name}</div>
-                    <div className="text-xs text-gray-500">{preset.width}×{preset.height}</div>
-                  </button>
-                ))}
+                  <option value="">Custom size</option>
+                  {PRESETS.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.width}×{p.height})
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
 
-            {originalSize && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <div className="text-sm text-gray-600 mb-2">Original Size</div>
-                <div className="text-lg font-semibold">
-                  {originalSize.width} × {originalSize.height} px
+              {aspectDiffers && (
+                <fieldset>
+                  <legend className="mb-1 text-sm font-medium text-gray-700">When the shape changes</legend>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700">
+                    {(
+                      [
+                        ['cover', 'Crop to fill'],
+                        ['contain', 'Fit inside (add background)'],
+                        ['stretch', 'Stretch'],
+                      ] as [Fit, string][]
+                    ).map(([v, l]) => (
+                      <label key={v} className="flex items-center gap-2">
+                        <input type="radio" name="rs-fit" value={v} checked={fit === v} onChange={() => setFit(v)} />
+                        {l}
+                      </label>
+                    ))}
+                  </div>
+                  {fit === 'contain' && (
+                    <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                      Background
+                      <input type="color" value={background} onChange={(e) => setBackground(e.target.value)} className="h-8 w-12 rounded border border-gray-300" />
+                    </label>
+                  )}
+                </fieldset>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="rs-format" className="mb-1 block text-sm font-medium text-gray-700">
+                    Format
+                  </label>
+                  <select
+                    id="rs-format"
+                    value={format}
+                    onChange={(e) => setFormat(e.target.value as OutputFormat)}
+                    className="w-full rounded-lg border border-gray-300 p-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="same">Same as original</option>
+                    <option value="jpeg">JPEG</option>
+                    <option value="png">PNG</option>
+                    <option value="webp">WebP</option>
+                  </select>
                 </div>
-                {fileSize && (
-                  <div className="text-sm text-gray-500 mt-1">
-                    {formatFileSize(fileSize.original)}
+                {showQuality && (
+                  <div>
+                    <label htmlFor="rs-quality" className="mb-1 block text-sm font-medium text-gray-700">
+                      Quality: {quality}%
+                    </label>
+                    <input id="rs-quality" type="range" min={10} max={100} step={5} value={quality} onChange={(e) => setQuality(e.target.valueAsNumber)} className="w-full" />
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Dimensions */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Width (px)
-                </label>
-                <input
-                  type="number"
-                  value={width}
-                  onChange={(e) => handleWidthChange(parseInt(e.target.value) || 1)}
-                  min="1"
-                  max="10000"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Height (px)
-                </label>
-                <input
-                  type="number"
-                  value={height}
-                  onChange={(e) => handleHeightChange(parseInt(e.target.value) || 1)}
-                  min="1"
-                  max="10000"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              {upscaled && <p className="text-sm text-amber-700">Enlarging beyond the original size can make the image look soft.</p>}
             </div>
 
-            {/* Options */}
-            <div className="space-y-4 mb-6">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={maintainAspectRatio}
-                  onChange={(e) => setMaintainAspectRatio(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-                />
-                <span className="text-gray-700">Maintain Aspect Ratio</span>
-              </label>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quality: {Math.round(quality * 100)}%
-                </label>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1"
-                  step="0.1"
-                  value={quality}
-                  onChange={(e) => setQuality(parseFloat(e.target.value))}
-                  className="w-full"
-                />
+            <div>
+              <h2 className="mb-2 text-sm font-medium text-gray-700">Result</h2>
+              <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-gray-200 bg-[repeating-conic-gradient(#f3f4f6_0_25%,#fff_0_50%)] bg-[length:20px_20px] p-3">
+                {result && <img src={result.url} alt="Resized preview" className="max-h-[420px] max-w-full object-contain" />}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Format
-                </label>
-                <select
-                  value={format}
-                  onChange={(e) => setFormat(e.target.value as 'png' | 'jpeg' | 'webp' | 'avif')}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="jpeg">JPEG</option>
-                  <option value="png">PNG</option>
-                  <option value="webp">WebP</option>
-                  <option value="avif">AVIF</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm">{error}</p>
-              </div>
-            )}
-
-            {fileSize && fileSize.resized > 0 && (
-              <div className="mb-6 p-4 bg-green-50 rounded-lg">
-                <div className="text-sm text-gray-600 mb-2">Resized Size</div>
-                <div className="text-lg font-semibold text-green-700">
-                  {formatFileSize(fileSize.resized)}
-                </div>
-                <div className="text-sm text-gray-500 mt-1">
-                  {((1 - fileSize.resized / fileSize.original) * 100).toFixed(1)}% smaller
-                </div>
-              </div>
-            )}
-
-            {useApi && originalImage && (
-              <button
-                onClick={handleResize}
-                disabled={!originalFile || isProcessing}
-                className="w-full mb-3 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
-              >
-                {isProcessing ? 'Processing...' : '🔄 Resize via API'}
-              </button>
-            )}
-
-            {resizedImage && (
-              <button
-                onClick={downloadImage}
-                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
-              >
-                📥 Download Resized Image
-              </button>
-            )}
-          </div>
-
-          {/* Preview */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Preview
-            </label>
-            <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300 min-h-[400px] flex items-center justify-center">
-              {resizedImage ? (
-                <div className="text-center">
-                  <img
-                    src={resizedImage}
-                    alt="Resized"
-                    className="max-w-full max-h-[500px] mx-auto mb-4 rounded-lg shadow-lg"
-                  />
-                  <div className="text-sm text-gray-600">
-                    {width} × {height} px
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-gray-400">
-                  <div className="text-6xl mb-4">🖼️</div>
-                  <p>Upload an image to get started</p>
+              {result && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-gray-700" data-testid="resize-result">
+                    {result.width}×{result.height}px · {(EXT[result.blob.type] ?? 'png').toUpperCase()} · {formatBytes(result.blob.size)}
+                  </p>
+                  <button type="button" onClick={download} className="rounded-lg bg-green-600 px-5 py-2 font-medium text-white hover:bg-green-700">
+                    Download
+                  </button>
                 </div>
               )}
             </div>
           </div>
-        </div>
-
-        <canvas ref={canvasRef} className="hidden" />
-
-        {/* SEO & AI-Friendly Content Sections */}
-        <div className="space-y-6 mt-8">
-          {/* About Section */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">About Image Resizer</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our Image Resizer is a powerful tool that resizes images directly in your browser or via API. 
-              It includes pre-configured sizes for all major social media platforms, making it easy to prepare 
-              images for Instagram, Facebook, Twitter, LinkedIn, YouTube, and Pinterest.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Choose from social media presets or set custom dimensions. The tool supports client-side processing 
-              for privacy or API processing for better performance with large images. All processing maintains 
-              image quality while optimizing file size.
-            </p>
-          </div>
-
-          {/* Social Media Presets Info */}
-          <div className="p-6 bg-purple-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Available Social Media Presets</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {SOCIAL_MEDIA_PRESETS.map((preset) => (
-                <div key={preset.id} className="bg-white p-4 rounded-lg border border-gray-200">
-                  <h5 className="font-semibold text-gray-900 mb-1">{preset.name}</h5>
-                  <div className="text-sm text-gray-600 mb-2">
-                    {preset.width} × {preset.height} px
-                  </div>
-                  <div className="text-xs text-gray-500">{preset.description}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Use Cases */}
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Common Use Cases</h4>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Resize images for Instagram posts, stories, and reels</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Optimize images for Facebook posts and cover photos</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Create Twitter posts and header images</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Prepare LinkedIn posts and cover images</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Create YouTube thumbnails</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">✓</span>
-                <span>Optimize Pinterest pins</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Features */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Key Features</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Social Media Presets</h5>
-                  <p className="text-sm text-gray-600">11 pre-configured sizes for major platforms</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-green-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">API Support</h5>
-                  <p className="text-sm text-gray-600">Client-side or API processing options</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-purple-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Format Support</h5>
-                  <p className="text-sm text-gray-600">Convert between JPEG, PNG, and WebP</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-orange-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-1">Quality Control</h5>
-                  <p className="text-sm text-gray-600">Adjust quality to balance size and appearance</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h4 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h4>
-            <div className="space-y-4">
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">What social media presets are available?</h5>
-                <p className="text-gray-700 text-sm">
-                  We provide presets for Instagram (post, story, reel), Facebook (post, cover), Twitter (post, header), 
-                  LinkedIn (post, cover), YouTube (thumbnail), and Pinterest (pin). All presets use recommended dimensions 
-                  for optimal display on each platform.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Should I use client-side or API processing?</h5>
-                <p className="text-gray-700 text-sm">
-                  Client-side processing is faster and more private (images never leave your browser). Use API processing 
-                  for very large images or when you need server-side optimization. Both methods produce the same results.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Can I use custom dimensions?</h5>
-                <p className="text-gray-700 text-sm">
-                  Yes, select "Custom" from the presets and enter your desired width and height. You can resize to any 
-                  dimensions up to 10,000 × 10,000 pixels.
-                </p>
-              </div>
-              <div>
-                <h5 className="font-semibold text-gray-900 mb-2">Is my image uploaded to a server?</h5>
-                <p className="text-gray-700 text-sm">
-                  Only if you enable "Use API for processing". With client-side processing (default), all image processing 
-                  happens locally in your browser. Your images never leave your device.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">💡 Tips</h4>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>Use social media presets for optimal display on each platform</li>
-            <li>Instagram posts work best at 1080×1080 (square format)</li>
-            <li>Instagram stories and reels use 1080×1920 (vertical format)</li>
-            <li>Facebook posts: 1200×630, Facebook covers: 1640×859</li>
-            <li>YouTube thumbnails: 1280×720 (16:9 aspect ratio)</li>
-            <li>Use API processing for images larger than 5MB</li>
-            <li>All processing happens in your browser by default - no uploads required</li>
-          </ul>
-        </div>
+        )}
       </div>
     </div>
   );
