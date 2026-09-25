@@ -82,6 +82,11 @@ const cvSchema = z.object({
   references: z.array(referenceSchema),
   interests: z.array(interestSchema),
   jobDescription: z.string().optional(),
+  // Optional personal details common on UAE / Gulf CVs; shown only when filled.
+  nationality: z.string().optional(),
+  visaStatus: z.string().optional(),
+  drivingLicence: z.string().optional(),
+  noticePeriod: z.string().optional(),
 });
 
 export type CVData = z.infer<typeof cvSchema>;
@@ -120,6 +125,10 @@ export const defaultCVData: CVData = {
         { category: "Hobbies", items: "" }
     ],
     jobDescription: "",
+    nationality: "",
+    visaStatus: "",
+    drivingLicence: "",
+    noticePeriod: "",
 };
 
 type CvFormProps = {

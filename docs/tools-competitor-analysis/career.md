@@ -27,6 +27,8 @@ Other fixes:
 - Heading levels skipped (h2 → h4). A "template guide" listed templates that do not exist, and the page made unverifiable ATS claims.
 - Debug `console.log` calls printed the user's CV data.
 
+**Update 2026-09-25:** see [cv-builder.md](./cv-builder.md) for a deeper competitor comparison, the text-based ATS PDF, the keyword match, section order, Gulf fields and JSON backup.
+
 **Backlog:** in-preview inline editing (Novoresume), matching cover-letter designs, AI bullet suggestions per job title, a real template thumbnail for Classic ATS, and more than one page-aware PDF layout. Admin templates may contain their own `<h1>`, which would add a second H1 in the preview; this needs a template-side change.
 
 ## Cover Letter Generator
