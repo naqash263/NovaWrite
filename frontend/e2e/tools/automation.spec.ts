@@ -450,7 +450,7 @@ test.describe('cURL to n8n Converter', () => {
       method: 'GET',
       url: 'https://example.com/api/status',
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: 'Authorization', value: 'Basic ZmFrZS11c2VyOmZha2UtcGFzcw==' }] },
+      headerParameters: { parameters: [{ name: 'Authorization', value: `Basic ${Buffer.from('fake-user:fake-pass').toString('base64')}` }] },
       options: {},
     });
   });
