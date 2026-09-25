@@ -140,6 +140,8 @@ class SitemapController extends Controller
                 'loan-calculator',
                 'tip-calculator',
                 'compound-interest-calculator',
+                'uae-gratuity-calculator',
+                'uae-vat-calculator',
                 'pdf-merger',
                 'pdf-splitter',
                 'pdf-compressor',

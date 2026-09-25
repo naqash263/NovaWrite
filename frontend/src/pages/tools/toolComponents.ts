@@ -9,6 +9,8 @@ export const toolComponents: Record<string, LazyExoticComponent<ComponentType>> 
   'utility-tools/loan-calculator': lazy(() => import('../../components/tools/LoanCalculator')),
   'utility-tools/tip-calculator': lazy(() => import('../../components/tools/TipCalculator')),
   'utility-tools/compound-interest-calculator': lazy(() => import('../../components/tools/CompoundInterestCalculator')),
+  'utility-tools/uae-gratuity-calculator': lazy(() => import('../../components/tools/UaeGratuityCalculator')),
+  'utility-tools/uae-vat-calculator': lazy(() => import('../../components/tools/UaeVatCalculator')),
   'utility-tools/json-formatter': lazy(() => import('../../components/tools/JSONFormatter')),
   'utility-tools/base64-encoder': lazy(() => import('../../components/tools/Base64Encoder')),
   'utility-tools/url-encoder': lazy(() => import('../../components/tools/URLEncoder')),
