@@ -15,6 +15,7 @@ class Contact extends Model
         'subject',
         'message',
         'inquiry_type',
+        'source',
         'file_id',
         'ip_address',
         'user_agent',

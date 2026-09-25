@@ -306,7 +306,7 @@ Route::get('/home-settings', [\App\Http\Controllers\Api\Admin\HomeSettingsContro
 
 // Public AdSense settings (no authentication required - for frontend)
 Route::get('/adsense-settings/active', [\App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'getActive']);
-Route::get('/adsense-settings/debug', [\App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'debug']);
+Route::get('/adsense-settings/debug', [\App\Http\Controllers\Api\Admin\AdSenseSettingsController::class, 'debug'])->middleware([\App\Http\Middleware\ApiAuth::class, 'admin']);
 
 
 
@@ -481,12 +481,22 @@ Route::get('workflows/{slug}', [WorkflowController::class, 'show']);
 Route::get('projects', [App\Http\Controllers\Api\ProjectController::class, 'index']);
 Route::get('projects/{slug}', [App\Http\Controllers\Api\ProjectController::class, 'show']);
 
-Route::post('workflow-downloads', [WorkflowDownloadController::class, 'requestDownload']);
+// Public lead endpoints are rate-limited per IP (spam and AI-cost protection).
+Route::post('workflow-downloads', [WorkflowDownloadController::class, 'requestDownload'])->middleware('throttle:20,1');
 Route::get('workflow-files/{id}/download', [WorkflowDownloadController::class, 'download'])->name('workflow-files.download');
 
-Route::post('contact', [ContactController::class, 'submit']);
-Route::post('contact/analyze', [ContactController::class, 'analyze']);
-Route::post('bookings', [\App\Http\Controllers\Api\BookingController::class, 'bookService']);
+Route::post('contact', [ContactController::class, 'submit'])->middleware('throttle:5,1');
+Route::post('contact/analyze', [ContactController::class, 'analyze'])->middleware('throttle:15,1');
+Route::post('bookings', [\App\Http\Controllers\Api\BookingController::class, 'bookService'])->middleware('throttle:5,1');
+
+Route::middleware([\App\Http\Middleware\ApiAuth::class, 'admin'])->prefix('admin/leads')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\Admin\LeadController::class, 'index']);
+    Route::get('stats', [\App\Http\Controllers\Api\Admin\LeadController::class, 'stats']);
+    Route::get('subscribers', [\App\Http\Controllers\Api\Admin\LeadController::class, 'subscribers']);
+    Route::get('{id}', [\App\Http\Controllers\Api\Admin\LeadController::class, 'show'])->whereNumber('id');
+    Route::patch('{id}', [\App\Http\Controllers\Api\Admin\LeadController::class, 'update'])->whereNumber('id');
+    Route::delete('{id}', [\App\Http\Controllers\Api\Admin\LeadController::class, 'destroy'])->whereNumber('id');
+});
 
 
 Route::middleware([\App\Http\Middleware\ApiAuth::class, \App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->group(function () {
