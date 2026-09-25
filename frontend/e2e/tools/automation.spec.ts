@@ -409,7 +409,7 @@ test.describe('cURL to n8n Converter', () => {
 
   test('form data, password field warning', async ({ page }) => {
     await openTool(page, CURL);
-    const json = await convert(page, `curl https://api.example.com/login -d 'username=ada&password=s3cret' -d remember=1`);
+    const json = await convert(page, `curl https://api.example.com/login -d 'username=ada&password=fake-password' -d remember=1`);
     expect(json.nodes[0].parameters).toEqual({
       method: 'POST',
       url: 'https://api.example.com/login',
@@ -418,7 +418,7 @@ test.describe('cURL to n8n Converter', () => {
       bodyParameters: {
         parameters: [
           { name: 'username', value: 'ada' },
-          { name: 'password', value: 's3cret' },
+          { name: 'password', value: 'fake-password' },
           { name: 'remember', value: '1' },
         ],
       },
@@ -430,7 +430,7 @@ test.describe('cURL to n8n Converter', () => {
 
   test('basic auth (-u) and ignored flags', async ({ page }) => {
     await openTool(page, CURL);
-    const cmd = 'curl -u admin:pa55 https://example.com/api/status -sSL --compressed';
+    const cmd = 'curl -u fake-user:fake-pass https://example.com/api/status -sSL --compressed';
     expect((await convert(page, cmd)).nodes[0].parameters).toEqual({
       method: 'GET',
       url: 'https://example.com/api/status',
@@ -445,12 +445,12 @@ test.describe('cURL to n8n Converter', () => {
     await expect(notes).toContainText('-L / --location ignored: the HTTP Request node (typeVersion 4.x) follows redirects by default');
     await expect(page.getByTestId('curl-secret-warning')).toContainText('basic auth (-u)');
 
-    // Keep mode sends the same Authorization header curl would (base64 of "admin:pa55").
+    // Keep mode sends the same Authorization header curl would (base64 of "fake-user:fake-pass").
     expect((await convert(page, cmd, 'keep')).nodes[0].parameters).toEqual({
       method: 'GET',
       url: 'https://example.com/api/status',
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: 'Authorization', value: 'Basic YWRtaW46cGE1NQ==' }] },
+      headerParameters: { parameters: [{ name: 'Authorization', value: 'Basic ZmFrZS11c2VyOmZha2UtcGFzcw==' }] },
       options: {},
     });
   });
