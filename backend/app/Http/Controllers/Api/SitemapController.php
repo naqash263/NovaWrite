@@ -137,6 +137,8 @@ class SitemapController extends Controller
                 'css-formatter',
                 'html-formatter',
                 'markdown-preview',
+                'cron-expression-generator',
+                'curl-to-n8n-converter',
                 'loan-calculator',
                 'tip-calculator',
                 'compound-interest-calculator',

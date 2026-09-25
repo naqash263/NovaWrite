@@ -37,6 +37,8 @@ export const toolComponents: Record<string, LazyExoticComponent<ComponentType>> 
   'utility-tools/document-converter': lazy(() => import('../../components/tools/DocumentConverter')),
   'utility-tools/excel-csv-converter': lazy(() => import('../../components/tools/ExcelCsvConverter')),
   'utility-tools/token-counter': lazy(() => import('../../components/tools/TokenCounter')),
+  'utility-tools/cron-expression-generator': lazy(() => import('../../components/tools/CronExpressionGenerator')),
+  'utility-tools/curl-to-n8n-converter': lazy(() => import('../../components/tools/CurlToN8nConverter')),
   'conversion-tools/length-converter': lazy(() => import('../../components/converters/LengthConverter')),
   'conversion-tools/weight-converter': lazy(() => import('../../components/converters/WeightConverter')),
   'conversion-tools/volume-converter': lazy(() => import('../../components/converters/VolumeConverter')),
