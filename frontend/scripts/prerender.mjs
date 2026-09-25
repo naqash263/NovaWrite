@@ -73,8 +73,10 @@ try {
       .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, '')
       // Prerendered pages carry their own content; the shell's generic <noscript> block would add a second h1.
       .replace(/<noscript>[\s\S]*?<\/noscript>/, '')
-      .replace('</head>', `    ${head}\n  </head>`)
-      .replace('<div id="root"></div>', `<div id="root"><div data-prerender><header>${siteNav}</header><main>${body}</main></div></div>`);
+      // Function replacers: page content may contain "$'" or "$&" (e.g. shell quoting), which a
+      // replacement string would expand into other parts of the document.
+      .replace('</head>', () => `    ${head}\n  </head>`)
+      .replace('<div id="root"></div>', () => `<div id="root"><div data-prerender><header>${siteNav}</header><main>${body}</main></div></div>`);
     const file = route === '/' ? path.join(outDir, 'index.html') : path.join(outDir, `${route.slice(1)}.html`);
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, html);

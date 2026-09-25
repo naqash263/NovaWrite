@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CvPreview } from './cv-preview';
 import { type CVData } from './cv-form';
 import { type CVStyle } from './template-customizer';
 import type { CvTemplateLike } from './cv-render';
+import type { CvLayout } from './cv-sections';
+import type { CvExportFormat, CvExportSettings } from './cv-export-settings';
+
+export type { CvExportFormat, CvExportSettings } from './cv-export-settings';
 
 interface CVExportOptionsProps {
   data: CVData;
   style: CVStyle;
   template?: CvTemplateLike | null;
-  onExport: (format: string, options?: Record<string, unknown>) => void;
+  layout?: CvLayout | null;
+  selectedFormat: CvExportFormat;
+  onFormatChange: (format: CvExportFormat) => void;
+  exportOptions: CvExportSettings;
+  onOptionsChange: (options: CvExportSettings) => void;
+  onExport: (format: CvExportFormat, options: CvExportSettings) => void;
   isExporting?: boolean;
 }
 
@@ -16,22 +25,20 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
   data,
   style,
   template,
+  layout,
+  selectedFormat,
+  onFormatChange: setSelectedFormat,
+  exportOptions,
+  onOptionsChange: setExportOptions,
   onExport,
   isExporting = false
 }) => {
-  const [selectedFormat, setSelectedFormat] = useState('pdf');
-  const [exportOptions, setExportOptions] = useState({
-    includePageNumbers: false,
-    includeWatermark: false,
-    pageSize: 'A4',
-    margins: 'normal'
-  });
 
-  const exportFormats = [
+  const exportFormats: { id: CvExportFormat; name: string; description: string; icon: string; color: string; features: string[] }[] = [
     {
       id: 'pdf',
       name: 'PDF',
-      description: 'Professional PDF format',
+      description: 'Selectable text, ready to upload or print',
       icon: '📄',
       color: 'bg-red-50 text-red-600',
       features: ['ATS-friendly', 'Print-ready', 'Universal compatibility']
@@ -74,9 +81,7 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
     { value: 'wide', label: 'Wide (1.5")', description: 'More white space' }
   ];
 
-  const handleExport = () => {
-    onExport(selectedFormat, exportOptions);
-  };
+  const handleExport = () => onExport(selectedFormat, exportOptions);
 
   const selectedFormatData = exportFormats.find(f => f.id === selectedFormat);
 
@@ -139,6 +144,42 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Settings</h3>
             <div className="space-y-4">
+              {selectedFormat === 'pdf' && (
+                <fieldset>
+                  <legend className="block text-sm font-medium text-gray-700 mb-2">PDF layout</legend>
+                  <div className="space-y-2">
+                    <label className="flex items-start gap-2 text-sm text-gray-900">
+                      <input
+                        type="radio"
+                        name="cv-pdf-layout"
+                        value="ats"
+                        checked={exportOptions.pdfLayout === 'ats'}
+                        onChange={() => setExportOptions({ ...exportOptions, pdfLayout: 'ats' })}
+                        className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>
+                        ATS text layout (recommended)
+                        <span className="block text-xs text-gray-500">One column of real text lines that applicant tracking systems read in order. Uses your accent colour, font and section order.</span>
+                      </span>
+                    </label>
+                    <label className="flex items-start gap-2 text-sm text-gray-900">
+                      <input
+                        type="radio"
+                        name="cv-pdf-layout"
+                        value="design"
+                        checked={exportOptions.pdfLayout === 'design'}
+                        onChange={() => setExportOptions({ ...exportOptions, pdfLayout: 'design' })}
+                        className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>
+                        Template design (as previewed)
+                        <span className="block text-xs text-gray-500">Keeps the selected template&apos;s look. The text stays selectable, but some ATS parsers read designed layouts less reliably.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+              )}
+
               {/* Page Size */}
               {(selectedFormat === 'pdf' || selectedFormat === 'docx') && (
                 <div>
@@ -252,7 +293,7 @@ export const CVExportOptions: React.FC<CVExportOptionsProps> = ({
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
           <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
             <div className="max-h-[600px] overflow-y-auto">
-              <CvPreview data={data} style={style} template={template} />
+              <CvPreview data={data} style={style} template={template} layout={layout} />
             </div>
           </div>
           <div className="mt-4 text-center">

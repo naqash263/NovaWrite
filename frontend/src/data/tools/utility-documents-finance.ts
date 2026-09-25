@@ -226,6 +226,211 @@ export const utilityDocumentsFinanceTools: ToolContent[] = [
     reviewed: '2026-09-24',
   },
   {
+    slug: 'uae-gratuity-calculator',
+    legacyId: 'uae-gratuity-calculator',
+    hub: 'utility-tools',
+    category: 'finance',
+    name: 'UAE Gratuity Calculator',
+    icon: '💼',
+    summary: 'Estimate UAE end-of-service gratuity from basic salary and exact dates, with unpaid leave, the two-year cap and a yearly schedule.',
+    seoTitle: 'UAE Gratuity Calculator 2026: End of Service Benefits',
+    seoDescription:
+      'Free UAE gratuity calculator for 2026: estimate end-of-service pay from basic salary and exact dates, with unpaid leave, the two-year cap and a yearly schedule.',
+    keywords: [
+      'uae gratuity calculator',
+      'gratuity calculator uae 2026',
+      'end of service calculator uae',
+      'end of service benefits uae',
+      'mohre gratuity calculator',
+      'dubai gratuity calculator',
+      'gratuity calculation uae labour law',
+      'eosb calculator uae',
+    ],
+    answer:
+      'UAE gratuity is 21 days of basic wage for each of the first five years of service and 30 days for each later year, pro-rata for part years, capped at two years’ wage (Article 51, Federal Decree-Law No. 33 of 2021). You need one year of continuous service, and unpaid absence does not count. Example: AED 10,000 basic for 7 years gives AED 55,000.',
+    howTo: [
+      'Enter your basic monthly salary in AED, without housing, transport or other allowances.',
+      'Enter your first and last working days, or switch to Years, months, days if you only know the length of service.',
+      'Add any unpaid leave days; they are deducted from your service.',
+      'Optionally open Advanced options to change the daily wage method or enter a part-time percentage.',
+      'Read the total, the breakdown by band and the year-by-year schedule, then copy or print the result.',
+    ],
+    features: [
+      'Exact service length from start and end dates (both days count), or entered as years, months and days',
+      'Unpaid leave days deducted from service, as Article 51 requires',
+      'Breakdown by band: 21 days per year for years 1–5 and 30 days per year after that',
+      'Two-year wage cap (24 × basic salary) applied and shown when it limits the payout',
+      'Year-by-year schedule with days of wage, amount and running total',
+      'Daily wage method (basic ÷ 30 or basic × 12 ÷ 365) and a part-time percentage',
+      'Formula, worked example and official sources on the page, with Copy and Print buttons',
+      'Exact arithmetic in fils, rounded to 2 decimals only for display',
+    ],
+    faqs: [
+      {
+        question: 'How is gratuity calculated in the UAE?',
+        answer:
+          'Under Article 51 of Federal Decree-Law No. 33 of 2021, a full-time employee with at least one year of continuous service gets 21 days of basic wage for each of the first five years and 30 days for each year after that. Part years are paid pro-rata, the total cannot exceed two years’ wage, and allowances such as housing and transport are not included.',
+      },
+      {
+        question: 'Is the daily wage basic salary ÷ 30 or basic salary × 12 ÷ 365?',
+        answer:
+          'The law sets gratuity in days of wage but does not state a divisor. Basic ÷ 30 is the common UAE payroll practice and is used by the widely cited calculators, so it is the default here. Some employers annualise (basic × 12 ÷ 365), which gives a slightly lower daily rate, and ADGM’s own regulations use ÷ 365. You can switch methods under Advanced options.',
+      },
+      {
+        question: 'Do unpaid leave or resigning reduce my gratuity?',
+        answer:
+          'Unpaid absence days are not counted as service, so they reduce the gratuity and can take you below the one-year minimum. Since the 2021 law took effect on 2 February 2022, all contracts are fixed-term and resigning no longer cuts gratuity. The old one-third and two-thirds cuts applied to resignations from unlimited contracts under Law No. 8 of 1980 until those contracts were converted.',
+      },
+      {
+        question: 'Does this calculator work for DIFC, ADGM or part-time jobs?',
+        answer:
+          'It follows the mainland federal labour law. DIFC replaced gratuity with the DEWS savings plan in February 2020, and ADGM has its own Employment Regulations, so check those schemes instead. For part-time work the Executive Regulations pro-rate the full-time gratuity by contracted hours; enter that percentage under Advanced options.',
+      },
+      {
+        question: 'When must my employer pay the gratuity?',
+        answer:
+          'End-of-service dues, including gratuity, must be paid within 14 days of the contract ending. If your employer does not pay, you can file a complaint with the Ministry of Human Resources and Emiratisation (MOHRE).',
+      },
+    ],
+    related: ['uae-vat-calculator', 'date-calculator', 'loan-calculator', 'percentage-calculator'],
+    processing: 'browser',
+    comparison: {
+      competitors: [
+        'MOHRE end-of-service calculator',
+        'gratuitycalculatoruae.ae',
+        'Bayzat Gratuity Calculator',
+        'Khaleej Times Gratuity Calculator',
+        'Gulf News / Dubai Development Authority calculator',
+        'HowUAE Gratuity Calculator',
+        'Zoho Payroll Gratuity Calculator',
+      ],
+      commonFeatures: [
+        'Basic salary plus joining and last working date',
+        'Limited / unlimited contract and resignation / termination choice',
+        'Total gratuity using the 21 / 30 days formula and the two-year cap',
+        'Unpaid leave days (gratuitycalculatoruae.ae, Zoho Payroll)',
+        'Year-by-year breakdown, PDF download and Arabic (gratuitycalculatoruae.ae)',
+        'Disclaimer that the result is indicative only',
+      ],
+      implemented: [
+        'Per-band breakdown and a year-by-year schedule with running total and cap marker',
+        'Unpaid leave deducted from service, including the effect on the one-year minimum',
+        'Date picker or years / months / days entry',
+        'Daily wage method choice with the difference explained, plus part-time percentage',
+        'Formula, worked example and official sources on the page; Copy and Print (print to PDF)',
+        'Clear DIFC / ADGM note instead of a silently wrong mainland result',
+      ],
+      backlog: [
+        'Arabic interface',
+        'One-click PDF download (Print to PDF works today)',
+        'Full final settlement: leave encashment, notice pay and repatriation ticket',
+        'DIFC DEWS and ADGM calculators',
+        'Pre-2022 unlimited-contract resignation reductions',
+      ],
+      advantages: [
+        'Shows every step: service after unpaid leave, daily wage, days per band, cap and schedule',
+        'Explains the ÷ 30 versus × 12 ÷ 365 daily wage question instead of hiding it',
+        'Runs entirely in your browser; salary details are never sent anywhere',
+      ],
+    },
+    reviewed: '2026-09-25',
+  },
+  {
+    slug: 'uae-vat-calculator',
+    legacyId: 'uae-vat-calculator',
+    hub: 'utility-tools',
+    category: 'finance',
+    name: 'UAE VAT Calculator',
+    icon: '🧾',
+    summary: 'Add 5% UAE VAT to a price, extract VAT from a VAT-inclusive total, work back from a VAT amount or total a multi-line invoice.',
+    seoTitle: 'UAE VAT Calculator: Add or Remove 5% VAT',
+    seoDescription:
+      'Free UAE VAT calculator: add 5% VAT to a price, extract VAT from a VAT-inclusive total with 5/105, work back from a VAT amount or total invoice lines.',
+    keywords: [
+      'uae vat calculator',
+      'vat calculator uae',
+      '5% vat calculator',
+      'reverse vat calculator uae',
+      'remove vat calculator',
+      'vat inclusive calculator dubai',
+      'calculate vat from total uae',
+    ],
+    answer:
+      'UAE VAT is charged at a standard rate of 5%, administered by the Federal Tax Authority. To add VAT, multiply the net price by 1.05. To extract VAT from a VAT-inclusive total, multiply it by 5/105 (about 4.76%). For example, AED 1,000 before VAT becomes AED 1,050, and AED 1,000 including VAT contains AED 47.62 of VAT.',
+    howTo: [
+      'Choose Add VAT, Remove VAT or From VAT amount.',
+      'Enter the amount in AED and, optionally, a quantity if the amount is a unit price.',
+      'Read the net amount, the 5% VAT and the total, rounded to the nearest fils.',
+      'For an invoice, switch to Line items and enter each line’s quantity, unit price and VAT rate.',
+      'Click Copy to paste the breakdown into an email, quote or spreadsheet.',
+    ],
+    features: [
+      'Add 5% VAT to a net price (net × 1.05)',
+      'Remove VAT from a VAT-inclusive total (total × 5/105)',
+      'Work back from a VAT amount to the net and total (VAT × 20 and × 21)',
+      'Optional quantity for unit prices',
+      'Line-item invoice mode with a 5% or 0% rate per line and invoice totals',
+      'Exact arithmetic in fils, rounded half-up on each line',
+      'Copy the breakdown, tab-separated for spreadsheets in line-item mode',
+    ],
+    faqs: [
+      {
+        question: 'How do I calculate 5% VAT in the UAE?',
+        answer:
+          'Multiply the price before VAT by 0.05 to get the VAT, or by 1.05 to get the VAT-inclusive total. For example, AED 200 before VAT carries AED 10 of VAT, for a total of AED 210. The 5% standard rate has applied since VAT was introduced on 1 January 2018.',
+      },
+      {
+        question: 'How do I remove VAT from a VAT-inclusive price?',
+        answer:
+          'Multiply the VAT-inclusive amount by 5/105 to get the VAT, then subtract it, or divide the total by 1.05 to get the net price. AED 1,000 including VAT is AED 952.38 net plus AED 47.62 VAT. Taking 5% of the total (AED 50) is a common mistake that overstates the VAT.',
+      },
+      {
+        question: 'Is every sale in the UAE charged 5% VAT?',
+        answer:
+          'No. Most supplies are standard-rated at 5%, but some are zero-rated, such as qualifying exports outside the GCC and international transport, and some are exempt, such as certain financial services, bare land and local passenger transport. Use the 0% rate for those lines in Line items mode.',
+      },
+      {
+        question: 'When must a business register for UAE VAT?',
+        answer:
+          'Registration is mandatory when taxable supplies and imports exceeded AED 375,000 in the past 12 months or are expected to exceed it in the next 30 days. A business can register voluntarily above AED 187,500.',
+      },
+    ],
+    related: ['uae-gratuity-calculator', 'percentage-calculator', 'currency-converter', 'loan-calculator'],
+    processing: 'browser',
+    comparison: {
+      competitors: [
+        'ClearTax UAE VAT Calculator',
+        'Tally Solutions VAT Calculator',
+        'ProfitBooks UAE VAT Calculator',
+        'Comfi VAT Calculator',
+        'vatcalculatoruae.com',
+        'CalcUAE VAT Calculator',
+        'NUM8ERS VAT Calculator',
+      ],
+      commonFeatures: [
+        'Add or remove 5% VAT from a single amount',
+        'Net, VAT and gross shown together',
+        'Formula explanation with examples',
+        'Verify a VAT amount on an invoice (CalcUAE)',
+        'Bulk or multi-item calculations on some tools',
+      ],
+      implemented: [
+        'Reverse mode from a VAT amount to net and total',
+        'Quantity for unit prices',
+        'Line-item invoice mode with per-line 5% or 0% rate and per-line rounding',
+        'Copy of the breakdown (tab-separated for spreadsheets)',
+        'Validation for empty, zero, negative and over-precise amounts',
+      ],
+      backlog: ['Arabic interface', 'Printable invoice summary', 'CSV import of invoice lines', 'Reverse-charge and designated-zone explanations'],
+      advantages: [
+        'Exact fils arithmetic, so add and remove round-trip without drift',
+        'Three modes plus line items in one tool',
+        'Runs entirely in your browser; amounts are never uploaded',
+      ],
+    },
+    reviewed: '2026-09-25',
+  },
+  {
     slug: 'pdf-merger',
     legacyId: 'pdf-merger',
     hub: 'utility-tools',

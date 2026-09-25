@@ -1,5 +1,6 @@
 import type { CVData } from "./cv-form";
 import { renderTemplateHtml, type CvTemplateLike } from "./cv-render";
+import type { CvLayout } from "./cv-sections";
 
 // Define CVStyle type
 export interface CVStyle {
@@ -14,11 +15,12 @@ type CvPreviewProps = {
   data: CVData;
   style: CVStyle;
   template?: CvTemplateLike | null; // Template from API (falls back to the built-in template)
+  layout?: CvLayout | null; // Section order and hidden sections
 };
 
 // Dynamic CV Preview Component
-export const CvPreview = ({ data, style, template }: CvPreviewProps) => {
-  const templateHTML = renderTemplateHtml(data, style, template);
+export const CvPreview = ({ data, style, template, layout }: CvPreviewProps) => {
+  const templateHTML = renderTemplateHtml(data, style, template, layout);
   return (
     <div
       id="cv-preview"

@@ -2,6 +2,7 @@
 // live preview and the HTML/PDF/TXT exports.
 import type { CVData } from "./cv-form";
 import { builtinTemplate } from "./builtin-template";
+import { applyHiddenSections, descriptionLines, formatDateRange, formatMonth, normalizeLayout, personalDetails, type CvLayout } from "./cv-sections";
 
 export interface CvTemplateStyle {
   primaryColor: string;
@@ -41,11 +42,28 @@ const text = (v: unknown) => (typeof v === 'string' ? v.trim() : v === null || v
 const filled = <T extends Entry>(items: unknown, keys: string[]): T[] =>
   (Array.isArray(items) ? items : []).filter((item): item is T => Boolean(item) && typeof item === 'object' && keys.some((k) => text((item as Entry)[k])));
 
-const dateRange = (start: unknown, end: unknown) => {
-  const s = text(start);
-  const e = text(end);
-  if (!s && !e) return '';
-  return `${escapeHtml(s)}${s ? ' – ' : ''}${e ? escapeHtml(e) : 'Present'}`;
+const dateRange = (start: unknown, end: unknown) => escapeHtml(formatDateRange(start, end));
+
+/** Plain lines keep their line breaks; lines written as "- …" / "• …" become a real list. */
+const descriptionHtml = (value: unknown) => {
+  const lines = descriptionLines(value);
+  if (!lines.length) return '';
+  if (!lines.some((l) => l.bullet)) return `<p class="item-description">${escapeHtml(text(value))}</p>`;
+  let html = '';
+  let list: string[] = [];
+  const flush = () => {
+    if (list.length) html += `<ul class="item-bullets">${list.join('')}</ul>`;
+    list = [];
+  };
+  for (const line of lines) {
+    if (line.bullet) list.push(`<li>${escapeHtml(line.text)}</li>`);
+    else {
+      flush();
+      html += `<p class="item-description">${escapeHtml(line.text)}</p>`;
+    }
+  }
+  flush();
+  return html;
 };
 
 const formatWorkExperience = (experiences: unknown) =>
@@ -58,7 +76,7 @@ const formatWorkExperience = (experiences: unknown) =>
         <span class="item-date">${dateRange(exp.startDate, exp.endDate)}</span>
       </div>
       <div class="item-subtitle">${escapeHtml(exp.company)}</div>
-      ${text(exp.description) ? `<p class="item-description">${escapeHtml(exp.description)}</p>` : ''}
+      ${descriptionHtml(exp.description)}
     </div>`,
     )
     .join('');
@@ -78,7 +96,7 @@ const formatProjects = (projects: unknown) =>
         ${text(project.startDate) ? `<span class="item-date">${dateRange(project.startDate, project.endDate)}</span>` : ''}
       </div>
       ${tech.length ? `<div class="tech-tags">${tech.map((t) => `<span class="tech-tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
-      ${text(project.description) ? `<p class="item-description">${escapeHtml(project.description)}</p>` : ''}
+      ${descriptionHtml(project.description)}
       ${url ? `<a href="${url}" class="project-link" target="_blank" rel="noopener noreferrer">${url}</a>` : ''}
     </div>`;
     })
@@ -106,7 +124,7 @@ const formatCertificates = (certificates: unknown) =>
     <div class="certificate-item">
       <div class="certificate-header">
         <h4 class="item-title">${escapeHtml(cert.name)}</h4>
-        <span class="item-date">${escapeHtml(cert.date)}</span>
+        <span class="item-date">${escapeHtml(formatMonth(cert.date))}</span>
       </div>
       <div class="item-subtitle">${escapeHtml(cert.issuer)}</div>
       ${text(cert.credentialId) ? `<div class="credential-id" style="font-size: 11px; color: #666; margin-top: 4px;">ID: ${escapeHtml(cert.credentialId)}</div>` : ''}
@@ -135,7 +153,7 @@ const formatAchievements = (achievements: unknown) =>
         <h4 class="item-title">${escapeHtml(achievement.title)}</h4>
         ${text(achievement.date) ? `<span class="item-date">${escapeHtml(achievement.date)}</span>` : ''}
       </div>
-      ${text(achievement.description) ? `<p class="item-description">${escapeHtml(achievement.description)}</p>` : ''}
+      ${descriptionHtml(achievement.description)}
     </div>`,
     )
     .join('');
@@ -182,8 +200,23 @@ const processConditionals = (html: string, data: CVData) =>
     return present ? content : '';
   });
 
+/** Puts `section#summary`, `section#experience`, … (ids used by the built-in template) in the chosen order. */
+const reorderSections = (doc: Document, order: string[]) => {
+  const found = order.map((key) => doc.querySelector(`section#${key}, [data-section="${key}"]`)).filter((el): el is Element => Boolean(el));
+  const parent = found[0]?.parentElement;
+  if (!parent) return;
+  const siblings = found.filter((el) => el.parentElement === parent);
+  if (siblings.length < 2) return;
+  const first = [...parent.children].find((child) => siblings.includes(child));
+  if (!first) return;
+  const marker = doc.createComment('sections');
+  parent.insertBefore(marker, first);
+  for (const el of siblings) parent.insertBefore(el, marker);
+  marker.remove();
+};
+
 // Hide entire section if placeholder is empty
-const hideEmptySections = (html: string) => {
+const hideEmptySections = (html: string, order?: string[]) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
 
@@ -202,11 +235,14 @@ const hideEmptySections = (html: string) => {
   });
 
   doc.querySelectorAll('div:empty, p:empty, section:empty, .section:empty').forEach((container) => container.remove());
+  if (order) reorderSections(doc, order);
   return doc.body.innerHTML;
 };
 
 /** Fills a template's placeholders with (escaped) CV data. Exported for exports and tests. */
-export function renderTemplateHtml(data: CVData, style: CvTemplateStyle, template?: CvTemplateLike | null): string {
+export function renderTemplateHtml(data: CVData, style: CvTemplateStyle, template?: CvTemplateLike | null, layout?: Partial<CvLayout> | null): string {
+  const sectionLayout = layout ? normalizeLayout(layout) : null;
+  if (sectionLayout) data = applyHiddenSections(data, sectionLayout.hidden);
   const source = template?.html_content ? template : builtinTemplate;
   let html: string = source.html_content || '';
 
@@ -229,6 +265,9 @@ export function renderTemplateHtml(data: CVData, style: CvTemplateStyle, templat
     profilePictureUrl: photo,
     profileImage: photo,
     skills: escapeHtml(skillsText(data.skills)),
+    personalDetails: personalDetails(data)
+      .map((d) => `<span class="cv-detail">${escapeHtml(d.label)}: ${escapeHtml(d.value)}</span>`)
+      .join(''),
   };
   const blocks: Record<string, string> = {
     workExperience: formatWorkExperience(data.workExperience),
@@ -247,6 +286,6 @@ export function renderTemplateHtml(data: CVData, style: CvTemplateStyle, templat
     return match;
   });
 
-  return hideEmptySections(html);
+  return hideEmptySections(html, sectionLayout?.order);
 }
 
