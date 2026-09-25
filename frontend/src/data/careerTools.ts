@@ -40,41 +40,51 @@ export const careerTools: CareerTool[] = [
     slug: 'cv-builder',
     name: 'CV Builder',
     icon: '📄',
-    summary: 'Build an ATS-friendly CV step by step with a live preview, then download it as PDF, Word, HTML or text.',
+    summary: 'Build an ATS-friendly CV step by step with a live preview, check it against a job ad, then download a text PDF, Word, HTML or text file.',
     h1: 'Free CV Builder',
     seoTitle: 'Free CV Builder: ATS-Friendly Templates, PDF & Word',
     seoDescription:
       'Build an ATS-friendly CV online for free. Fill in guided steps, watch the live preview update, pick a template and download as PDF or Word. No signup.',
     answer:
-      'A CV builder turns your work history, education and skills into a formatted, recruiter-ready document. This free builder guides you through ten short steps, shows a live preview as you type, saves progress in your browser and exports your CV as PDF, Word, HTML or plain text. You can also upload an existing CV or tailor it to a job with AI.',
+      'A CV builder turns your work history, education and skills into a formatted, recruiter-ready document. This free builder guides you through ten short steps with a live preview, saves progress in your browser, checks your CV against a job description and exports a text-based PDF, Word, HTML or plain-text file. AI upload and tailoring are optional.',
     howTo: [
       'Choose "Create Manually", "Upload Existing CV" or "Tailor to Job".',
-      'Fill in personal details, summary, experience and education; the live preview updates as you type.',
-      'Add skills, projects, languages, references and certifications, or leave optional sections empty.',
-      'Pick a template in the "Choose Your ATS-Friendly Template" step.',
-      'Select PDF, Word, HTML or Plain Text and click Download.',
+      'Fill in personal details (plus optional UAE / Gulf fields), summary, experience and education; the live preview updates as you type.',
+      'Use "Bullet ideas" under each job for action verbs and quantified examples; leave optional sections empty.',
+      'In step 9 pick a template, accent colour, font and size, and reorder or hide sections.',
+      'In step 10 paste a job ad to see your keyword match, then download PDF, Word, HTML or plain text.',
     ],
     features: [
       'Ten guided steps with a live CV preview',
-      'Built-in ATS-friendly template plus admin-managed templates',
-      'Export to PDF, Word (.docx), HTML and plain text',
-      'Autosave to browser storage',
+      'Text-based ATS PDF: real, selectable text lines in one column with clean page breaks',
+      'Word (.docx), HTML and plain-text exports',
+      'In-browser ATS keyword match against a pasted job description',
+      'Accent colour, font and size options; reorder or hide sections',
+      'Action-verb and quantified-bullet helper that works without AI',
+      'Optional UAE / Gulf fields: nationality, visa status, driving licence, notice period',
+      'Autosave in your browser plus JSON backup and restore',
       'Optional AI CV upload and job tailoring',
     ],
     faqs: [
       {
         question: 'Is this CV builder really free?',
-        answer: 'Yes. Building, previewing and downloading your CV in every format is free, with no signup and no watermark.',
+        answer:
+          'Yes. Building, previewing and downloading your CV in every format is free, with no signup, no trial and no watermark. Your CV is saved in your own browser; only the optional AI upload and tailoring features send it to the server.',
       },
       {
-        question: 'Are the templates ATS-friendly?',
+        question: 'Is the PDF readable by applicant tracking systems (ATS)?',
         answer:
-          'The built-in template uses a single column, standard section headings and real text rather than images, which applicant tracking systems can parse. The Word and plain-text exports are the safest formats for online application portals.',
+          'The default "ATS text layout" PDF is built from your entries as real, selectable text lines in one column with standard headings (Experience, Education, Skills), so parsers can read it in order. The "Template design" option keeps a template’s look instead. No builder can promise how a particular employer’s ATS will rank you.',
       },
       {
-        question: 'Where is my CV data stored?',
+        question: 'How does the ATS keyword match work?',
         answer:
-          'Your entries are autosaved in your own browser (local storage) so you can come back later. Manual editing and exports happen on your device; only the optional AI upload and tailoring features send data to the server.',
+          'In the export step, paste a job description. The builder picks its most prominent keywords and phrases, shows which ones already appear in your CV and suggests what to add. It runs in your browser and nothing is uploaded. Only add skills you really have.',
+      },
+      {
+        question: 'Should my CV include nationality, visa status or a photo?',
+        answer:
+          'For jobs in the UAE and the wider Gulf, recruiters often expect nationality, visa status, driving licence and notice period, and a professional photo is common. The builder has optional fields for these that appear only when filled. For UK or US applications, leave the photo and personal details out.',
       },
       {
         question: 'What is the difference between a CV and a resume?',
@@ -83,9 +93,9 @@ export const careerTools: CareerTool[] = [
       },
     ],
     related: ['cover-letter-generator', 'linkedin-optimizer', 'interview-prep', 'skills-assessment'],
-    keywords: ['cv builder', 'free cv builder', 'resume builder', 'ats friendly cv', 'cv maker online', 'cv template download word'],
+    keywords: ['cv builder', 'free cv builder', 'resume builder', 'ats friendly cv', 'cv maker online', 'cv template download word', 'uae cv format', 'cv keyword match'],
     processing: 'mixed',
-    reviewed: '2026-09-24',
+    reviewed: '2026-09-25',
   },
   {
     slug: 'cover-letter-generator',
