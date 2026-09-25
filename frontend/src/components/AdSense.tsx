@@ -93,50 +93,17 @@ export default function AdSense({
       }
     };
 
-    // Wait for script to load and DOM to be ready
+    // Push once the element and queue are ready. Retries are bounded (~15s) and every timer
+    // is cleared on unmount, so SPA navigation cannot leave retry loops running.
+    const timers: number[] = [];
+    let attempts = 0;
     const tryInitialize = () => {
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-          setTimeout(() => {
-            if (!initializeAd()) {
-              // Retry after a short delay if initialization failed
-              setTimeout(tryInitialize, 500);
-            }
-          }, 200);
-        });
-      } else {
-        setTimeout(() => {
-          if (!initializeAd()) {
-            // Retry after a short delay if initialization failed
-            setTimeout(tryInitialize, 500);
-          }
-        }, 200);
-      }
+      if (initializeAd() || ++attempts >= 30) return;
+      timers.push(window.setTimeout(tryInitialize, 500));
     };
+    timers.push(window.setTimeout(tryInitialize, 200));
 
-    // Start initialization process
-    if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
-      tryInitialize();
-    } else {
-      // Wait for script to load
-      const checkInterval = setInterval(() => {
-        if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
-          clearInterval(checkInterval);
-          tryInitialize();
-        }
-      }, 100);
-
-      // Cleanup after 15 seconds
-      const timeout = setTimeout(() => {
-        clearInterval(checkInterval);
-        console.warn('[AdSense] Timeout waiting for script to load');
-      }, 15000);
-
-      return () => {
-        clearInterval(checkInterval);
-        clearTimeout(timeout);
-      };
-    }
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [adSlot, dataAdClient]);
 
   // Determine if we should show real AdSense or test placeholder

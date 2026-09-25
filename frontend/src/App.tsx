@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import RouteAnalytics from './components/analytics/RouteAnalytics';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -59,6 +60,7 @@ const CvTemplates = lazy(() => import('./pages/admin/CvTemplates'));
 const CvTemplateCreate = lazy(() => import('./pages/admin/CvTemplateCreate'));
 const PushNotifications = lazy(() => import('./pages/admin/PushNotifications'));
 const Analytics = lazy(() => import('./pages/admin/Analytics'));
+const AdminLeads = lazy(() => import('./pages/admin/Leads'));
 const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
 const GoogleSuccess = lazy(() => import('./pages/auth/GoogleSuccess'));
 const Unauthorized = lazy(() => import('./pages/Unauthorized'));
@@ -95,6 +97,7 @@ function App() {
       <PerformanceOptimizer />
       <AuthProvider>
         <BrowserRouter>
+          <RouteAnalytics />
           <Layout>
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -157,6 +160,7 @@ function App() {
               <Route path="/admin/email-queue" element={<ProtectedRoute requireAdmin><EmailQueue /></ProtectedRoute>} />
               <Route path="/admin/email-logs" element={<ProtectedRoute requireAdmin><EmailLogs /></ProtectedRoute>} />
             <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><Analytics /></ProtectedRoute>} />
+            <Route path="/admin/leads" element={<ProtectedRoute requireAdmin><AdminLeads /></ProtectedRoute>} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />

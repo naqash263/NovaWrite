@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, useRef, type MouseEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSEO } from '../../utils/seo';
 import { toolAppSchema, howToSchema, faqSchema, breadcrumbSchema } from '../../utils/schema';
@@ -12,6 +12,8 @@ import ApiKeyBanner from '../../components/ApiKeyBanner';
 import ApiKeyManager from '../../components/ApiKeyManager';
 import { Breadcrumbs, CheckList, FaqList } from '../../components/site/ui';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
+import ToolServiceCta from '../../components/site/ToolServiceCta';
+import { trackEvent } from '../../utils/analytics';
 
 const processingCopy: Record<ToolContent['processing'], { label: string; text: string }> = {
   browser: { label: 'Runs in your browser', text: 'Your data is processed locally on your device and is never uploaded to our servers.' },
@@ -37,6 +39,20 @@ function ToolPageContent({ tool }: { tool: ToolContent }) {
   const related = tool.related.map((s) => getToolBySlug(s)).filter((t): t is ToolContent => Boolean(t));
   const processing = processingCopy[tool.processing];
   const reviewed = new Date(`${tool.reviewed}T00:00:00Z`);
+  const usageTracked = useRef(false);
+
+  // One tool_use event per visit, on the first button press inside the tool (e.g. Format, Convert, Copy).
+  const trackFirstUse = (event: MouseEvent<HTMLElement>) => {
+    if (usageTracked.current) return;
+    const button = (event.target as HTMLElement).closest('button');
+    if (!button) return;
+    usageTracked.current = true;
+    trackEvent('tool_use', {
+      tool_slug: tool.slug,
+      tool_hub: tool.hub,
+      action: (button.getAttribute('aria-label') || button.textContent || '').trim().slice(0, 40),
+    });
+  };
 
   useSEO({
     title: tool.seoTitle,
@@ -100,8 +116,8 @@ function ToolPageContent({ tool }: { tool: ToolContent }) {
               <ApiKeyManager />
             </div>
           )}
-          <AdPlacement position="content-top" />
-          <section aria-label={`${tool.name} tool`} data-testid="tool-root" className="min-w-0">
+          <AdPlacement position="content-top" className="mb-6" />
+          <section aria-label={`${tool.name} tool`} data-testid="tool-root" className="min-w-0" onClickCapture={trackFirstUse}>
             <ErrorBoundary
               fallback={
                 <div role="alert" data-testid="tool-error" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-900">
@@ -122,7 +138,9 @@ function ToolPageContent({ tool }: { tool: ToolContent }) {
               </Suspense>
             </ErrorBoundary>
           </section>
-          <AdPlacement position="content-bottom" />
+          <ToolServiceCta category={tool.category} toolSlug={tool.slug} toolName={tool.name} />
+          {/* Kept well clear of the tool's own buttons (accidental-click policy). */}
+          <AdPlacement position="content-bottom" className="mt-10" />
 
           <div className="mt-8 space-y-6">
             {tool.howTo.length > 0 && (
@@ -165,6 +183,8 @@ function ToolPageContent({ tool }: { tool: ToolContent }) {
                 )}
               </section>
             )}
+
+            <AdPlacement position="content-middle" />
 
             {tool.faqs.length > 0 && (
               <section aria-labelledby="faq-heading">

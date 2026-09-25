@@ -119,8 +119,10 @@ export default function CookiePolicy() {
 
             <h3 className="text-xl font-semibold text-gray-900 mb-3">6.2 Cookie Consent</h3>
             <p className="text-gray-700 mb-6">
-              When you first visit our website, you may see a cookie consent banner. You can choose to 
-              accept or decline non-essential cookies. You can change your preferences at any time.
+              If you visit from the EEA, the UK or Switzerland, Google Analytics and Google AdSense run in a
+              restricted mode without analytics or advertising cookies until you give consent through our consent
+              message, and you can change that choice at any time. Everyone can manage personalised ads at{' '}
+              <a href="https://adssettings.google.com" className="text-blue-600 hover:underline" rel="noopener noreferrer" target="_blank">Google Ads Settings</a>.
             </p>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Impact of Disabling Cookies</h2>

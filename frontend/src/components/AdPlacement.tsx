@@ -107,10 +107,12 @@ export default function AdPlacement({ position, className = '' }: AdPlacementPro
           style: { minHeight: '280px', margin: '20px 0' }
         };
       default:
+        // In-content units usually render 250–280px tall on mobile; reserve it to avoid layout shift
+        // (index.css collapses the box again if AdSense reports the slot as unfilled).
         return {
           adFormat: 'auto' as const,
           fullWidthResponsive: true,
-          style: {}
+          style: { minHeight: '250px' }
         };
     }
   };
@@ -130,7 +132,6 @@ export default function AdPlacement({ position, className = '' }: AdPlacementPro
         adFormat={config.adFormat}
         fullWidthResponsive={config.fullWidthResponsive}
         style={config.style}
-        className={className}
         dataAdClient={displayClientId}
       />
     </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/axios';
+import { trackEvent, trackLead } from '../utils/analytics';
 
 interface WorkflowDownloadModalProps {
   workflowFile: {
@@ -56,6 +57,8 @@ export default function WorkflowDownloadModal({
       const response = await apiClient.post('/workflow-downloads', requestData);
 
       const downloadUrl = response.data.download_url;
+      trackEvent('file_download', { file_name: workflowFile.id, link_text: 'n8n workflow' });
+      if (requestData.marketing_opt_in) trackLead('workflow_download');
       
       window.location.href = downloadUrl;
       
