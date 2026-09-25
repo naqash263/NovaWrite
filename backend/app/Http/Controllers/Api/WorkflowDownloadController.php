@@ -20,11 +20,9 @@ class WorkflowDownloadController extends Controller
             'marketing_opt_in' => 'boolean',
         ]);
 
-        // Debug logging
         \Log::info('WorkflowDownload request', [
-            'email' => $request->email,
-            'marketing_opt_in' => $request->marketing_opt_in,
-            'request_all' => $request->all(),
+            'workflow_file_id' => $request->workflow_file_id,
+            'marketing_opt_in' => (bool) $request->marketing_opt_in,
             'auth_web' => Auth::check(),
             'auth_api' => Auth::guard('api')->check(),
             'user_id' => Auth::id() ?? Auth::guard('api')->id(),
@@ -61,9 +59,8 @@ class WorkflowDownloadController extends Controller
         // Get user ID if logged in (check both guards)
         $authenticatedUser = Auth::user() ?? Auth::guard('api')->user();
         
-        // For logged-in users, automatically set marketing_opt_in to true
-        // For anonymous users, use the request value or default to false
-        $marketingOptIn = $authenticatedUser ? true : ($request->marketing_opt_in ?? false);
+        // Marketing emails need an explicit opt-in from everyone, logged in or not.
+        $marketingOptIn = (bool) ($request->marketing_opt_in ?? false);
         
         $downloadData = [
             'workflow_id' => $workflowFile->workflow_id,

@@ -81,6 +81,7 @@ export default function PrivacyPolicy() {
             </p>
             <ul className="list-disc list-inside text-gray-700 mb-6 space-y-2">
               <li>Google Analytics for website analytics</li>
+              <li>Google AdSense to show advertising on the free tools and articles</li>
               <li>Email services for communication</li>
               <li>Cloud storage for data backup</li>
               <li>Payment processors for transactions</li>
@@ -88,6 +89,22 @@ export default function PrivacyPolicy() {
             <p className="text-gray-700 mb-6">
               These third parties have access to your Personal Data only to perform these tasks on our behalf 
               and are obligated not to disclose or use it for any other purpose.
+            </p>
+
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Advertising</h3>
+            <p className="text-gray-700 mb-4">
+              Third-party vendors, including Google, use cookies to serve ads based on your prior visits to this
+              website or other websites. Google's use of advertising cookies enables it and its partners to serve
+              ads to you based on your visits to this site and/or other sites on the Internet.
+            </p>
+            <p className="text-gray-700 mb-6">
+              You may opt out of personalised advertising by visiting{' '}
+              <a href="https://adssettings.google.com" className="text-blue-600 hover:underline" rel="noopener noreferrer" target="_blank">Google Ads Settings</a>,
+              or opt out of some third-party vendors' use of cookies for personalised advertising at{' '}
+              <a href="https://www.aboutads.info/choices/" className="text-blue-600 hover:underline" rel="noopener noreferrer" target="_blank">aboutads.info</a>.
+              Learn more in{' '}
+              <a href="https://policies.google.com/technologies/partner-sites" className="text-blue-600 hover:underline" rel="noopener noreferrer" target="_blank">How Google uses information from sites that use its services</a>.
+              Visitors from the EEA, UK and Switzerland are asked for consent before advertising cookies are used.
             </p>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Data Retention</h2>

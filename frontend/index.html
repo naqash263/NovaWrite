@@ -1,12 +1,20 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google tag (gtag.js) - Deferred for better performance -->
+    <!-- Google tag (gtag.js). Consent Mode v2: EEA/UK/CH visitors start with storage denied
+         until the consent message (AdSense Privacy & messaging) updates it. Page views are sent
+         by the SPA router (RouteAnalytics), so the automatic one is off. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
+      gtag('consent', 'default', {
+        ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied',
+        wait_for_update: 500,
+        region: ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IS','IE','IT','LV','LI','LT','LU','MT','NL','NO','PL','PT','RO','SK','SI','ES','SE','GB','CH']
+      });
+      gtag('consent', 'default', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted', analytics_storage: 'granted' });
       gtag('js', new Date());
-      gtag('config', 'G-E3DLY81RTW');
+      gtag('config', 'G-E3DLY81RTW', { send_page_view: false });
     </script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-E3DLY81RTW" defer></script>
     

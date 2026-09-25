@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class ContactController extends Controller
 {
@@ -36,6 +37,7 @@ class ContactController extends Controller
             'message' => 'required|string|min:10|max:5000',
             'inquiry_type' => 'nullable|string|in:general,consultation,project,partnership,other',
             'file_id' => 'nullable|integer|exists:files,id',
+            'source' => 'nullable|string|max:120',
         ]);
 
         if ($validator->fails()) {
@@ -66,7 +68,7 @@ class ContactController extends Controller
                 'file_id' => $request->file_id,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-            ]);
+            ] + self::sourceAttribute($request->source));
 
             // Prepare email variables for N8n
             $variables = [
@@ -185,6 +187,15 @@ class ContactController extends Controller
                 'message' => 'AI analysis temporarily unavailable',
             ], 500);
         }
+    }
+
+    /**
+     * The contacts.source column is added by a migration; skip it if that has not run yet
+     * so a pending migration can never block enquiries.
+     */
+    public static function sourceAttribute(?string $source): array
+    {
+        return $source !== null && Schema::hasColumn('contacts', 'source') ? ['source' => $source] : [];
     }
 }
 

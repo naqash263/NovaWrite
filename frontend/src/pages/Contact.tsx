@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { useSEO } from '../utils/seo';
 import apiClient from '../api/axios';
 import { useHomeSettings } from '../hooks/useHomeSettings';
 import { generateBreadcrumbSchema, generateFAQSchema, injectStructuredData } from '../utils/structuredData';
-import AdPlacement from '../components/AdPlacement';
+import { trackLead } from '../utils/analytics';
 
 interface FormData {
   name: string;
@@ -22,6 +24,11 @@ interface FormErrors {
 
 export default function Contact() {
   const { getImageUrl } = useHomeSettings();
+  const { isAuthenticated } = useAuth();
+  // CTAs elsewhere link here with ?topic=…&source=… so the enquiry is pre-filled and attributed.
+  const [searchParams] = useSearchParams();
+  const leadSource = searchParams.get('source')?.slice(0, 120) || undefined;
+  const leadTopic = searchParams.get('topic')?.slice(0, 120) || '';
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -130,6 +137,13 @@ export default function Contact() {
       } catch (e) {
         console.error('Failed to load saved form data:', e);
       }
+    }
+    if (leadTopic) {
+      setFormData(prev => ({
+        ...prev,
+        inquiry_type: 'consultation',
+        subject: prev.subject || `Free consultation: ${leadTopic}`,
+      }));
     }
 
     // Add breadcrumb schema
@@ -422,7 +436,8 @@ export default function Contact() {
     setSubmitStatus({ type: null, message: '' });
 
     try {
-      const response = await apiClient.post('/contact', formData);
+      const response = await apiClient.post('/contact', { ...formData, source: leadSource });
+      trackLead('contact', { inquiry_type: formData.inquiry_type, lead_source: leadSource });
       setSubmitStatus({
         type: 'success',
         message: response.data.message || 'Thank you for your message! I\'ll get back to you within 24 hours.'
@@ -479,9 +494,6 @@ export default function Contact() {
       </div>
       
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        {/* Ad Placement - Top */}
-        <AdPlacement position="content-top" className="mb-8" />
-
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Sidebar - Contact Info */}
           <div className="lg:col-span-1">
@@ -540,11 +552,6 @@ export default function Contact() {
                     </span>
                   ))}
                 </div>
-              </div>
-
-              {/* Ad Placement - Sidebar */}
-              <div className="mt-8">
-                <AdPlacement position="sidebar" />
               </div>
             </div>
           </div>
@@ -766,6 +773,8 @@ export default function Contact() {
                   </div>
                 </div>
 
+                {/* Uploads need an account (POST /files is authenticated), so guests are asked for a link instead. */}
+                {isAuthenticated ? (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Attach File (Optional)
@@ -819,6 +828,11 @@ export default function Contact() {
                     )}
                   </div>
                 </div>
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    Have a brief, spec or screenshots? Paste a link (Google Drive, Dropbox, Loom) in your message.
+                  </p>
+                )}
 
                 <div>
                   <button
@@ -842,11 +856,6 @@ export default function Contact() {
                   </button>
                 </div>
               </form>
-            </div>
-
-            {/* Ad Placement - Bottom */}
-            <div className="mt-8">
-              <AdPlacement position="content-bottom" />
             </div>
           </div>
         </div>

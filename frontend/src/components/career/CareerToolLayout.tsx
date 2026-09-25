@@ -6,6 +6,7 @@ import { SITE_URL, profile } from '../../data/profile';
 import { careerTools, getCareerTool } from '../../data/careerTools';
 import { Breadcrumbs, FaqList } from '../site/ui';
 import ApiKeyManager from '../ApiKeyManager';
+import AdPlacement from '../AdPlacement';
 
 const privacyCopy = {
   ai: 'The details you enter are sent to this site’s AI service only to generate your result. Avoid entering sensitive personal data such as ID numbers or your home address.',
@@ -110,6 +111,9 @@ export default function CareerToolLayout({ slug, children }: { slug: string; chi
           {children}
         </section>
 
+        {/* The CV builder places its own ad units; the other career tools share these two. */}
+        {slug !== 'cv-builder' && <AdPlacement position="content-bottom" className="mt-10" />}
+
         <div className="mt-10 space-y-6">
           <section aria-labelledby="how-to-heading" className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
             <h2 id="how-to-heading" className="text-2xl font-semibold tracking-tight">
@@ -126,6 +130,8 @@ export default function CareerToolLayout({ slug, children }: { slug: string; chi
               ))}
             </ol>
           </section>
+
+          {slug !== 'cv-builder' && <AdPlacement position="content-middle" />}
 
           <section aria-labelledby="faq-heading">
             <h2 id="faq-heading" className="mb-4 text-2xl font-semibold tracking-tight">

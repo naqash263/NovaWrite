@@ -34,6 +34,7 @@ class PublicEndpointSecurityTest extends TestCase
     {
         $this->getJson('/api/cv-ai/fix-keys')->assertUnauthorized();
         $this->postJson('/api/admin/cv-templates-temp', ['name' => 'x'])->assertUnauthorized();
+        $this->getJson('/api/adsense-settings/debug')->assertUnauthorized();
     }
 
     public function test_encryption_health_check_never_returns_the_app_key(): void

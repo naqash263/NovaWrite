@@ -621,3 +621,8 @@ table.compact-table th {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Collapse reserved ad space when AdSense has no ad to show for the slot. */
+.ad-placement:has(ins.adsbygoogle[data-ad-status='unfilled']) {
+  display: none;
+}

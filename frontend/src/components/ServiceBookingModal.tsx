@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import apiClient from '../api/axios';
+import { trackLead } from '../utils/analytics';
 
 interface ServiceBookingModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export default function ServiceBookingModal({
       });
 
       if (response.data.success) {
+        trackLead('booking', { service: serviceName, budget_range: formData.budget_range || undefined });
         setSuccess(true);
         setTimeout(() => {
           onClose();

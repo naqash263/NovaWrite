@@ -53,6 +53,7 @@ export const adminNav: AdminNavSection[] = [
     title: 'Overview',
     items: [
       { path: '/admin', label: 'Dashboard', icon: LayoutDashboard, keywords: 'home overview stats' },
+      { path: '/admin/leads', label: 'Leads', icon: Inbox, keywords: 'enquiries contact bookings consultation subscribers sales' },
       { path: '/admin/analytics', label: 'Analytics', icon: BarChart3, keywords: 'pwa installs traffic' },
       { path: '/admin/monitoring', label: 'System Monitoring', icon: Activity, keywords: 'health status queue' },
     ],
