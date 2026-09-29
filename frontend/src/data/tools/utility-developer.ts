@@ -773,4 +773,177 @@ export const utilityDeveloperTools: ToolContent[] = [
     },
     reviewed: '2026-09-24',
   },
+  // Automation tools (growth audit 5.1). Research: docs/tools-competitor-analysis/automation-tools.md
+  {
+    slug: 'cron-expression-generator',
+    legacyId: 'cron-expression-generator',
+    hub: 'utility-tools',
+    category: 'developer',
+    name: 'Cron Expression Generator',
+    icon: '⏰',
+    summary: 'Build or explain cron expressions, see the next 10 runs in any time zone and copy an n8n Schedule Trigger',
+    seoTitle: 'Cron Expression Generator & Explainer with n8n Examples',
+    seoDescription:
+      'Build a cron expression from presets or paste one for a plain-English explanation, field errors and the next 10 run times in any time zone. n8n ready.',
+    keywords: [
+      'cron expression generator',
+      'cron expression explainer',
+      'crontab generator',
+      'cron schedule examples',
+      'n8n cron expression',
+      'n8n schedule trigger cron',
+      'cron next run time',
+      'cron every 5 minutes',
+    ],
+    answer:
+      'A cron expression is five fields (minute, hour, day of month, month, day of week) that define when a job runs. This free generator builds one from simple choices or explains any expression in plain English, flags the exact invalid field and lists the next 10 run times in your chosen time zone. It also supports the optional seconds field n8n accepts.',
+    howTo: [
+      'Type or paste a cron expression, or pick a schedule in the Build a schedule section.',
+      'Read the plain-English explanation and fix any field highlighted in red.',
+      'Choose a time zone, or tap UTC, Asia/Dubai or Asia/Karachi, to check the next 10 run times.',
+      'Click Copy, or Copy n8n Schedule Trigger node and paste it onto the n8n canvas.',
+    ],
+    features: [
+      'Explains 5-field cron and n8n’s optional 6-field seconds format in plain English',
+      'Supports *, lists, ranges, steps, JAN–DEC and SUN–SAT names, 7 for Sunday and @daily-style macros',
+      'Highlights the invalid field with a specific error message',
+      'Lists the next 10 run times in any IANA time zone, calculated in your browser',
+      'Applies the standard day-of-month OR day-of-week rule and warns where n8n differs',
+      'Schedule builder and 12 business presets, plus a copyable n8n Schedule Trigger node',
+    ],
+    faqs: [
+      {
+        question: 'How do I use a cron expression in n8n?',
+        answer:
+          'Add a Schedule Trigger node, set Trigger Interval to Custom (Cron) and paste the expression into the Expression field. n8n accepts five fields, or six with an optional seconds field first. Publish the workflow for the schedule to take effect.',
+      },
+      {
+        question: 'Which time zone does the n8n Schedule Trigger use?',
+        answer:
+          'It uses the workflow time zone from the workflow settings. If none is set, it uses the instance time zone, which self-hosted n8n sets with the GENERIC_TIMEZONE environment variable (default America/New_York) and n8n Cloud sets in the admin dashboard.',
+      },
+      {
+        question: 'Why does 0 0 1 * 1 run on every Monday?',
+        answer:
+          'When both day of month and day of week are restricted, standard cron runs on days that match either field, so this runs on the 1st of every month and on every Monday. The explainer shows this rule whenever it applies.',
+      },
+      {
+        question: 'Does this support Quartz syntax like ? or L?',
+        answer:
+          'No. It follows standard cron, which is what n8n uses, so ?, L, W, # and a 7th year field are reported as errors with a hint. Use * instead of ? and list the days you need instead of L.',
+      },
+    ],
+    related: ['curl-to-n8n-converter', 'time-zone-converter', 'date-calculator', 'regex-tester', 'json-formatter'],
+    processing: 'browser',
+    comparison: {
+      competitors: [
+        'Crontab.guru (Cronitor)',
+        'Crontab-generator.org',
+        'FreeFormatter Cron Expression Generator (Quartz)',
+        'n8n-focused cron pages (Hndy Tools, TheDigiZone)',
+      ],
+      commonFeatures: [
+        'Plain-English translation of an expression',
+        'Next scheduled run times',
+        'Dropdown-based generator',
+        'Examples and common presets',
+        'Shareable URL',
+        'Quartz 6/7-field syntax (FreeFormatter)',
+      ],
+      implemented: [
+        'Two-way editing: builder and presets write the expression, pasted expressions are explained',
+        'Per-field validation that highlights the wrong field',
+        'Next 10 runs in any IANA time zone with UTC, Asia/Dubai and Asia/Karachi quick picks',
+        'Explicit day-of-month OR day-of-week notice, plus a warning where n8n’s cron library behaves differently',
+        'n8n Schedule Trigger instructions, time zone guidance and a paste-ready node',
+        'Copy link that restores the expression',
+      ],
+      backlog: ['Quartz mode (?, L, W, #)', 'Calendar heat-map of upcoming runs', 'Compare two expressions', 'Export runs as .ics'],
+      advantages: [
+        'Only tool reviewed that outputs a paste-ready n8n Schedule Trigger node',
+        'Shows where n8n and standard cron disagree',
+        'Time-zone-aware run times with quick picks for Gulf and Pakistan time',
+        'Runs entirely in your browser with no signup',
+      ],
+    },
+    reviewed: '2026-09-25',
+  },
+  {
+    slug: 'curl-to-n8n-converter',
+    legacyId: 'curl-to-n8n-converter',
+    hub: 'utility-tools',
+    category: 'developer',
+    name: 'cURL to n8n Converter',
+    icon: '🔁',
+    summary: 'Convert cURL commands into paste-ready n8n HTTP Request nodes, with secrets moved to credentials',
+    seoTitle: 'cURL to n8n Converter – HTTP Request Node JSON',
+    seoDescription:
+      'Convert cURL commands into n8n HTTP Request nodes you can paste onto the canvas. Maps headers, query, JSON, form and auth, and moves API keys to credentials.',
+    keywords: ['curl to n8n', 'curl to n8n converter', 'n8n http request node', 'n8n import curl', 'convert curl to n8n', 'n8n http request json', 'curl converter'],
+    answer:
+      'A cURL to n8n converter turns a curl command from API docs into an n8n HTTP Request node. Paste one or more commands and this free tool maps the method, URL, query, headers, JSON or form body and basic auth to node parameters, explains every field and outputs JSON you paste straight onto the canvas. API keys can be moved into n8n credentials.',
+    howTo: [
+      'Paste one or more cURL commands into the input, or load a sample.',
+      'Choose how to handle API keys: move them to an n8n credential, use placeholders or keep them.',
+      'Check the field-by-field summary and any notes about ignored options.',
+      'Click Copy n8n node, then click the n8n canvas and press Ctrl+V (Cmd+V).',
+      'If the node uses a credential, create it in n8n and select it in the node.',
+    ],
+    features: [
+      'Parses -X, -H, -d, --data-raw, --data-binary, --data-urlencode, --json, -F, -u, -G, -k and -m',
+      'Handles backslash line continuations and single, double and $\'…\' quotes',
+      'Outputs an HTTP Request node (typeVersion 4.2) in n8n’s paste format',
+      'Detects Authorization, API-key and token headers and query parameters',
+      'Moves one secret into a Basic, Header or Query Auth credential, or replaces it with a placeholder',
+      'Converts several commands at once and explains each mapped field',
+    ],
+    faqs: [
+      {
+        question: 'Doesn’t n8n already have Import cURL?',
+        answer:
+          'Yes, the HTTP Request node has an Import cURL button. This tool adds batch conversion, a table explaining each mapped field, notes on ignored options and secret handling. n8n’s import puts -u credentials into an Authorization header; here you can move them into a credential instead.',
+      },
+      {
+        question: 'How do I paste the result into n8n?',
+        answer:
+          'Click Copy n8n node, open your workflow, click an empty spot on the canvas and press Ctrl+V (Cmd+V on Mac). The JSON uses the {"nodes": [...], "connections": {}} shape that n8n accepts on paste.',
+      },
+      {
+        question: 'Why move API keys into credentials?',
+        answer:
+          'Values typed into node parameters are saved in the workflow and included when you copy, export or share it. n8n credentials are stored separately, and exported workflows only contain the credential name and ID.',
+      },
+      {
+        question: 'Is my cURL command sent to a server?',
+        answer: 'No. Parsing and conversion run entirely in your browser, so commands, tokens and passwords never leave your device.',
+      },
+    ],
+    related: ['cron-expression-generator', 'json-formatter', 'url-encoder', 'base64-encoder', 'jwt-decoder'],
+    processing: 'browser',
+    comparison: {
+      competitors: ['n8n built-in Import cURL (HTTP Request node)', 'curlconverter.com', 'FlowEngine cURL to n8n', 'Ihor Chyshkala cURL to n8n'],
+      commonFeatures: [
+        'Parse method, URL, headers and body from a cURL command',
+        'Copy output for pasting into n8n',
+        'Browser-only processing (Chyshkala, curlconverter)',
+        'Many target languages (curlconverter, not n8n)',
+        'Download JSON (FlowEngine)',
+      ],
+      implemented: [
+        'Paste-ready {"nodes":[...],"connections":{}} output checked against n8n’s paste code',
+        'Secret detection with credential or placeholder output',
+        'Field-by-field mapping table and notes for ignored flags (--compressed, -s, -L)',
+        'Batch conversion of several commands into one paste',
+        'JSON bodies kept as JSON so numbers, booleans and nesting survive',
+      ],
+      backlog: ['Windows cmd (^) and PowerShell (`) continuations', 'Proxy and cookie-jar options', 'Chain converted nodes with connections', 'Pagination hints'],
+      advantages: [
+        'Warns before API keys end up in shared workflow JSON',
+        'Explains every mapped field instead of only producing output',
+        'Converts multiple commands at once',
+        'Runs entirely in your browser; nothing is uploaded',
+      ],
+    },
+    reviewed: '2026-09-25',
+  },
 ];

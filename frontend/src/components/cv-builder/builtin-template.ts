@@ -3,7 +3,20 @@
 // Uses the same {{placeholder}} contract as the admin-managed templates.
 export const BUILTIN_TEMPLATE_ID = 'builtin-classic';
 
-export const builtinTemplate = {
+/** A CV template as returned by GET /api/cv-templates (admin-managed) or the built-in one. */
+export interface CvTemplateRecord {
+  id: string | number;
+  name?: string;
+  description?: string | null;
+  category?: string | null;
+  ats_score?: number | null;
+  is_default?: boolean;
+  thumbnail?: string | null;
+  customizable_options?: string[] | null;
+  html_content?: string | null;
+}
+
+export const builtinTemplate: CvTemplateRecord & { html_content: string } = {
   id: BUILTIN_TEMPLATE_ID,
   name: 'Classic ATS',
   description: 'Single column, standard section headings and real text that applicant tracking systems can parse.',
@@ -31,6 +44,9 @@ export const builtinTemplate = {
   .cv-classic .item-date { color: #6b7280; font-size: 0.9em; white-space: nowrap; }
   .cv-classic .item-subtitle { color: #374151; font-style: italic; }
   .cv-classic .item-description { margin: 3px 0 0; white-space: pre-line; }
+  .cv-classic .item-bullets { margin: 3px 0 0; padding-left: 18px; list-style: disc; }
+  .cv-classic .item-bullets li { margin: 1px 0; }
+  .cv-classic .cv-details { font-size: 0.95em; color: #4b5563; display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 3px; }
   .cv-classic .tech-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 3px 0; }
   .cv-classic .tech-tag { font-size: 0.85em; border: 1px solid #d1d5db; border-radius: 3px; padding: 0 4px; }
   .cv-classic .language-item, .cv-classic .interest-item { display: inline-block; margin: 0 14px 4px 0; }
@@ -42,6 +58,7 @@ export const builtinTemplate = {
   <div class="cv-name">{{fullName}}</div>
   <div class="cv-role">{{jobTitle}}</div>
   <div class="cv-contact"><span>{{email}}</span><span>{{phoneNumber}}</span><span>{{address}}</span></div>
+  <div class="cv-details">{{personalDetails}}</div>
 </header>
 <section id="summary"><h3>Profile</h3><p class="item-description">{{professionalSummary}}</p></section>
 <section id="experience"><h3>Experience</h3>{{workExperience}}</section>

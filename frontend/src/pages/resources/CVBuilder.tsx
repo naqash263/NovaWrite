@@ -2,15 +2,21 @@ import React, { useState, useEffect, useRef } from 'react';
 import { defaultCVData, type CVData } from '../../components/cv-builder/cv-form';
 import { CvPreview } from '../../components/cv-builder/cv-preview';
 import { escapeHtml, renderTemplateHtml } from '../../components/cv-builder/cv-render';
-import { type CVStyle } from '../../components/cv-builder/template-customizer';
+import { SectionManager, TemplateCustomizer, type CVStyle } from '../../components/cv-builder/template-customizer';
 import { useToast } from '../../hooks/use-toast';
 import CVExportOptions from '../../components/cv-builder/CVExportOptions';
+import { defaultExportSettings, type CvExportFormat, type CvExportSettings } from '../../components/cv-builder/cv-export-settings';
 import { API_CONFIG } from '../../config/api';
 import apiClient from '../../api/axios';
-import jsPDF from 'jspdf';
 import CareerToolLayout from '../../components/career/CareerToolLayout';
-import { builtinTemplate } from '../../components/cv-builder/builtin-template';
+import { builtinTemplate, type CvTemplateRecord } from '../../components/cv-builder/builtin-template';
 import { buildCvDocx } from '../../components/cv-builder/cv-docx';
+import { buildCvPdf, unsupportedPdfCharacters } from '../../components/cv-builder/cv-pdf';
+import { cvForAi, mergeTailored, normalizeAiCv, postCvAi } from '../../components/cv-builder/cv-ai';
+import { makeBackup, parseBackup } from '../../components/cv-builder/cv-backup';
+import { defaultCvLayout, normalizeLayout, type CvLayout } from '../../components/cv-builder/cv-sections';
+import AtsMatchPanel from '../../components/cv-builder/AtsMatchPanel';
+import BulletHelper from '../../components/cv-builder/BulletHelper';
 import AdPlacement from '../../components/AdPlacement';
 
 
@@ -71,72 +77,49 @@ const FileInput = ({ onFileSelect, isProcessing, buttonText, accept = ".pdf,.doc
   );
 };
 
-// CV Upload Step Component
-const CVUploadStep = ({ onExtractionComplete }: { onExtractionComplete: (extractedData: any) => void }) => {
-  const { addToast } = useToast();
+// Shown under the AI steps so people are never stuck when the AI is unavailable.
+const ManualEntryLink = ({ onManual }: { onManual: () => void }) => (
+  <div className="mt-6 text-center">
+    <button type="button" onClick={onManual} className="text-sm font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+      Enter details manually instead
+    </button>
+  </div>
+);
+
+const AiError = ({ message }: { message: string }) => (
+  <div role="alert" className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-left text-sm text-red-800">
+    <p className="font-semibold">That did not work</p>
+    <p className="mt-1">{message}</p>
+  </div>
+);
+
+const ACCEPTED_CV_TYPES = /\.(pdf|docx?|txt)$/i;
+
+// CV Upload Step Component: POST /api/cv-ai/extract (multipart, field "file")
+const CVUploadStep = ({ onExtractionComplete, onManual }: { onExtractionComplete: (extractedData: Partial<CVData>) => void; onManual: () => void }) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [extractionResult, setExtractionResult] = useState<any>(null);
+  const [error, setError] = useState('');
 
   const handleFileUpload = async (file: File) => {
+    setError('');
+    if (!ACCEPTED_CV_TYPES.test(file.name)) {
+      setError('Please upload a PDF, Word (.doc or .docx) or plain text (.txt) file.');
+      return;
+    }
     if (file.size > 10 * 1024 * 1024) {
-      addToast({ type: 'error', title: 'File too large', description: 'Please upload a CV smaller than 10 MB.' });
+      setError('Please upload a CV smaller than 10 MB.');
       return;
     }
     setIsProcessing(true);
-    
-    try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // Call real AI extraction API
-      const response = await fetch('/api/cv-ai/extract', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-        }
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'CV extraction failed');
-      }
-      
-      if (!result.success) {
-        throw new Error(result.message || 'CV extraction failed');
-      }
-      
-      // Transform API response to match our CV data structure
-      const extractedData = {
-        fullName: result.data.fullName || '',
-        jobTitle: result.data.jobTitle || '',
-        email: result.data.email || '',
-        phoneNumber: result.data.phoneNumber || '',
-        address: result.data.address || '',
-        professionalSummary: result.data.professionalSummary || '',
-        workExperience: result.data.workExperience || [],
-        education: result.data.education || [],
-        skills: Array.isArray(result.data.skills) ? result.data.skills.join(', ') : result.data.skills || '',
-        projects: result.data.projects || [],
-        languages: result.data.languages || [],
-        interests: result.data.interests || [],
-        references: result.data.references || [],
-        certificates: result.data.certifications || [],
-        achievements: result.data.achievements || []
-      };
-      
-      setExtractionResult(extractedData);
-      onExtractionComplete(extractedData);
-    } catch (error) {
-      console.error('CV extraction failed:', error);
-      // Show error message to user
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      addToast({ type: 'error', title: 'CV extraction failed', description: errorMessage });
-    } finally {
-      setIsProcessing(false);
+    const formData = new FormData();
+    formData.append('file', file);
+    const result = await postCvAi('extract', formData);
+    setIsProcessing(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
     }
+    onExtractionComplete(normalizeAiCv(result.data));
   };
 
   return (
@@ -147,143 +130,56 @@ const CVUploadStep = ({ onExtractionComplete }: { onExtractionComplete: (extract
       </div>
 
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        {!extractionResult ? (
-          <div className="text-center">
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">📄</span>
-        </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Your CV File</h3>
-              <p className="text-gray-600 mb-6">Supports PDF, DOC, DOCX, and TXT files up to 10MB</p>
-          </div>
-          
-            <FileInput
-              onFileSelect={handleFileUpload}
-              isProcessing={isProcessing}
-              buttonText="Choose CV File"
-              accept=".pdf,.doc,.docx,.txt"
-            />
-
-            {isProcessing && (
-              <div className="mt-6">
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <span className="text-gray-600">AI is analyzing your CV...</span>
-        </div>
-                <p className="text-sm text-gray-500 mt-2">This may take a few moments</p>
-          </div>
-        )}
-        </div>
-        ) : (
         <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">✅</span>
+          <div className="mb-6">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl" aria-hidden="true">📄</span>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Your CV File</h3>
+            <p className="text-gray-600 mb-6">Supports PDF, DOC, DOCX, and TXT files up to 10MB</p>
           </div>
-            <h3 className="text-xl font-semibold text-green-900 mb-2">CV Successfully Analyzed!</h3>
-            <p className="text-gray-600 mb-6">We've extracted your information. Click "Next" to review and edit your CV.</p>
-            
-            <div className="bg-gray-50 rounded-lg p-4 text-left">
-              <h4 className="font-semibold text-gray-900 mb-2">Extracted Information:</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Name: {extractionResult.fullName}</li>
-                <li>• Job Title: {extractionResult.jobTitle}</li>
-                <li>• Email: {extractionResult.email}</li>
-                <li>• Experience: {extractionResult.workExperience?.length || 0} positions</li>
-                <li>• Education: {extractionResult.education?.length || 0} entries</li>
-                <li>• Skills: {String(extractionResult.skills || '').split(',').filter((s: string) => s.trim()).length} skills</li>
-            </ul>
-          </div>
+
+          <FileInput onFileSelect={handleFileUpload} isProcessing={isProcessing} buttonText="Choose CV File" accept=".pdf,.doc,.docx,.txt" />
+
+          {isProcessing && (
+            <div className="mt-6" role="status">
+              <div className="flex items-center justify-center space-x-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span className="text-gray-600">AI is analyzing your CV...</span>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">This may take a few moments</p>
+            </div>
+          )}
+          {error && <AiError message={error} />}
         </div>
-        )}
+        <ManualEntryLink onManual={onManual} />
       </div>
     </div>
   );
 };
 
-// Job Tailoring Step Component
-const JobTailoringStep = ({ onTailoringComplete }: { onTailoringComplete: (tailoredData: any) => void }) => {
-  const { addToast } = useToast();
-  const [jobDescription, setJobDescription] = useState('');
+const MIN_JOB_DESCRIPTION = 50; // CvAiController::tailorCv validates job_description min:50
+
+// Job Tailoring Step Component: POST /api/cv-ai/tailor { cv_data, job_description }
+const JobTailoringStep = ({ cvData, onTailoringComplete, onManual }: { cvData: CVData; onTailoringComplete: (tailoredData: Partial<CVData>) => void; onManual: () => void }) => {
+  const [jobDescription, setJobDescription] = useState(cvData.jobDescription || '');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [tailoringResult, setTailoringResult] = useState<any>(null);
+  const [error, setError] = useState('');
+  const length = jobDescription.trim().length;
+  const tooShort = length < MIN_JOB_DESCRIPTION;
+  const hasCv = Boolean(String(cvData.fullName || '').trim() || (cvData.workExperience || []).some((e) => String(e?.jobTitle || e?.company || '').trim()));
 
   const handleJobTailoring = async () => {
-    if (!jobDescription.trim()) return;
-    
+    if (tooShort) return;
+    setError('');
     setIsProcessing(true);
-    
-    try {
-      // Create base CV data for tailoring
-      const baseCvData = {
-        fullName: "",
-        jobTitle: "",
-        email: "",
-        phoneNumber: "",
-        address: "",
-        professionalSummary: "",
-        workExperience: [],
-        education: [],
-        skills: "",
-        projects: [],
-        languages: [],
-        interests: [],
-        references: [],
-        certificates: [],
-        achievements: []
-      };
-      
-      // Call real AI tailoring API
-      const response = await fetch('/api/cv-ai/tailor', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          cv_data: baseCvData,
-          job_description: jobDescription
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'CV tailoring failed');
-      }
-      
-      if (!result.success) {
-        throw new Error(result.message || 'CV tailoring failed');
-      }
-      
-      // Transform API response to match our CV data structure
-      const tailoredData = {
-        fullName: result.data.fullName || '',
-        jobTitle: result.data.jobTitle || '',
-        email: result.data.email || '',
-        phoneNumber: result.data.phoneNumber || '',
-        address: result.data.address || '',
-        professionalSummary: result.data.professionalSummary || '',
-        workExperience: result.data.workExperience || [],
-        education: result.data.education || [],
-        skills: Array.isArray(result.data.skills) ? result.data.skills.join(', ') : result.data.skills || '',
-        projects: result.data.projects || [],
-        languages: result.data.languages || [],
-        interests: result.data.interests || [],
-        references: result.data.references || [],
-        certificates: result.data.certifications || [],
-        achievements: result.data.achievements || []
-      };
-      
-      setTailoringResult(tailoredData);
-      onTailoringComplete(tailoredData);
-    } catch (error) {
-      console.error('Job tailoring failed:', error);
-      // Show error message to user
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      addToast({ type: 'error', title: 'CV tailoring failed', description: errorMessage });
-    } finally {
-      setIsProcessing(false);
+    const result = await postCvAi('tailor', { cv_data: cvForAi(cvData), job_description: jobDescription.trim() });
+    setIsProcessing(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
     }
+    onTailoringComplete({ ...normalizeAiCv(result.data), jobDescription: jobDescription.trim() });
   };
 
   return (
@@ -294,70 +190,59 @@ const JobTailoringStep = ({ onTailoringComplete }: { onTailoringComplete: (tailo
       </div>
 
       <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        {!tailoringResult ? (
-            <div>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Job Description *
-              </label>
-              <textarea aria-label="Job Description"
-                value={jobDescription}
-                onChange={(e) => setJobDescription(e.target.value)}
-                placeholder="Paste the complete job description here..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                rows={8}
-              />
-              <p className="text-sm text-gray-500 mt-2">
-                Include the full job description with requirements, responsibilities, and qualifications
-              </p>
-            </div>
+        <p className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
+          {hasCv
+            ? 'The AI rewrites the CV you have already entered for this job. Review every change before you send it.'
+            : 'You have not entered a CV yet, so the AI drafts one from the job description. Replace the draft with your real experience.'}
+        </p>
+        <div className="mb-6">
+          <label htmlFor="cv-tailor-job-description" className="block text-sm font-medium text-gray-700 mb-2">
+            Job Description *
+          </label>
+          <textarea
+            id="cv-tailor-job-description"
+            aria-describedby="cv-tailor-job-description-hint"
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            placeholder="Paste the complete job description here..."
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            rows={8}
+          />
+          <p id="cv-tailor-job-description-hint" className={`text-sm mt-2 ${tooShort && length > 0 ? 'text-amber-700' : 'text-gray-500'}`}>
+            {tooShort
+              ? `Paste at least 50 characters (${length}/50) including the requirements and responsibilities.`
+              : 'Include the full job description with requirements, responsibilities, and qualifications.'}
+          </p>
+        </div>
 
-              <div className="text-center">
-              <button
-                onClick={handleJobTailoring}
-                disabled={!jobDescription.trim() || isProcessing}
-                className="inline-flex items-center px-8 py-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isProcessing ? (
-                  <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    AI is tailoring your CV...
-                  </>
-                ) : (
-                  <>
-                    <span className="mr-2">🎯</span>
-                    Tailor My CV
-                  </>
-                )}
-              </button>
-            </div>
-
-            {isProcessing && (
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-500">Analyzing job requirements and optimizing your CV...</p>
-                </div>
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={handleJobTailoring}
+            disabled={tooShort || isProcessing}
+            className="inline-flex items-center px-8 py-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isProcessing ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                AI is tailoring your CV...
+              </>
+            ) : (
+              <>
+                <span className="mr-2" aria-hidden="true">🎯</span>
+                Tailor My CV
+              </>
             )}
-          </div>
-        ) : (
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">✅</span>
-            </div>
-            <h3 className="text-xl font-semibold text-green-900 mb-2">CV Successfully Tailored!</h3>
-            <p className="text-gray-600 mb-6">We've optimized your CV for this specific job. Click "Next" to review and edit your tailored CV.</p>
-            
-            <div className="bg-gray-50 rounded-lg p-4 text-left">
-              <h4 className="font-semibold text-gray-900 mb-2">Tailoring Results:</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Optimized professional summary for the role</li>
-                <li>• Highlighted relevant skills and experience</li>
-                <li>• Adjusted job descriptions to match requirements</li>
-                <li>• Enhanced keywords for ATS compatibility</li>
-                <li>• Structured content for maximum impact</li>
-              </ul>
-            </div>
-          </div>
-          )}
+          </button>
+        </div>
+
+        {isProcessing && (
+          <p className="mt-6 text-center text-sm text-gray-500" role="status">
+            Analyzing job requirements and optimizing your CV...
+          </p>
+        )}
+        {error && <AiError message={error} />}
+        <ManualEntryLink onManual={onManual} />
       </div>
     </div>
   );
@@ -418,12 +303,54 @@ const StepNavigation = ({
   onFinish: () => void,
   isNextDisabled?: boolean 
 }) => {
-  // const progressPercentage = (currentStep / totalSteps) * 100;
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === totalSteps;
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const [pinned, setPinned] = useState(false);
+  const [navHeight, setNavHeight] = useState(0);
+
+  // CSS `position: sticky` cannot work here: the site sets overflow-x: hidden on both <html> and
+  // <body>, which makes <body> a (non-scrolling) scroll container. So pin the bar to the bottom of
+  // the screen ourselves while the builder is on screen but the bar's own place is below the fold.
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const container = wrapper.parentElement;
+      const nav = navRef.current;
+      if (!container || !nav) return;
+      const height = nav.offsetHeight;
+      const viewport = window.innerHeight;
+      const shouldPin = container.getBoundingClientRect().top < viewport - height && wrapper.getBoundingClientRect().top + height > viewport;
+      setNavHeight(height);
+      setPinned(shouldPin);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null;
+    observer?.observe(document.body);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      observer?.disconnect();
+    };
+  }, []);
 
   return (
-    <div className="bg-white border-t border-gray-200 px-3 sm:px-4 py-3 sm:py-4 md:py-6 sticky bottom-0 z-10 shadow-lg">
+    <div ref={wrapperRef} style={pinned ? { height: navHeight } : undefined}>
+    <div
+      ref={navRef}
+      data-pinned={pinned || undefined}
+      className={`bg-white border-t border-gray-200 px-3 sm:px-4 py-3 sm:py-4 md:py-6 shadow-lg ${pinned ? 'fixed inset-x-0 bottom-0 z-40' : 'relative z-10'}`}
+    >
       <div className="max-w-6xl mx-auto">
         {/* Mobile Progress Bar */}
         <div className="mb-3 sm:mb-2 sm:hidden">
@@ -544,9 +471,10 @@ const StepNavigation = ({
             {isLastStep ? (
             <button
               onClick={onFinish}
+                aria-label="Download CV"
                 className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
-                <span className="text-lg">📄</span>
+                <span className="text-lg" aria-hidden="true">📄</span>
               <span>Download CV</span>
             </button>
           ) : (
@@ -567,11 +495,27 @@ const StepNavigation = ({
         </div>
       </div>
     </div>
+    </div>
   );
 };
 
+// Optional personal details common on UAE / Gulf CVs.
+const GULF_FIELDS: { key: 'nationality' | 'visaStatus' | 'drivingLicence' | 'noticePeriod'; label: string; placeholder: string; options?: string[] }[] = [
+  { key: 'nationality', label: 'Nationality', placeholder: 'e.g., Indian' },
+  {
+    key: 'visaStatus',
+    label: 'Visa status',
+    placeholder: 'e.g., Employment visa (transferable)',
+    options: ['Employment visa (transferable)', 'Golden visa', 'Residence visa (family sponsored)', 'Freelance visa', 'Visit visa', 'Requires sponsorship', 'UAE national'],
+  },
+  { key: 'drivingLicence', label: 'Driving licence', placeholder: 'e.g., Valid UAE driving licence', options: ['Valid UAE driving licence', 'GCC driving licence', 'International driving permit'] },
+  { key: 'noticePeriod', label: 'Notice period', placeholder: 'e.g., 30 days or Immediately available', options: ['Immediately available', '30 days', '60 days', '90 days'] },
+];
+
 // Individual Step Components
 const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data: CVData, onDataChange: (data: CVData) => void, onProfilePictureUpload: (event: React.ChangeEvent<HTMLInputElement>) => void }) => {
+  // Open the optional Gulf section on first render when it already has content; afterwards the user controls it.
+  const [gulfOpenInitially] = useState(() => GULF_FIELDS.some((f) => Boolean(String(data[f.key] || '').trim())));
   return (
     <div className="max-w-4xl mx-auto p-1 sm:p-6">
       <div className="text-center mb-8">
@@ -635,6 +579,36 @@ const PersonalInfoStep = ({ data, onDataChange, onProfilePictureUpload }: { data
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
           </div>
+
+          <details className="md:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4" open={gulfOpenInitially}>
+            <summary className="cursor-pointer text-sm font-semibold text-gray-800">Additional details for UAE / Gulf CVs (optional)</summary>
+            <p className="mt-2 text-xs text-gray-600">Recruiters in the UAE and wider Gulf often look for these. Each one appears on your CV only if you fill it in.</p>
+            <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {GULF_FIELDS.map((field) => (
+                <div key={field.key} className="space-y-1">
+                  <label htmlFor={`cv-${field.key}`} className="block text-sm font-medium text-gray-700">
+                    {field.label}
+                  </label>
+                  <input
+                    id={`cv-${field.key}`}
+                    type="text"
+                    list={field.options ? `cv-${field.key}-options` : undefined}
+                    value={data[field.key] || ''}
+                    onChange={(e) => onDataChange({ ...data, [field.key]: e.target.value })}
+                    placeholder={field.placeholder}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  />
+                  {field.options && (
+                    <datalist id={`cv-${field.key}-options`}>
+                      {field.options.map((option) => (
+                        <option key={option} value={option} />
+                      ))}
+                    </datalist>
+                  )}
+                </div>
+              ))}
+            </div>
+          </details>
 
           <div className="md:col-span-2 space-y-4">
             <label className="block text-sm font-semibold text-gray-700">Profile Picture</label>
@@ -771,7 +745,9 @@ const ExperienceStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
               <h3 className="text-lg font-semibold text-gray-900">Experience {index + 1}</h3>
               {data.workExperience.length > 1 && (
                 <button
+                  type="button"
                   onClick={() => removeExperience(index)}
+                  aria-label={`Remove experience ${index + 1}`}
                   className="text-red-600 hover:text-red-700 text-sm font-medium"
                 >
                   Remove
@@ -828,10 +804,12 @@ const ExperienceStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
                 <textarea aria-label="Description"
                   value={exp.description}
                   onChange={(e) => updateExperience(index, 'description', e.target.value)}
-                  placeholder="Describe your responsibilities and achievements..."
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+                  placeholder={'- Led a team of 5 to launch …\n- Reduced reporting time by 40% by …'}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-y"
                 />
+                <p className="text-xs text-gray-500">Start each line with "- " to make it a bullet point.</p>
+                <BulletHelper index={index} description={exp.description} onChange={(value) => updateExperience(index, 'description', value)} />
               </div>
             </div>
           </div>
@@ -887,7 +865,9 @@ const EducationStep = ({ data, onDataChange }: { data: CVData, onDataChange: (da
               <h3 className="text-lg font-semibold text-gray-900">Education {index + 1}</h3>
               {data.education.length > 1 && (
                 <button
+                  type="button"
                   onClick={() => removeEducation(index)}
+                  aria-label={`Remove education ${index + 1}`}
                   className="text-red-600 hover:text-red-700 text-sm font-medium"
                 >
                   Remove
@@ -1020,6 +1000,7 @@ const SkillsAndProjectsStep = ({ data, onDataChange }: { data: CVData, onDataCha
                     <button
                       type="button"
                       onClick={() => removeProject(index)}
+                  aria-label={`Remove project ${index + 1}`}
                       className="text-red-600 hover:text-red-800 text-sm font-medium"
                     >
                       Remove
@@ -1218,6 +1199,7 @@ const LanguagesAndInterestsStep = ({ data, onDataChange }: { data: CVData, onDat
                     <button
                       type="button"
                       onClick={() => removeLanguage(index)}
+                  aria-label={`Remove language ${index + 1}`}
                       className="text-red-600 hover:text-red-800 text-sm font-medium"
                     >
                       Remove
@@ -1281,6 +1263,7 @@ const LanguagesAndInterestsStep = ({ data, onDataChange }: { data: CVData, onDat
                     <button
                       type="button"
                       onClick={() => removeInterest(index)}
+                  aria-label={`Remove interest category ${index + 1}`}
                       className="text-red-600 hover:text-red-800 text-sm font-medium"
                     >
                       Remove
@@ -1394,6 +1377,7 @@ const ReferencesStep = ({ data, onDataChange }: { data: CVData, onDataChange: (d
                 <button
                   type="button"
                   onClick={() => removeReference(index)}
+                  aria-label={`Remove reference ${index + 1}`}
                   className="text-red-600 hover:text-red-800 text-sm font-medium"
                 >
                   Remove
@@ -1566,6 +1550,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
                     <button
                       type="button"
                       onClick={() => removeCertificate(index)}
+                  aria-label={`Remove certificate ${index + 1}`}
                       className="text-red-600 hover:text-red-800 text-sm font-medium"
                     >
                       Remove
@@ -1664,6 +1649,7 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
                     <button
                       type="button"
                       onClick={() => removeAchievement(index)}
+                  aria-label={`Remove achievement ${index + 1}`}
                       className="text-red-600 hover:text-red-800 text-sm font-medium"
                     >
                       Remove
@@ -1739,16 +1725,19 @@ const CertificationsAndAchievementsStep = ({ data, onDataChange }: { data: CVDat
   );
 };
 
-const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading, onTemplateSelect, selectedTemplate }: { 
+const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading, onTemplateSelect, selectedTemplate, layout, onLayoutChange }: { 
   style: CVStyle, 
   onStyleChange: (style: CVStyle) => void, 
   data: CVData,
-  templates: any[],
+  templates: CvTemplateRecord[],
   templatesLoading: boolean,
-  onTemplateSelect: (template: any) => void,
-  selectedTemplate: any
+  onTemplateSelect: (template: CvTemplateRecord) => void,
+  selectedTemplate: CvTemplateRecord | null,
+  layout: CvLayout,
+  onLayoutChange: (layout: CvLayout) => void
 }) => {
-  const [previewMode, setPreviewMode] = useState<'grid' | 'preview'>('grid');
+  // A template is always selected (the built-in one at least), so start on its live preview.
+  const [previewMode, setPreviewMode] = useState<'grid' | 'preview'>(selectedTemplate ? 'preview' : 'grid');
   
   const handleTemplateSelect = (templateId: string) => {
     const template = templates.find(t => t.id.toString() === templateId);
@@ -1812,6 +1801,11 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
             and real text instead of images make your CV easiest to parse. The built-in Classic ATS template follows these rules.
           </p>
         </div>
+      </div>
+
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        <TemplateCustomizer style={style} onStyleChange={onStyleChange} />
+        <SectionManager layout={layout} onLayoutChange={onLayoutChange} />
       </div>
 
       {previewMode === 'grid' ? (
@@ -1960,7 +1954,7 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
               </div>
               <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
                 <div className="max-h-[800px] overflow-y-auto">
-                  <CvPreview data={data} style={style} template={selectedTemplate} />
+                  <CvPreview data={data} style={style} template={selectedTemplate} layout={layout} />
                 </div>
               </div>
             </div>
@@ -1971,30 +1965,58 @@ const TemplateStep = ({ style, onStyleChange, data, templates, templatesLoading,
   );
 };
 
-const PreviewStep = ({ data, style, onDownload, selectedTemplate }: { data: CVData, style: CVStyle, onDownload: (format?: string, options?: any) => void, selectedTemplate: any }) => {
+const PreviewStep = ({
+  data,
+  style,
+  layout,
+  selectedTemplate,
+  format,
+  onFormatChange,
+  settings,
+  onSettingsChange,
+  onDownload,
+  onDataChange,
+}: {
+  data: CVData;
+  style: CVStyle;
+  layout: CvLayout;
+  selectedTemplate: CvTemplateRecord | null;
+  format: CvExportFormat;
+  onFormatChange: (format: CvExportFormat) => void;
+  settings: CvExportSettings;
+  onSettingsChange: (settings: CvExportSettings) => void;
+  onDownload: (format: CvExportFormat, options: CvExportSettings) => Promise<void>;
+  onDataChange: (data: CVData) => void;
+}) => {
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleExport = async (format: string, options?: any) => {
+  const handleExport = async (f: CvExportFormat, options: CvExportSettings) => {
     setIsExporting(true);
     try {
-      await onDownload(format, options);
+      await onDownload(f, options);
     } finally {
       setIsExporting(false);
     }
   };
 
   return (
-    <CVExportOptions
-      data={data}
-      style={style}
-      template={selectedTemplate}
-      onExport={handleExport}
-      isExporting={isExporting}
-    />
+    <>
+      <CVExportOptions
+        data={data}
+        style={style}
+        template={selectedTemplate}
+        layout={layout}
+        selectedFormat={format}
+        onFormatChange={onFormatChange}
+        exportOptions={settings}
+        onOptionsChange={onSettingsChange}
+        onExport={handleExport}
+        isExporting={isExporting}
+      />
+      <AtsMatchPanel data={data} onDataChange={onDataChange} />
+    </>
   );
 };
-
-type ExportOptions = { pageSize?: string; margins?: string; includePageNumbers?: boolean; includeWatermark?: boolean };
 
 // Reads builder progress saved in localStorage (synchronously, so a reload resumes
 // exactly where the user left off, also under React StrictMode).
@@ -2041,10 +2063,15 @@ export default function CVBuilder() {
     const saved = readSaved<number[]>('cv-builder-completed-steps');
     return new Set(Array.isArray(saved) ? saved : []);
   });
-  const [templates, setTemplates] = useState<any[]>([builtinTemplate]);
+  const [templates, setTemplates] = useState<CvTemplateRecord[]>([builtinTemplate]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(builtinTemplate);
-  const [livePreviewOpen, setLivePreviewOpen] = useState(() => typeof window === 'undefined' || !window.matchMedia || window.matchMedia('(min-width: 1024px)').matches);
+  const [selectedTemplate, setSelectedTemplate] = useState<CvTemplateRecord | null>(builtinTemplate);
+  const [cvLayout, setCvLayout] = useState<CvLayout>(() => normalizeLayout(shouldLoadSaved() ? readSaved<unknown>('cv-builder-layout') : null));
+  const [exportFormat, setExportFormat] = useState<CvExportFormat>('pdf');
+  const [exportSettings, setExportSettings] = useState<CvExportSettings>(defaultExportSettings);
+  const [backupError, setBackupError] = useState('');
+  const backupInputRef = useRef<HTMLInputElement>(null);
+  const [livePreviewOpen, setLivePreviewOpen]= useState(() => typeof window === 'undefined' || !window.matchMedia || window.matchMedia('(min-width: 1024px)').matches);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const { addToast } = useToast();
 
@@ -2171,7 +2198,7 @@ export default function CVBuilder() {
       try {
         const response = await apiClient.get('/cv-templates');
         const data = response.data;
-        const apiTemplates: any[] = data?.success && Array.isArray(data.data) ? data.data.filter((t: any) => t?.html_content) : [];
+        const apiTemplates: CvTemplateRecord[] = data?.success && Array.isArray(data.data) ? data.data.filter((t: CvTemplateRecord | null) => t?.html_content) : [];
         if (cancelled || apiTemplates.length === 0) return;
         setTemplates([builtinTemplate, ...apiTemplates]);
         let savedId: string | null = null;
@@ -2180,8 +2207,8 @@ export default function CVBuilder() {
         } catch {
           savedId = null;
         }
-        const saved = savedId ? [builtinTemplate, ...apiTemplates].find((t: any) => String(t.id) === savedId) : null;
-        const initial = saved || apiTemplates.find((t: any) => t.is_default) || apiTemplates[0];
+        const saved = savedId ? [builtinTemplate, ...apiTemplates].find((t) => String(t.id) === savedId) : null;
+        const initial = saved || apiTemplates.find((t) => t.is_default) || apiTemplates[0];
         if (initial) {
           setSelectedTemplate(initial);
           setCvStyle((prev) => ({ ...prev, templateName: initial.name || String(initial.id) }));
@@ -2200,7 +2227,7 @@ export default function CVBuilder() {
   }, []);
 
   // Remember the template the user picks between visits.
-  const chooseTemplate = (template: any) => {
+  const chooseTemplate = (template: CvTemplateRecord) => {
     setSelectedTemplate(template);
     try {
       if (template?.id !== undefined) localStorage.setItem('cv-builder-template-id', String(template.id));
@@ -2240,12 +2267,17 @@ export default function CVBuilder() {
           });
         }
       }
-      localStorage.setItem('cv-builder-style', JSON.stringify(cvStyle));
-      localStorage.setItem('cv-builder-completed-steps', JSON.stringify(Array.from(completedSteps)));
+      try {
+        localStorage.setItem('cv-builder-style', JSON.stringify(cvStyle));
+        localStorage.setItem('cv-builder-layout', JSON.stringify(cvLayout));
+        localStorage.setItem('cv-builder-completed-steps', JSON.stringify(Array.from(completedSteps)));
+      } catch {
+        /* storage full or blocked */
+      }
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [cvData, cvStyle, completedSteps]);
+  }, [cvData, cvStyle, cvLayout, completedSteps]);
 
   // Save current step
   useEffect(() => {
@@ -2263,39 +2295,22 @@ export default function CVBuilder() {
     }
   }, [creationMode, currentStep]);
 
-  // Reset processed data flag and clear CV data when creation mode changes
+  // Reset the processed flag when the creation mode changes. Existing CV data is kept:
+  // an upload replaces it only once extraction succeeds, and tailoring starts from it.
   useEffect(() => {
     setHasProcessedData(false);
-    // Clear CV data when switching to upload or tailor modes
-    if (creationMode === 'ai-upload' || creationMode === 'ai-tailor') {
-      setCvData({
-        fullName: '',
-        jobTitle: '',
-        email: '',
-        phoneNumber: '',
-        address: '',
-        profilePictureUrl: '',
-        professionalSummary: '',
-        workExperience: [],
-        education: [],
-        skills: "",
-        projects: [],
-        languages: [],
-        interests: [],
-        references: [],
-        certificates: [],
-        achievements: []
-      });
-    }
   }, [creationMode]);
 
   // Handle CV extraction completion
-  const handleCVExtractionComplete = (extractedData: any) => {
-    // Update CV data with extracted information
-    setCvData(prevData => ({
-      ...prevData,
-      ...extractedData
-    }));
+  const handleCVExtractionComplete = (extractedData: Partial<CVData>) => {
+    // The uploaded CV replaces the current one; empty sections keep one blank row to fill in.
+    setCvData((prevData) => {
+      const next: CVData = { ...defaultCVData, profilePictureUrl: prevData.profilePictureUrl, ...extractedData };
+      for (const key of ['workExperience', 'education', 'projects', 'certificates', 'languages', 'achievements', 'references', 'interests'] as const) {
+        if (!Array.isArray(next[key]) || next[key].length === 0) (next as Record<string, unknown>)[key] = defaultCVData[key];
+      }
+      return next;
+    });
     
     // Mark that data has been processed
     setHasProcessedData(true);
@@ -2313,12 +2328,9 @@ export default function CVBuilder() {
   };
 
   // Handle job tailoring completion
-  const handleJobTailoringComplete = (tailoredData: any) => {
-    // Update CV data with tailored information
-    setCvData(prevData => ({
-      ...prevData,
-      ...tailoredData
-    }));
+  const handleJobTailoringComplete = (tailoredData: Partial<CVData>) => {
+    // Take the tailored text, but keep your own entries for anything the AI returned empty.
+    setCvData((prevData) => mergeTailored(prevData, tailoredData));
     
     // Mark that data has been processed
     setHasProcessedData(true);
@@ -2367,9 +2379,18 @@ export default function CVBuilder() {
     setCreationMode(null);
     setHasProcessedData(false);
     setCompletedSteps(new Set());
-    
+    setCvLayout(defaultCvLayout);
+    setExportFormat('pdf');
+    setExportSettings(defaultExportSettings);
+    setBackupError('');
+
     // Clear localStorage
-    localStorage.removeItem('cv-builder-data');
+    try {
+      localStorage.removeItem('cv-builder-data');
+      localStorage.removeItem('cv-builder-layout');
+    } catch {
+      /* storage unavailable */
+    }
     
     // Close modal
     setShowClearConfirm(false);
@@ -2383,7 +2404,7 @@ export default function CVBuilder() {
   };
 
   // Sanitize CV data to prevent JSON encoding issues
-  const sanitizeCvData = (data: any): any => {
+  const sanitizeCvData = (data: CVData): CVData => {
     // Create a deep copy to avoid modifying the original
     const sanitized = JSON.parse(JSON.stringify({ ...data }));
     
@@ -2393,7 +2414,7 @@ export default function CVBuilder() {
         // Test if it can be properly JSON encoded
         const test = { url: sanitized.profilePictureUrl };
         JSON.stringify(test);
-      } catch (error) {
+      } catch {
         // If there's an error, remove the problematic field
         console.warn('Removed invalid profilePictureUrl due to JSON encoding issues');
         sanitized.profilePictureUrl = '';
@@ -2403,50 +2424,6 @@ export default function CVBuilder() {
     return sanitized;
   };
 
-  const handleFinish = async (format: string = 'pdf', options: any = {}) => {
-    try {
-      // Sanitize CV data before exporting to prevent JSON encoding issues
-      try {
-        // Test if the current data can be properly JSON encoded
-        JSON.stringify(cvData);
-      } catch (jsonError) {
-        console.warn('CV data has JSON encoding issues, sanitizing...', jsonError);
-        const sanitizedData = sanitizeCvData(cvData);
-        setCvData(sanitizedData);
-        
-        // Allow time for the component to re-render with sanitized data
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
-      // Handle different export formats
-      switch (format) {
-        case 'pdf':
-          await exportAsPDF(options);
-          break;
-        case 'docx':
-          await exportAsDOCX(options);
-          break;
-        case 'html':
-          await exportAsHTML(options);
-          break;
-        case 'txt':
-          await exportAsTXT(options);
-          break;
-      default:
-          await exportAsPDF(options);
-      }
-    } catch (error) {
-      console.error('Export error:', error);
-      addToast({
-        type: 'error',
-        title: 'Export Failed',
-        description: 'Failed to export CV. Please try again.',
-        duration: 5000
-      });
-    }
-  };
-
-
   // Safe file name: keep letters, numbers, spaces, dots and dashes.
   const exportFileBase = () =>
     (cvData.fullName || 'CV')
@@ -2454,46 +2431,19 @@ export default function CVBuilder() {
       .trim()
       .replace(/\s+/g, '_') || 'CV';
 
-  const exportAsPDF = async (options: ExportOptions = {}): Promise<void> => {
+  // Default: text-based ATS PDF built from the data. "Template design" renders the selected template instead.
+  const exportAsPDF = async (options: Partial<CvExportSettings> = {}): Promise<void> => {
     try {
-      const previewElement = document.querySelector('[data-cv-preview]');
-      const templateHTML = previewElement ? previewElement.innerHTML : renderTemplateHtml(cvData, cvStyle, selectedTemplate);
-
-      const pageSize = (options.pageSize || 'A4').toLowerCase() as 'a4' | 'letter' | 'legal';
-      const marginMm = options.margins === 'narrow' ? 12.7 : options.margins === 'wide' ? 38.1 : 25.4;
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: pageSize, putOnlyUsedFonts: true, compress: true });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const contentWidth = pageWidth - marginMm * 2;
-      // Lay the template out at the printable width in CSS pixels (96 dpi) so 1px = 1px on paper.
-      const renderWidthPx = Math.round((contentWidth / 25.4) * 96);
-
-      const container = document.createElement('div');
-      container.style.cssText = `width:${renderWidthPx}px;background:#fff;color:#1f2937;font-family:Arial, sans-serif;`;
-      container.innerHTML = templateHTML;
-
-      await pdf.html(container, {
-        x: 0,
-        y: 0,
-        margin: [marginMm, marginMm, marginMm, marginMm],
-        width: contentWidth,
-        windowWidth: renderWidthPx,
-        autoPaging: 'text',
-        html2canvas: { useCORS: true, backgroundColor: '#ffffff', logging: false },
-      });
-
-      // html2canvas can leave its overlay behind; remove it so the page stays clickable.
-      document.querySelectorAll('.html2pdf__overlay').forEach((overlay) => overlay.remove());
-
-      const pages = pdf.getNumberOfPages();
-      for (let i = 1; i <= pages; i++) {
-        pdf.setPage(i);
-        pdf.setFontSize(8);
-        pdf.setTextColor(120);
-        if (options.includePageNumbers) pdf.text(`Page ${i} of ${pages}`, pageWidth - marginMm, pageHeight - 6, { align: 'right' });
-        if (options.includeWatermark) pdf.text("Created with Naqash Thaheem's CV Builder", marginMm, pageHeight - 6);
+      const unsupported = unsupportedPdfCharacters(cvData);
+      if (unsupported.length) {
+        addToast({
+          type: 'warning',
+          title: 'Some characters may not show in the PDF',
+          description: `The PDF uses standard fonts that cannot display ${unsupported.slice(0, 5).join(' ')}. Download the Word version to keep them.`,
+          duration: 8000,
+        });
       }
-
+      const pdf = options.pdfLayout === 'design' ? await buildDesignedPdf(options) : await buildCvPdf(cvData, cvStyle, { ...options, sections: cvLayout });
       pdf.save(`${exportFileBase()}_Resume.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -2507,7 +2457,50 @@ export default function CVBuilder() {
     }
   };
 
-  const exportAsTXT = async (_options: any): Promise<void> => {
+  // Renders the selected template's HTML into the PDF (text stays selectable via jsPDF's html renderer).
+  const buildDesignedPdf = async (options: Partial<CvExportSettings>) => {
+    const { jsPDF } = await import('jspdf');
+    const previewElement = document.querySelector('[data-cv-preview]');
+    const templateHTML = previewElement ? previewElement.innerHTML : renderTemplateHtml(cvData, cvStyle, selectedTemplate, cvLayout);
+
+    const pageSize = (options.pageSize || 'A4').toLowerCase() as 'a4' | 'letter' | 'legal';
+    const marginMm = options.margins === 'narrow' ? 12.7 : options.margins === 'wide' ? 38.1 : 25.4;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: pageSize, putOnlyUsedFonts: true, compress: true });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - marginMm * 2;
+    // Lay the template out at the printable width in CSS pixels (96 dpi) so 1px = 1px on paper.
+    const renderWidthPx = Math.round((contentWidth / 25.4) * 96);
+
+    const container = document.createElement('div');
+    container.style.cssText = `width:${renderWidthPx}px;background:#fff;color:#1f2937;font-family:Arial, sans-serif;`;
+    container.innerHTML = templateHTML;
+
+    await pdf.html(container, {
+      x: 0,
+      y: 0,
+      margin: [marginMm, marginMm, marginMm, marginMm],
+      width: contentWidth,
+      windowWidth: renderWidthPx,
+      autoPaging: 'text',
+      html2canvas: { useCORS: true, backgroundColor: '#ffffff', logging: false },
+    });
+
+    // html2canvas can leave its overlay behind; remove it so the page stays clickable.
+    document.querySelectorAll('.html2pdf__overlay').forEach((overlay) => overlay.remove());
+
+    const pages = pdf.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(8);
+      pdf.setTextColor(120);
+      if (options.includePageNumbers) pdf.text(`Page ${i} of ${pages}`, pageWidth - marginMm, pageHeight - 6, { align: 'right' });
+      if (options.includeWatermark) pdf.text("Created with Naqash Thaheem's CV Builder", marginMm, pageHeight - 6);
+    }
+    return pdf;
+  };
+
+  const exportAsTXT = async (): Promise<void> => {
     try {
       // Get the preview element that contains the rendered template
       const previewElement = document.querySelector('[data-cv-preview]');
@@ -2595,9 +2588,9 @@ export default function CVBuilder() {
     }
   };
 
-  const exportAsDOCX = async (_options: any): Promise<void> => {
+  const exportAsDOCX = async (options: Partial<CvExportSettings> = {}): Promise<void> => {
     try {
-      const blob = await buildCvDocx(cvData, cvStyle.primaryColor, { pageSize: _options?.pageSize, margins: _options?.margins });
+      const blob = await buildCvDocx(cvData, cvStyle.primaryColor, { pageSize: options.pageSize, margins: options.margins, sections: cvLayout });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -2618,7 +2611,7 @@ export default function CVBuilder() {
     }
   };
 
-  const exportAsHTML = async (_options: any): Promise<void> => {
+  const exportAsHTML = async (): Promise<void> => {
     try {
       // Get the preview element that contains the rendered template
       const previewElement = document.querySelector('[data-cv-preview]');
@@ -2679,9 +2672,7 @@ export default function CVBuilder() {
     }
   };
 
-  const handleDownload = async (format?: string, options?: any) => {
-    if (!format) return;
-    
+  const handleDownload = async (format: CvExportFormat, options: CvExportSettings = exportSettings) => {
     try {
       switch (format) {
         case 'pdf':
@@ -2691,23 +2682,59 @@ export default function CVBuilder() {
           await exportAsDOCX(options);
           break;
         case 'html':
-          await exportAsHTML(options);
+          await exportAsHTML();
           break;
         case 'txt':
-          await exportAsTXT(options);
+          await exportAsTXT();
           break;
-        default:
-          console.warn('Unknown export format:', format);
       }
     } catch (error) {
+      // Each exporter already told the user what went wrong.
       console.error('Export failed:', error);
-      addToast({
-        type: 'error',
-        title: 'Export Failed',
-        description: 'Failed to export CV. Please try again.',
-        duration: 5000
-      });
     }
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const saveBackup = () => {
+    setBackupError('');
+    const json = makeBackup(cvData, cvStyle, cvLayout, selectedTemplate?.id);
+    downloadBlob(new Blob([json], { type: 'application/json' }), `${exportFileBase()}_CV_backup.json`);
+  };
+
+  const restoreBackup = async (file: File) => {
+    setBackupError('');
+    let text = '';
+    try {
+      text = await file.text();
+    } catch {
+      setBackupError('The file could not be read. Please try again.');
+      return;
+    }
+    const parsed = parseBackup(text);
+    if (!parsed.ok) {
+      setBackupError(parsed.message);
+      return;
+    }
+    setCvData(parsed.data);
+    setCvStyle((prev) => ({ ...prev, ...parsed.style }));
+    setCvLayout(parsed.layout);
+    const template = parsed.templateId ? templates.find((t) => String(t.id) === parsed.templateId) : null;
+    if (template) chooseTemplate(template);
+    if (currentStep === 0) {
+      setCreationMode('manual');
+      changeStep(1);
+    }
+    addToast({ type: 'success', title: 'Backup restored', description: 'Your CV has been restored from the backup file.', duration: 4000 });
   };
 
   // Live preview beside the form for the data-entry steps (not while uploading/tailoring).
@@ -2721,9 +2748,9 @@ export default function CVBuilder() {
       case 1:
         // Show different content based on creation mode and whether data has been processed
         if (creationMode === 'ai-upload' && !hasProcessedData) {
-          return <CVUploadStep onExtractionComplete={handleCVExtractionComplete} />;
+          return <CVUploadStep onExtractionComplete={handleCVExtractionComplete} onManual={() => setCreationMode('manual')} />;
         } else if (creationMode === 'ai-tailor' && !hasProcessedData) {
-          return <JobTailoringStep onTailoringComplete={handleJobTailoringComplete} />;
+          return <JobTailoringStep cvData={cvData} onTailoringComplete={handleJobTailoringComplete} onManual={() => setCreationMode('manual')} />;
         } else {
           return <PersonalInfoStep data={cvData} onDataChange={setCvData} onProfilePictureUpload={handleProfilePictureUpload} />;
         }
@@ -2748,16 +2775,26 @@ export default function CVBuilder() {
           data={cvData} 
           templates={templates} 
           templatesLoading={templatesLoading} 
-          onTemplateSelect={chooseTemplate} 
-          selectedTemplate={selectedTemplate} 
+          onTemplateSelect={chooseTemplate}
+          selectedTemplate={selectedTemplate}
+          layout={cvLayout}
+          onLayoutChange={setCvLayout}
         />;
       case 10:
-        return <PreviewStep 
-          data={cvData} 
-          style={cvStyle} 
-          onDownload={handleDownload} 
-          selectedTemplate={selectedTemplate} 
-        />;
+        return (
+          <PreviewStep
+            data={cvData}
+            style={cvStyle}
+            layout={cvLayout}
+            selectedTemplate={selectedTemplate}
+            format={exportFormat}
+            onFormatChange={setExportFormat}
+            settings={exportSettings}
+            onSettingsChange={setExportSettings}
+            onDownload={handleDownload}
+            onDataChange={setCvData}
+          />
+        );
       default:
         return <div>Step not found</div>;
     }
@@ -2770,8 +2807,38 @@ export default function CVBuilder() {
         <AdPlacement position="content-top" className="mb-6" />
 
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Clear Button - Top Right */}
-          <div className="flex justify-end items-center p-3 sm:p-4 md:p-6 pb-0">
+          {/* Backup / restore and clear - top right */}
+          <div className="flex flex-wrap justify-end items-center gap-2 p-3 sm:p-4 md:p-6 pb-0">
+            <button
+              type="button"
+              onClick={saveBackup}
+              className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-300"
+            >
+              Save backup (.json)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (backupInputRef.current) {
+                  backupInputRef.current.value = '';
+                  backupInputRef.current.click();
+                }
+              }}
+              className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-300"
+            >
+              Restore backup
+            </button>
+            <input
+              ref={backupInputRef}
+              type="file"
+              accept="application/json,.json"
+              aria-label="Restore backup file"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void restoreBackup(file);
+              }}
+            />
               <button
               onClick={handleClear}
               className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200 border border-blue-200"
@@ -2784,6 +2851,11 @@ export default function CVBuilder() {
               <span className="sm:hidden">Reset</span>
               </button>
       </div>
+          {backupError && (
+            <div role="alert" className="mx-3 mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 sm:mx-4 md:mx-6">
+              {backupError}
+            </div>
+          )}
 
           <div className="p-3 sm:p-4 md:p-6 pt-2 sm:pt-3 md:pt-4">
             <div
@@ -2811,7 +2883,7 @@ export default function CVBuilder() {
                     </div>
                     {livePreviewOpen && (
                       <div id="cv-live-preview" data-testid="cv-live-preview" className="max-h-[75vh] overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-                        <CvPreview data={cvData} style={cvStyle} template={selectedTemplate} />
+                        <CvPreview data={cvData} style={cvStyle} template={selectedTemplate} layout={cvLayout} />
                       </div>
                     )}
                     {livePreviewOpen && (
@@ -2832,7 +2904,7 @@ export default function CVBuilder() {
           totalSteps={totalSteps}
           onNext={handleNext}
           onPrevious={handlePrevious}
-          onFinish={handleFinish}
+          onFinish={() => handleDownload(exportFormat, exportSettings)}
             />}
           </div>
         </div>

@@ -37,7 +37,7 @@ export const hubs: Record<ToolHub, HubInfo> = {
       'Free online utility tools with no signup: PDF merge and split, image compression, JSON formatter, password generator, QR codes and finance calculators.',
     intro: 'Everyday tools for text, images, PDFs, developers and personal finance. Most run entirely in your browser, so your files never leave your device.',
     answer:
-      'These are free, no-signup online tools for common tasks: merging or splitting PDFs, compressing and converting images, formatting JSON, SQL or HTML, generating passwords, hashes, UUIDs and QR codes, and calculating loans or compound interest. Most tools process data locally in your browser.',
+      'These are free, no-signup online tools for common tasks: merging or splitting PDFs, compressing and converting images, formatting JSON, SQL or HTML, generating passwords, hashes, UUIDs and QR codes, and calculating loans, compound interest, UAE end-of-service gratuity or 5% UAE VAT. Most tools process data locally in your browser.',
     categories: ['documents', 'images', 'developer', 'text', 'security', 'finance'],
   },
   'conversion-tools': {
