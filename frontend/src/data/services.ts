@@ -100,7 +100,7 @@ export const services: Service[] = [
     seoTitle: 'AI Automation & n8n Workflow Consultant, UAE | Naqash Thaheem',
     seoDescription:
       'AI automation consulting: WhatsApp AI agents, lead qualification, proposal generation and n8n workflows that connect your CRM, email, databases and APIs.',
-    keywords: ['AI automation consultant', 'n8n automation expert', 'business process automation', 'WhatsApp AI agent', 'AI agents for business'],
+    keywords: ['AI automation consultant', 'n8n developer', 'n8n automation expert', 'n8n consultant', 'business process automation', 'WhatsApp automation', 'WhatsApp AI agent', 'AI agents for business'],
     h1: 'AI Automation & Workflow Automation',
     lead: 'I design practical AI solutions that automate repetitive business processes, and I start with the process, not the tool.',
     sections: [

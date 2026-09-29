@@ -187,6 +187,21 @@ test.describe('uae-gratuity-calculator', () => {
     await expect(root.getByText('Enter the length of service.')).toBeVisible();
   });
 
+  test('FAQ answers the MOHRE, emirate / free-zone and final settlement questions', async ({ page }) => {
+    const tool = getToolBySlug('uae-gratuity-calculator')!;
+    for (const kw of ['gratuity calculator', 'gratuity calculator dubai', 'gratuity calculator abu dhabi', 'mohre gratuity calculator', 'jafza gratuity calculator', 'final settlement calculation']) {
+      expect(tool.keywords).toContain(kw);
+    }
+    await openTool(page, 'uae-gratuity-calculator');
+    const faq = (await page.locator('script[type="application/ld+json"]').allTextContents()).map((s) => JSON.parse(s)).find((b) => b['@type'] === 'FAQPage');
+    const questions: string[] = faq.mainEntity.map((q: { name: string }) => q.name);
+    expect(questions).toEqual(
+      expect.arrayContaining(['Is this the same as the MOHRE gratuity calculator?', 'Does it work in Dubai, Abu Dhabi, JAFZA, DIFC or ADGM?', 'What is included in the final settlement?']),
+    );
+    const mohre = faq.mainEntity.find((q: { name: string }) => q.name.includes('MOHRE'));
+    expect(mohre.acceptedAnswer.text).toContain('not affiliated');
+  });
+
   test('copy and print the result', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.addInitScript(() => {
@@ -342,7 +357,7 @@ test.describe('UAE finance tool pages', () => {
       expect(types).toEqual(expect.arrayContaining(['WebApplication', 'FAQPage']));
       const faq = blocks.find((b) => b['@type'] === 'FAQPage');
       expect(faq.mainEntity).toHaveLength(tool.faqs.length);
-      expect(blocks.find((b) => b['@type'] === 'WebApplication').dateModified).toBe('2026-09-25');
+      expect(blocks.find((b) => b['@type'] === 'WebApplication').dateModified).toBe(tool.reviewed);
       // The tool's own sections use h2/h3 only.
       await expect(page.getByTestId('tool-root').locator('h1')).toHaveCount(0);
       await expect(page.getByTestId('tool-root').locator('h2').first()).toBeVisible();
