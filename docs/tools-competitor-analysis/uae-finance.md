@@ -1,10 +1,15 @@
-# UAE finance tools: rules, competitor analysis and QA (reviewed 2026-09-25)
+# UAE finance tools: rules, competitor analysis and QA (reviewed 2026-09-29)
 
 Hub: `/resources/utility-tools` (category `finance`). Tools: UAE gratuity calculator
-(`uae-gratuity-calculator`) and UAE VAT calculator (`uae-vat-calculator`). Both were added in response to
-`docs/GROWTH_AUDIT_2026-09.md` section 5.1 (priorities 1 and 5).
+(`uae-gratuity-calculator`) and UAE VAT calculator (`uae-vat-calculator`), added in response to
+`docs/GROWTH_AUDIT_2026-09.md` section 5.1 (priorities 1 and 5), plus the UAE leave salary calculator
+(`uae-leave-salary-calculator`) and UAE overtime calculator (`uae-overtime-calculator`), added on 2026-09-29
+for low-difficulty Semrush keywords (UAE database, Sept 2026): "leave salary calculator uae" (880/mo, KD 9),
+"leave salary calculation in uae" (880, KD 9), "annual leave calculator uae" (320, KD 9), "overtime calculator
+uae" (1,300, KD 17) and "overtime calculation in uae" (1,300, KD 17). The four tools link to each other
+through `related`, and the gratuity and leave pages also link in their content.
 
-Processing: both run entirely in the browser (`processing: 'browser'`). The arithmetic is in
+Processing: all four run entirely in the browser (`processing: 'browser'`). The arithmetic is in
 `frontend/src/components/tools/uaeMoney.ts`: money is held as BigInt fils or as an exact fraction, and it is
 rounded half-up to 2 decimals only when displayed.
 
@@ -12,6 +17,9 @@ Research: facts come from web search result snippets. Direct fetches of u.ae, mo
 uaelegislation.gov.ae, gulfnews.com, khaleejtimes.com and the competitor calculators were blocked by the
 research environment's egress proxy, so only what the snippets state is recorded here. Anything we could not
 verify is left out of the tool content.
+The 2026-09-29 research for the leave salary and overtime tools had the same restriction (u.ae, mohre.gov.ae,
+uaelegislation.gov.ae, jafza.ae, khaleejtimes.com, gulfnews.com and the law-firm sites were all blocked), so
+those rules also rest on search snippets that quote the law, MOHRE and u.ae.
 
 ## Gratuity rules as implemented
 
@@ -82,6 +90,96 @@ explicit daily-wage method, part-time, formula + worked example + official sourc
 Backlog: Arabic, one-click PDF, full final settlement (leave encashment, notice pay, ticket), DIFC DEWS and
 ADGM calculators, pre-2022 unlimited-contract resignation reductions.
 
+### Gratuity search coverage (2026-09-29)
+
+Keywords added for the gratuity cluster: "gratuity calculator" (60.5k), "gratuity calculator uae" (49.5k),
+"gratuity calculator dubai" (4.4k), "how to calculate gratuity in uae" (3.6k), "gratuity calculator abu dhabi"
+(880), "uae gratuity law" (880), "uae settlement calculator" (480), "final settlement calculation" (320) and
+"jafza gratuity calculator" (390), alongside the existing "uae gratuity calculator", "end of service calculator
+uae", "mohre gratuity calculator" and "dubai gratuity calculator". FAQs were reorganised (the registry allows
+at most 5):
+
+- "Is this the same as the MOHRE gratuity calculator?": no; an independent tool applying the same Federal
+  Decree-Law formula, not affiliated with MOHRE.
+- "Does it work in Dubai, Abu Dhabi, JAFZA, DIFC or ADGM?": yes for mainland jobs in every emirate and for JAFZA,
+  whose companies must follow the federal labour law for end-of-service benefits (JAFZA guide
+  "How to calculate gratuity for employees of Jafza companies", Khaleej Times "JAFZA visa: gratuity, ticket as per
+  Labour Law"); DIFC (DEWS since February 2020) and ADGM (own Employment Regulations) differ.
+- "What is included in the final settlement?": gratuity + unused leave (basic salary) + unpaid salary and
+  overtime + notice pay + contract benefits such as a ticket, due within 14 days (Article 53). Points to the leave
+  salary tool; the page body links to the leave salary and overtime calculators.
+- The daily-wage (÷ 30 vs × 12 ÷ 365) answer was folded into "How is gratuity calculated in the UAE?", and the
+  14-day payment answer into the final-settlement FAQ.
+
+Top-ranking gratuity competitors named in the Semrush brief and added to the registry comparison:
+gulfnews.com and dda.gov.ae (already listed), plus gratuitycalculatordubaiuae.ae, ZenHR, Cercli and Workforce.ae. Their
+feature sets could not be checked (direct fetches are blocked, see Research above), so they are listed without a
+feature column.
+
+## Leave salary rules as implemented
+
+| Rule | Implementation | Source |
+| --- | --- | --- |
+| 30 calendar days of paid leave per year of service once one year is completed | Leave earned = 30 × years of service when service ≥ 1 year | Decree-Law 33/2021 Art. 29(1); u.ae annual leave page; Bayzat, uaeahead.com summaries |
+| 2 days per month when service is more than 6 months and less than 1 year | 2 × completed calendar months (6–11 months) | Art. 29(1)(b); u.ae; Khaleej Times |
+| Fraction of the last year paid when service ends | Part years pro-rata: 30 × days ÷ 365 (e.g. 181 days = 14.88 days) | Art. 29 ("entitled to leave for the fraction of the last year"), u.ae types-of-leave page, uaeahead.com |
+| Under 6 months: no statutory paid leave | 0 days with a "Not entitled yet" note. **Option**: "2 days per completed month" because some sources say leavers during probation are paid accrued days | u.ae / Sovereign Group guides (no entitlement); auxiliumservices.com (probation leavers paid) |
+| Pay during annual leave is the *wage* (Art. 1: basic wage plus cash allowances and benefits) | Leave-salary mode default = basic + allowances. **Option**: basic only if the contract says so | Art. 1 definitions of "Wage" and "Basic Wage" (as quoted by NOW Money, Rousan & Associates); Gulf News "full salary and allowances during annual leave"; hhslawyers.com |
+| Unused leave paid at exit on the *basic* wage | Exit mode default = basic salary. **Option**: basic + allowances for more generous contracts | Art. 29(9) as quoted by Khaleej Times, hhslawyers.com, Gulf News, qasproglobal.com |
+| Daily wage divisor | Default monthly wage ÷ 30. **Option**: × 12 ÷ 365 | Law does not fix a divisor; ÷ 30 used by MOHRE-citing guides and calculators (Yomly, BCL Globiz, qasproglobal.com); some payroll systems annualise |
+| Unpaid leave not counted as service | Unpaid days subtracted from service before accrual (and from the end date for the completed-month count) | Sovereign Group, Kinetic, Bayzat leave guides (practice; mirrors Art. 51 for gratuity) |
+| Carry forward up to half a year's leave with employer agreement, or a cash allowance at the wage when due; employer cannot block use for more than 2 years | Explained on the page and in an FAQ (not calculated) | Cabinet Resolution 1/2022 (Executive Regulations) and Art. 29(8), as quoted by Khaleej Times and Emirates 24/7 |
+| Final dues within 14 days | Explained on the page | Art. 53, as summarised by uaeahead.com and payslip.ae |
+
+Balance = leave earned − paid leave already taken (whole employment). A negative balance shows an "overdrawn"
+warning and pays AED 0; planned leave above the balance shows a warning. Leave days are held as exact fractions
+(over 438,000) and money in BigInt fils, like the gratuity tool.
+
+We did not find a primary source stating the ÷ 30 divisor; one guide attributes it to "Article 67", which we
+could not verify, so the tool presents ÷ 30 as practice, not law.
+
+## Overtime rules as implemented
+
+| Rule | Implementation | Source |
+| --- | --- | --- |
+| Normal hours at most 8 a day or 48 a week (2 hours less in Ramadan) | Warnings above 8 h/day and 48 h/week; Ramadan in text and FAQ | Art. 17; u.ae working hours page |
+| Overtime = normal-hours pay on the **basic** wage + at least 25% | +25% on the hourly basic wage (× 1.25 per hour) | Art. 19(2); MOHRE "Dear Worker – Know Your Rights"; u.ae ("remuneration (which is based on basic salary)"); Khaleej Times; Bracewell |
+| 10 pm–4 am: at least 50%, not for shift workers | +50%; "I work in shifts" option drops night hours to +25% | Art. 19(3); MOHRE Dear Worker; u.ae |
+| Rest day: substitute rest day, or the day's wage + at least 50% of the basic wage; max 2 consecutive rest days (except daily-wage workers) | Rest-day / public-holiday hours at × 1.5 of the hourly base | Art. 19(4)–(5) as quoted by Emirates 24/7, legaleagle.ae; MOHRE Dear Worker |
+| Public holiday: another day off for each day, or the day's wage + at least 50% of the basic wage | Same × 1.5 category | Art. 28 (quoted by Gulf News / Emirates 24/7) |
+| Overtime at most 2 h/day (except to prevent serious loss or accident); total hours at most 144 per 3 weeks | Warnings: average (regular + night) overtime per working day > 2; (normal + all overtime hours) scaled to 3 weeks > 144 | Art. 19(1); Executive Regulations Art. 15(3) |
+| Some categories exempt from the hour limits | Mentioned in disclaimer and FAQ | Executive Regulations Art. 15(4) (snippet) |
+| Hourly rate convention | Default basic ÷ 30 ÷ normal daily hours. **Options**: × 12 ÷ 365 ÷ daily hours (Emirates 24/7, Bayzat), × 12 ÷ 52 ÷ weekly hours | Law does not fix a divisor; ÷ 30 ÷ 8 used by Khaleej Times' example and most guides |
+| Wage base | Default basic salary (legal minimum). **Option**: basic + allowances for contracts that pay more | As above |
+
+The "period" input (one week, three weeks, one month = 30 days) is only used for the limit checks. With a
+48-hour week any sustained overtime exceeds 144 hours per 3 weeks; the warning reports this literally, as
+Article 19(1) is written. Premiums above the legal minimum are in the backlog.
+
+Simplification: for rest-day work the law pays "the wage for that day" plus 50% of the *basic* wage. With the
+default basic-salary base this is exactly 150% of the hourly basic wage. With the allowances option the tool
+applies 150% to the full hourly wage, i.e. it assumes the more generous contract also pays the premium on it.
+
+## Leave salary and overtime competitor notes
+
+Checked through search snippets only (direct fetches blocked):
+
+| Capability | Payslip.ae | thegratuitycalculator.ae | BCL Globiz | Yomly | RadixHR | This tool |
+| --- | --- | --- | --- | --- | --- | --- |
+| Encashment = basic ÷ 30 × days | Yes | Yes | Yes | Yes | Yes | Yes (÷ 30 or × 12 ÷ 365) |
+| Accrual from joining date | Yes | n/k | n/k | n/k | n/k | Yes, incl. 6-month and 1-year thresholds and pro-rata part year |
+| Planned-leave salary on full wage vs exit on basic | n/k | Mentions | n/k | n/k | n/k | Both modes, basis selectable |
+| Unpaid leave / taken days | n/k | n/k | n/k | n/k | n/k | Yes |
+
+| Capability | Bayzat | RadixHR | uaecalculator.ae | uaegratuity-calculator.com | TimeChart | This tool |
+| --- | --- | --- | --- | --- | --- | --- |
+| 125% / 150% rates | Yes | Yes | Yes | Yes | Yes | Yes, per type in one run |
+| Shift-worker night exception | Text | n/k | n/k | n/k | n/k | Option |
+| Legal-limit warnings (2 h/day, 144 h/3 weeks, 8 h / 48 h) | Text | n/k | n/k | n/k | n/k | Yes |
+| Divisor choice | × 12 ÷ 365 ÷ 8 | n/k | n/k | n/k | n/k | Three conventions |
+
+n/k = not known from the snippets.
+
 ## VAT rules as implemented
 
 | Rule | Implementation | Source |
@@ -112,7 +210,27 @@ Backlog: Arabic, printable invoice summary, CSV import of lines, reverse-charge 
 
 ## Tests
 
-`frontend/e2e/tools/uae-finance.spec.ts`: 15 tests (14 desktop + 1 `@mobile`). Expected values are computed
+`frontend/e2e/tools/uae-employment.spec.ts` (leave salary and overtime), expected values computed independently:
+
+- 3 years, 60 days taken, AED 10,000 basic + 5,000 allowances: 90 earned, 30 balance, 30-day leave = AED 15,000
+  (full wage) or AED 10,000 (basic only); over-balance warning at 35 days
+- exit after 3 years with 75 taken = 15 days = AED 5,000 on basic (AED 7,500 with allowances); leaving
+  30 June 2026 adds 14.88 days (AED 9,958.90)
+- 8 months = 16 days; exactly 6 months = 12 days; 5 months = 0 with "not entitled" (10 days with the pro-rata
+  option); exactly 1 year = 30 days
+- 73 unpaid days: 2 years 292 days = 84 days = AED 28,000; 10 unpaid days in the first year = 11 months = 22 days;
+  unpaid ≥ service rejected; 100 taken of 90 earned = overdrawn, AED 0
+- known balance 22.5 days at AED 9,000 = AED 6,750 (÷ 30) and AED 6,657.53 (× 12 ÷ 365)
+- validation, Copy and Print
+- overtime AED 6,000 / 8 h: AED 25/h; 10 regular + 4 night + 8 rest-day hours = AED 762.50; shift worker
+  AED 737.50; AED 3,200 → AED 166.67 for 10 h; 7.5-hour days; × 12 ÷ 365 and × 12 ÷ 52 methods; allowances option
+- limit warnings: exactly 144 h in 3 weeks (none) vs 144.5 (warning); 2.0 vs 2.4 overtime hours a day;
+  9-hour days and 54-hour weeks; zero hours; validation; Copy
+- SEO (H1, title, description, WebApplication + FAQPage + HowTo JSON-LD, dateModified, prerendered HTML),
+  cross-links between the four UAE tools, and no horizontal overflow at 390 px (`@mobile`)
+
+`frontend/e2e/tools/uae-finance.spec.ts`: 16 tests (15 desktop + 1 `@mobile`), including a check that the
+gratuity FAQ answers the MOHRE, emirate / free-zone and final-settlement questions. Expected values are computed
 independently in the test:
 
 - 3 years at AED 10,000 = 63 days × 333.33 = AED 21,000
@@ -129,6 +247,47 @@ independently in the test:
 - no horizontal overflow at 390 px
 
 ## Sources
+
+Leave salary, overtime and gratuity-coverage research (2026-09-29, via search snippets):
+
+- https://u.ae/en/information-and-services/jobs/employment-in-the-private-sector/types-of-leaves-and-entitlements-in-the-private-sector/annual-leave
+- https://u.ae/en/information-and-services/jobs/Sector-of-employment/employment-in-the-private-sector/Types-of-leaves
+- https://u.ae/en/information-and-services/jobs/Sector-of-employment/employment-in-the-private-sector/working-hours
+- https://u.ae/en/information-and-services/jobs/employment-in-the-private-sector/types-of-leaves-and-entitlements-in-the-private-sector/official-leaves-and-vacations
+- https://mohre.gov.ae/en/guidance-and-awareness-portal-new/employee-companies/dear-worker-know-your-rights
+- https://www.mohre.gov.ae/assets/download/635f7/Additional%20Working%20Hours%20-%20Wages%20-%20Leaves%20Guide%20EN.pdf.aspx
+- https://uaelegislation.gov.ae/en/legislations/1541/download (Federal Decree-Law No. 33 of 2021)
+- https://www.khaleejtimes.com/uae/legal/annual-leave-in-uae-how-many-days-you-can-take-carry-forward-all-you-need-to-know
+- https://www.khaleejtimes.com/uae/legal/labour-law-can-you-encash-unused-annual-leave-carry-it-forward
+- https://www.khaleejtimes.com/uae/legal/overtime-pay-explained
+- https://www.khaleejtimes.com/uae/jafza-visa-gratuity-ticket-as-per-labour-law
+- https://gulfnews.com/ask-gulf-news/uae-annual-leave-pay-are-you-entitled-to-your-full-salary-including-allowances-1.500620286
+- https://gulfnews.com/living-in-uae/ask-us/working-during-eid-uae-1.500454399
+- https://www.emirates247.com/uae-guide/working-in-the-uae-how-is-overtime-pay-calculated/3876
+- https://hhslawyers.com/blog/unused-annual-leave-encashment-new-uae-labour-law/
+- https://uaeahead.com/uae-labour-law-annual-leave/
+- https://uaeahead.com/uae-labour-law-working-hours/
+- https://legaleagle.ae/en/employees-right-to-financial-compensation-or-rest-days-for-overtime-hours-in-the-uae/
+- https://www.bracewell.com/resources/uae-employment-law-update/
+- https://nowmoney.me/blog/basic-salary-in-uae-labour-law/
+- https://rousanlaw.com/bonus-commission-are-not-part-of-the-basic-wage-according-to-the-uae-new-employment-law-no-33-of-2021/
+- https://www.sovereigngroup.com/news/a-comprehensive-guide-to-leave-entitlements-in-the-uae/
+- https://www.jafza.ae/resource-centre/guides/how-to-calculate-gratuity-for-employees-of-jafza-companies/
+- https://payslip.ae/annual-leave
+- https://payslip.ae/final-settlement
+- https://thegratuitycalculator.ae/leave-salary-calculator-uae/
+- https://bcl.ae/leave-encashment-calculator-2026/
+- https://www.yomly.com/hr-toolkit/online-leave-salary-calculator-for-uae/
+- https://radixhr.com/leave-salary-calculator
+- https://radixhr.com/overtime-calculator
+- https://www.bayzat.com/blog/overtime-calculation-uae/
+- https://uaecalculator.ae/overtime-calculator-uae/
+- https://www.uaegratuity-calculator.com/overtime-calculator-uae/
+- https://www.timechart.org/blogs/overtime-calculation-in-uae.html
+- https://gratuitycalculatordubaiuae.ae/
+
+Gratuity and VAT research (2026-09-25):
+
 
 - https://u.ae/en/information-and-services/jobs/end-of-service-benefits-for-employees-in-the-private-sector/calculations-for-gratuity-pay-
 - https://u.ae/en/information-and-services/jobs/end-of-service-benefits-for-employees-in-the-private-sector/provisions-for-end-of-service-benefits
