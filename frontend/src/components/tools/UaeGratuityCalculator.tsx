@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import {
   calculateGratuity,
   dailyWageMethods,
@@ -493,6 +494,19 @@ export default function UaeGratuityCalculator() {
           Basic salary AED 10,000, 7 years of service, no unpaid leave. Daily wage = 10,000 ÷ 30 = AED 333.33. Years 1–5: 5 × 21 = 105 days = AED
           35,000. Years 6–7: 2 × 30 = 60 days = AED 20,000. Total: 165 days = <strong>AED 55,000</strong>, below the cap of AED 240,000. With 90
           days of unpaid leave, service falls to 6 years 275 days and the gratuity to about AED 52,534.25.
+        </p>
+        <h3 className="mt-5 text-lg font-semibold text-gray-900">The rest of your final settlement</h3>
+        <p className="mt-2 text-gray-700" data-testid="gratuity-settlement">
+          Gratuity is only one part of the final settlement. Add pay for unused annual leave (on basic salary) with the{' '}
+          <Link to="/resources/utility-tools/uae-leave-salary-calculator" className="text-blue-700 underline hover:text-blue-800">
+            UAE leave salary calculator
+          </Link>
+          , any unpaid overtime with the{' '}
+          <Link to="/resources/utility-tools/uae-overtime-calculator" className="text-blue-700 underline hover:text-blue-800">
+            UAE overtime calculator
+          </Link>
+          , plus unpaid salary, notice pay if notice was not worked and contract benefits such as a return ticket. All end-of-service dues are due
+          within 14 days of the contract ending.
         </p>
         <h3 className="mt-5 text-lg font-semibold text-gray-900">Sources</h3>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">

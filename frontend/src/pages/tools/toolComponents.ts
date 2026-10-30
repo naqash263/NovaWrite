@@ -11,6 +11,8 @@ export const toolComponents: Record<string, LazyExoticComponent<ComponentType>> 
   'utility-tools/compound-interest-calculator': lazy(() => import('../../components/tools/CompoundInterestCalculator')),
   'utility-tools/uae-gratuity-calculator': lazy(() => import('../../components/tools/UaeGratuityCalculator')),
   'utility-tools/uae-vat-calculator': lazy(() => import('../../components/tools/UaeVatCalculator')),
+  'utility-tools/uae-leave-salary-calculator': lazy(() => import('../../components/tools/UaeLeaveSalaryCalculator')),
+  'utility-tools/uae-overtime-calculator': lazy(() => import('../../components/tools/UaeOvertimeCalculator')),
   'utility-tools/json-formatter': lazy(() => import('../../components/tools/JSONFormatter')),
   'utility-tools/base64-encoder': lazy(() => import('../../components/tools/Base64Encoder')),
   'utility-tools/url-encoder': lazy(() => import('../../components/tools/URLEncoder')),

@@ -144,6 +144,8 @@ class SitemapController extends Controller
                 'compound-interest-calculator',
                 'uae-gratuity-calculator',
                 'uae-vat-calculator',
+                'uae-leave-salary-calculator',
+                'uae-overtime-calculator',
                 'pdf-merger',
                 'pdf-splitter',
                 'pdf-compressor',

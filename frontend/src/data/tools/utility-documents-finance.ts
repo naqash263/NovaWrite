@@ -237,12 +237,21 @@ export const utilityDocumentsFinanceTools: ToolContent[] = [
     seoDescription:
       'Free UAE gratuity calculator for 2026: estimate end-of-service pay from basic salary and exact dates, with unpaid leave, the two-year cap and a yearly schedule.',
     keywords: [
+      'gratuity calculator',
+      'gratuity calculator uae',
       'uae gratuity calculator',
       'gratuity calculator uae 2026',
       'end of service calculator uae',
       'end of service benefits uae',
-      'mohre gratuity calculator',
+      'gratuity calculator dubai',
       'dubai gratuity calculator',
+      'gratuity calculator abu dhabi',
+      'how to calculate gratuity in uae',
+      'mohre gratuity calculator',
+      'uae gratuity law',
+      'uae settlement calculator',
+      'final settlement calculation',
+      'jafza gratuity calculator',
       'gratuity calculation uae labour law',
       'eosb calculator uae',
     ],
@@ -269,12 +278,17 @@ export const utilityDocumentsFinanceTools: ToolContent[] = [
       {
         question: 'How is gratuity calculated in the UAE?',
         answer:
-          'Under Article 51 of Federal Decree-Law No. 33 of 2021, a full-time employee with at least one year of continuous service gets 21 days of basic wage for each of the first five years and 30 days for each year after that. Part years are paid pro-rata, the total cannot exceed two years’ wage, and allowances such as housing and transport are not included.',
+          'Under Article 51 of Federal Decree-Law No. 33 of 2021, a full-time employee with at least one year of continuous service gets 21 days of basic wage for each of the first five years and 30 days for each year after that. Part years are paid pro-rata, the total cannot exceed two years’ wage, and allowances are excluded. The daily wage is usually basic salary ÷ 30; some employers annualise (× 12 ÷ 365), which you can pick under Advanced options.',
       },
       {
-        question: 'Is the daily wage basic salary ÷ 30 or basic salary × 12 ÷ 365?',
+        question: 'Is this the same as the MOHRE gratuity calculator?',
         answer:
-          'The law sets gratuity in days of wage but does not state a divisor. Basic ÷ 30 is the common UAE payroll practice and is used by the widely cited calculators, so it is the default here. Some employers annualise (basic × 12 ÷ 365), which gives a slightly lower daily rate, and ADGM’s own regulations use ÷ 365. You can switch methods under Advanced options.',
+          'No. This is an independent calculator and is not affiliated with the Ministry of Human Resources and Emiratisation (MOHRE). It applies the same Federal Decree-Law formula that MOHRE publishes for private-sector employees and shows every step, but only MOHRE, your employer or a court can confirm the amount you are owed.',
+      },
+      {
+        question: 'Does it work in Dubai, Abu Dhabi, JAFZA, DIFC or ADGM?',
+        answer:
+          'Yes for mainland jobs in every emirate, including Dubai and Abu Dhabi, and for most free zones such as JAFZA, whose companies must follow the federal labour law for end-of-service benefits. DIFC replaced gratuity with the DEWS savings plan in February 2020 and ADGM has its own Employment Regulations, so check those schemes instead. For part-time work, enter the percentage of full-time hours under Advanced options.',
       },
       {
         question: 'Do unpaid leave or resigning reduce my gratuity?',
@@ -282,17 +296,12 @@ export const utilityDocumentsFinanceTools: ToolContent[] = [
           'Unpaid absence days are not counted as service, so they reduce the gratuity and can take you below the one-year minimum. Since the 2021 law took effect on 2 February 2022, all contracts are fixed-term and resigning no longer cuts gratuity. The old one-third and two-thirds cuts applied to resignations from unlimited contracts under Law No. 8 of 1980 until those contracts were converted.',
       },
       {
-        question: 'Does this calculator work for DIFC, ADGM or part-time jobs?',
+        question: 'What is included in the final settlement?',
         answer:
-          'It follows the mainland federal labour law. DIFC replaced gratuity with the DEWS savings plan in February 2020, and ADGM has its own Employment Regulations, so check those schemes instead. For part-time work the Executive Regulations pro-rate the full-time gratuity by contracted hours; enter that percentage under Advanced options.',
-      },
-      {
-        question: 'When must my employer pay the gratuity?',
-        answer:
-          'End-of-service dues, including gratuity, must be paid within 14 days of the contract ending. If your employer does not pay, you can file a complaint with the Ministry of Human Resources and Emiratisation (MOHRE).',
+          'A UAE final settlement usually adds up the gratuity, pay for unused annual leave (on basic salary; use the UAE Leave Salary Calculator), any unpaid salary and overtime, notice pay if notice was not worked, and other contract benefits such as a repatriation ticket. Article 53 requires the employer to pay all end-of-service dues within 14 days of the contract ending; if not, you can complain to MOHRE.',
       },
     ],
-    related: ['uae-vat-calculator', 'date-calculator', 'loan-calculator', 'percentage-calculator'],
+    related: ['uae-leave-salary-calculator', 'uae-overtime-calculator', 'uae-vat-calculator', 'date-calculator', 'loan-calculator'],
     processing: 'browser',
     comparison: {
       competitors: [
@@ -303,6 +312,10 @@ export const utilityDocumentsFinanceTools: ToolContent[] = [
         'Gulf News / Dubai Development Authority calculator',
         'HowUAE Gratuity Calculator',
         'Zoho Payroll Gratuity Calculator',
+        'gratuitycalculatordubaiuae.ae',
+        'ZenHR Gratuity Calculator',
+        'Cercli Gratuity Calculator',
+        'Workforce.ae Gratuity Calculator',
       ],
       commonFeatures: [
         'Basic salary plus joining and last working date',
@@ -319,11 +332,13 @@ export const utilityDocumentsFinanceTools: ToolContent[] = [
         'Daily wage method choice with the difference explained, plus part-time percentage',
         'Formula, worked example and official sources on the page; Copy and Print (print to PDF)',
         'Clear DIFC / ADGM note instead of a silently wrong mainland result',
+        'FAQs for Dubai, Abu Dhabi and free-zone (JAFZA) users, the MOHRE question and what a final settlement includes',
+        'Companion UAE leave salary and overtime calculators for the rest of the final settlement',
       ],
       backlog: [
         'Arabic interface',
         'One-click PDF download (Print to PDF works today)',
-        'Full final settlement: leave encashment, notice pay and repatriation ticket',
+        'One combined final settlement view (gratuity, leave encashment, notice pay and ticket); the parts exist as separate tools',
         'DIFC DEWS and ADGM calculators',
         'Pre-2022 unlimited-contract resignation reductions',
       ],
@@ -333,7 +348,208 @@ export const utilityDocumentsFinanceTools: ToolContent[] = [
         'Runs entirely in your browser; salary details are never sent anywhere',
       ],
     },
-    reviewed: '2026-09-25',
+    reviewed: '2026-09-29',
+  },
+  {
+    slug: 'uae-leave-salary-calculator',
+    legacyId: 'uae-leave-salary-calculator',
+    hub: 'utility-tools',
+    category: 'finance',
+    name: 'UAE Leave Salary Calculator',
+    icon: '🏖️',
+    summary: 'Work out UAE annual leave earned, leave salary for a planned holiday and the payout for unused leave when you leave a job.',
+    seoTitle: 'UAE Leave Salary Calculator 2026: Annual Leave Pay',
+    seoDescription:
+      'Free UAE leave salary calculator: annual leave earned under Article 29, leave salary on full wage and unused leave encashment on basic salary at exit.',
+    keywords: [
+      'leave salary calculator uae',
+      'leave salary calculation in uae',
+      'annual leave calculator uae',
+      'leave encashment calculator uae',
+      'unused leave payment uae',
+      'annual leave entitlement uae',
+      'leave salary uae labour law',
+      'final settlement leave salary uae',
+    ],
+    answer:
+      'UAE employees earn 30 calendar days of paid annual leave a year after one year of service, and 2 days a month between six months and one year (Article 29, Federal Decree-Law No. 33 of 2021). Leave salary is the daily wage (monthly wage ÷ 30) × leave days. Unused leave at exit is paid on basic salary: AED 10,000 basic and 15 unused days gives AED 5,000.',
+    howTo: [
+      'Choose Leave salary for planned leave or Unused leave at exit.',
+      'Enter your basic monthly salary and, optionally, your monthly allowances.',
+      'Enter your joining date, the end date, leave already taken and any unpaid leave, or switch to I know my balance.',
+      'For planned leave, enter how many leave days you will take.',
+      'Read the leave balance, daily wage and amount, then copy or print the result.',
+    ],
+    features: [
+      'Leave earned from exact dates: 30 days a year pro-rata after one year, 2 days per completed month from 6 to 12 months',
+      'Two modes: leave salary for a planned holiday and encashment of unused leave at exit',
+      'Wage basis explained and selectable: full wage (basic + allowances) during leave, basic salary for unused leave at exit',
+      'Unpaid leave deducted from service and leave already taken deducted from the balance',
+      'Warnings when planned leave exceeds the balance or more leave was taken than earned',
+      'Daily wage method (÷ 30 or × 12 ÷ 365) and an under-6-months option',
+      'Formula, worked example, carry-forward rules and official sources, with Copy and Print',
+      'Exact arithmetic in fils, rounded to 2 decimals only for display',
+    ],
+    faqs: [
+      {
+        question: 'How many days of annual leave do I get in the UAE?',
+        answer:
+          'Under Article 29 of Federal Decree-Law No. 33 of 2021, a private-sector employee gets at least 30 calendar days of paid annual leave for each year of service. Between six months and one year of service you earn 2 days for each month, and when employment ends you are paid for the fraction of the last year. Under six months there is no statutory paid leave.',
+      },
+      {
+        question: 'Is leave salary paid on basic salary or full salary?',
+        answer:
+          'During annual leave you are paid your wage, which Article 1 of the law defines as basic salary plus allowances, so the default here is the full wage. Unused leave paid out when employment ends is calculated on the basic salary only (Article 29). Your contract can be more generous, so both bases can be selected under Advanced options.',
+      },
+      {
+        question: 'How is unused annual leave paid when I leave a job?',
+        answer:
+          'Unused days are paid as cash in lieu with your final settlement, whatever the reason you leave: basic monthly salary ÷ 30 × unused days. For example, AED 9,000 basic and 20 unused days gives AED 6,000. Final dues, including gratuity, must be paid within 14 days of the contract ending.',
+      },
+      {
+        question: 'Can I carry forward annual leave to next year?',
+        answer:
+          'With your employer’s agreement you can carry forward up to half of a year’s leave, or agree a cash allowance for it at the wage you earned when it fell due (Executive Regulations, Cabinet Resolution No. 1 of 2022). Your employer cannot stop you from using accrued leave for more than two years.',
+      },
+      {
+        question: 'Does this apply in DIFC, ADGM or free zones?',
+        answer:
+          'It follows the mainland federal labour law, which also applies in most free zones. DIFC and ADGM have their own employment laws with different leave rules, so check those instead. Your contract or company policy can also give more leave than the legal minimum.',
+      },
+    ],
+    related: ['uae-gratuity-calculator', 'uae-overtime-calculator', 'uae-vat-calculator', 'date-calculator'],
+    processing: 'browser',
+    comparison: {
+      competitors: [
+        'Payslip.ae Annual Leave Calculator',
+        'thegratuitycalculator.ae Leave Salary Calculator',
+        'BCL Globiz Leave Encashment Calculator',
+        'Yomly Leave Salary Calculator',
+        'RadixHR Leave Salary Calculator',
+        'uaecalculators.ae Leave Encashment Calculator',
+      ],
+      commonFeatures: [
+        'Basic salary × unused days ÷ 30',
+        'Accrued leave from joining date (Payslip.ae)',
+        'Leave salary with or without allowances',
+        'Explanation of Article 29 and the basic-salary rule at exit',
+        'Disclaimer that the result is indicative only',
+      ],
+      implemented: [
+        'Both planned-leave salary and unused-leave encashment in one tool',
+        'Accrual from exact dates with the 6-month and 1-year thresholds and pro-rata part years',
+        'Unpaid leave and leave taken deducted, with over-balance and overdrawn warnings',
+        'Wage basis and daily-wage method selectable, each with the default explained',
+        'Formula, worked example, carry-forward rules and sources on the page; Copy and Print',
+      ],
+      backlog: ['Arabic interface', 'Carry-forward tracker per leave year', 'Combined final settlement with gratuity and notice pay', 'Part-time leave pro-rating'],
+      advantages: [
+        'Separates full-wage leave salary from basic-wage encashment instead of mixing them',
+        'Shows every step: service, leave earned, taken, balance and daily wage',
+        'Runs entirely in your browser; salary details are never sent anywhere',
+      ],
+    },
+    reviewed: '2026-09-29',
+  },
+  {
+    slug: 'uae-overtime-calculator',
+    legacyId: 'uae-overtime-calculator',
+    hub: 'utility-tools',
+    category: 'finance',
+    name: 'UAE Overtime Calculator',
+    icon: '⏱️',
+    summary: 'Calculate UAE overtime pay from basic salary: regular, night-time and rest-day or public-holiday hours, with legal-limit warnings.',
+    seoTitle: 'UAE Overtime Calculator 2026: 25% and 50% Rates',
+    seoDescription:
+      'Free UAE overtime calculator under Article 19: hourly basic wage, 25% regular, 50% night (10 pm–4 am) and rest-day pay, with warnings for legal limits.',
+    keywords: [
+      'overtime calculator uae',
+      'overtime calculation in uae',
+      'uae overtime calculation formula',
+      'overtime pay uae labour law',
+      'night overtime rate uae',
+      'public holiday overtime uae',
+      'rest day overtime uae',
+      'hourly rate calculator uae',
+    ],
+    answer:
+      'UAE overtime is paid at the hourly basic wage plus at least 25%, or plus 50% between 10 pm and 4 am (not for shift workers), under Article 19 of Federal Decree-Law No. 33 of 2021. Rest-day or public-holiday work earns a day off or pay plus 50%. Hourly wage = basic salary ÷ 30 ÷ 8, so AED 6,000 basic gives AED 25 an hour.',
+    howTo: [
+      'Enter your basic monthly salary in AED.',
+      'Enter your normal hours per day and working days per week.',
+      'Enter overtime hours split into regular, night (10 pm–4 am) and rest day or public holiday hours.',
+      'Choose the period the hours cover so the daily and 3-week limits can be checked.',
+      'Read the hourly wage, pay per type and total, then copy or print the result.',
+    ],
+    features: [
+      'Hourly basic wage from monthly salary and normal daily hours',
+      'Pay per overtime type: +25% regular, +50% night (10 pm–4 am) and +50% rest day or public holiday',
+      'Shift-worker option that removes the night premium, as Article 19 requires',
+      'Warnings above 8 normal hours a day or 48 a week, 2 overtime hours a day and 144 hours in 3 weeks',
+      'Hourly method choice (÷ 30 ÷ daily hours, × 12 ÷ 365, or × 12 ÷ 52 ÷ weekly hours) and optional allowances',
+      'Formula, worked example and official sources on the page, with Copy and Print',
+      'Exact arithmetic in fils, rounded to 2 decimals only for display',
+    ],
+    faqs: [
+      {
+        question: 'How is overtime calculated in the UAE?',
+        answer:
+          'Work out the hourly basic wage (basic salary ÷ 30 ÷ normal daily hours) and pay each overtime hour at that rate plus at least 25%. Hours between 10 pm and 4 am get at least 50% extra, except for shift workers. With AED 6,000 basic and 8-hour days, the hourly wage is AED 25, so 10 regular overtime hours pay AED 312.50.',
+      },
+      {
+        question: 'Is overtime paid on basic salary or total salary?',
+        answer:
+          'On basic salary. Article 19 and MOHRE guidance calculate overtime on the basic wage for normal working hours, and housing, transport and other allowances are excluded. A contract can pay overtime on the full wage, so you can add allowances under Advanced options.',
+      },
+      {
+        question: 'What do I get for working on a rest day or public holiday?',
+        answer:
+          'Your employer must give you a substitute day off, or pay the wage for the hours worked plus at least 50% of the basic wage. That is 150% of your hourly basic wage for each hour. You cannot be required to work more than two consecutive rest days, except daily-wage workers.',
+      },
+      {
+        question: 'How many overtime hours are allowed in the UAE?',
+        answer:
+          'Normal hours are capped at 8 a day or 48 a week, reduced by 2 hours a day in Ramadan. Overtime may not exceed 2 hours a day unless the work is needed to prevent a serious loss or accident, and total working hours may not exceed 144 in any three weeks. Some roles, such as senior managers, are exempt from these limits.',
+      },
+      {
+        question: 'Does this apply in DIFC, ADGM or free zones?',
+        answer:
+          'It follows the mainland federal labour law and its Executive Regulations, which also apply in most free zones. DIFC and ADGM have their own employment laws with different working-time rules, so check those instead. Your contract may also pay more than the legal minimum.',
+      },
+    ],
+    related: ['uae-gratuity-calculator', 'uae-leave-salary-calculator', 'uae-vat-calculator', 'percentage-calculator'],
+    processing: 'browser',
+    comparison: {
+      competitors: [
+        'Bayzat overtime guide and calculator',
+        'RadixHR Overtime Calculator',
+        'uaecalculator.ae Overtime Calculator',
+        'uaegratuity-calculator.com Overtime Calculator',
+        'TimeChart Overtime Calculator',
+        'EasyCalculation UAE Overtime Calculator',
+      ],
+      commonFeatures: [
+        'Basic salary and overtime hours',
+        '125% normal and 150% night or holiday rates',
+        'Hourly rate from basic × 12 ÷ 365 ÷ 8 or basic ÷ 30 ÷ 8',
+        'Explanation of Article 19',
+        'Disclaimer that the result is indicative only',
+      ],
+      implemented: [
+        'Regular, night and rest-day or public-holiday hours in one calculation with a per-type breakdown',
+        'Shift-worker exception for the night rate',
+        'Warnings for the 8-hour, 48-hour, 2-hour and 144-hours-in-3-weeks limits',
+        'Three hourly-rate conventions with the default explained, and an allowances option for generous contracts',
+        'Formula, worked example and sources on the page; Copy and Print',
+      ],
+      backlog: ['Arabic interface', 'Custom premium percentages above the legal minimum', 'Day-by-day timesheet entry', 'Ramadan hours mode'],
+      advantages: [
+        'Checks the legal limits instead of only multiplying hours',
+        'Makes the hourly-rate divisor explicit and selectable',
+        'Runs entirely in your browser; salary details are never sent anywhere',
+      ],
+    },
+    reviewed: '2026-09-29',
   },
   {
     slug: 'uae-vat-calculator',
@@ -395,7 +611,7 @@ export const utilityDocumentsFinanceTools: ToolContent[] = [
           'Registration is mandatory when taxable supplies and imports exceeded AED 375,000 in the past 12 months or are expected to exceed it in the next 30 days. A business can register voluntarily above AED 187,500.',
       },
     ],
-    related: ['uae-gratuity-calculator', 'percentage-calculator', 'currency-converter', 'loan-calculator'],
+    related: ['uae-gratuity-calculator', 'uae-leave-salary-calculator', 'uae-overtime-calculator', 'percentage-calculator', 'currency-converter'],
     processing: 'browser',
     comparison: {
       competitors: [

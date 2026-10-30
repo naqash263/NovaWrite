@@ -1,4 +1,4 @@
-// Exact money arithmetic for the UAE finance tools (gratuity and VAT).
+// Exact money arithmetic for the UAE finance tools (gratuity, VAT, leave salary and overtime).
 // Amounts are held as BigInt fils (1 AED = 100 fils) or as a numerator over a fixed
 // denominator, so nothing is rounded until a value is displayed (half-up to 2 dp).
 
@@ -218,4 +218,149 @@ export function removeVat(grossFils: bigint, ratePercent: bigint = VAT_RATE_PERC
 export function fromVatAmount(vatFils: bigint): VatBreakdown {
   const net = (vatFils * 100n) / VAT_RATE_PERCENT;
   return { net, vat: vatFils, gross: net + vatFils };
+}
+
+// ---------------------------------------------------------------- Dates
+
+/** ISO date `days` days before `iso` (days may be 0). Returns null for an invalid date. */
+export function shiftIsoDate(iso: string, days: number): string | null {
+  const t = parseIsoDate(iso);
+  if (t === null) return null;
+  return new Date(t - days * DAY_MS).toISOString().slice(0, 10);
+}
+
+function addMonthsClamped(t: number, months: number) {
+  const d = new Date(t);
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + months;
+  const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  return Date.UTC(y, m, Math.min(d.getUTCDate(), last));
+}
+
+/** Whole calendar months from the first to the last working day (both inclusive). 0 when the end is before the start. */
+export function completedMonths(start: string, end: string): number {
+  const s = parseIsoDate(start);
+  const e = parseIsoDate(end);
+  if (s === null || e === null || e < s) return 0;
+  const after = e + DAY_MS;
+  let months = 0;
+  while (addMonthsClamped(s, months + 1) <= after) months++;
+  return months;
+}
+
+// ---------------------------------------------------------------- Annual leave
+
+/**
+ * Leave days are numerators over LEAVE_DAY_D, so pro-rata days (30 × days ÷ 365, from service units)
+ * and 2-decimal inputs (hundredths) are both exact.
+ */
+export const LEAVE_DAY_D = UNITS_PER_YEAR * 100n; // 438,000
+
+/** Converts a day count in hundredths (e.g. 1250n = 12.5 days) to LEAVE_DAY_D units. */
+export const leaveDaysFromHundredths = (hundredths: bigint) => hundredths * UNITS_PER_YEAR;
+
+export type LeaveRule = 'annual' | 'monthly' | 'none';
+export type UnderSixMonths = 'none' | 'prorata';
+
+export interface LeaveEntitlement {
+  /** annual = 30 days per year pro-rata (1 year+); monthly = 2 days per completed month (6-12 months); none = under 6 months. */
+  rule: LeaveRule;
+  /** Days earned over the service period, over LEAVE_DAY_D. */
+  days: bigint;
+  months: number;
+}
+
+/**
+ * Annual leave earned under Article 29 of Federal Decree-Law No. 33 of 2021: 30 days for each year of
+ * service (pro-rata for the fraction of the last year) once one year is completed; 2 days for each month
+ * when service is more than 6 months and less than a year. Under 6 months there is no statutory
+ * entitlement unless `underSix` is 'prorata' (2 days per completed month, as some employers pay at exit).
+ */
+export function leaveEntitlement(serviceUnits: bigint, months: number, underSix: UnderSixMonths = 'none'): LeaveEntitlement {
+  if (serviceUnits >= UNITS_PER_YEAR) return { rule: 'annual', days: 30n * serviceUnits * 100n, months };
+  if (months >= 6 || underSix === 'prorata') return { rule: 'monthly', days: 2n * BigInt(months) * LEAVE_DAY_D, months };
+  return { rule: 'none', days: 0n, months };
+}
+
+export interface LeavePayResult {
+  /** Daily wage in fils = dailyN / dailyD. */
+  dailyN: bigint;
+  dailyD: bigint;
+  /** Amount in fils = amountN / amountD. */
+  amountN: bigint;
+  amountD: bigint;
+}
+
+/** Leave salary or encashment: daily wage (monthly wage ÷ 30, or × 12 ÷ 365) × leave days (over LEAVE_DAY_D). */
+export function leavePay(monthlyWageFils: bigint, leaveDays: bigint, method: DailyWageMethod): LeavePayResult {
+  const k = method === 'thirty' ? 1n : 12n;
+  const div = method === 'thirty' ? 30n : DAYS_PER_YEAR;
+  return { dailyN: monthlyWageFils * k, dailyD: div, amountN: monthlyWageFils * k * leaveDays, amountD: div * LEAVE_DAY_D };
+}
+
+// ---------------------------------------------------------------- Overtime
+
+export type HourlyMethod = 'thirty' | 'annual' | 'weekly';
+
+export const hourlyMethods: Record<HourlyMethod, { label: string; formula: string }> = {
+  thirty: { label: 'Monthly wage ÷ 30 ÷ daily hours (standard)', formula: 'monthly wage ÷ 30 ÷ normal daily hours' },
+  annual: { label: 'Monthly wage × 12 ÷ 365 ÷ daily hours (annualised)', formula: 'monthly wage × 12 ÷ 365 ÷ normal daily hours' },
+  weekly: { label: 'Monthly wage × 12 ÷ 52 ÷ weekly hours', formula: 'monthly wage × 12 ÷ 52 ÷ normal weekly hours' },
+};
+
+export type OvertimeKind = 'regular' | 'night' | 'restDay';
+
+export interface OvertimeLine {
+  kind: OvertimeKind;
+  /** Hours in hundredths. */
+  hours: bigint;
+  /** Premium in percent on top of the hourly wage (25 or 50). */
+  premium: bigint;
+  /** Pay in fils = amount / denominator. */
+  amount: bigint;
+}
+
+export interface OvertimeResult {
+  /** Hourly wage in fils = hourlyN / hourlyD. */
+  hourlyN: bigint;
+  hourlyD: bigint;
+  /** All amounts are numerators over this denominator (fils). */
+  denominator: bigint;
+  lines: OvertimeLine[];
+  total: bigint;
+  totalHours: bigint;
+}
+
+/**
+ * Overtime pay under Article 19 of Federal Decree-Law No. 33 of 2021: the hourly wage for normal hours
+ * plus at least 25% (regular overtime), 50% between 10 pm and 4 am (25% for shift workers, who are
+ * excluded from the night rate) and 50% for work on a rest day or public holiday not compensated with
+ * a substitute day off. Hours and daily hours are in hundredths.
+ */
+export function calculateOvertime(
+  monthlyWageFils: bigint,
+  dailyHoursHundredths: bigint,
+  daysPerWeek: bigint,
+  method: HourlyMethod,
+  hours: Record<OvertimeKind, bigint>,
+  shiftWorker = false,
+): OvertimeResult {
+  const hourlyN = monthlyWageFils * (method === 'thirty' ? 1n : 12n) * 100n;
+  const hourlyD = method === 'thirty' ? 30n * dailyHoursHundredths : method === 'annual' ? DAYS_PER_YEAR * dailyHoursHundredths : 52n * dailyHoursHundredths * daysPerWeek;
+  const denominator = hourlyD * 100n * 100n; // hours in hundredths × (100 + premium) percent
+  const premiums: Record<OvertimeKind, bigint> = { regular: 25n, night: shiftWorker ? 25n : 50n, restDay: 50n };
+  const lines = (['regular', 'night', 'restDay'] as const).map((kind) => ({
+    kind,
+    hours: hours[kind],
+    premium: premiums[kind],
+    amount: hourlyN * hours[kind] * (100n + premiums[kind]),
+  }));
+  return {
+    hourlyN,
+    hourlyD,
+    denominator,
+    lines,
+    total: lines.reduce((t, l) => t + l.amount, 0n),
+    totalHours: lines.reduce((t, l) => t + l.hours, 0n),
+  };
 }
